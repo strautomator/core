@@ -57,7 +57,7 @@ export const startup = async () => {
     // Load settings defined for current module (web or api).
     setmeup.load()
     setmeup.load("settings.private.json")
-    setmeup.loadFromEnv("STA_")
+    setmeup.loadFromEnv("STA")
 
     // Specific environment variables?
     if (settings.general.envPrefix) {
