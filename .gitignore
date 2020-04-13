@@ -1,0 +1,9 @@
+.cache
+.DS_Store
+.history
+.nyc_output
+coverage
+docs
+lib
+node_modules
+*.log

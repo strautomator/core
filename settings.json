@@ -1,0 +1,131 @@
+// STRAUTOMATOR CORE SETTINGS
+
+{
+    "billing": {
+        // Free accounts are limited to 2 recipes and conditions.
+        "free": {
+            "maxRecipes": 2,
+            "maxConditions": 2
+        },
+        // Pro accounts are limited to 999 (unlimited) recipes and conditions.
+        "pro": {
+            "maxRecipes": 999,
+            "maxConditions": 999
+        }
+    },
+    "cookie": {
+        // The cookie secret SHOULD be overriden on production on a settings.private.json file
+        // or via the STA_cookie_secret environment variable.
+        "secret": "Strautocookies"
+    },
+    "database": {
+        // Single documents from the database can get cached in memory. Value set in seconds.
+        // To disable, set this to null.
+        "cacheDuration": 20,
+        // Encryption options.
+        "crypto": {
+            "algorithm": "aes-256-cbc",
+            // List of property names that should be saved in encrypted format.
+            "fields": ["accessToken", "refreshToken", "password"]
+        }
+    },
+    "gcp": {
+        // The project ID on Google Cloud must be set on the settings.private.json file
+        // or via the STA_gcp_projectId environment variable.
+        "projectId": null
+    },
+    "mailer": {
+        // The default "from" on sent emails must be set on settings.private.json file
+        // or via the STA_mailer_from environment variable.
+        "from": null,
+        // Default SMTP settings are valid for SendGrid. You can overwrite these on
+        // on your private settings or via environment variables.
+        "smtp": {
+            "pool": true,
+            "secure": false,
+            "host": "smtp.sendgrid.net",
+            "port": 2525,
+            "auth": {
+                // User and password must be set via the settings.private.json file
+                // or using environment variables.
+                "user": null,
+                "pass": null
+            }
+        }
+    },
+    "maps": {
+        // Cache geolocation results for 20 minutes. Value set in seconds.
+        "cacheDuration": 1200,
+        // Circle color, will also be used as a fill color with half opacity.
+        "circleColor": "0x0066CC",
+        // Default marker style and color.
+        "defaultStyle": "color:red",
+        // Default map size in pixels.
+        "defaultSize": 400,
+        // Default zoom level 10 (far) to 19 (closer).
+        "defaultZoom": 16,
+        // The Google Maps API key must be set on settings.private.json file or
+        // via the STA_maps_api_key environment variable.
+        "api": {
+            "key": null,
+            // Static maps base URL.
+            "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
+        }
+    },
+    "recipes": {
+        // Max length for specific properties.
+        "maxLength": {
+            "title": 40,
+            "conditionValue": 120,
+            "actionValue": 300
+        }
+    },
+    "strava": {
+        // API endpoints and credentials from Strava.
+        "api": {
+            "baseUrl": "https://www.strava.com/api/v3/",
+            "authUrl": "https://www.strava.com/oauth/authorize",
+            "tokenUrl": "https://www.strava.com/oauth/token",
+            "scopes": "read,profile:read_all,activity:read_all,activity:write",
+            // Maximum concurrent requests per sintance.
+            "maxConcurrent": 6,
+            // Maximum requests per minute per instance. Default maximum on Strava
+            // is around 40 requests per minute total, so for 2 instances we use 30
+            // as load balancing is not done on a perfect 50/50 level.
+            "maxPerMinute": 30,
+            // Default page size 120, max is 200.
+            "pageSize": 120
+        },
+        // Keep details for the user's last 10 activities by default.
+        "activityHistoryCount": 10
+    },
+    "users": {
+        // Consider users idle if they had no processed activities for more than 1 week.
+        "idleDays": 7
+    },
+    "weather": {
+        // Cache weather results for 20 minutes. Value set in seconds.
+        "cacheDuration": 1200,
+        "darksky": {
+            // Base URL to the Dark Sky weather API.
+            "baseUrl": "https://api.darksky.net/forecast/",
+            // The Dark Sky API secret MUST be set via private settings or
+            // via the SMU_darksky_api_secret environment variable.
+            "secret": null
+        },
+        "openweathermap": {
+            // Base URL to the OpenWeatherMap API.
+            "baseUrl": "https://api.openweathermap.org/data/2.5/weather",
+            // The OpenWeatherMap API secret MUST be set via private settings or
+            // via the SMU_weather_openweathermap_secret environment variable.
+            "secret": null
+        },
+        "weatherbit": {
+            // Base URL to the Weatherbit API.
+            "baseUrl": "https://api.weatherbit.io/v2.0/history/hourly",
+            // The Weatherbit API secret MUST be set via private settings or
+            // via the SMU_weather_weatherbit_secret environment variable.
+            "secret": null
+        }
+    }
+}

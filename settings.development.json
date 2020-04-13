@@ -1,0 +1,30 @@
+// STRAUTOMATOR CORE SETTINGS (DEVELOPMENT)
+
+{
+    "app": {
+        "title": "Strautomator DEV"
+    },
+    "database": {
+        // If you're hosting multiple sites or services within the same Google Project,
+        // you might add a default prefix to Firestore collection names.
+        "collectionPrefix": "strautomator-dev-",
+        // Default encryption key on development.
+        "crypto": {
+            "key": "StrautomateAndProtectWithThisKey",
+            "iv": "1234567890ABCDEF"
+        }
+    },
+    "strava": {
+        "api": {
+            // Default URL token to be appended to the URL of webhooks, for
+            // extra security. Can only include alphanumeric characters.
+            // This SHOULD be overriden by a secret token set via private settings
+            // or via the SMU_strava_api_urlToken environment variable.
+            "urlToken": "super-secret",
+            // Default verification token to be sent by Strava on subcriptions.
+            // This SHOULD be overriden by a secret token set via private settings
+            // or via the SMU_strava_api_verifyToken environment variable.
+            "verifyToken": "strautotoken-for-the-winner"
+        }
+    }
+}

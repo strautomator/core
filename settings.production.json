@@ -1,0 +1,28 @@
+// STRAUTOMATOR CORE SETTINGS (PRODUCTION)
+
+{
+    "app": {
+        "title": "Strautomator"
+    },
+    "database": {
+        // If you're hosting multiple sites or services within the same Google Project,
+        // you might add a default prefix to Firestore collection names.
+        "collectionPrefix": "strautomator-",
+        // Encryption key and IV must be set on the settings.private.json file, or via the
+        // $STA_database_crypto_key and $STA_database_crypto_iv environment variables.
+        "crypto": {
+            "key": null,
+            "iv": null
+        }
+    },
+    "strava": {
+        "api": {
+            // Default URL token to be sent by Strava on subcriptions, MUST be set
+            // via private settings or the SMU_strava_api_urlToken environment variable.
+            "urlToken": null,
+            // Default verification token to be sent by Strava on subcriptions, MUST be set
+            // via private settings or the SMU_strava_api_verifyToken environment variable.
+            "verifyToken": null
+        }
+    }
+}

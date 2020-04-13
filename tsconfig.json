@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "baseUrl": "",
+        "rootDir": "src",
+        "outDir": "lib",
+        "target": "es2018",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "declaration": true,
+        "paths": {
+            "anyhow": ["node_modules/anyhow/", "../api/node_modules/anyhow/"],
+            "setmeup": ["node_modules/setmeup/", "../api/node_modules/setmeup/"]
+        }
+    },
+    "typedocOptions": {
+        "excludeExternals": true,
+        "excludePrivate": true,
+        "mode": "modules",
+        "name": "Strautomator Core",
+        "out": "docs"
+    }
+}
