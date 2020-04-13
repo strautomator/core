@@ -38,7 +38,12 @@ export class Mailer {
             // Create and test the SMTP client.
             const smtp = settings.mailer.smtp
             this.client = nodemailer.createTransport(smtp)
-            await this.client.verify()
+
+            try {
+                await this.client.verify()
+            } catch (ex) {
+                logger.error("Mailer.init", `Could not verify connection to ${smtp.host} ${smtp.port}, but will proceed anyways`)
+            }
 
             logger.info("Mailer.init", smtp.host, smtp.port)
         } catch (ex) {
