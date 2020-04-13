@@ -37,10 +37,12 @@ export class Database {
                 throw new Error("Missing the mandatory database.crypto.key setting")
             }
 
-            this.firestore = new Firestore({
-                projectId: settings.gcp.projectId,
-                keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
-            })
+            const options: any = {projectId: settings.gcp.projectId}
+            if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+                options.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
+            }
+
+            this.firestore = new Firestore(options)
 
             const prefix = settings.database.collectionPrefix
             const logPrefix = prefix ? `Collections prefixed with "${prefix}"` : "No collections prefix"
