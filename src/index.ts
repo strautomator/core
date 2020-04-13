@@ -41,9 +41,10 @@ export const users: Users = Users.Instance
 import {Recipes} from "./recipes"
 export const recipes: Recipes = Recipes.Instance
 
-// Export useful types.
-export {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./recipes/types"
-export {UserData} from "./users/types"
+// Export types.
+export * from "./recipes/types"
+export * from "./strava/types"
+export * from "./users/types"
 
 // Startup script.
 export const startup = async () => {
