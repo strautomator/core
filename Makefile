@@ -21,7 +21,7 @@ docs:
 
 update:
 	-ncu -u
-	npm version $(shell date '+%y.%-V%u.%H%M') --force --allow-same-version --no-git-tag-version
+	npm version $(shell date '+%y.%-V%u.%-d%-H%-M') --force --allow-same-version --no-git-tag-version
 	npm install
 	rm -rf ./lib
 	$(TSC)
