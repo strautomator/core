@@ -21,10 +21,15 @@ export class Mailer {
     // --------------------------------------------------------------------------
 
     /**
-     * Init the email manager.
+     * Init the Email manager.
      */
     init = async (): Promise<void> => {
         try {
+            if (settings.mailer.disabled) {
+                logger.warn("Mailer.init", "Disabled on settings, emails will not be sent")
+                return
+            }
+
             if (!settings.mailer.from) {
                 throw new Error("Missing the mailer.from setting")
             }
@@ -60,6 +65,11 @@ export class Mailer {
      * @param options Email sending options.
      */
     send = async (options: EmailSendingOptions): Promise<void> => {
+        if (settings.mailer.disabled) {
+            logger.warn("Mailer.init", "Disabled on settings, will not send", options.to, options.subject)
+            return
+        }
+
         try {
             await this.client.send(options)
         } catch (ex) {
