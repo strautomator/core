@@ -23,7 +23,7 @@ export class Weather {
     /**
      * List of weather providers (as modules).
      */
-    providers: WeatherProvider[] = [darksky, openweathermap, weatherbit]
+    providers: WeatherProvider[] = []
 
     // INIT
     // --------------------------------------------------------------------------
@@ -33,7 +33,18 @@ export class Weather {
      */
     init = async (): Promise<void> => {
         try {
-            await darksky.init()
+            if (!settings.weather.darksky.disabled) {
+                await darksky.init()
+                this.providers.push(darksky)
+            }
+            if (!settings.weather.openweathermap.disabled) {
+                await openweathermap.init()
+                this.providers.push(openweathermap)
+            }
+            if (!settings.weather.weatherbit.disabled) {
+                await weatherbit.init()
+                this.providers.push(weatherbit)
+            }
 
             cache.setup("weather", settings.weather.cacheDuration)
             logger.info("Weather.init")
