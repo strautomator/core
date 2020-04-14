@@ -16,6 +16,7 @@ if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CRED
 
 // Settings module, then core modules.
 import setmeup = require("setmeup")
+import cache = require("bitecache")
 
 import {Database} from "./database"
 export const database: Database = Database.Instance
@@ -75,4 +76,10 @@ export const startup = async () => {
         logger.error("Strautomator.startup", "Failed to start, will exit...")
         process.exit()
     }
+}
+
+// Shutdown script.
+export const shutdown = async () => {
+    logger.warn("Strautomator.shutdown", "Terminating the service now...")
+    cache.clear()
 }

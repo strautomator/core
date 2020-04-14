@@ -18,3 +18,4 @@ export * from "./recipes/types";
 export * from "./strava/types";
 export * from "./users/types";
 export declare const startup: () => Promise<void>;
+export declare const shutdown: () => Promise<void>;
