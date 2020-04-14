@@ -188,6 +188,11 @@ export function toStravaProfile(data): StravaProfile {
     // Has profile image?
     if (data.profile) {
         profile.urlAvatar = data.profile
+
+        // Relative avatar URL? Append Strava's base URL.
+        if (profile.urlAvatar.indexOf("://") < 0) {
+            profile.urlAvatar = `https://strava.com/${profile.urlAvatar}`
+        }
     }
 
     return profile
