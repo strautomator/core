@@ -5,12 +5,16 @@
         // Free accounts are limited to 2 recipes and conditions.
         "free": {
             "maxRecipes": 2,
-            "maxConditions": 2
+            "maxConditions": 2,
+            // Links on 1 out of 5 processed activities on free accounts.
+            "linksOn": 5
         },
         // Pro accounts are limited to 999 (unlimited) recipes and conditions.
         "pro": {
             "maxRecipes": 999,
-            "maxConditions": 999
+            "maxConditions": 999,
+            // No links on Pro accounts processed activities.
+            "linksOn": false
         }
     },
     "cookie": {

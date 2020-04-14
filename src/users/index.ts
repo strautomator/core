@@ -193,6 +193,18 @@ export class Users {
             logger.error("Users.setActivityCount", user.id, user.profile.username, ex)
         }
     }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Check if the passed user has a valid Pro account.
+     * @param user The user to be checked.
+     */
+    isPro = (user: UserData): boolean => {
+        const now = new Date()
+        return user.dateBilling && user.dateBilling >= now && user.payments.length > 0
+    }
 }
 
 // Exports...
