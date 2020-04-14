@@ -1,4 +1,4 @@
-// Strautomator Core: User
+// Strautomator Core: Users
 
 import {UserData} from "./types"
 import {StravaProfile, StravaTokens} from "../strava/types"
@@ -10,7 +10,7 @@ import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
- * Class to get and process users.
+ * Manage and process user accounts.
  */
 export class Users {
     private constructor() {}

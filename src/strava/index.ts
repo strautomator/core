@@ -30,7 +30,7 @@ export class Strava {
     // --------------------------------------------------------------------------
 
     /**
-     * Init the Strava API handle.
+     * Init the Strava wrapper.
      */
     init = async (): Promise<void> => {
         await this.api.init()

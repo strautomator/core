@@ -26,7 +26,7 @@ export class Database {
     // --------------------------------------------------------------------------
 
     /**
-     * Init the database wrapper.
+     * Init the Database wrapper.
      */
     init = async (): Promise<void> => {
         try {

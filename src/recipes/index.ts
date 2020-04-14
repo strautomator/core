@@ -1,4 +1,4 @@
-// Strautomator Core: Recipe
+// Strautomator Core: Recipes
 
 import {recipePropertyList, recipeActionList} from "./lists"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
