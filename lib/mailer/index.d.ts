@@ -8,7 +8,7 @@ export declare class Mailer {
     static get Instance(): Mailer;
     private client;
     /**
-     * Init the email manager.
+     * Init the Email manager.
      */
     init: () => Promise<void>;
     /**

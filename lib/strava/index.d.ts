@@ -13,7 +13,7 @@ export declare class Strava {
      */
     api: StravaAPI;
     /**
-     * Init the Strava API handle.
+     * Init the Strava wrapper.
      */
     init: () => Promise<void>;
     /**

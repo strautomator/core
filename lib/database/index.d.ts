@@ -11,7 +11,7 @@ export declare class Database {
      */
     private firestore;
     /**
-     * Init the database wrapper.
+     * Init the Database wrapper.
      */
     init: () => Promise<void>;
     /**

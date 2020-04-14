@@ -1,7 +1,7 @@
 import { UserData } from "./types";
 import { StravaProfile, StravaTokens } from "../strava/types";
 /**
- * Class to get and process users.
+ * Manage and process user accounts.
  */
 export declare class Users {
     private constructor();
