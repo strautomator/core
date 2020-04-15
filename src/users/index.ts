@@ -19,6 +19,19 @@ export class Users {
         return this._instance || (this._instance = new this())
     }
 
+    // INIT
+    // --------------------------------------------------------------------------
+
+    /**
+     * Init the Users manager.
+     */
+    init = async (): Promise<void> => {
+        if (!settings.users.idleDays || settings.users.idleDays < 2) {
+            logger.warn("Users.init", "idleDays setting must be at least 2, force setting it to 2 now")
+            settings.users.idleDays = 2
+        }
+    }
+
     // GET USER DATA
     // --------------------------------------------------------------------------
 
@@ -38,8 +51,7 @@ export class Users {
     }
 
     /**
-     * Get users with recipes and that haven't received
-     * activity updates on for more than a few days.
+     * Get users with recipes defined but with no activities processed for a few days.
      */
     getIdle = async (): Promise<UserData[]> => {
         try {

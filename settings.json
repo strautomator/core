@@ -104,8 +104,8 @@
         "activityHistoryCount": 10
     },
     "users": {
-        // Consider users idle if they had no processed activities for more than 1 week.
-        "idleDays": 7
+        // Consider users idle if they had no processed activities for more than 1 month.
+        "idleDays": 30
     },
     "weather": {
         // Cache weather results for 20 minutes. Value set in seconds.

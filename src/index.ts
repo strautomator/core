@@ -71,6 +71,7 @@ export const startup = async () => {
         await mailer.init()
         await maps.init()
         await strava.init()
+        await users.init()
         await weather.init()
     } catch (ex) {
         logger.error("Strautomator.startup", "Failed to start, will exit...")
