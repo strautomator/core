@@ -7,7 +7,7 @@
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
         // you might add a default prefix to Firestore collection names.
-        "collectionPrefix": "strautomator-",
+        "collectionPrefix": "",
         // Encryption key and IV must be set on the settings.private.json file, or via the
         // $STA_database_crypto_key and $STA_database_crypto_iv environment variables.
         "crypto": {
