@@ -1,9 +1,6 @@
 // STRAUTOMATOR CORE SETTINGS (DEVELOPMENT)
 
 {
-    "app": {
-        "title": "Strautomator DEV"
-    },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
         // you might add a default prefix to Firestore collection names.

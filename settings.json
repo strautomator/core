@@ -1,4 +1,5 @@
 // STRAUTOMATOR CORE SETTINGS
+// Here are most of the Strautomator settings.
 
 {
     "billing": {
@@ -16,11 +17,6 @@
             // No links on Pro accounts processed activities.
             "linksOn": false
         }
-    },
-    "cookie": {
-        // The cookie secret SHOULD be overriden on production on a settings.private.json file
-        // or via the STA_cookie_secret environment variable.
-        "secret": "Strautocookies"
     },
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.

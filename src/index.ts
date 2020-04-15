@@ -49,9 +49,6 @@ export * from "./users/types"
 
 // Startup script.
 export const startup = async () => {
-    const settings = setmeup.settings
-
-    // Load core settings.
     setmeup.load(`${__dirname}/../settings.json`)
     setmeup.load(`${__dirname}/../settings.${process.env.NODE_ENV}.json`)
 
@@ -59,11 +56,6 @@ export const startup = async () => {
     setmeup.load()
     setmeup.load("settings.private.json")
     setmeup.loadFromEnv("STA")
-
-    // Specific environment variables?
-    if (settings.general.envPrefix) {
-        setmeup.loadFromEnv(settings.general.envPrefix)
-    }
 
     // Try starting individual modules now.
     try {
