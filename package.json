@@ -1,13 +1,13 @@
 {
     "name": "strautomator-core",
-    "version": "20.163.152255",
+    "version": "20.164.160148",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "private": true,
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "scripts": {
-        "build": "tsc"
+        "postinstall": "tsc"
     },
     "dependencies": {
         "@google-cloud/firestore": "^3.7.4",
