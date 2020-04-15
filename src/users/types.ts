@@ -30,6 +30,8 @@ export interface UserData {
     recipes?: UserRecipeMap
     /** List of user payments. */
     payments?: PayPalTransaction[]
+    /** User preferences. */
+    preferences?: UserPreferences
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */
@@ -38,10 +40,18 @@ export interface UserData {
     dateBilling?: Date
     /** Date of last received activity from Strava. */
     dateLastActivity?: Date
-    /** Units (imperial or metric). */
-    units?: string
     /** Recipes counter. */
     recipeCount?: number
     /** Processed activities counter. */
     activityCount?: number
+}
+
+/**
+ * User preferences.
+ */
+export interface UserPreferences {
+    /** Temperature and distance units (metric or imperial). */
+    units?: "metric" | "imperial"
+    /** Prefered weather provider. */
+    weatherProvider?: "darksky" | "openweathermap" | "weatherbit"
 }
