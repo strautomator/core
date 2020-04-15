@@ -2,7 +2,6 @@ TYPEDOC:= ./node_modules/.bin/typedoc
 TSC:= ./node_modules/.bin/tsc
 
 build:
-	rm -rf ./lib
 	$(TSC)
 	rm -rf ./node_modules/anyhow
 	rm -rf ./node_modules/setmeup
@@ -23,7 +22,6 @@ update:
 	-ncu -u
 	npm version $(shell date '+%y.%-V%u.%-d%H%M') --force --allow-same-version --no-git-tag-version
 	npm install
-	rm -rf ./lib
 	$(TSC)
 
 .PHONY: docs
