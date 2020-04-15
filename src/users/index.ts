@@ -104,12 +104,13 @@ export class Users {
 
             const userData: UserData = {
                 id: profile.id,
+                displayName: profile.username || profile.firstName || profile.lastName || "friend",
                 profile: profile,
                 stravaTokens: stravaTokens,
                 dateLogin: now
             }
 
-            logger.debug("Users.upsert", profile.id, profile.username, userData)
+            logger.debug("Users.upsert", userData.id, userData)
 
             // Fetch or create document on database.
             const doc = database.doc("users", profile.id)
@@ -117,7 +118,7 @@ export class Users {
 
             // Set registration date, if user does not exist yet.
             if (!exists) {
-                logger.debug("Users.upsert", profile.id, profile.username, "New user will be created")
+                logger.info("Users.upsert", userData.id, userData.displayName, "New registration")
                 userData.dateRegistered = now
                 userData.recipes = {}
                 userData.recipeCount = 0
@@ -132,11 +133,11 @@ export class Users {
             await database.merge("users", userData, doc)
 
             const profileSummary = `Has ${profile.bikes.length} bikes, ${profile.shoes.length} shoes, updated: ${profile.dateUpdated}`
-            logger.info("Users.upsert", profile.id, profile.username, profileSummary)
+            logger.info("Users.upsert", userData.id, userData.displayName, profileSummary)
 
             return userData
         } catch (ex) {
-            logger.error("Users.upsert", profile.id, profile.username, ex)
+            logger.error("Users.upsert", profile.id, ex)
             throw ex
         }
     }
@@ -155,7 +156,7 @@ export class Users {
             }
         } catch (ex) {
             if (user.profile) {
-                logger.error("Users.update", user.id, user.profile.username, ex)
+                logger.error("Users.update", user.id, user.displayName, ex)
             } else {
                 logger.error("Users.update", user.id, ex)
             }
@@ -173,7 +174,7 @@ export class Users {
             await database.doc("users", user.id).delete()
         } catch (ex) {
             if (user.profile) {
-                logger.error("Users.update", user.id, user.profile.username, ex)
+                logger.error("Users.update", user.id, user.displayName, ex)
             } else {
                 logger.error("Users.update", user.id, ex)
             }
@@ -190,7 +191,7 @@ export class Users {
         try {
             await database.increment("users", user.id, "activityCount")
         } catch (ex) {
-            logger.error("Users.setActivityCount", user.id, user.profile.username, ex)
+            logger.error("Users.setActivityCount", user.id, user.displayName, ex)
         }
     }
 

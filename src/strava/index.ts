@@ -124,7 +124,7 @@ export class Strava {
             const data = await this.api.get(tokens.accessToken, "athlete")
             const profile = toStravaProfile(data)
 
-            logger.info("Strava.getAthlete", `ID ${profile.id}`, profile.username)
+            logger.info("Strava.getAthlete", `ID ${profile.id}`, profile.username || profile.firstName || profile.lastName)
             return profile
         } catch (ex) {
             logger.error("Strava.getAthlete", ex)
@@ -298,7 +298,7 @@ export class Strava {
             user.stravaSubscription = result.id
             await users.update({id: user.id, stravaSubscription: result.id} as UserData, true)
 
-            logger.info("Strava.setSubscription", user.id, user.profile.username, `Subscription ${result.id}`)
+            logger.info("Strava.setSubscription", user.id, user.displayName, `Subscription ${result.id}`)
 
             return result.id
         } catch (ex) {
@@ -319,7 +319,7 @@ export class Strava {
     cancelSubscription = async (user: UserData): Promise<void> => {
         try {
             if (!user.stravaSubscription) {
-                logger.warn("Strava.cancelSubscription", `User ${user.id}, ${user.profile.username} has no active webhook subscription`)
+                logger.warn("Strava.cancelSubscription", `User ${user.id}, ${user.displayName} has no active webhook subscription`)
                 return
             }
 
@@ -329,9 +329,9 @@ export class Strava {
             }
 
             await this.api.delete(null, `push_subscriptions/${user.stravaSubscription}`, query)
-            logger.info("Strava.cancelSubscription", `User ${user.id}, ${user.profile.username}`, `Subscription ${user.stravaSubscription} cancelled`)
+            logger.info("Strava.cancelSubscription", `User ${user.id}, ${user.displayName}`, `Subscription ${user.stravaSubscription} cancelled`)
         } catch (ex) {
-            logger.error("Strava.cancelSubscription", `User ${user.id}, ${user.profile.username}`, ex)
+            logger.error("Strava.cancelSubscription", `User ${user.id}, ${user.displayName}`, ex)
             throw ex
         }
     }
@@ -352,7 +352,7 @@ export class Strava {
             // Add user details.
             data.user = {
                 id: user.id,
-                username: user.profile.username
+                username: user.displayName
             }
 
             // Add recipe IDs.
@@ -362,7 +362,7 @@ export class Strava {
             await database.set("activities", data, activity.id.toString())
             logger.debug("Strava.saveProcessedActivity", data)
         } catch (ex) {
-            logger.error("Strava.saveProcessedActivity", `User ${user.id} - ${user.profile.username}`, `Activity ${activity.id}`, ex)
+            logger.error("Strava.saveProcessedActivity", `User ${user.id} - ${user.displayName}`, `Activity ${activity.id}`, ex)
         }
     }
 }

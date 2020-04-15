@@ -48,6 +48,11 @@ export declare class Users {
      * @param user The user to have activity count incremented.
      */
     setActivityCount: (user: UserData) => Promise<void>;
+    /**
+     * Check if the passed user has a valid Pro account.
+     * @param user The user to be checked.
+     */
+    isPro: (user: UserData) => boolean;
 }
 declare const _default: Users;
 export default _default;

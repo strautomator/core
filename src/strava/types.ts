@@ -171,12 +171,6 @@ export function toStravaProfile(data): StravaProfile {
         shoes: []
     }
 
-    // Username defaults to first name and ID, if not set.
-    if (!profile.username) {
-        profile.username = profile.firstName ? profile.firstName.toLowerCase() : "user"
-        profile.username = `${profile.username}-${profile.id}`
-    }
-
     // Has bikes?
     if (data.bikes && data.bikes.length > 0) {
         for (let bike of data.bikes) {

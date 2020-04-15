@@ -258,7 +258,7 @@ export class Recipes {
         try {
             await database.increment("users", user.id, `recipes.${id}.triggerCount`)
         } catch (ex) {
-            logger.error("Recipes.setTriggerCount", `User ${user.id} - ${user.profile.username}`, `Recipe ${id}`, ex)
+            logger.error("Recipes.setTriggerCount", `User ${user.id} - ${user.displayName}`, `Recipe ${id}`, ex)
         }
     }
 
@@ -400,7 +400,7 @@ export class Recipes {
      * @param action The action with an invalid parameter.
      */
     reportInvalidAction = (user: UserData, action: RecipeAction, message?: string) => {
-        logger.warn("Recipes.reportInvalidAction", `User ${user.id} - ${user.profile.username}`, `Action ${action.type}: ${action.value}`, message)
+        logger.warn("Recipes.reportInvalidAction", `User ${user.id} - ${user.displayName}`, `Action ${action.type}: ${action.value}`, message)
     }
 }
 

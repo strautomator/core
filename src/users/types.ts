@@ -17,7 +17,9 @@ export interface UserRecipeMap {
  */
 export interface UserData {
     /** Unique ID, same as Strava's athlete ID. */
-    id?: string
+    id: string
+    /** User's display (taken from one of the user profile fields). */
+    displayName?: string
     /** User profile data from Strava. */
     profile: StravaProfile
     /** User strava access and refresh tokens. */
