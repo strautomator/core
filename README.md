@@ -15,7 +15,7 @@ Additionally, you can also define settings via environment variables, prefixed b
 
 ### TypeScript vs Javascript
 
-Whenever possible we'll use TypeScript to write the core logic of Strautomator. In other words, **always**. But please note that the compiled Javascript is also included in this repo, under the [/lib](https://github.com/strautomator/core/blob/master/lib) folder.
+Whenever possible we'll use TypeScript to write the core logic of Strautomator. In other words, **always**. The TypeScript code should be compiled in build time manually, please check the [API's Dockerfile](https://github.com/strautomator/api/blob/master/Dockerfile) for a sample.
 
 ### Database
 
