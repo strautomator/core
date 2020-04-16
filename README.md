@@ -1,6 +1,8 @@
 # Strautomator Core
 
-This is the core module of Strautomator, and contains most of its busines logic. This project doesn't run by itself, but it's used by the [API](https://github.com/strautomator/api) and [Web frontend](https://github.com/strautomator/web).
+This is the core module of Strautomator, and contains most of its busines logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web).
+
+**Why having 2 distinct repos / projects, you might ask...** First because the original plan for Strautomator was to be command line tool, and not a web app. Second, by keeping the core login decoupled from the web frontend we can easily reuse it on Cloud Functions and other platforms. Win / win.
 
 ### Settings
 
@@ -15,7 +17,7 @@ Additionally, you can also define settings via environment variables, prefixed b
 
 ### TypeScript vs Javascript
 
-Whenever possible we'll use TypeScript to write the core logic of Strautomator. In other words, **always**. The TypeScript code should be compiled in build time manually, please check the [API's Dockerfile](https://github.com/strautomator/api/blob/master/Dockerfile) for a sample.
+Whenever possible we'll use TypeScript to write the core logic of Strautomator. In other words, **always**. The TypeScript compiler is included as a package dependecy and compiled to JS right after install.
 
 ### Database
 
@@ -27,4 +29,4 @@ There's a Makefile with a bunch of helper commands that you should use. For inst
 
     $ make update
 
-This will also control the module's versioning automatically. You should not need to change the version on the package.json manually, ever.
+This will also control the module's versioning automatically. You should change the version on the package.json manually, ever.

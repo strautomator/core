@@ -4,7 +4,6 @@
 import logger = require("anyhow")
 logger.setup("console")
 logger.levelOnConsole = true
-logger.info("Strautomator.startup", `PID ${process.pid}`)
 
 // Defaults to gcp-credentials.json if no credentials were set for gcloud.
 if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
@@ -49,6 +48,8 @@ export * from "./users/types"
 
 // Startup script.
 export const startup = async () => {
+    logger.info("Strautomator.startup", `PID ${process.pid}`)
+
     setmeup.load(`${__dirname}/../settings.json`)
     setmeup.load(`${__dirname}/../settings.${process.env.NODE_ENV}.json`)
 
