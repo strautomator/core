@@ -1,16 +1,13 @@
 TYPEDOC:= ./node_modules/.bin/typedoc
 TSC:= ./node_modules/.bin/tsc
 
-build:
-	$(TSC)
-	rm -rf ./node_modules/anyhow
-	rm -rf ./node_modules/setmeup
-
+# Clean compiled resources and dependencies
 clean:
 	rm -rf ./lib
 	rm -rf ./node_modules
 	rm -f package-lock.json
 
+# Generate TypeScript docs
 docs:
 	rm -rf ./docs/assets
 	rm -rf ./docs/classes
@@ -18,6 +15,13 @@ docs:
 	rm -rf ./docs/modules
 	$(TYPEDOC) --disableOutputCheck
 
+# Compile TypeScript to JS
+build:
+	$(TSC)
+	rm -rf ./node_modules/anyhow
+	rm -rf ./node_modules/setmeup
+
+# Update dependencies and set new version
 update:
 	-ncu -u
 	npm version $(shell date '+%y.%-V%u.%-d%H%M') --force --allow-same-version --no-git-tag-version
