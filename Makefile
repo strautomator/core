@@ -27,5 +27,6 @@ update:
 	npm version $(shell date '+%y.%-V%u.%-d%H%M') --force --allow-same-version --no-git-tag-version
 	npm install
 	$(TSC)
+	-npm link
 
 .PHONY: docs
