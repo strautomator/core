@@ -68,7 +68,7 @@ export const startup = async () => {
         await weather.init()
     } catch (ex) {
         logger.error("Strautomator.startup", "Failed to start, will exit...")
-        process.exit()
+        process.exit(1)
     }
 }
 
