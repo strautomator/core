@@ -336,6 +336,50 @@ export class Strava {
         }
     }
 
+    /**
+     * Periodically check user subscriptions and renew them, if needed.
+     */
+    checkSubscriptions = async (): Promise<void> => {
+        try {
+            const subscriptions = await this.getSubscriptions()
+            const idleUsers = await users.getIdle()
+
+            logger.info("Scheduler.checkSubscriptions", `${subscriptions.length} webhooks`, `${idleUsers.length} idle users`)
+
+            // Iterate users and make sure subscriptions are active.
+            for (let user of idleUsers) {
+                try {
+                    let sub: StravaWebhook
+
+                    // Find correct subscription for the user.
+                    for (let s of subscriptions) {
+                        if (s.id == user.stravaSubscription) {
+                            sub = s
+                            break
+                        } else if (s.callbackUrl.indexOf(`${settings.strava.api.urlToken}/${user.id}`) > 0) {
+                            logger.warn("Scheduler.checkSubscriptions", `User ${user.id} - ${user.displayName}`, `Wrong subscription ID ${user.stravaSubscription}, correct is ${s.id}`)
+                            sub = s
+                            break
+                        }
+                    }
+
+                    // Reset subscription if it's not valid.
+                    if (!sub) {
+                        logger.info("Scheduler.checkSubscriptions", `User ${user.id} - ${user.displayName}`, `Subscription ${user.stravaSubscription || "empty"}`, `Needs renewal`)
+                        await this.setSubscription(user)
+                    } else {
+                        logger.debug("Scheduler.checkSubscriptions", `User ${user.id} - ${user.displayName}`, `Subscription ${user.stravaSubscription} is active`)
+                    }
+                } catch (ex) {
+                    logger.debug("Sccheduler.checkSubscriptions", `User ${user.id} - ${user.displayName}`, user.stravaSubscription, "Failed", ex)
+                }
+            }
+        } catch (ex) {
+            logger.error("Scheduler.checkSubscriptions", ex)
+            throw ex
+        }
+    }
+
     // DATABASE
     // --------------------------------------------------------------------------
 
