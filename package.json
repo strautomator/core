@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "20.171.200100",
+    "version": "20.171.200107",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "private": true,

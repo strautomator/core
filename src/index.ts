@@ -80,7 +80,7 @@ export const startup = async () => {
             const file = storage.bucket(downloadSettings.bucket).file(downloadSettings.filename)
             await file.download({destination: "./settings.from-gcp.json"})
 
-            setmeup.load("./settings.from-gcp.json", {destroy: true})
+            setmeup.load("./settings.from-gcp.json", {crypto: true, destroy: true})
         } catch (ex) {
             logger.error("Strautomator.startup", `Could not download ${downloadSettings.filename} from GCP bucket ${downloadSettings.bucket}`, ex)
             process.exit(2)
