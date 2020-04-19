@@ -59,9 +59,6 @@ export const startup = async () => {
 
     // Check basic settings.
     const settings = setmeup.settings
-    if (settings.app.port) {
-        throw new Error("Missing the mandatory gcp.projectId setting")
-    }
     if (!settings.gcp.projectId) {
         throw new Error("Missing the mandatory gcp.projectId setting")
     }
