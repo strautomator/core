@@ -5,7 +5,7 @@ import logger = require("anyhow")
 logger.setup("console")
 logger.levelOnConsole = true
 
-// Defaults to gcp-credentials.json if no credentials were set for gcloud.
+// Defaults to gcp-credentials.json on home directory if no credentials were set for gcloud.
 if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     const homedir = require("os").homedir()
     const credPath = `${homedir}/gcp-credentials.json`
@@ -50,13 +50,36 @@ export * from "./users/types"
 export const startup = async () => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
-    setmeup.load(`${__dirname}/../settings.json`)
-    setmeup.load(`${__dirname}/../settings.${process.env.NODE_ENV}.json`)
-
-    // Load settings defined for current module (web or api).
+    // Load settings defined for the core and from app root.
     setmeup.load()
-    setmeup.load("settings.private.json")
-    setmeup.loadFromEnv("STA")
+    setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`, `${__dirname}/../settings.secret.json`])
+
+    // Load settings from env.
+    setmeup.loadFromEnv()
+
+    // Get extra settings from Google Cloud Storage? To do so you must set the correct
+    // bucket and filename on the settings, or via environment variables.
+    if (setmeup.settings.gcp.downloadSettings.bucket) {
+        const downloadSettings = setmeup.settings.gcp.downloadSettings
+
+        try {
+            const {Storage} = require("@google-cloud/storage")
+            const storageOptions: any = {}
+
+            if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+                storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
+            }
+
+            const storage = new Storage(storageOptions)
+            const file = storage.bucket(downloadSettings.bucket).file(downloadSettings.filename)
+            await file.download({destination: "./settings.from-gcp.json"})
+
+            setmeup.load("./settings.from-gcp.json", {destroy: true})
+        } catch (ex) {
+            logger.error("Strautomator.startup", `Could not download ${downloadSettings.filename} from GCP bucket ${downloadSettings.bucket}`, ex)
+            process.exit(2)
+        }
+    }
 
     // Try starting individual modules now.
     try {

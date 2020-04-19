@@ -30,23 +30,31 @@
         }
     },
     "gcp": {
-        // The project ID on Google Cloud must be set on the settings.private.json file
-        // or via the STA_gcp_projectId environment variable.
-        "projectId": null
+        // The project ID on Google Cloud must be set on the settings.secret.json file
+        // or via the SMU_gcp_projectId environment variable.
+        "projectId": null,
+        "downloadSettings": {
+            // If you wish the app to download settings from Google Cloud Storage on startup, please
+            // specify the bucket name and filename below on your secret settings or via the
+            // SMU_gcp_downloadSettings_bucket and SMU_gcp_downloadSettings_filename environment
+            // variables. We HIGHLY recommend you to have the settings file encrypted there.
+            "bucket": null,
+            "filename": "settings.secret.json"
+        }
     },
     "mailer": {
-        // The default "from" on sent emails must be set on settings.private.json file
-        // or via the STA_mailer_from environment variable.
+        // The default "from" on sent emails must be set on settings.secret.json file
+        // or via the SMU_mailer_from environment variable.
         "from": null,
         // Default SMTP settings are valid for SendGrid. You can overwrite these on
-        // on your private settings or via environment variables.
+        // on your secret settings or via environment variables.
         "smtp": {
             "pool": true,
             "secure": false,
             "host": "smtp.sendgrid.net",
             "port": 2525,
             "auth": {
-                // User and password must be set via the settings.private.json file
+                // User and password must be set via the settings.secret.json file
                 // or using environment variables.
                 "user": null,
                 "pass": null
@@ -64,8 +72,8 @@
         "defaultSize": 400,
         // Default zoom level 10 (far) to 19 (closer).
         "defaultZoom": 16,
-        // The Google Maps API key must be set on settings.private.json file or
-        // via the STA_maps_api_key environment variable.
+        // The Google Maps API key must be set on settings.secret.json file or
+        // via the SMU_maps_api_key environment variable.
         "api": {
             "key": null,
             // Static maps base URL.
@@ -109,21 +117,21 @@
         "darksky": {
             // Base URL to the Dark Sky weather API.
             "baseUrl": "https://api.darksky.net/forecast/",
-            // The Dark Sky API secret MUST be set via private settings or
+            // The Dark Sky API secret MUST be set via secret settings or
             // via the SMU_darksky_api_secret environment variable.
             "secret": null
         },
         "openweathermap": {
             // Base URL to the OpenWeatherMap API.
             "baseUrl": "https://api.openweathermap.org/data/2.5/weather",
-            // The OpenWeatherMap API secret MUST be set via private settings or
+            // The OpenWeatherMap API secret MUST be set via secret settings or
             // via the SMU_weather_openweathermap_secret environment variable.
             "secret": null
         },
         "weatherbit": {
             // Base URL to the Weatherbit API.
             "baseUrl": "https://api.weatherbit.io/v2.0/history/hourly",
-            // The Weatherbit API secret MUST be set via private settings or
+            // The Weatherbit API secret MUST be set via secret settings or
             // via the SMU_weather_weatherbit_secret environment variable.
             "secret": null
         }
