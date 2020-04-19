@@ -50,17 +50,26 @@ export * from "./users/types"
 export const startup = async () => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
-    // Load settings defined for the core and from app root.
-    setmeup.load()
+    // Load settings defined at the core, and then from the app root.
     setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`, `${__dirname}/../settings.secret.json`])
+    setmeup.load()
 
     // Load settings from env.
     setmeup.loadFromEnv()
 
+    // Check basic settings.
+    const settings = setmeup.settings
+    if (settings.app.port) {
+        throw new Error("Missing the mandatory gcp.projectId setting")
+    }
+    if (!settings.gcp.projectId) {
+        throw new Error("Missing the mandatory gcp.projectId setting")
+    }
+
     // Get extra settings from Google Cloud Storage? To do so you must set the correct
     // bucket and filename on the settings, or via environment variables.
     if (setmeup.settings.gcp.downloadSettings.bucket) {
-        const downloadSettings = setmeup.settings.gcp.downloadSettings
+        const downloadSettings = settings.gcp.downloadSettings
 
         try {
             const {Storage} = require("@google-cloud/storage")

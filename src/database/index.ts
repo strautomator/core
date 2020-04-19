@@ -30,9 +30,6 @@ export class Database {
      */
     init = async (): Promise<void> => {
         try {
-            if (!settings.gcp.projectId) {
-                throw new Error("Missing the mandatory gcp.projectId setting")
-            }
             if (!settings.database.crypto.key) {
                 throw new Error("Missing the mandatory database.crypto.key setting")
             }
