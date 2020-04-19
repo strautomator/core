@@ -11,9 +11,9 @@ Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) modul
 - **settings.json** - general settings shared by all environments
 - **settings.development.json** - development settings, mostly when running on your dev machine
 - **settings.production.json** - production settings, except credentials and secrets
-- **settings.private.json** - credentials and secrets, excluded from the GIT repo
+- **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
 
-Additionally, you can also define settings via environment variables, prefixed by STA and separating blocks with underscore. So for instance to set the `app.title` via environment variables, you should set the value on `STA_app_title`.
+Additionally, you can also define settings via environment variables, prefixed by STA and separating blocks with underscore. So for instance to set the `app.title` via environment variables, you should set the value on `SMU_app_title`.
 
 ### TypeScript vs Javascript
 
