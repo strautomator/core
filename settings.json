@@ -95,14 +95,25 @@
             "authUrl": "https://www.strava.com/oauth/authorize",
             "tokenUrl": "https://www.strava.com/oauth/token",
             "scopes": "read,profile:read_all,activity:read_all,activity:write",
-            // Maximum concurrent requests per sintance.
+            // Maximum concurrent requests per instance.
             "maxConcurrent": 6,
             // Maximum requests per minute per instance. Default maximum on Strava
             // is around 40 requests per minute total, so for 2 instances we use 30
             // as load balancing is not done on a perfect 50/50 level.
             "maxPerMinute": 30,
             // Default page size 120, max is 200.
-            "pageSize": 120
+            "pageSize": 120,
+            // How many times should Strautomator retry failed jobs, for instance
+            // when updating user activities on Strava? After last fail, it will
+            // save the job details to the database for post processing.
+            // The default (2 retry after 30 seconds) is good for stateless containers
+            // where the processing might be cut once the response is sent to the client,
+            // for instance on Google Cloud Run or Cloud Functions. If you're running
+            // on your own controlled VM, you might want to increase these,
+            // for example maxRetry 2 and retryAfter 20000.
+            "maxRetry": 1,
+            // Retry failed jobs after 1 second by default (value in milliseconds).
+            "retryInterval": 1000
         },
         // Keep details for the user's last 10 activities by default.
         "activityHistoryCount": 10
