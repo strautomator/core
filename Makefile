@@ -18,8 +18,6 @@ docs:
 # Compile TypeScript to JS
 build:
 	$(TSC)
-	rm -rf ./node_modules/anyhow
-	rm -rf ./node_modules/setmeup
 
 # Update dependencies and set new version
 update:
