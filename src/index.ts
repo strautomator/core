@@ -76,11 +76,14 @@ export const startup = async () => {
                 storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
             }
 
+            // Download settings from GCS.
             const storage = new Storage(storageOptions)
             const file = storage.bucket(downloadSettings.bucket).file(downloadSettings.filename)
             await file.download({destination: "./settings.from-gcp.json"})
 
-            setmeup.load("./settings.from-gcp.json", {crypto: true, destroy: true})
+            // Load downloaded settings, assuming they're encrypted.
+            const loadOptions = {crypto: true, destroy: true}
+            setmeup.load("./settings.from-gcp.json", loadOptions)
         } catch (ex) {
             logger.error("Strautomator.startup", `Could not download ${downloadSettings.filename} from GCP bucket ${downloadSettings.bucket}`, ex)
             process.exit(2)
