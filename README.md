@@ -26,6 +26,12 @@ Whenever possible we'll use TypeScript to write the core logic of Strautomator. 
 
 By default Strautomator will use the Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, such as MongoDB or DynamoDB.
 
+The following tables / collections are used:
+
+- **users** registered user details
+- **activities** summary of activities processed
+- **activities-failed** summary of failed processed activities
+
 ### Make
 
 There's a Makefile with a bunch of helper commands that you should use. For instance to update dependencies to their latest versions:
