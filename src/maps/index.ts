@@ -52,8 +52,8 @@ export class Maps {
      * @param address Address to query the coordinates for.
      * @param region Optional TLD biasing region.
      */
-    getGetcode = async (address: string, region?: string): Promise<Coordinates[]> => {
-        logger.debug("Maps.getGetcode", address)
+    getGeocode = async (address: string, region?: string): Promise<Coordinates[]> => {
+        logger.debug("Maps.getGeocode", address)
 
         try {
             if (!address && address.length < 3) {
@@ -109,13 +109,17 @@ export class Maps {
                 return results
             }
 
+            // Error returned by the Maps API?
+            if (res.data && res.data.error_message) {
+                throw new Error(res.data.error_message)
+            }
+
             logger.info("Maps.getGeocode", address, region, `No results for: ${address}`)
             return []
         } catch (ex) {
-            logger.error("Maps.getGetcode", address, region, ex)
+            logger.error("Maps.getGeocode", address, region, ex)
+            throw ex
         }
-
-        return null
     }
 
     /**
