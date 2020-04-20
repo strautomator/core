@@ -27,13 +27,6 @@ export class StravaAPI {
      */
     private limiter: Bottleneck
 
-    /**
-     * The authentication URL used to start the OAuth2 flow with Strava.
-     */
-    get authUrl(): string {
-        return `${settings.strava.api.authUrl}?client_id=${settings.strava.api.clientId}&redirect_uri=${settings.app.url}auth/callback&response_type=code&scope=${settings.strava.api.scopes}`
-    }
-
     // INIT
     // --------------------------------------------------------------------------
 
