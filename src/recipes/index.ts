@@ -143,7 +143,14 @@ export class Recipes {
                     }
                 }
 
-                // Date and time condition.
+                // Day of week condition.
+                else if (prop.indexOf("weekday") >= 0) {
+                    if (!this.checkWeekday(activity, c)) {
+                        return false
+                    }
+                }
+
+                // Time based condition.
                 else if (prop.indexOf("date") >= 0) {
                     if (!this.checkTimestamp(activity, c)) {
                         return false
@@ -343,8 +350,8 @@ export class Recipes {
         const op = condition.operator
 
         // Parse condition and activity's date.
-        const value = parseFloat(condition.value as string)
-        const aTime = parseFloat(moment(activity[prop]).format("Hmm"))
+        const value = parseInt(condition.value as string)
+        const aTime = parseInt(moment(activity[prop]).format("Hmm"))
         let valid: boolean = true
 
         // Check it time is greater, less or around 15min of the condition's time.
@@ -362,6 +369,34 @@ export class Recipes {
 
         if (!valid) {
             logger.debug("Recipes.checkTimestamp", `Activity ${activity.id}`, condition, `Failed`)
+        }
+
+        return valid
+    }
+
+    /**
+     * Check if the passed date is on the specified week day (0 = Sunday, 6 = Satiurday).
+     * @param activity The Strava activity to be checked.
+     * @param condition The weekday based recipe condition.
+     */
+    private checkWeekday = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+        const prop = condition.property
+        const op = condition.operator
+
+        // Parse condition and activity's date.
+        const value = parseInt(condition.value as string)
+        const weekday = moment(activity["dateStart"]).day()
+        let valid: boolean
+
+        // Check it time is greater, less or around 15min of the condition's time.
+        if (op == RecipeOperator.Equal) {
+            valid = value == weekday
+        } else {
+            throw new Error(`Invalid operator ${op} for ${prop}`)
+        }
+
+        if (!valid) {
+            logger.debug("Recipes.checkWeekday", `Activity ${activity.id}`, condition, `Failed`)
         }
 
         return valid

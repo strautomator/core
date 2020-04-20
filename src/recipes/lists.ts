@@ -8,6 +8,10 @@ export const recipeOperatorList = {
         {value: "like", text: "has", description: "Text contains the specified value"},
         {value: "=", text: "is exactly", description: "Text matches the specified value"}
     ],
+    location: [
+        {value: "=", text: "within 40m of", description: ""},
+        {value: "like", text: "within 500m of", description: ""}
+    ],
     number: [
         {value: "=", text: "is exactly", description: "Number matches the specified value"},
         {value: "<", text: "is less than", description: "Number less than the specified value"},
@@ -19,10 +23,7 @@ export const recipeOperatorList = {
         {value: "like", text: "is around", description: "Time within 20 minutes of the specified value"},
         {value: "=", text: "is exactly", description: "Time within 1 minute of the specified value"}
     ],
-    location: [
-        {value: "=", text: "within 40m of", description: ""},
-        {value: "like", text: "within 500m of", description: ""}
-    ]
+    day: [{value: "=", text: "is", description: ""}]
 }
 
 /**
@@ -34,6 +35,7 @@ export const recipePropertyList = [
     {value: "elevation", text: "Elevation", type: "number", operators: recipeOperatorList.number, suffix: "m"},
     {value: "dateStart", text: "Start time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
     {value: "dateEnd", text: "End time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
+    {value: "weekday", text: "Week day", type: "day", operators: recipeOperatorList.day},
     {value: "movingTime", text: "Moving time", type: "number", operators: recipeOperatorList.number, suffix: "h"},
     {value: "locationStart", text: "Starting location", type: "location", operators: recipeOperatorList.location},
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
