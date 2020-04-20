@@ -57,14 +57,25 @@ export interface StravaActivity {
 /**
  * Processed activity details to be saved on the database.
  */
-export interface StravaProcessedActivity extends StravaActivity {
+export interface StravaProcessedActivity {
     /** User details for this activity. */
     user: {
+        /** User ID. */
         id: string
-        username: string
+        /** User display name. */
+        displayName: string
     }
-    /** List of recipe IDs. */
-    recipes: string[]
+    /** List of recipes applied to the activity. */
+    recipes: {
+        [id: string]: {
+            /** Title of the recipe. */
+            title: string
+            /** Conditions of the recipe (summary text)/ */
+            conditions: string[]
+            /** Actions of the recipe (summary text)/ */
+            actions: string[]
+        }
+    }
 }
 
 /**
@@ -211,7 +222,7 @@ export interface StravaTokens {
 }
 
 /**
- * Represents a subscription (webhook) for events dispatched by Strava.
+ * Represents a webhook (subscription) for events dispatched by Strava.
  */
 export interface StravaWebhook {
     /** Subscription ID. */
