@@ -233,7 +233,7 @@ export class Recipes {
 
     /**
      * String representation of the recipe.
-     * @recipe The recipe to get the summary for.
+     * @param recipe The recipe to get the summary for.
      */
     getSummary = (recipe: RecipeData): string => {
         const result = []
@@ -247,6 +247,38 @@ export class Recipes {
         }
 
         return result.join(", ")
+    }
+
+    /**
+     * String representation of a recipe action.
+     * @param action The recipe action to get the summary for.
+     */
+    getActionSummary = (action: RecipeAction): string => {
+        const actionType = _.find(recipeActionList, {value: action.type}).text
+        const valueText = action.friendlyValue || action.value
+
+        if (action.value && action.type != "commute") {
+            return `${actionType}: ${valueText}`
+        } else {
+            return `${actionType}`
+        }
+    }
+
+    /**
+     * String representation of a recipe condition.
+     * @param condition The recipe condition to get the summary for.
+     */
+    getConditionSummary = (condition: RecipeCondition): string => {
+        const property = _.find(recipePropertyList, {value: condition.property})
+        const fieldText = property.text
+        const operatorText = _.find(property.operators, {value: condition.operator}).text
+        let valueText = condition.friendlyValue || condition.value
+
+        if (property.suffix) {
+            valueText += ` ${property.suffix}`
+        }
+
+        return `${fieldText} ${operatorText} ${valueText}`
     }
 
     /**
