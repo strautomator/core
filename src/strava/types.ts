@@ -58,6 +58,12 @@ export interface StravaActivity {
  * Processed activity details to be saved on the database.
  */
 export interface StravaProcessedActivity {
+    /** Activity ID. */
+    id: number
+    /** Activity type (Ride, Run, etc). */
+    type: StravaSport
+    /** Start date of the activity. */
+    date: Date
     /** User details for this activity. */
     user: {
         /** User ID. */

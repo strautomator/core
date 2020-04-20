@@ -217,6 +217,9 @@ export class StravaActivities {
 
             // Data to be saved on the database.
             const data: StravaProcessedActivity = {
+                id: activity.id,
+                type: activity.type,
+                date: activity.dateStart,
                 user: {
                     id: user.id,
                     displayName: user.displayName
