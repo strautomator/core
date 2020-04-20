@@ -60,7 +60,9 @@ export class Maps {
                 throw new Error("Invalid or missing address")
             }
 
-            address = address.toLowerCase()
+            // Sanitize address and get its ID.
+            address = jaul.data.removeFromString(address, ["%", "{", "}", "[", "]", "@"])
+            const addressId = address.toLowerCase().replace(/ /g, "")
 
             // Adapt region to correct ccTLD.
             if (region == "gb") {
@@ -68,13 +70,10 @@ export class Maps {
             }
 
             // Location stored on cache?
-            const cached = cache.get("maps", `${region}-${address}`)
+            const cached = cache.get("maps", `${region}-${addressId}`)
             if (cached) return cached
 
-            // Remove invalid characters from address.
-            address = address.toLowerCase()
-            address = jaul.data.removeFromString(address, ["%", "{", "}", "[", "]", "@"])
-
+            // Geo request parameters.
             const geoRequest: GeocodeRequest = {
                 params: {
                     address: address,
@@ -105,11 +104,12 @@ export class Maps {
                     })
                 }
 
-                cache.set("maps", `${region}-${address}`, results)
+                cache.set("maps", `${region}-${addressId}`, results)
                 logger.info("Maps.getGeocode", address, region, `${results.length} result(s)`)
                 return results
             }
 
+            logger.info("Maps.getGeocode", address, region, `No results for: ${address}`)
             return []
         } catch (ex) {
             logger.error("Maps.getGetcode", address, region, ex)
