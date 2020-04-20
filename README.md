@@ -2,6 +2,8 @@
 
 This is the core module of Strautomator, and contains most of its busines logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web).
 
+**Please note that Strautomator is still in beta! Its internals, API specs and general settings will likely change a lot before we hit a stable release.**
+
 ### Settings
 
 Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its docs. The settings are splitted as follows:
