@@ -46,6 +46,10 @@ export class Recipes {
      */
     validate = (recipe: RecipeData): void => {
         try {
+            if (!recipe) {
+                throw new Error("Recipe is empty")
+            }
+
             if (!recipe.title) {
                 throw new Error("Missing recipe title")
             }
