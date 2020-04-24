@@ -51,6 +51,21 @@ export class Users {
     }
 
     /**
+     * Get active users (with at least 1 recipe).
+     */
+    getActive = async (): Promise<UserData[]> => {
+        try {
+            const result = await database.search("users", ["recipeCount", ">", 0])
+
+            logger.info("Users.getActive", `${result.length} active users`)
+            return result
+        } catch (ex) {
+            logger.error("Users.getActive", ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get users with recipes defined but with no activities processed for a few days.
      */
     getIdle = async (): Promise<UserData[]> => {
