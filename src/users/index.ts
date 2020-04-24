@@ -141,7 +141,8 @@ export class Users {
 
             // Fetch or create document on database.
             const doc = database.doc("users", profile.id)
-            const exists = (await doc.get()).exists
+            const docSnapshot = await doc.get()
+            const exists = docSnapshot.exists
 
             // Set registration date, if user does not exist yet.
             if (!exists) {
@@ -151,16 +152,16 @@ export class Users {
                 userData.recipeCount = 0
                 userData.activityCount = 0
             } else {
-                if (userData.recipes) {
-                    userData.recipeCount = Object.keys(userData.recipes).length
+                const docData = docSnapshot.data()
+
+                if (docData.recipes) {
+                    userData.recipeCount = Object.keys(docData.recipes).length
                 }
             }
 
             // Save user to the database.
             await database.merge("users", userData, doc)
-
-            const profileSummary = `Has ${profile.bikes.length} bikes, ${profile.shoes.length} shoes, updated: ${profile.dateUpdated}`
-            logger.info("Users.upsert", userData.id, userData.displayName, profileSummary)
+            logger.info("Users.upsert", userData.id, userData.displayName, `Has ${userData.recipeCount} recipes`, `Last updated on Strava: ${profile.dateUpdated}`)
 
             return userData
         } catch (ex) {

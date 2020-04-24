@@ -148,6 +148,11 @@ export class StravaWebhooks {
                 }
             }
 
+            // Not subscriptions renewed?
+            if (renewCount == 0) {
+                logger.warn("Strava.resetSubscriptions", "No subscriptions were renewed (count = 0)")
+            }
+
             // Result with removed and renewed counts.
             const result: StravaWebhookReset = {
                 removedSubscriptions: removeCount,
