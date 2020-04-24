@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Webhooks
 
-import {StravaWebhook} from "./types"
+import {StravaWebhook, StravaWebhookReset} from "./types"
 import {UserData} from "../users/types"
 import api from "./api"
 import users from "../users"
@@ -62,7 +62,7 @@ export class StravaWebhooks {
                 throw new Error("Missing subscription ID from Strava")
             }
 
-            // Save substription to user on the database.
+            // Save subscription to user on the database.
             user.stravaSubscription = result.id
             await users.update({id: user.id, stravaSubscription: result.id} as UserData, true)
 
@@ -104,46 +104,59 @@ export class StravaWebhooks {
         }
     }
 
+    // WEBHOOKS MAINTENANCE
+    // --------------------------------------------------------------------------
+
     /**
      * Periodically check user subscriptions and renew them, if needed.
      */
-    checkSubscriptions = async (): Promise<void> => {
+    resetSubscriptions = async (): Promise<StravaWebhookReset> => {
         try {
+            let removeCount = 0
+            let renewCount = 0
             const subscriptions = await this.getSubscriptions()
-            const idleUsers = await users.getIdle()
 
-            logger.info("Strava.checkSubscriptions", `${subscriptions.length} webhooks`, `${idleUsers.length} idle users`)
+            logger.info("Strava.resetSubscriptions", `${subscriptions.length} webhooks will be cleared`)
 
-            // Iterate users and make sure subscriptions are active.
-            for (let user of idleUsers) {
+            // Iterate subscriptions to remove existing ones.
+            for (let s of subscriptions) {
                 try {
-                    let sub: StravaWebhook
-
-                    // Find correct subscription for the user.
-                    for (let s of subscriptions) {
-                        if (s.id == user.stravaSubscription) {
-                            sub = s
-                            break
-                        } else if (s.callbackUrl.indexOf(`${settings.strava.api.urlToken}/${user.id}`) > 0) {
-                            logger.warn("Strava.checkSubscriptions", `User ${user.id} - ${user.displayName}`, `Wrong subscription ID ${user.stravaSubscription}, correct is ${s.id}`)
-                            sub = s
-                            break
-                        }
+                    const query = {
+                        client_id: settings.strava.api.clientId,
+                        client_secret: settings.strava.api.clientSecret
                     }
 
-                    // Reset subscription if it's not valid.
-                    if (!sub) {
-                        logger.info("Strava.checkSubscriptions", `User ${user.id} - ${user.displayName}`, `Subscription ${user.stravaSubscription || "empty"}`, `Needs renewal`)
-                        await this.setSubscription(user)
-                    } else {
-                        logger.debug("Strava.checkSubscriptions", `User ${user.id} - ${user.displayName}`, `Subscription ${user.stravaSubscription} is active`)
-                    }
+                    // Delete existing subscription.
+                    await api.delete(null, `push_subscriptions/${s.id}`, query)
+                    removeCount++
                 } catch (ex) {
-                    logger.debug("Strava.checkSubscriptions", `User ${user.id} - ${user.displayName}`, user.stravaSubscription, "Failed", ex)
+                    logger.warn("Strava.resetSubscriptions", `Could not remove subscription ${s.id}`, ex)
                 }
             }
+
+            const activeUsers = await users.getActive()
+
+            logger.info("Strava.resetSubscriptions", `Removed ${removeCount} webhooks`, `Will renew webhooks for ${activeUsers.length} users now`)
+
+            // Iterate active users to renew subscriptions.
+            for (let user of activeUsers) {
+                try {
+                    await this.setSubscription(user)
+                    renewCount++
+                } catch (ex) {
+                    logger.debug("Strava.resetSubscriptions", `Could not set subscription for user ${user.id}, ${user.displayName}`, ex)
+                }
+            }
+
+            // Result with removed and renewed counts.
+            const result: StravaWebhookReset = {
+                removedSubscriptions: removeCount,
+                renewedSubscriptions: renewCount
+            }
+
+            return result
         } catch (ex) {
-            logger.error("Strava.checkSubscriptions", ex)
+            logger.error("Strava.resetSubscriptions", ex)
             throw ex
         }
     }
