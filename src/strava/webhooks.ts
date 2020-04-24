@@ -44,13 +44,14 @@ export class StravaWebhooks {
     // --------------------------------------------------------------------------
 
     /**
-     * Subscribe to activities updates sent by Strava, and return the subscription ID.
+     * Subscribe to activities updates sent by Strava, and return the subscription ID
      * @param user The relevant user to receive activities from.
      */
     setSubscription = async (user: UserData): Promise<number> => {
         try {
+            const baseUrl = settings.api.url || settings.app.url
             const query = {
-                callback_url: `${settings.app.url}strava/${settings.strava.api.urlToken}/${user.id}`,
+                callback_url: `${baseUrl}strava/${settings.strava.api.urlToken}/${user.id}`,
                 client_id: settings.strava.api.clientId,
                 client_secret: settings.strava.api.clientSecret,
                 verify_token: settings.strava.api.verifyToken
