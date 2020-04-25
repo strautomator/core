@@ -18,6 +18,10 @@
             "linksOn": false
         }
     },
+    // Bunq integration settings.
+    "bunq": {
+        "currency": "EUR"
+    },
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.

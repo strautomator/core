@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "20.176.250020",
+    "version": "20.176.252250",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "private": true,
@@ -11,7 +11,7 @@
     },
     "dependencies": {
         "@bunq-community/bunq-js-client": "^1.1.1",
-        "@google-cloud/firestore": "^3.7.4",
+        "@google-cloud/firestore": "^3.7.5",
         "@google-cloud/storage": "^4.7.0",
         "@googlemaps/google-maps-services-js": "^2.6.0",
         "axios": "^0.19.2",
