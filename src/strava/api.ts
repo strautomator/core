@@ -200,12 +200,14 @@ export class StravaAPI {
                 headers: {"User-Agent": `${settings.app.title} ${packageVersion}`}
             }
 
-            // Token has expired? Renew it now.
-            if (tokens.expiresAt < moment().unix()) {
-                const newTokens = await this.refreshToken(tokens.refreshToken, tokens.accessToken)
-                token = newTokens.accessToken
-            } else {
-                token = tokens.accessToken
+            // Renew token if it has expired.
+            if (tokens) {
+                if (tokens.expiresAt < moment().unix()) {
+                    const newTokens = await this.refreshToken(tokens.refreshToken, tokens.accessToken)
+                    token = newTokens.accessToken
+                } else {
+                    token = tokens.accessToken
+                }
             }
 
             // Token was passed?
