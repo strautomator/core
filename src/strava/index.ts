@@ -1,12 +1,13 @@
 // Strautomator Core: Strava
 
 import {StravaTokens} from "./types"
+import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
 import stravaWebhooks from "./webhooks"
 import api from "./api"
+import eventManager from "../eventmanager"
 import logger = require("anyhow")
-import querystring = require("querystring")
 const settings = require("setmeup").settings
 
 /**
@@ -49,82 +50,38 @@ export class Strava {
      */
     init = async (): Promise<void> => {
         await api.init()
+
+        eventManager.on("Users.delete", this.onUsersDelete)
+    }
+
+    /**
+     * Cancel webhooks for user when it gets deleted from the database.
+     * @param user User that was deleted from the database.
+     */
+    private onUsersDelete = async (user: UserData): Promise<void> => {
+        try {
+            await this.webhooks.cancelSubscription(user)
+        } catch (ex) {
+            logger.error("Users.onUsersDelete", `Failed to cancel webhooks for user ${user.id} - ${user.displayName}`)
+        }
     }
 
     // AUTH METHODS
     // --------------------------------------------------------------------------
 
     /**
-     * Get the OAuth2 access token based on the provided authorization code.
-     * This method will return null when it fails to get the token.
+     * Shortcut to API's getToken().
      * @param code The authorization code provided via the callback URL.
      */
     getToken = async (code: string): Promise<StravaTokens> => {
-        try {
-            let qs = {
-                grant_type: "authorization_code",
-                client_id: settings.strava.api.clientId,
-                client_secret: settings.strava.api.clientSecret,
-                redirect_uri: `${settings.app.url}strava/auth/callback`,
-                code: code
-            }
-
-            // Post data to Strava.
-            const tokenUrl = `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`
-            const res = await api.axios.post(tokenUrl)
-
-            if (res == null || res.data == null) {
-                throw new Error("Invalid access token")
-            }
-
-            // Save new tokens to database.
-            const tokens: StravaTokens = {
-                accessToken: res.data.access_token,
-                refreshToken: res.data.refresh_token,
-                expiresAt: res.data.expires_at
-            }
-
-            return tokens
-        } catch (ex) {
-            logger.error("StravaAPI.getToken", ex)
-        }
+        return await api.getToken(code)
     }
 
     /**
-     * Refresh OAuth2 tokens from Strava.
+     * Shortcut to API's refreshToken().
      */
     refreshToken = async (refreshToken: string, accessToken?: string): Promise<StravaTokens> => {
-        try {
-            const qs: any = {
-                grant_type: "refresh_token",
-                client_id: settings.strava.api.clientId,
-                client_secret: settings.strava.api.clientSecret,
-                refresh_token: refreshToken
-            }
-
-            // Access token was passed?
-            if (accessToken) {
-                qs.access_token = accessToken
-            }
-
-            // Post data to Strava.
-            const tokenUrl = `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`
-            const res = await api.axios.post(tokenUrl)
-
-            if (res == null || res.data == null) {
-                throw new Error("Invalid or empty token response")
-            }
-            // Save new tokens to database.
-            const tokens: StravaTokens = {
-                accessToken: res.data.access_token,
-                refreshToken: res.data.refresh_token,
-                expiresAt: res.data.expires_at
-            }
-
-            return tokens
-        } catch (ex) {
-            logger.error("StravaAPI.refreshToken", ex)
-        }
+        return await api.refreshToken(refreshToken, accessToken)
     }
 }
 

@@ -222,7 +222,7 @@ export interface StravaTokens {
     /** The OAuth2 access token. */
     accessToken?: string
     /** The OAuth2 refresh token. */
-    refreshToken?: String
+    refreshToken?: string
     /** Access token expiry date. */
     expiresAt?: number
 }

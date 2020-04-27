@@ -36,7 +36,7 @@ export class StravaActivities {
         logger.debug("Strava.getActivity", id)
 
         try {
-            const data = await api.get(tokens.accessToken, `activities/${id}`)
+            const data = await api.get(tokens, `activities/${id}`)
             const activity = toStravaActivity(data)
 
             // First we try fetching gear details from cached database user.
@@ -84,7 +84,7 @@ export class StravaActivities {
             }
 
             // Fetch user activities from Strava.
-            let activities = await api.get(tokens.accessToken, "athlete/activities", query)
+            let activities = await api.get(tokens, "athlete/activities", query)
 
             return activities
         } catch (ex) {
@@ -119,7 +119,7 @@ export class StravaActivities {
                 logResult.push(`${field}=${activity[field]}`)
             }
 
-            await api.put(tokens.accessToken, `activities/${activity.id}`, null, data)
+            await api.put(tokens, `activities/${activity.id}`, null, data)
 
             logger.info("Strava.setActivity", activity.id, logResult.join(", "))
         } catch (ex) {

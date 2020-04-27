@@ -24,7 +24,7 @@ export class StravaAthletes {
      */
     getAthlete = async (tokens: StravaTokens): Promise<StravaProfile> => {
         try {
-            const data = await api.get(tokens.accessToken, "athlete")
+            const data = await api.get(tokens, "athlete")
             const profile = toStravaProfile(data)
 
             logger.info("Strava.getAthlete", `ID ${profile.id}`, profile.username || profile.firstName || profile.lastName)
@@ -44,7 +44,7 @@ export class StravaAthletes {
         logger.debug("Strava.getGear", id)
 
         try {
-            const data = await api.get(tokens.accessToken, `gear/${id}`)
+            const data = await api.get(tokens, `gear/${id}`)
             const gear = toStravaGear(data)
 
             return gear

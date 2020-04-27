@@ -4,6 +4,7 @@ import {UserData} from "./types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 import {encryptData} from "../database/crypto"
 import database from "../database"
+import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
@@ -29,6 +30,42 @@ export class Users {
         if (!settings.users.idleDays || settings.users.idleDays < 2) {
             logger.warn("Users.init", "idleDays setting must be at least 2, force setting it to 2 now")
             settings.users.idleDays = 2
+        }
+
+        eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
+    }
+
+    /**
+     * Update Strava tokens on user's document when they are refreshed.
+     * @param refreshToken The original refresh token.
+     * @param tokens The updated Strava tokens.
+     */
+    private onStravaRefreshToken = async (refreshToken: string, tokens: StravaTokens): Promise<void> => {
+        if (!refreshToken) {
+            logger.error("Users.onStravaRefreshToken", "Missing refresh token")
+            return
+        }
+
+        const maskedToken = `${refreshToken.substring(0, 3)}***${refreshToken.substring(refreshToken.length - 2)}`
+
+        try {
+            const user = await this.getByToken(refreshToken, true)
+
+            // User not found?
+            if (!user) {
+                logger.warn("Users.onStravaRefreshToken", `No user found for refresh token ${maskedToken}`)
+                return
+            }
+
+            // Updated user info.
+            const updatedUser: Partial<UserData> = {
+                id: user.id,
+                stravaTokens: tokens
+            }
+
+            await this.update(updatedUser as UserData)
+        } catch (ex) {
+            logger.error("Users.onStravaRefreshToken", `Failed to update user tokens for original refresh token ${maskedToken}`)
         }
     }
 
@@ -100,11 +137,13 @@ export class Users {
     /**
      * Get the user for the passed access token.
      * @param accessToken The user's plain-text access token.
+     * @param isBoolean Get by refresh token instead of access token.
      */
-    getByToken = async (accessToken: string): Promise<UserData> => {
+    getByToken = async (accessToken: string, isRefresh?: boolean): Promise<UserData> => {
         try {
             const encryptedToken = encryptData(accessToken)
-            const users = await database.search("users", ["stravaTokens.accessToken", "==", encryptedToken])
+            const field = isRefresh ? "stravaTokens.refreshToken" : "stravaTokens.accessToken"
+            const users = await database.search("users", [field, "==", encryptedToken])
 
             if (users.length > 0) {
                 return users[0]
@@ -173,11 +212,11 @@ export class Users {
     /**
      * Update the specified user on the database.
      * @param user User to be updated.
-     * @param merge Set to true to merge instead of replace data, default is false.
+     * @param merge Set to true to fully replace data instead of merging, default is false.
      */
-    update = async (user: UserData, merge?: boolean): Promise<void> => {
+    update = async (user: UserData, replace?: boolean): Promise<void> => {
         try {
-            if (merge) {
+            if (!replace) {
                 await database.merge("users", user)
             } else {
                 await database.set("users", user, user.id)
@@ -200,6 +239,9 @@ export class Users {
     delete = async (user: UserData): Promise<void> => {
         try {
             await database.doc("users", user.id).delete()
+
+            // Publish delete event.
+            eventManager.emit("Users.delete", user)
         } catch (ex) {
             if (user.profile) {
                 logger.error("Users.update", user.id, user.displayName, ex)

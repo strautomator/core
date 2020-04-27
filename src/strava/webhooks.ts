@@ -65,7 +65,7 @@ export class StravaWebhooks {
 
             // Save subscription to user on the database.
             user.stravaSubscription = result.id
-            await users.update({id: user.id, stravaSubscription: result.id} as UserData, true)
+            await users.update({id: user.id, stravaSubscription: result.id} as UserData)
 
             logger.info("Strava.setSubscription", user.id, user.displayName, `Subscription ${result.id}`)
 
