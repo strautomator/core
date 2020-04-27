@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "20.176.252250",
+    "version": "20.181.272350",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "private": true,
@@ -24,9 +24,9 @@
         "typescript": "^3.8.3"
     },
     "devDependencies": {
-        "@types/node": "^13.13.2",
+        "@types/node": "^13.13.4",
         "chalk": "^4.0.0",
-        "typedoc": "^0.17.4"
+        "typedoc": "^0.17.6"
     },
     "peerDependencies": {
         "anyhow": "^1.5.2",

@@ -72,7 +72,7 @@ export class Strava {
         }
     }
 
-    // AUTH METHODS
+    // AUTH SHORTCUT METHODS
     // --------------------------------------------------------------------------
 
     /**
@@ -92,7 +92,6 @@ export class Strava {
 
     /**
      * Revoke the passed access token.
-     * @param accessToken Access token to be deauthorized.
      */
     revokeToken = async (accessToken?: string): Promise<void> => {
         return await api.revokeToken(accessToken)
