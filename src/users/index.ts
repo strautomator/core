@@ -103,6 +103,22 @@ export class Users {
     }
 
     /**
+     * Get users with expired Strava OAuth tokens.
+     */
+    getExpired = async (): Promise<UserData[]> => {
+        try {
+            const now = moment().unix()
+            const result = await database.search("users", ["stravaTokens.expiresAt", "<=", now])
+
+            logger.info("Users.getExpired", `${result.length} users with expired tokens`)
+            return result
+        } catch (ex) {
+            logger.error("Users.getExpired", ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get users with recipes defined but with no activities processed for a few days.
      */
     getIdle = async (): Promise<UserData[]> => {
