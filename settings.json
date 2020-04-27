@@ -97,6 +97,7 @@
         "api": {
             "baseUrl": "https://www.strava.com/api/v3/",
             "authUrl": "https://www.strava.com/oauth/authorize",
+            "deauthUrl": "https://www.strava.com/oauth/deauthorize",
             "tokenUrl": "https://www.strava.com/oauth/token",
             "scopes": "read,profile:read_all,activity:read_all,activity:write",
             // Maximum concurrent requests per instance.

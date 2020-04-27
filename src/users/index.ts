@@ -46,7 +46,7 @@ export class Users {
             return
         }
 
-        const maskedToken = `${refreshToken.substring(0, 3)}***${refreshToken.substring(refreshToken.length - 2)}`
+        const maskedToken = `${refreshToken.substring(0, 3)}***${refreshToken.substring(refreshToken.length - 1)}`
 
         try {
             const user = await this.getByToken(refreshToken, true)

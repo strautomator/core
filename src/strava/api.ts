@@ -154,6 +154,31 @@ export class StravaAPI {
         }
     }
 
+    /**
+     * Revoke the passed access token.
+     * @param accessToken Access token to be deauthorized.
+     */
+    revokeToken = async (accessToken?: string): Promise<void> => {
+        try {
+            const qs: any = {
+                access_token: accessToken
+            }
+
+            // Post data to Strava.
+            const tokenUrl = `${settings.strava.api.deauthUrl}?${querystring.stringify(qs)}`
+            const res = await this.axios.post(tokenUrl)
+
+            if (res == null || res.data == null) {
+                throw new Error("Invalid or empty token response")
+            }
+
+            const maskedToken = `${accessToken.substring(0, 3)}***${accessToken.substring(accessToken.length - 1)}`
+            logger.info("Strava.revokeToken", `Token ${maskedToken} deauthorized`)
+        } catch (ex) {
+            logger.error("Strava.revokeToken", ex)
+        }
+    }
+
     // API REQUEST
     // --------------------------------------------------------------------------
 

@@ -55,7 +55,7 @@ export class Strava {
     }
 
     /**
-     * Cancel webhooks for user when it gets deleted from the database.
+     * Cancel webhooks and revoke token for user after it gets deleted from the database.
      * @param user User that was deleted from the database.
      */
     private onUsersDelete = async (user: UserData): Promise<void> => {
@@ -63,6 +63,12 @@ export class Strava {
             await this.webhooks.cancelSubscription(user)
         } catch (ex) {
             logger.error("Users.onUsersDelete", `Failed to cancel webhooks for user ${user.id} - ${user.displayName}`)
+        }
+
+        try {
+            await this.revokeToken(user.stravaTokens.accessToken)
+        } catch (ex) {
+            logger.error("Users.onUsersDelete", `Failed to revoke token for user ${user.id} - ${user.displayName}`)
         }
     }
 
@@ -82,6 +88,14 @@ export class Strava {
      */
     refreshToken = async (refreshToken: string, accessToken?: string): Promise<StravaTokens> => {
         return await api.refreshToken(refreshToken, accessToken)
+    }
+
+    /**
+     * Revoke the passed access token.
+     * @param accessToken Access token to be deauthorized.
+     */
+    revokeToken = async (accessToken?: string): Promise<void> => {
+        return await api.revokeToken(accessToken)
     }
 }
 
