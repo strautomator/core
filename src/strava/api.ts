@@ -47,6 +47,9 @@ export class StravaAPI {
             if (!settings.strava.api.verifyToken) {
                 throw new Error("Missing the strava.api.verifyToken setting")
             }
+            if (!settings.strava.api.urlToken) {
+                throw new Error("Missing the strava.api.urlToken setting")
+            }
 
             // Create the bottleneck rate limiter.
             this.limiter = new Bottleneck({

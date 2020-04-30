@@ -39,25 +39,36 @@ export class StravaActivities {
             const data = await api.get(tokens, `activities/${id}`)
             const activity = toStravaActivity(data)
 
+            // Activity's gear was set?
             // First we try fetching gear details from cached database user.
             // Otherwise get directly from the API.
-            let user: UserData = cache.get("database", `users-${data.athlete.id}`)
-            let gear: StravaGear
+            if (data.gear_id) {
+                try {
+                    let user: UserData = cache.get("database", `users-${data.athlete.id}`)
+                    let gear: StravaGear
 
-            for (let bike of user.profile.bikes) {
-                if (bike.id == id) {
-                    gear = bike
+                    // Search for bikes.
+                    for (let bike of user.profile.bikes) {
+                        if (bike.id == id) {
+                            gear = bike
+                        }
+                    }
+
+                    // Search for shoes.
+                    for (let shoe of user.profile.shoes) {
+                        if (shoe.id == id) {
+                            gear = shoe
+                        }
+                    }
+
+                    // Set correct activity gear.
+                    activity.gear = gear ? gear : await stravaAthletes.getGear(tokens, data.gear_id)
+                } catch (ex) {
+                    logger.warn("Strava.getActivity", id, "Could not get activity's gear details")
                 }
+            } else {
+                activity.gear = null
             }
-
-            for (let shoe of user.profile.shoes) {
-                if (shoe.id == id) {
-                    gear = shoe
-                }
-            }
-
-            // Set correct activity gear.
-            activity.gear = gear ? gear : await stravaAthletes.getGear(tokens, data.gear_id)
 
             return activity
         } catch (ex) {
@@ -100,7 +111,6 @@ export class StravaActivities {
      * Updates a single activity on Strava.
      * @param tokens Strava access tokens.
      * @param activity The ativity data.
-     * @param fields List of fields that should be updated.
      */
     setActivity = async (tokens: StravaTokens, activity: StravaActivity): Promise<void> => {
         logger.debug("Strava.setActivity", activity.id)

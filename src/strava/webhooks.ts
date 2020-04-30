@@ -49,7 +49,7 @@ export class StravaWebhooks {
      */
     setSubscription = async (user: UserData): Promise<number> => {
         try {
-            const baseUrl = settings.api.url || settings.app.url
+            const baseUrl = settings.api.url || `${settings.app.url}api/`
             const query = {
                 callback_url: `${baseUrl}strava/${settings.strava.api.urlToken}/${user.id}`,
                 client_id: settings.strava.api.clientId,
@@ -67,7 +67,7 @@ export class StravaWebhooks {
             user.stravaSubscription = result.id
             await users.update({id: user.id, stravaSubscription: result.id} as UserData)
 
-            logger.info("Strava.setSubscription", user.id, user.displayName, `Subscription ${result.id}`)
+            logger.info("Strava.setSubscription", `User ${user.id} - ${user.displayName}`, `Subscription ${result.id}`)
 
             return result.id
         } catch (ex) {

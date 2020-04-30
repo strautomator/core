@@ -111,7 +111,7 @@
             // How many times should Strautomator retry failed jobs, for instance
             // when updating user activities on Strava? After last fail, it will
             // save the job details to the database for post processing.
-            // The default (2 retry after 30 seconds) is good for stateless containers
+            // The default (1 retry after 1 second) is good for stateless containers
             // where the processing might be cut once the response is sent to the client,
             // for instance on Google Cloud Run or Cloud Functions. If you're running
             // on your own controlled VM, you might want to increase these,
