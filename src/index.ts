@@ -13,31 +13,27 @@ if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CRED
     logger.warn("Strautomator.startup", `GOOGLE_APPLICATION_CREDENTIALS defaulting to ${credPath}`)
 }
 
-// Settings module, then core modules.
+// Init settings.
 import setmeup = require("setmeup")
+
+// Init in-memory cache.
 import cache = require("bitecache")
 
+// Load Core modules.
 import {Database} from "./database"
 export const database: Database = Database.Instance
-
 import {Mailer} from "./mailer"
 export const mailer: Mailer = Mailer.Instance
-
 import {Maps} from "./maps"
 export const maps: Maps = Maps.Instance
-
 import {PayPal} from "./paypal"
 export const paypal: PayPal = PayPal.Instance
-
 import {Strava} from "./strava"
 export const strava: Strava = Strava.Instance
-
 import {Weather} from "./weather"
 export const weather: Weather = Weather.Instance
-
 import {Users} from "./users"
 export const users: Users = Users.Instance
-
 import {Recipes} from "./recipes"
 export const recipes: Recipes = Recipes.Instance
 
@@ -50,11 +46,8 @@ export * from "./users/types"
 export const startup = async () => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
-    // Load settings defined at the core, and then from the app root.
-    setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`, `${__dirname}/../settings.secret.json`])
-    setmeup.load()
-
-    // Load settings from env.
+    // Load core settings, then from environment variables.
+    setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`], {overwrite: false})
     setmeup.loadFromEnv()
 
     // Check basic settings.
