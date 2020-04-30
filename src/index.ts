@@ -5,6 +5,11 @@ import logger = require("anyhow")
 logger.setup("console")
 logger.levelOnConsole = true
 
+// Node env defaults to development.
+if (!process.env.NODE_ENV) {
+    process.env.NODE_ENV = "development"
+}
+
 // Defaults to gcp-credentials.json on home directory if no credentials were set for gcloud.
 if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     const homedir = require("os").homedir()
@@ -46,7 +51,7 @@ export * from "./users/types"
 export const startup = async () => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
-    // Load core settings, then from environment variables.
+    // Load core settings, them module settings, then from environment variables.
     setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`])
     setmeup.load()
     setmeup.loadFromEnv()
