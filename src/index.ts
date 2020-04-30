@@ -47,7 +47,8 @@ export const startup = async () => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
     // Load core settings, then from environment variables.
-    setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`], {overwrite: false})
+    setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`])
+    setmeup.load()
     setmeup.loadFromEnv()
 
     // Check basic settings.
