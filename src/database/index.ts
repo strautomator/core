@@ -208,7 +208,6 @@ export class Database {
         const colname = `${settings.database.collectionPrefix}${collection}`
         const table = this.firestore.collection(colname)
         const doc = table.doc(id)
-        const data: any = {}
 
         // Default increment is 1.
         if (!value) {
@@ -216,8 +215,9 @@ export class Database {
         }
 
         // Increment field.
-        data[field] = FieldValue
-        await doc.update({activityCount: FieldValue.increment(value)})
+        const data: any = {}
+        data[field] = FieldValue.increment(value)
+        await doc.update(data)
     }
 
     // HELPERS
