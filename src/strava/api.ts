@@ -200,7 +200,7 @@ export class StravaAPI {
             const options: any = {
                 url: `${settings.strava.api.baseUrl}${path}`,
                 method: method,
-                headers: {"User-Agent": `${settings.app.title} ${packageVersion}`}
+                headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`}
             }
 
             // Renew token if it has expired.
