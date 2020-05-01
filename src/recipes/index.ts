@@ -196,9 +196,14 @@ export class Recipes {
     processAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
         logger.debug("Recipes.processAction", activity, action)
 
+        if (!activity.updatedFields) {
+            activity.updatedFields = []
+        }
+
         // Mark activity as commute?
         if (action.type == RecipeActionType.Commute) {
             activity.commute = true
+            activity.updatedFields.push("commute")
             return
         }
 
@@ -212,6 +217,7 @@ export class Recipes {
                 this.reportInvalidAction(user, action, "Gear not found")
             } else {
                 activity.gear = gear
+                activity.updatedFields.push("gear")
             }
             return
         }
@@ -230,12 +236,14 @@ export class Recipes {
         // Change activity name?
         if (action.type == RecipeActionType.Name) {
             activity.name = processedValue
+            activity.updatedFields.push("name")
             return
         }
 
         // Change activity description?
         if (action.type == RecipeActionType.Description) {
             activity.description = processedValue
+            activity.updatedFields.push("description")
             return
         }
     }
