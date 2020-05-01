@@ -233,7 +233,8 @@ export class StravaActivities {
             const data: StravaProcessedActivity = {
                 id: activity.id,
                 type: activity.type,
-                date: activity.dateStart,
+                dateStart: activity.dateStart,
+                dateProcessed: new Date(),
                 user: {
                     id: user.id,
                     displayName: user.displayName

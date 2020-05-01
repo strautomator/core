@@ -185,6 +185,8 @@ export class Recipes {
             await this.processAction(user, activity, action)
         }
 
+        // Update recipe stats and return OK.
+        await this.updateStats(user, recipe, activity)
         return true
     }
 
@@ -197,69 +199,73 @@ export class Recipes {
     processAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
         logger.debug("Recipes.processAction", activity, action)
 
-        if (!activity.updatedFields) {
-            activity.updatedFields = []
-        }
-
-        // Mark activity as commute?
-        if (action.type == RecipeActionType.Commute) {
-            activity.commute = true
-            activity.updatedFields.push("commute")
-            return
-        }
-
-        // Change activity gear?
-        if (action.type == RecipeActionType.Gear) {
-            let gear = _.find(user.profile.bikes, {id: action.value})
-            if (!gear) {
-                gear = _.find(user.profile.shoes, {id: action.value})
+        try {
+            if (!activity.updatedFields) {
+                activity.updatedFields = []
             }
-            if (!gear) {
-                this.reportInvalidAction(user, action, "Gear not found")
-            } else {
-                activity.gear = gear
-                activity.updatedFields.push("gear")
+
+            // Mark activity as commute?
+            if (action.type == RecipeActionType.Commute) {
+                activity.commute = true
+                activity.updatedFields.push("commute")
+                return
             }
-            return
-        }
 
-        let processedValue = action.value
-
-        // Append suffixes to values before processing.
-        const activityWithSuffix: StravaActivity = _.cloneDeep(activity)
-        for (let prop of recipePropertyList) {
-            if (prop.suffix && activityWithSuffix[prop.value]) {
-                activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${prop.suffix}`
+            // Change activity gear?
+            if (action.type == RecipeActionType.Gear) {
+                let gear = _.find(user.profile.bikes, {id: action.value})
+                if (!gear) {
+                    gear = _.find(user.profile.shoes, {id: action.value})
+                }
+                if (!gear) {
+                    this.reportInvalidAction(user, action, "Gear not found")
+                } else {
+                    activity.gear = gear
+                    activity.updatedFields.push("gear")
+                }
+                return
             }
-        }
 
-        // Iterate activity properties and replace keywords set on the action value.
-        processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
+            let processedValue = action.value
 
-        // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
-        if (processedValue.indexOf("${weather.") >= 0) {
-            if (activity.locationStart && activity.locationStart.length > 0) {
-                const weatherSummary = await weather.getActivityWeather(activity)
-                const weatherDetails = weatherSummary.start || weatherSummary.end
-                processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
-            } else {
-                logger.warn("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
-                processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
+            // Append suffixes to values before processing.
+            const activityWithSuffix: StravaActivity = _.cloneDeep(activity)
+            for (let prop of recipePropertyList) {
+                if (prop.suffix && activityWithSuffix[prop.value]) {
+                    activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${prop.suffix}`
+                }
             }
-        }
 
-        // Change activity name?
-        if (action.type == RecipeActionType.Name) {
-            activity.name = processedValue
-            activity.updatedFields.push("name")
-            return
-        }
+            // Iterate activity properties and replace keywords set on the action value.
+            processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
 
-        // Change activity description?
-        if (action.type == RecipeActionType.Description) {
-            activity.description = processedValue
-            activity.updatedFields.push("description")
-            return
+            // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
+            if (processedValue.indexOf("${weather.") >= 0) {
+                if (activity.locationStart && activity.locationStart.length > 0) {
+                    const weatherSummary = await weather.getActivityWeather(activity)
+                    const weatherDetails = weatherSummary.start || weatherSummary.end
+                    processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
+                } else {
+                    logger.warn("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
+                    processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
+                }
+            }
+
+            // Change activity name?
+            if (action.type == RecipeActionType.Name) {
+                activity.name = processedValue
+                activity.updatedFields.push("name")
+                return
+            }
+
+            // Change activity description?
+            if (action.type == RecipeActionType.Description) {
+                activity.description = processedValue
+                activity.updatedFields.push("description")
+                return
+            }
+        } catch (ex) {
+            logger.error("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, `Action ${action.type}`, ex)
         }
     }
 
