@@ -391,8 +391,6 @@ export class Recipes {
             valid = value >= aTime - 20 && value <= aTime + 20
         } else if (op == RecipeOperator.Equal) {
             valid = value >= aTime - 1 && value <= aTime + 1
-        } else {
-            throw new Error(`Invalid operator ${op} for ${prop}`)
         }
 
         if (!valid) {
@@ -449,8 +447,6 @@ export class Recipes {
             valid = false
         } else if (op == RecipeOperator.LessThan && aNumber >= value) {
             valid = false
-        } else {
-            throw new Error(`Invalid operator ${op} for ${prop}`)
         }
 
         if (!valid) {
