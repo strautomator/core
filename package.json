@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "20.185.11302",
+    "version": "20.185.12142",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "private": true,
@@ -18,7 +18,7 @@
         "bitecache": "^1.1.1",
         "bottleneck": "^2.19.5",
         "jaul": "^1.3.3",
-        "moment": "2.24.0",
+        "moment": "2.25.1",
         "nodemailer": "^6.4.6",
         "setmeup": "^1.5.4",
         "typescript": "^3.8.3"
