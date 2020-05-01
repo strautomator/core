@@ -10,7 +10,6 @@ import _ = require("lodash")
 import jaul = require("jaul")
 import logger = require("anyhow")
 import moment = require("moment")
-import {WeatherSummary} from "src/weather/types"
 const settings = require("setmeup").settings
 
 /**
@@ -235,6 +234,7 @@ export class Recipes {
                 const weatherDetails = weatherSummary.start || weatherSummary.end
                 processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
             } else {
+                logger.warn("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
                 processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
             }
         }
