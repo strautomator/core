@@ -1,7 +1,7 @@
 // Strautomator Core: Recipes
 
 import {recipePropertyList, recipeActionList} from "./lists"
-import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
+import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator, RecipeStats} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
@@ -185,8 +185,6 @@ export class Recipes {
             await this.processAction(user, activity, action)
         }
 
-        // Increase its counter on the database.
-
         return true
     }
 
@@ -295,13 +293,39 @@ export class Recipes {
     /**
      * Increment a recipe's trigger count.
      * @param user The user to have activity count incremented.
-     * @param id The recipe ID.
+     * @param recipe The recipe to be updated.
      */
-    setTriggerCount = async (user: UserData, id: string): Promise<void> => {
+    updateStats = async (user: UserData, recipe: RecipeData, activity: StravaActivity): Promise<void> => {
         try {
-            await database.increment("users", user.id, `recipes.${id}.triggerCount`)
+            const now = new Date()
+
+            // Set ID and check if a stats document already exists.
+            const id = `${user.id}-${recipe.id}`
+            const doc = database.doc("recipe-stats", id)
+            const docSnapshot = await doc.get()
+            const exists = docSnapshot.exists
+            let stats: RecipeStats
+
+            // If not existing, create a new stats object.
+            if (!exists) {
+                stats = {
+                    id: id,
+                    activities: [activity.id],
+                    dateLastTrigger: now
+                }
+
+                logger.info("Recipe.updateStats", id, "Created")
+            } else {
+                stats = docSnapshot.data() as RecipeStats
+                stats.activities.push(activity.id)
+                stats.dateLastTrigger = now
+            }
+
+            // Save stats to the database.
+            await database.merge("recipe-stats", stats, doc)
+            logger.info("Recipe.updateStats", id, `Added activity ${activity.id}`)
         } catch (ex) {
-            logger.error("Recipes.setTriggerCount", `User ${user.id} - ${user.displayName}`, `Recipe ${id}`, ex)
+            logger.error("Recipes.updateStats", `User ${user.id}`, `Recipe ${recipe.id}`, `Activity ${activity.id}`, ex)
         }
     }
 
@@ -471,7 +495,7 @@ export class Recipes {
      * @param action The action with an invalid parameter.
      */
     reportInvalidAction = (user: UserData, action: RecipeAction, message?: string) => {
-        logger.warn("Recipes.reportInvalidAction", `User ${user.id} - ${user.displayName}`, `Action ${action.type}: ${action.value}`, message)
+        logger.warn("Recipes.reportInvalidAction", `User ${user.id}`, `Action ${action.type}: ${action.value}`, message)
     }
 }
 

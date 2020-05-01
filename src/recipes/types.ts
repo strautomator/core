@@ -12,8 +12,6 @@ export interface RecipeData {
     conditions: RecipeCondition[]
     /** List of actions to be executed. */
     actions: RecipeAction[]
-    /** How many times the recipe was triggered? */
-    triggerCount: number
 }
 
 /**
@@ -40,6 +38,18 @@ export interface RecipeCondition {
     value: string | number | boolean
     /** Friendly display value. */
     friendlyValue?: string
+}
+
+/**
+ * Recipe stats saved on the database.
+ */
+export interface RecipeStats {
+    /** The ID is on the format of UserID */
+    id: string
+    /** List of activity IDs that triggered this recipe. */
+    activities: number[]
+    /** When was it last triggered. */
+    dateLastTrigger: Date
 }
 
 /**

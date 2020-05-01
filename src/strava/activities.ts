@@ -145,7 +145,7 @@ export class StravaActivities {
      * @param retryCount How many times it tried to process the activity.
      */
     processActivity = async (user: UserData, activityId: number, retryCount?: number): Promise<void> => {
-        logger.debug("Strava.processActivity", user.id, activityId)
+        logger.debug("Strava.processActivity", user.id, activityId, retryCount)
 
         try {
             if (Object.keys(user.recipes).length == 0) {
@@ -173,6 +173,8 @@ export class StravaActivities {
 
             // Activity updated? Save to Strava and increment activity counter.
             if (recipeIds.length > 0) {
+                logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId} from ${activity.dateStart}`, `Matching recipes: ${recipeIds.join(", ")}`)
+
                 try {
                     await this.setActivity(user.stravaTokens, activity)
                 } catch (ex) {
@@ -199,6 +201,8 @@ export class StravaActivities {
                 } catch (ex) {
                     logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, "Can't save to database", ex)
                 }
+            } else {
+                logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId} from ${activity.dateStart}`, `No matching recipes`)
             }
         } catch (ex) {
             logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, ex)
