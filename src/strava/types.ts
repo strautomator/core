@@ -123,7 +123,7 @@ export function toStravaActivity(data): StravaActivity {
     // Sometimes Strava returns a wrong (much lower) average speed, so make sure we have the correct value here.
     const calculatedSpeed = activity.distance / (activity.movingTime / 3600)
     if (calculatedSpeed > activity.speedAvg * 1.01) {
-        activity.speedAvg = parseFloat((calculatedSpeed / 1000).toFixed(2))
+        activity.speedAvg = parseFloat(calculatedSpeed.toFixed(2))
     }
 
     return activity
