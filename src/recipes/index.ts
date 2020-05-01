@@ -10,6 +10,7 @@ import _ = require("lodash")
 import jaul = require("jaul")
 import logger = require("anyhow")
 import moment = require("moment")
+import {WeatherSummary} from "src/weather/types"
 const settings = require("setmeup").settings
 
 /**
@@ -227,10 +228,15 @@ export class Recipes {
         // Iterate activity properties and replace keywords set on the action value.
         processedValue = jaul.data.replaceTags(processedValue, activity)
 
-        // Weather tags on the value? Fetch weather and process it.
+        // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
         if (processedValue.indexOf("${weather.") >= 0) {
-            const weatherDetails = await weather.getActivityWeather(activity)
-            processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
+            if (activity.locationStart && activity.locationStart.length > 0) {
+                const weatherSummary = await weather.getActivityWeather(activity)
+                const weatherDetails = weatherSummary.start || weatherSummary.end
+                processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
+            } else {
+                processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
+            }
         }
 
         // Change activity name?

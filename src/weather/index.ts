@@ -1,6 +1,6 @@
 // Strautomator Core: Weather
 
-import {ActivityWeather, MoonPhase, WeatherProvider} from "./types"
+import {ActivityWeather, MoonPhase, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
 import darksky from "./darksky"
 import openweathermap from "./openweathermap"
@@ -24,6 +24,26 @@ export class Weather {
      * List of weather providers (as modules).
      */
     providers: WeatherProvider[] = []
+
+    /**
+     * Helper property to return an empty summary.
+     */
+    get emptySummary() {
+        const emptySummary: WeatherSummary = {
+            summary: "",
+            icon: "",
+            iconText: "",
+            temperature: "",
+            humidity: "",
+            pressure: "",
+            windSpeed: "",
+            windBearing: "" as any,
+            precipType: "",
+            moon: "" as any
+        }
+
+        return emptySummary
+    }
 
     // INIT
     // --------------------------------------------------------------------------
