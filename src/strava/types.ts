@@ -20,7 +20,7 @@ export interface StravaActivity {
     dateEnd: Date
     /** Total distance in kilometers. */
     distance?: number
-    /** Total elevation in meters. */
+    /** Total elevation gain in meters. */
     elevationGain?: number
     /** Maximum elevation. */
     elevationMax?: number

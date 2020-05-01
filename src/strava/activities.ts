@@ -173,7 +173,7 @@ export class StravaActivities {
 
             // Activity updated? Save to Strava and increment activity counter.
             if (recipeIds.length > 0) {
-                logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId} from ${activity.dateStart}`, `Matching recipes: ${recipeIds.join(", ")}`)
+                logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, `Recipes: ${recipeIds.join(", ")}`)
 
                 try {
                     await this.setActivity(user.stravaTokens, activity)

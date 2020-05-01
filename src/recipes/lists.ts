@@ -32,7 +32,7 @@ export const recipeOperatorList = {
 export const recipePropertyList = [
     {value: "name", text: "Name", type: "text", operators: recipeOperatorList.text},
     {value: "distance", text: "Distance", type: "number", operators: recipeOperatorList.number, suffix: "km"},
-    {value: "elevation", text: "Elevation", type: "number", operators: recipeOperatorList.number, suffix: "m"},
+    {value: "elevationGain", text: "Elevation gain", type: "number", operators: recipeOperatorList.number, suffix: "m"},
     {value: "dateStart", text: "Start time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
     {value: "dateEnd", text: "End time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
     {value: "weekday", text: "Week day", type: "day", operators: recipeOperatorList.day},
