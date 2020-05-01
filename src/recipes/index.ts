@@ -234,7 +234,7 @@ export class Recipes {
         }
 
         // Iterate activity properties and replace keywords set on the action value.
-        processedValue = jaul.data.replaceTags(processedValue, recipeActionList)
+        processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
         if (processedValue.indexOf("${weather.") >= 0) {
