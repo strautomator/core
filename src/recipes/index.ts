@@ -190,8 +190,9 @@ export class Recipes {
 
     /**
      * Process a value string against an activity and return the final result.
+     * @param user The user (owner of the activity).
      * @param activity A Strava activity.
-     * @param value The value string template.
+     * @param action Recipe action to be executed.
      */
     processAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
         logger.debug("Recipes.processAction", activity, action)
@@ -224,8 +225,16 @@ export class Recipes {
 
         let processedValue = action.value
 
+        // Append suffixes to values before processing.
+        const activityWithSuffix: StravaActivity = _.cloneDeep(activity)
+        for (let prop of recipePropertyList) {
+            if (prop.suffix && activityWithSuffix[prop.value]) {
+                activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${prop.suffix}`
+            }
+        }
+
         // Iterate activity properties and replace keywords set on the action value.
-        processedValue = jaul.data.replaceTags(processedValue, activity)
+        processedValue = jaul.data.replaceTags(processedValue, recipeActionList)
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
         if (processedValue.indexOf("${weather.") >= 0) {
