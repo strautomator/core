@@ -18,7 +18,7 @@ export interface StravaActivity {
     dateStart: Date
     /** End date and time, local time. */
     dateEnd: Date
-    /** Total distance in meters. */
+    /** Total distance in kilometers. */
     distance?: number
     /** Total elevation in meters. */
     elevationGain?: number
@@ -97,7 +97,7 @@ export function toStravaActivity(data): StravaActivity {
         commute: data.commute,
         dateStart: data.start_date_local,
         dateEnd: data.start_date_local + data.elapsed_time,
-        distance: data.distance,
+        distance: parseFloat((data.distance / 1000).toFixed(1)),
         elevationGain: data.total_elevation_gain,
         elevationMax: data.elev_high,
         totalTime: data.elapsed_time,
