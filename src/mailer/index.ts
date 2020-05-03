@@ -53,7 +53,6 @@ export class Mailer {
             logger.info("Mailer.init", smtp.host, smtp.port)
         } catch (ex) {
             logger.error("Mailer.init", ex)
-            process.exit(34)
         }
     }
 

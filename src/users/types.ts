@@ -1,6 +1,6 @@
 // Strautomator Core: User types
 
-import {PayPalTransaction} from "../paypal/types"
+import {PayPalSubscription} from "../paypal/types"
 import {RecipeData} from "../recipes/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 
@@ -24,16 +24,16 @@ export interface UserData {
     profile: StravaProfile
     /** User strava access and refresh tokens. */
     stravaTokens?: StravaTokens
-    /** Strava subscription numeric ID (used for webhooks). */
-    stravaSubscription?: number
+    /** Strava webhook ID (used for subscription / webhooks). */
+    stravaWebhook?: number
     /** User email, optional. */
     email?: string
     /** List of user recipes. */
     recipes?: UserRecipeMap
-    /** List of user payments. */
-    payments?: PayPalTransaction[]
     /** User preferences. */
     preferences?: UserPreferences
+    /** PayPal subsccription (if subscribed to the service). */
+    paypalSubscription?: PayPalSubscription
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */

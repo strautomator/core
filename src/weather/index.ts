@@ -67,7 +67,7 @@ export class Weather {
             }
 
             cache.setup("weather", settings.weather.cacheDuration)
-            logger.info("Weather.init")
+            logger.info("Weather.init", `Loaded ${this.providers.length} providers`)
         } catch (ex) {
             logger.error("Weather.init", ex)
         }

@@ -64,8 +64,8 @@ export class StravaWebhooks {
             }
 
             // Save subscription to user on the database.
-            user.stravaSubscription = result.id
-            await users.update({id: user.id, stravaSubscription: result.id} as UserData)
+            user.stravaWebhook = result.id
+            await users.update({id: user.id, stravaWebhook: result.id} as UserData)
 
             logger.info("Strava.setSubscription", `User ${user.id} - ${user.displayName}`, `Subscription ${result.id}`)
 
@@ -87,7 +87,7 @@ export class StravaWebhooks {
      */
     cancelSubscription = async (user: UserData): Promise<void> => {
         try {
-            if (!user.stravaSubscription) {
+            if (!user.stravaWebhook) {
                 logger.warn("Strava.cancelSubscription", `User ${user.id}, ${user.displayName} has no active webhook subscription`)
                 return
             }
@@ -97,8 +97,8 @@ export class StravaWebhooks {
                 client_secret: settings.strava.api.clientSecret
             }
 
-            await api.delete(null, `push_subscriptions/${user.stravaSubscription}`, query)
-            logger.info("Strava.cancelSubscription", `User ${user.id}, ${user.displayName}`, `Subscription ${user.stravaSubscription} cancelled`)
+            await api.delete(null, `push_subscriptions/${user.stravaWebhook}`, query)
+            logger.info("Strava.cancelSubscription", `User ${user.id}, ${user.displayName}`, `Subscription ${user.stravaWebhook} cancelled`)
         } catch (ex) {
             logger.error("Strava.cancelSubscription", `User ${user.id}, ${user.displayName}`, ex)
             throw ex

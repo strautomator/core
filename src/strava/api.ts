@@ -72,7 +72,6 @@ export class StravaAPI {
             logger.info("Strava.init", `Max concurrent: ${settings.strava.api.maxConcurrent}, per minute: ${settings.strava.api.maxPerMinute}`)
         } catch (ex) {
             logger.error("Strava.init", ex)
-            process.exit(37)
         }
     }
 

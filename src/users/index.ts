@@ -212,6 +212,12 @@ export class Users {
                 if (docData.recipes) {
                     userData.recipeCount = Object.keys(docData.recipes).length
                 }
+
+                // TODO! Migrate stravaSubscription to stravaWebhook.
+                if (docData.stravaSubscription) {
+                    userData.stravaWebhook = userData["stravaSubscription"]
+                    delete userData["stravaSubscription"]
+                }
             }
 
             // Save user to the database.
@@ -290,7 +296,7 @@ export class Users {
      */
     isPro = (user: UserData): boolean => {
         const now = new Date()
-        return user.dateBilling && user.dateBilling >= now && user.payments.length > 0
+        return user.dateBilling && user.dateBilling >= now
     }
 }
 

@@ -37,7 +37,7 @@ export class Maps {
             this.client = new Client()
 
             cache.setup("maps", settings.maps.cacheDuration)
-            logger.info("Maps.init")
+            logger.info("Maps.init", `Default style: ${settings.maps.defaultStyle}`, `Size ${settings.maps.defaultSize}`, `Zoom ${settings.maps.defaultZoom}`)
         } catch (ex) {
             logger.error("Maps.init", ex)
             throw ex

@@ -346,7 +346,11 @@ export class Recipes {
                 logger.info("Recipe.updateStats", id, "Created")
             } else {
                 stats = docSnapshot.data() as RecipeStats
-                stats.activities.push(activity.id)
+
+                if (stats.activities.indexOf(activity.id) < 0) {
+                    stats.activities.push(activity.id)
+                }
+
                 stats.dateLastTrigger = now
             }
 
