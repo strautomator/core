@@ -2,6 +2,7 @@
 
 import {PayPalBillingPlan, PayPalSubscription} from "./types"
 import api from "./api"
+import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
 const settings = require("setmeup").settings
@@ -207,18 +208,18 @@ export class PayPalSubscriptions {
     }
 
     /**
-     * Create a new billing agreement for the specified billing plan.
+     * Create a new subscription agreement for the specified billing plan.
      * @param billingPlan The billing plan chosen by the user.
      */
-    createSubscription = async (billingPlan: PayPalBillingPlan): Promise<string> => {
+    createSubscription = async (billingPlan: PayPalBillingPlan): Promise<PayPalSubscription> => {
         try {
             const options = {
                 url: "billing/subscriptions",
                 method: "POST",
                 data: {
                     plan_id: billingPlan.id,
-                    start_date: moment(new Date()).add(10, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
-                    override_merchant_preferences: {
+                    start_date: moment(new Date()).add(settings.paypal.billingPlan.startMinutes, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
+                    application_context: {
                         brand_name: settings.app.title,
                         return_url: `${settings.app.url}billing/success`,
                         cancel_url: `${settings.app.url}billing`,
@@ -238,9 +239,17 @@ export class PayPalSubscriptions {
                 throw new Error("Invalid response from PayPal")
             }
 
-            console.dir(res)
+            // Get approval URL.
+            const approvalUrl = _.find(res.links, {rel: "approve"})
 
-            return ""
+            return {
+                id: res.id,
+                status: res.status,
+                billingPlan: billingPlan,
+                dateCreated: moment(res.create_time).toDate(),
+                dateUpdated: moment(res.create_time).toDate(),
+                approvalUrl: approvalUrl
+            }
         } catch (ex) {
             logger.error("PayPal.createBillingAgreement", `Could not create billing agreement for plan ${billingPlan.id}`)
             throw ex

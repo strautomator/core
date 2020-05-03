@@ -44,8 +44,6 @@ export interface PayPalProduct {
 export interface PayPalSubscription {
     /** Subscription ID. */
     id: string
-    /** Email of the subscriber. */
-    email: string
     /** Subscription status. */
     status: "APPROVAL_PENDING" | "APPROVED" | "ACTIVE" | "SUSPENDED" | "CANCELLED" | "EXPIRED"
     /** Billing plan details. */
@@ -55,7 +53,11 @@ export interface PayPalSubscription {
     /** Date of last update of the subscription. */
     dateUpdated: Date
     /** Date of next payment. */
-    dateNextPayment: Date
+    dateNextPayment?: Date
+    /** URL for the user to proceed and approve the subscription. */
+    approvalUrl?: string
+    /** Email of the subscriber. */
+    email?: string
     /** Details of the last payment (if any was made). */
     lastPayment?: {
         /** Payment amount. */

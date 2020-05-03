@@ -83,7 +83,9 @@
             // a frequency and price, like 1.00 / month.
             "name": "Strautomator Pro subscription",
             "productName": "Strautomator Pro account",
-            "description": "A Strautomator Pro account subscription."
+            "description": "A Strautomator Pro account subscription.",
+            // Subscription agreements are et to start in 10 minutes after they are created.
+            "startMinutes": 10
         }
     },
     "plans": {
