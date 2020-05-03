@@ -6,4 +6,5 @@ coverage
 docs
 lib
 node_modules
+settings.secret.json
 *.log
