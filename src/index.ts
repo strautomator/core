@@ -48,58 +48,68 @@ export * from "./strava/types"
 export * from "./users/types"
 
 // Startup script.
-export const startup = async () => {
+export const startup = async (dryRun?: boolean) => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
-    // Load core settings, them module settings, then from environment variables.
-    setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`])
-    setmeup.load()
-    setmeup.loadFromEnv()
+    try {
+        const settings = setmeup.settings
 
-    // Check basic settings.
-    const settings = setmeup.settings
-    if (!settings.gcp.projectId) {
-        throw new Error("Missing the mandatory gcp.projectId setting")
-    }
+        // Load core settings, them module settings, then from environment variables.
+        setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`])
+        setmeup.load()
+        setmeup.loadFromEnv()
 
-    // Get extra settings from Google Cloud Storage? To do so you must set the correct
-    // bucket and filename on the settings, or via environment variables.
-    if (setmeup.settings.gcp.downloadSettings.bucket) {
-        const downloadSettings = settings.gcp.downloadSettings
+        // Check basic settings.
+        if (!settings.gcp.projectId) {
+            throw new Error("Missing the mandatory gcp.projectId setting")
+        }
 
-        try {
-            const {Storage} = require("@google-cloud/storage")
-            const storageOptions: any = {}
+        // Get extra settings from Google Cloud Storage? To do so you must set the correct
+        // bucket and filename on the settings, or via environment variables.
+        if (setmeup.settings.gcp.downloadSettings.bucket) {
+            const downloadSettings = settings.gcp.downloadSettings
 
-            if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-                storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
+            try {
+                const {Storage} = require("@google-cloud/storage")
+                const storageOptions: any = {}
+
+                if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+                    storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
+                }
+
+                // Download settings from GCS.
+                const storage = new Storage(storageOptions)
+                const file = storage.bucket(downloadSettings.bucket).file(downloadSettings.filename)
+                await file.download({destination: "./settings.from-gcp.json"})
+
+                // Load downloaded settings, assuming they're encrypted.
+                const loadOptions = {crypto: true, destroy: true}
+                setmeup.load("./settings.from-gcp.json", loadOptions)
+            } catch (ex) {
+                logger.error("Strautomator.startup", `Could not download ${downloadSettings.filename} from GCP bucket ${downloadSettings.bucket}`, ex)
             }
-
-            // Download settings from GCS.
-            const storage = new Storage(storageOptions)
-            const file = storage.bucket(downloadSettings.bucket).file(downloadSettings.filename)
-            await file.download({destination: "./settings.from-gcp.json"})
-
-            // Load downloaded settings, assuming they're encrypted.
-            const loadOptions = {crypto: true, destroy: true}
-            setmeup.load("./settings.from-gcp.json", loadOptions)
-        } catch (ex) {
-            logger.error("Strautomator.startup", `Could not download ${downloadSettings.filename} from GCP bucket ${downloadSettings.bucket}`, ex)
-            process.exit(2)
+        }
+    } catch (ex) {
+        if (dryRun === false) {
+            logger.error("Strautomator.startup", "Failed to load settings", ex)
+        } else {
+            logger.error("Strautomator.startup", "Failed to load settings, will exit...")
+            return process.exit(1)
         }
     }
 
     // Try starting individual modules now.
-    try {
-        await database.init()
-        await mailer.init()
-        await maps.init()
-        await strava.init()
-        await users.init()
-        await weather.init()
-    } catch (ex) {
-        logger.error("Strautomator.startup", "Failed to start, will exit...")
-        process.exit(1)
+    for (let coreModule of [database, mailer, maps, paypal, strava, users, weather]) {
+        try {
+            await coreModule.init()
+        } catch (ex) {
+            if (dryRun === false) {
+                logger.debug("Strautomator.startup", "Failed to start a core module", ex)
+            } else {
+                logger.error("Strautomator.startup", "Failed to start a core module, will exit...")
+                return process.exit(1)
+            }
+        }
     }
 }
 

@@ -26,4 +26,9 @@ update:
 	npm install
 	$(TSC)
 
+# Dry run (check if startup() is completing).
+dryrun:
+	$(TSC)
+	node dryrun.js
+
 .PHONY: docs
