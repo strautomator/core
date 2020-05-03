@@ -1,0 +1,252 @@
+// Strautomator Core: PayPal Subscriptions
+
+import {PayPalBillingPlan, PayPalSubscription} from "./types"
+import api from "./api"
+import logger = require("anyhow")
+import moment = require("moment")
+const settings = require("setmeup").settings
+
+/**
+ * PayPal Subscriptions API.
+ */
+export class PayPalSubscriptions {
+    private constructor() {}
+    private static _instance: PayPalSubscriptions
+    static get Instance() {
+        return this._instance || (this._instance = new this())
+    }
+
+    /**
+     * Active billing plans on PayPal.
+     */
+    billingPlans: {[id: string]: PayPalBillingPlan}
+
+    // BILLING PLAN METHODS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Return billing plans registered on PayPal.
+     * @param productId Optional product ID.
+     * @param activeOnly Set to true to return all billing plans instead of only active ones.
+     */
+    getBillingPlans = async (productId?: string, returnAll?: boolean): Promise<PayPalBillingPlan[]> => {
+        try {
+            const plans: PayPalBillingPlan[] = []
+            const options: any = {
+                url: "billing/plans",
+                params: {
+                    page: 1,
+                    page_size: 20
+                }
+            }
+
+            if (productId) {
+                options.params.product_id = productId
+            }
+
+            const res = await api.makeRequest(options)
+
+            // No plans returned from PayPal? Stop here.
+            if (!res.plans || res.plans.length == 0) {
+                logger.warn("PayPal.getBillingPlans", `Product ${productId}`, "No billing plans returned from PayPal")
+                return []
+            }
+
+            // Iterate response and build plan objects.
+            for (let p of res.plans) {
+                if (returnAll || p.status == "ACTIVE") {
+                    plans.push({
+                        id: p.id,
+                        name: p.name,
+                        dateCreated: moment(p.create_time).toDate()
+                    })
+                }
+            }
+
+            // Log parameters.
+            const logProduct = productId ? "for product ${productId}" : "for all products"
+            const logStatus = returnAll ? "all" : "active only"
+            logger.info("PayPal.getProducts", `Got ${plans.length} plans ${logProduct}`, `Status: ${logStatus}`)
+
+            return plans
+        } catch (ex) {
+            logger.error("PayPal.getBillingPlans", `Could not fetch billing plans for product ${productId}`)
+            throw ex
+        }
+    }
+
+    /**
+     * Create a new billing plan on PayPal. Returns the created billing plan object.
+     * @param productId The corresponding product ID.
+     * @param frequency The billing frequency (by default, month or year).
+     */
+    createBillingPlan = async (productId: string, frequency: string): Promise<PayPalBillingPlan> => {
+        const price = settings.plans.pro.price[frequency].toFixed(2)
+        const planName = `${settings.paypal.billingPlan.name} (${price} / ${frequency})`
+
+        try {
+            const options = {
+                url: "billing/plans",
+                method: "POST",
+                data: {
+                    product_id: productId,
+                    name: planName,
+                    description: settings.paypal.billingPlan.description,
+                    status: "ACTIVE",
+                    billing_cycles: [
+                        {
+                            frequency: {
+                                interval_unit: frequency.toUpperCase(),
+                                interval_count: 1
+                            },
+                            tenure_type: "REGULAR",
+                            sequence: 1,
+                            total_cycles: 0,
+                            pricing_scheme: {
+                                fixed_price: {
+                                    value: price,
+                                    currency_code: settings.paypal.billingPlan.currency
+                                }
+                            }
+                        }
+                    ],
+                    payment_preferences: {
+                        auto_bill_outstanding: true,
+                        payment_failure_threshold: 2
+                    }
+                }
+            }
+
+            const res = await api.makeRequest(options)
+
+            // Make sure response has a valid ID.
+            if (!res || !res.id) {
+                throw new Error("Invalid response from PayPal")
+            }
+
+            logger.info("PayPal.createBillingPlan", `Product ${productId}, ${price} / ${frequency}`, `New billing plan ID: ${res.id}`)
+
+            // Return the created plan.
+            return {
+                id: res.id,
+                name: res.name,
+                dateCreated: moment(res.create_time).toDate()
+            }
+        } catch (ex) {
+            logger.error("PayPal.createBillingPlan", `Could not create billing plans for product ${productId}, ${price} / ${frequency}`)
+            throw ex
+        }
+    }
+
+    /**
+     * Deactivate the specified billing plan.
+     * @param id The corresponding billing plan ID.
+     * @param frequency The billing frequency (by default, month or year).
+     */
+    deactivateBillingPlan = async (id: string): Promise<void> => {
+        try {
+            const options = {
+                url: `billing/plans/${id}/deactivate`,
+                method: "POST"
+            }
+
+            await api.makeRequest(options)
+
+            logger.info("PayPal.deactivateBillingPlan", id, "Deactivated")
+        } catch (ex) {
+            logger.error("PayPal.deactivateBillingPlan", id, ex)
+            throw ex
+        }
+    }
+
+    // SUBSCRIPTION METHODS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Get subsccription details from PayPal.
+     * @param id The corresponding subscription ID.
+     */
+    getSubscription = async (id: string): Promise<PayPalSubscription> => {
+        try {
+            const options = {
+                url: `billing/subscriptions/${id}`
+            }
+
+            const res = await api.makeRequest(options)
+
+            // No data returned from PayPal? Stop here.
+            if (!res.id) {
+                throw new Error(`No data returned from PayPal`)
+            }
+
+            // Create subscription object with the fetched details.
+            const subscription: PayPalSubscription = {
+                id: res.id,
+                email: res.subscriber.email_address,
+                status: res.status,
+                billingPlan: this.billingPlans[res.plan_id],
+                dateCreated: moment(res.create_time).toDate(),
+                dateUpdated: moment(res.update_time).toDate(),
+                dateNextPayment: moment(res.billing_info.next_billing_time).toDate()
+            }
+
+            // A payment was already made? Fill last payment details.
+            if (res.billing_info.last_payment) {
+                subscription.lastPayment = {
+                    amount: parseFloat(res.billing_info.last_payment.amount.value),
+                    currency: res.billing_info.last_payment.currency_code,
+                    date: moment(res.billing_info.last_payment.time).toDate()
+                }
+            }
+
+            return subscription
+        } catch (ex) {
+            logger.error("PayPal.getSubscription", `Could not fetch details for subscription ${id}`)
+            throw ex
+        }
+    }
+
+    /**
+     * Create a new billing agreement for the specified billing plan.
+     * @param billingPlan The billing plan chosen by the user.
+     */
+    createSubscription = async (billingPlan: PayPalBillingPlan): Promise<string> => {
+        try {
+            const options = {
+                url: "billing/subscriptions",
+                method: "POST",
+                data: {
+                    plan_id: billingPlan.id,
+                    start_date: moment(new Date()).add(10, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
+                    override_merchant_preferences: {
+                        brand_name: settings.app.title,
+                        return_url: `${settings.app.url}billing/success`,
+                        cancel_url: `${settings.app.url}billing`,
+                        shipping_preference: "NO_SHIPPING",
+                        payment_method: {
+                            payer_selected: "PAYPAL",
+                            payee_preferred: "IMMEDIATE_PAYMENT_REQUIRED"
+                        }
+                    }
+                }
+            }
+
+            const res = await api.makeRequest(options)
+
+            // Make sure response has a valid ID.
+            if (!res || !res.id) {
+                throw new Error("Invalid response from PayPal")
+            }
+
+            console.dir(res)
+
+            return ""
+        } catch (ex) {
+            logger.error("PayPal.createBillingAgreement", `Could not create billing agreement for plan ${billingPlan.id}`)
+            throw ex
+        }
+    }
+}
+
+// Exports...
+export default PayPalSubscriptions.Instance

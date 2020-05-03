@@ -1,0 +1,118 @@
+// Strautomator Core: PayPal API
+
+import {PayPalAuth} from "./types"
+import _ = require("lodash")
+import logger = require("anyhow")
+import moment = require("moment")
+import querystring = require("querystring")
+const axios = require("axios").default
+const settings = require("setmeup").settings
+const packageVersion = require("../../package.json").version
+
+// Helper function to get error details from PayPal responses.
+const parseResponseError = (err) => {
+    if (!err.response || !err.response.data) return err
+
+    const data = err.response.data
+    let details = data.name ? data.name : ""
+
+    if (data.details && data.details.length > 0) {
+        details += " - " + _.map(data.details, "issue").join(", ")
+    }
+
+    return details
+}
+
+/**
+ * PayPal API handler.
+ */
+export class PayPalAPI {
+    private constructor() {}
+    private static _instance: PayPalAPI
+    static get Instance() {
+        return this._instance || (this._instance = new this())
+    }
+
+    /**
+     * Authentication token.
+     */
+    auth: PayPalAuth
+
+    /**
+     * Authenticate on PayPal and get a new access token.
+     */
+    authenticate = async () => {
+        try {
+            const options = {
+                method: "POST",
+                url: `${settings.paypal.api.baseUrl}oauth2/token`,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                auth: {
+                    username: settings.paypal.api.clientId,
+                    password: settings.paypal.api.clientSecret
+                },
+                data: querystring.stringify({grant_type: "client_credentials"})
+            }
+
+            // Try fetching a new token from PayPal.
+            const res = await axios(options)
+
+            this.auth = {
+                accessToken: res.data.access_token,
+                expiresAt: res.data.expiresIn + moment().unix() - 120
+            }
+
+            logger.info("PayPal.authenticate", "Got a new token")
+        } catch (ex) {
+            logger.error("PayPal.authenticate", parseResponseError(ex))
+        }
+    }
+
+    /**
+     * Make a request to the PayPal API with the given options.
+     * @param options Options passed to the request (axios).
+     */
+    makeRequest = async (options: any): Promise<any> => {
+        try {
+            if (this.auth.expiresAt < moment().unix()) {
+                await this.authenticate()
+            }
+
+            // Make sure headers object is set.
+            if (!options.headers) options.headers = {}
+
+            // Set correct full URL.
+            if (options.url.substring(0, 4) != "http") {
+                options.url = `${settings.paypal.api.baseUrl}${options.url}`
+            }
+
+            // Return full data when creating new resources.
+            if (options.method == "POST") {
+                options.headers["Prefer"] = "return=representation"
+            }
+
+            // Append auth header and custom user agent.
+            options.headers["Authorization"] = `Bearer ${this.auth.accessToken}`
+            options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
+
+            // Dispatch request to PayPal.
+            const res = await axios(options)
+
+            if (!res || !res.data) {
+                logger.warn("PayPal.makeRequest", options.method, options.url, "Got an empty response")
+                return null
+            }
+
+            return res.data
+        } catch (ex) {
+            const err = parseResponseError(ex)
+            logger.error("PayPal.makeRequest", options.method, options.url, err)
+            throw err
+        }
+    }
+}
+
+// Exports...
+export default PayPalAPI.Instance
