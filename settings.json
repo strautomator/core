@@ -2,22 +2,6 @@
 // Here are most of the Strautomator settings.
 
 {
-    "billing": {
-        // Free accounts are limited to 2 recipes and conditions.
-        "free": {
-            "maxRecipes": 2,
-            "maxConditions": 2,
-            // Links on 1 out of 5 processed activities on free accounts.
-            "linksOn": 5
-        },
-        // Pro accounts are limited to 999 (unlimited) recipes and conditions.
-        "pro": {
-            "maxRecipes": 999,
-            "maxConditions": 999,
-            // No links on Pro accounts processed activities.
-            "linksOn": false
-        }
-    },
     // Bunq integration settings.
     "bunq": {
         "currency": "EUR"
@@ -82,6 +66,45 @@
             "key": null,
             // Static maps base URL.
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
+        }
+    },
+    "paypal": {
+        "api": {
+            // The PayPal API client ID and secret must be set on the settings.secret.json file,
+            // or via the SMU_paypal_api_clientId and SMU_paypal_api_clientSecret env variables.
+            // Please note that on development it will default the sandbox environment.
+            "clientId": null,
+            "clientSecret": null
+        },
+        "billingPlan": {
+            // Default currency is EUR.
+            "currency": "EUR",
+            // Names and descriptions used on PayPal billing plans. The name will be suffix-ed with
+            // a frequency and price, like 1.00 / month.
+            "name": "Strautomator Pro subscription",
+            "productName": "Strautomator Pro account",
+            "description": "A Strautomator Pro account subscription."
+        }
+    },
+    "plans": {
+        // Free accounts are limited to 2 recipes and conditions.
+        "free": {
+            "maxRecipes": 2,
+            "maxConditions": 2,
+            // Links on 1 out of 5 processed activities on free accounts.
+            "linksOn": 5
+        },
+        // Pro accounts are limited to 999 (unlimited) recipes and conditions.
+        "pro": {
+            "maxRecipes": 999,
+            "maxConditions": 999,
+            // No links on Pro accounts processed activities.
+            "linksOn": false,
+            // Prices for Pro account.
+            "price": {
+                "month": 1.5,
+                "year": 12
+            }
         }
     },
     "recipes": {

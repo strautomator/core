@@ -12,10 +12,23 @@
             "iv": null
         }
     },
+    "paypal": {
+        "api": {
+            "baseUrl": "https://api.paypal.com/v1/",
+            "mode": "live",
+            // Token to be appended to the URL of PayPal webhooks, for
+            // extra security. Can only include alphanumeric characters.
+            // This MUST be set voa the settings.secret.json file or via
+            // via the SMU_paypal_api_urlToken environment variable.
+            "urlToken": null
+        }
+    },
     "strava": {
         "api": {
-            // Default URL token to be sent by Strava on subcriptions, MUST be set
-            // via secret settings or the SMU_strava_api_urlToken environment variable.
+            // Token to be appended to the URL of Strava webhooks, for
+            // extra security. Can only include alphanumeric characters.
+            // This MUST be set voa the settings.secret.json file or via
+            // via the SMU_strava_api_urlToken environment variable.
             "urlToken": null,
             // Default verification token to be sent by Strava on subcriptions, MUST be set
             // via secret settings or the SMU_strava_api_verifyToken environment variable.
