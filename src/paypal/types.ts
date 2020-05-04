@@ -43,11 +43,13 @@ export interface PayPalProduct {
 }
 
 /**
- * A PayPal subscription (user donated to Strautomator).
+ * A PayPal subscription (user subscribed to Strautomator).
  */
 export interface PayPalSubscription {
     /** Subscription ID. */
     id: string
+    /** User ID (set when subscribing, might be null when only fetching subscriptions from PayPal). */
+    userId: string
     /** Subscription status. */
     status: "APPROVAL_PENDING" | "APPROVED" | "ACTIVE" | "SUSPENDED" | "CANCELLED" | "EXPIRED"
     /** Billing plan details. */

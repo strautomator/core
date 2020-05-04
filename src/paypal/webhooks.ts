@@ -51,7 +51,6 @@ export class PayPalProducts {
      */
     createWebhook = async (): Promise<PayPalWebhook> => {
         try {
-
             const options = {
                 url: "notifications/webhooks",
                 method: "POST",
@@ -85,7 +84,7 @@ export class PayPalProducts {
      * Get details about a webhook event.
      * @param id The event ID.
      */
-    getEventDetails = async (id: string): Promise<any> => {
+    getWebhookEventDetails = async (id: string): Promise<any> => {
         try {
             const options = {
                 url: `notifications/webhooks-events/${id}`
@@ -93,12 +92,43 @@ export class PayPalProducts {
 
             const res = await api.makeRequest(options)
 
-            logger.info("PayPal.getEventDetails", id, res.event_type, res.resource.id, `Created ${res.create_time}`)
+            logger.info("PayPal.getWebhookEventDetails", id, res.event_type, res.resource.id, `Created ${res.create_time}`)
 
             return res
         } catch (ex) {
-            logger.error("PayPal.getEventDetails", "Could not fetch products from PayPal")
+            logger.error("PayPal.getWebhookEventDetails", "Could not fetch products from PayPal")
             throw ex
+        }
+    }
+
+    /**
+     * Process a webhook event dispatched by PayPal.
+     * @param data Event data.
+     */
+    processWebhook = async (data): Promise<void> => {
+        try {
+            const resourceDetails = []
+            const resource = data.resource
+
+            // Get and log webhook event details.
+            if (resource) {
+                if (resource.id) resourceDetails.push(`ID ${resource.id}`)
+                if (resource.plan_id) resourceDetails.push(`Plan ${resource.id}`)
+                if (resource.billing_agreement_id) resourceDetails.push(`Subscription ${resource.billing_agreement_id}`)
+                if (resource.amount) resourceDetails.push(`${resource.amount.total} ${resource.amount.currency}`)
+                if (resource.state) resourceDetails.push(`State: ${resource.state}`)
+                if (resource.status) resourceDetails.push(resource.status)
+            } else {
+                resourceDetails.push("No resource details found")
+            }
+
+            logger.info("PayPal.processWebhook", data.event_type, resourceDetails.join(", "))
+
+            // User started a subscription? Save the details on his account.
+            if (data.event_type == "PAYMENT.SALE.COMPLETED") {
+            }
+        } catch (ex) {
+            logger.error("PayPal.processWebhook", `ID ${data.id}`, data.event_type, ex)
         }
     }
 }

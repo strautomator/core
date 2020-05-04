@@ -2,6 +2,7 @@
 
 import {PayPalBillingPlan, PayPalSubscription} from "./types"
 import api from "./api"
+import database from "../database"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
@@ -231,6 +232,7 @@ export class PayPalSubscriptions {
             // Create subscription object with the fetched details.
             const subscription: PayPalSubscription = {
                 id: res.id,
+                userId: null,
                 email: res.subscriber.email_address,
                 status: res.status,
                 billingPlan: api.currentBillingPlans[res.plan_id],
@@ -261,7 +263,7 @@ export class PayPalSubscriptions {
      * Create a new subscription agreement for the specified billing plan.
      * @param billingPlan The billing plan chosen by the user.
      */
-    createSubscription = async (billingPlan: PayPalBillingPlan): Promise<PayPalSubscription> => {
+    createSubscription = async (billingPlan: PayPalBillingPlan, userId: string): Promise<PayPalSubscription> => {
         try {
             const options = {
                 url: "billing/subscriptions",
@@ -290,14 +292,20 @@ export class PayPalSubscriptions {
                 throw new Error("Invalid response from PayPal")
             }
 
-            return {
+            // Create subscription and save on the database.
+            const subscription: PayPalSubscription = {
                 id: res.id,
+                userId: userId,
                 status: res.status,
                 billingPlan: billingPlan,
                 dateCreated: moment(res.create_time).toDate(),
                 dateUpdated: moment(res.create_time).toDate(),
                 approvalUrl: _.find(res.links, {rel: "approve"}).href
             }
+
+            await database.set("subscriptions", subscription, res.id)
+
+            return subscription
         } catch (ex) {
             logger.error("PayPal.createBillingAgreement", `Could not create billing agreement for plan ${billingPlan.id}`)
             throw ex

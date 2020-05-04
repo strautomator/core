@@ -118,7 +118,6 @@ export class PayPal {
         try {
             api.currentBillingPlans = {}
 
-            const activePlanIds = []
             const billingPlans = await paypalSubscriptions.getBillingPlans()
             const frequencies = Object.keys(settings.plans.pro.price)
 
