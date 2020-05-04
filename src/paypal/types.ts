@@ -16,6 +16,8 @@ export interface PayPalAuth {
 export interface PayPalBillingPlan {
     /** Billing plan ID. */
     id: string
+    /** Product ID. */
+    productId: string
     /** Billing plan name. */
     name: string
     /** Date when billing plan was created. */

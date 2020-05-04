@@ -215,8 +215,7 @@ export class Users {
 
                 // TODO! Migrate stravaSubscription to stravaWebhook.
                 if (docData.stravaSubscription) {
-                    userData.stravaWebhook = userData["stravaSubscription"]
-                    delete userData["stravaSubscription"]
+                    userData.stravaWebhook = docData.stravaSubscription
                 }
             }
 

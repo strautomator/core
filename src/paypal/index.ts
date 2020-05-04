@@ -110,11 +110,11 @@ export class PayPal {
                         const price = settings.plans.pro.price[frequency].toFixed(2)
 
                         // Check if plan's price for matching frequency is still the same.
-                        if (plan.name.indexOf(price) > 0) {
+                        if (plan.productId == paypalProducts.currentProduct.id && plan.name.indexOf(price) > 0) {
                             activePlanIds.push(plan.id)
                             plan.enabled = true
                         } else {
-                            logger.warn("PayPal.setupBillingPlans", plan.name, `${frequency} / ${plan.id}`, `Plan has a different price, so won't enabled it`)
+                            logger.warn("PayPal.setupBillingPlans", plan.name, `${frequency} / ${plan.id}`, `Plan has a different product or price, so won't enabled it`)
                         }
                     }
                 }

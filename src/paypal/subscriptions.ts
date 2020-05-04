@@ -58,6 +58,7 @@ export class PayPalSubscriptions {
                 if (returnAll || p.status == "ACTIVE") {
                     plans.push({
                         id: p.id,
+                        productId: p.product_id,
                         name: p.name,
                         dateCreated: moment(p.create_time).toDate()
                     })
@@ -67,7 +68,7 @@ export class PayPalSubscriptions {
             // Log parameters.
             const logProduct = productId ? "for product ${productId}" : "for all products"
             const logStatus = returnAll ? "all" : "active only"
-            logger.info("PayPal.getProducts", `Got ${plans.length} plans ${logProduct}`, `Status: ${logStatus}`)
+            logger.info("PayPal.getProducts", `Status: ${logStatus}`, `Got ${plans.length} plans ${logProduct}`)
 
             return plans
         } catch (ex) {
@@ -130,6 +131,7 @@ export class PayPalSubscriptions {
             // Return the created plan.
             return {
                 id: res.id,
+                productId: productId,
                 name: res.name,
                 dateCreated: moment(res.create_time).toDate()
             }
