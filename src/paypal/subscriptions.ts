@@ -286,7 +286,7 @@ export class PayPalSubscriptions {
             }
 
             // Get approval URL.
-            const approvalUrl = _.find(res.links, {rel: "approve"})
+            const approvalUrl = _.find(res.links, {rel: "approve"}).href
 
             return {
                 id: res.id,
