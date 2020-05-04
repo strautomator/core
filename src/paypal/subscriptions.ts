@@ -17,11 +17,6 @@ export class PayPalSubscriptions {
         return this._instance || (this._instance = new this())
     }
 
-    /**
-     * Active billing plans on PayPal.
-     */
-    billingPlans: {[id: string]: PayPalBillingPlan}
-
     // BILLING PLAN METHODS
     // --------------------------------------------------------------------------
 
@@ -43,6 +38,8 @@ export class PayPalSubscriptions {
 
             if (productId) {
                 options.params.product_id = productId
+            } else {
+                productId = null
             }
 
             const res = await api.makeRequest(options)
@@ -53,26 +50,62 @@ export class PayPalSubscriptions {
                 return []
             }
 
-            // Iterate response and build plan objects.
+            // Iterate response and get plan details.
             for (let p of res.plans) {
                 if (returnAll || p.status == "ACTIVE") {
-                    plans.push({
-                        id: p.id,
-                        productId: p.product_id,
-                        name: p.name,
-                        dateCreated: moment(p.create_time).toDate()
-                    })
+                    plans.push(await this.getBillingPlan(p.id))
                 }
             }
 
             // Log parameters.
-            const logProduct = productId ? "for product ${productId}" : "for all products"
+            const logProduct = productId ? " for product ${productId}" : ""
             const logStatus = returnAll ? "all" : "active only"
-            logger.info("PayPal.getProducts", `Status: ${logStatus}`, `Got ${plans.length} plans ${logProduct}`)
+            logger.info("PayPal.getBillingPlans", `Status: ${logStatus}`, `Got ${plans.length} plans${logProduct}`)
 
             return plans
         } catch (ex) {
             logger.error("PayPal.getBillingPlans", `Could not fetch billing plans for product ${productId}`)
+            throw ex
+        }
+    }
+
+    /**
+     * Return full details about a single billing plan.
+     * @param id The billing plan ID.
+     */
+    getBillingPlan = async (id: string): Promise<PayPalBillingPlan> => {
+        try {
+            const options: any = {
+                url: `billing/plans/${id}`,
+                returnRepresentation: true
+            }
+
+            const res = await api.makeRequest(options)
+
+            // No data returned from PayPal? Stop here.
+            if (!res.id) {
+                logger.warn("PayPal.getBillingPlan", id, "No plan details returned from PayPal")
+                return null
+            }
+
+            const billingPlan: PayPalBillingPlan = {
+                id: res.id,
+                productId: res.product_id,
+                name: res.name,
+                dateCreated: moment(res.create_time).toDate(),
+                price: parseFloat(res.billing_cycles[0].pricing_scheme.fixed_price.value),
+                frequency: res.billing_cycles[0].frequency.interval_unit.toLowerCase(),
+                enabled: false
+            }
+
+            // Plan is enabled only if matching the current product ID and with a valid frequency.
+            if (settings.plans.pro.price[billingPlan.frequency] && api.currentProduct && api.currentProduct.id == billingPlan.productId) {
+                billingPlan.enabled = true
+            }
+
+            return billingPlan
+        } catch (ex) {
+            logger.error("PayPal.getBillingPlan", `Could not fetch billing plans for product ${id}`)
             throw ex
         }
     }
@@ -90,6 +123,7 @@ export class PayPalSubscriptions {
             const options = {
                 url: "billing/plans",
                 method: "POST",
+                returnRepresentation: true,
                 data: {
                     product_id: productId,
                     name: planName,
@@ -133,7 +167,10 @@ export class PayPalSubscriptions {
                 id: res.id,
                 productId: productId,
                 name: res.name,
-                dateCreated: moment(res.create_time).toDate()
+                dateCreated: moment(res.create_time).toDate(),
+                price: price,
+                frequency: frequency,
+                enabled: true
             }
         } catch (ex) {
             logger.error("PayPal.createBillingPlan", `Could not create billing plans for product ${productId}, ${price} / ${frequency}`)
@@ -155,6 +192,11 @@ export class PayPalSubscriptions {
 
             await api.makeRequest(options)
 
+            // Remove plan from cache of current billing plans.
+            if (api.currentBillingPlans) {
+                delete api.currentBillingPlans[id]
+            }
+
             logger.info("PayPal.deactivateBillingPlan", id, "Deactivated")
         } catch (ex) {
             logger.error("PayPal.deactivateBillingPlan", id, ex)
@@ -172,7 +214,8 @@ export class PayPalSubscriptions {
     getSubscription = async (id: string): Promise<PayPalSubscription> => {
         try {
             const options = {
-                url: `billing/subscriptions/${id}`
+                url: `billing/subscriptions/${id}`,
+                returnRepresentation: true
             }
 
             const res = await api.makeRequest(options)
@@ -187,7 +230,7 @@ export class PayPalSubscriptions {
                 id: res.id,
                 email: res.subscriber.email_address,
                 status: res.status,
-                billingPlan: this.billingPlans[res.plan_id],
+                billingPlan: api.currentBillingPlans[res.plan_id],
                 dateCreated: moment(res.create_time).toDate(),
                 dateUpdated: moment(res.update_time).toDate(),
                 dateNextPayment: moment(res.billing_info.next_billing_time).toDate()
@@ -218,6 +261,7 @@ export class PayPalSubscriptions {
             const options = {
                 url: "billing/subscriptions",
                 method: "POST",
+                returnRepresentation: true,
                 data: {
                     plan_id: billingPlan.id,
                     start_date: moment(new Date()).add(settings.paypal.billingPlan.startMinutes, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",

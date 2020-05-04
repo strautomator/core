@@ -22,6 +22,8 @@ export interface PayPalBillingPlan {
     name: string
     /** Date when billing plan was created. */
     dateCreated: Date
+    /** Plan's price. */
+    price: number
     /** Billing frequency (month or year). */
     frequency?: string
     /** Is the billing plan currently enabled? */

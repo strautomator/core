@@ -16,12 +16,7 @@ export class PayPalProducts {
         return this._instance || (this._instance = new this())
     }
 
-    /**
-     * The current product registered on PayPal.
-     */
-    currentProduct: PayPalProduct
-
-    // METHODS
+    // PRODUCT METHODS
     // --------------------------------------------------------------------------
 
     /**
@@ -32,6 +27,7 @@ export class PayPalProducts {
             const products: PayPalProduct[] = []
             const options = {
                 url: "catalogs/products",
+                returnRepresentation: true,
                 params: {
                     page: 1,
                     page_size: 20
@@ -71,6 +67,7 @@ export class PayPalProducts {
             const options = {
                 url: "catalogs/products",
                 method: "POST",
+                returnRepresentation: true,
                 data: {
                     name: settings.paypal.billingPlan.productName,
                     description: settings.paypal.billingPlan.description,

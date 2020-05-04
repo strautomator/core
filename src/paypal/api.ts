@@ -1,6 +1,6 @@
 // Strautomator Core: PayPal API
 
-import {PayPalAuth} from "./types"
+import {PayPalAuth, PayPalBillingPlan, PayPalProduct} from "./types"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
@@ -34,9 +34,22 @@ export class PayPalAPI {
     }
 
     /**
-     * Authentication token.
+     * Authentication token and expiry timestamp.
      */
     auth: PayPalAuth
+
+    /**
+     * The current product registered on PayPal.
+     */
+    currentProduct: PayPalProduct
+
+    /**
+     * Active billing plans on PayPal.
+     */
+    currentBillingPlans: {[id: string]: PayPalBillingPlan}
+
+    // METHODS
+    // --------------------------------------------------------------------------
 
     /**
      * Authenticate on PayPal and get a new access token.
@@ -74,11 +87,13 @@ export class PayPalAPI {
      * Make a request to the PayPal API with the given options.
      * @param options Options passed to the request (axios).
      */
-    makeRequest = async (options: any): Promise<any> => {
+    makeRequest = async (reqOptions: any): Promise<any> => {
         try {
             if (this.auth.expiresAt < moment().unix()) {
                 await this.authenticate()
             }
+
+            const options = _.cloneDeep(reqOptions)
 
             // Make sure headers object is set.
             if (!options.headers) options.headers = {}
@@ -88,14 +103,15 @@ export class PayPalAPI {
                 options.url = `${settings.paypal.api.baseUrl}${options.url}`
             }
 
-            // Return full data when creating new resources.
-            if (options.method == "POST") {
-                options.headers["Prefer"] = "return=representation"
-            }
-
             // Append auth header and custom user agent.
             options.headers["Authorization"] = `Bearer ${this.auth.accessToken}`
             options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
+
+            // Return full representation?
+            if (options.returnRepresentation) {
+                delete options.returnRepresentation
+                options.headers["Prefer"] = "return=representation"
+            }
 
             // Dispatch request to PayPal.
             const res = await axios(options)
@@ -108,7 +124,7 @@ export class PayPalAPI {
             return res.data
         } catch (ex) {
             const err = parseResponseError(ex)
-            logger.error("PayPal.makeRequest", options.method, options.url, err)
+            logger.error("PayPal.makeRequest", reqOptions.method, reqOptions.url, err)
             throw err
         }
     }
