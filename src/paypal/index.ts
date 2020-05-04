@@ -102,7 +102,8 @@ export class PayPal {
     }
 
     /**
-     * Get and / or create the necessary billing plans on PayPal.
+     * Get and / or create the necessary billing plans on PayPal. Only the last created billing
+     * plans will be marked as enabled (one for each frequency).
      */
     setupBillingPlans = async () => {
         try {

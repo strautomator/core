@@ -98,8 +98,11 @@ export class PayPalSubscriptions {
                 enabled: false
             }
 
-            // Plan is enabled only if matching the current product ID and with a valid frequency.
-            if (settings.plans.pro.price[billingPlan.frequency] && api.currentProduct && api.currentProduct.id == billingPlan.productId) {
+            // Plan is enabled only if matching the current product ID , frequency and price.
+            const frequencyPrice = settings.plans.pro.price[billingPlan.frequency]
+            const matchingPrice = frequencyPrice && frequencyPrice.toFixed(2) == billingPlan.price.toFixed(2)
+            const matchingProduct = api.currentProduct && api.currentProduct.id == billingPlan.productId
+            if (matchingPrice && matchingProduct) {
                 billingPlan.enabled = true
             }
 
