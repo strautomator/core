@@ -1,5 +1,6 @@
 // Strautomator Core: PayPal
 
+import {PayPalBillingPlan, PayPalProduct} from "./types"
 import api from "./api"
 import paypalProducts from "./products"
 import paypalSubscriptions from "./subscriptions"
@@ -27,6 +28,20 @@ export class PayPal {
      * Subscription methods.
      */
     subscriptions = paypalSubscriptions
+
+    /**
+     * Shortcut to api.currentProduct.
+     */
+    get currentProduct(): PayPalProduct {
+        return api.currentProduct
+    }
+
+    /**
+     * Shortcut to api.currentBillingPlans.
+     */
+    get currentBillingPlans(): {[id: string]: PayPalBillingPlan} {
+        return api.currentBillingPlans
+    }
 
     // INIT
     // --------------------------------------------------------------------------
