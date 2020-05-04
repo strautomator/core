@@ -7,7 +7,6 @@ import paypalSubscriptions from "./subscriptions"
 import _ = require("lodash")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
-const frequencies = Object.keys(settings.plans.pro.price)
 
 /**
  * PayPal Manager.
@@ -111,6 +110,7 @@ export class PayPal {
 
             const activePlanIds = []
             const billingPlans = await paypalSubscriptions.getBillingPlans()
+            const frequencies = Object.keys(settings.plans.pro.price)
 
             // Match existing plans by looking for the frequency and price on the title.
             for (let plan of billingPlans) {
