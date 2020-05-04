@@ -4,6 +4,7 @@ import {PayPalBillingPlan, PayPalProduct} from "./types"
 import api from "./api"
 import paypalProducts from "./products"
 import paypalSubscriptions from "./subscriptions"
+import paypalWebhooks from "./webhooks"
 import _ = require("lodash")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
@@ -27,6 +28,11 @@ export class PayPal {
      * Subscription methods.
      */
     subscriptions = paypalSubscriptions
+
+    /**
+     * Webhook methods.
+     */
+    webhooks = paypalWebhooks
 
     /**
      * Shortcut to api.currentProduct.
@@ -64,6 +70,9 @@ export class PayPal {
             // Setup the product and billing plans on PayPal.
             await this.setupProduct()
             await this.setupBillingPlans()
+
+            // Setup a valid webhook on PayPal.
+            await this.setupWebhook()
         } catch (ex) {
             logger.error("PayPal.init", ex)
             throw ex
@@ -129,9 +138,28 @@ export class PayPal {
                 }
             }
 
-            logger.info("PayPal.setupBillingPlans", `Active plans: ${activePlanIds.join(", ")}`)
+            logger.info("PayPal.setupBillingPlans", `Active plans: ${Object.keys(api.currentBillingPlans).join(", ")}`)
         } catch (ex) {
             logger.error("PayPal.setupBillingPlans", ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Check if a webhook is registered on PayPal, and if not, register it now.
+     */
+    setupWebhook = async (): Promise<void> => {
+        try {
+            const webhooks = await paypalWebhooks.getWebhooks()
+            const existingWebhook = _.find(webhooks, {url: api.webhookUrl})
+
+            // No webhooks on PayPal yet? Register one now.
+            if (!existingWebhook) {
+                logger.warn("PayPal.setupWebhook", "No matching webhooks found on PayPal, will register one now")
+                await paypalWebhooks.createWebhook()
+            }
+        } catch (ex) {
+            logger.error("PayPal.setupWebhook", ex)
             throw ex
         }
     }

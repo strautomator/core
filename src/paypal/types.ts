@@ -86,3 +86,13 @@ export interface PayPalTransaction {
     /** Transaction date. */
     date: Date
 }
+
+/**
+ * A webhook registered on PayPal.
+ */
+export interface PayPalWebhook {
+    /** ID of the webhook. */
+    id: string
+    /** URL of the webhook. */
+    url: string
+}

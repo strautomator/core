@@ -248,6 +248,8 @@ export class PayPalSubscriptions {
                 }
             }
 
+            logger.error("PayPal.getSubscription", id, subscription.email)
+
             return subscription
         } catch (ex) {
             logger.error("PayPal.getSubscription", `Could not fetch details for subscription ${id}`)
@@ -288,16 +290,13 @@ export class PayPalSubscriptions {
                 throw new Error("Invalid response from PayPal")
             }
 
-            // Get approval URL.
-            const approvalUrl = _.find(res.links, {rel: "approve"}).href
-
             return {
                 id: res.id,
                 status: res.status,
                 billingPlan: billingPlan,
                 dateCreated: moment(res.create_time).toDate(),
                 dateUpdated: moment(res.create_time).toDate(),
-                approvalUrl: approvalUrl
+                approvalUrl: _.find(res.links, {rel: "approve"}).href
             }
         } catch (ex) {
             logger.error("PayPal.createBillingAgreement", `Could not create billing agreement for plan ${billingPlan.id}`)

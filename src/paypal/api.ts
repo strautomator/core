@@ -48,6 +48,15 @@ export class PayPalAPI {
      */
     currentBillingPlans: {[id: string]: PayPalBillingPlan}
 
+    /**
+     * URL used for webhooks.
+     */
+    get webhookUrl(): string {
+        const baseUrl = settings.api.url || `${settings.app.url}api/`
+        const token = settings.paypal.api.urlToken
+        return `${baseUrl}paypal/webhook/${token}`
+    }
+
     // METHODS
     // --------------------------------------------------------------------------
 
