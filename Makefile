@@ -27,8 +27,8 @@ update:
 	$(TSC)
 
 # Dry run (check if startup() is completing).
-dryrun:
+dry-run:
 	$(TSC)
-	node dryrun.js
+	node dry-run.js
 
 .PHONY: docs

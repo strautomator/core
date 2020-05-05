@@ -1,6 +1,6 @@
 # Strautomator Core
 
-This is the core module of Strautomator, and contains most of its busines logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web).
+This is the core module of Strautomator, and contains most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web).
 
 **Please note that Strautomator is still in beta! Its internals, API specs and general settings will likely change a lot before we hit a stable release.**
 
@@ -14,11 +14,11 @@ Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) modul
 - **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
 - **GCS settings** - optional, will be downloaded from a Google Cloud Storage bucket on startup
 
-Additionally, you can also define settings via environment variables, prefixed by SMU and separating blocks with underscore. So for instance to set the `app.title` via environment variables, you should set the value on `SMU_app_title`.
+Additionally, you can also define settings via environment variables, prefixed by SMU and separating levels with underscore. So for instance to define the `app.title` via environment variables, you should set the value on `$SMU_app_title`. To define `gcp.projectId`, use `$SMU_gcp_projectId`. And so on.
 
-If you want to download settings from Google Cloud Storage, you must define the `settings.gcp.downloadSettings.bucket` either directly on one of the settings files, or via the `$SMU_gcp_downloadSettings_bucket` env variable. The default filename is `settings.secret.json`, but you can change that as well. The settings file downloaded from GCS will NOT persist on the disk.
+If you want to download settings from Google Cloud Storage, you must define the `gcp.downloadSettings.bucket` (or via the `$SMU_gcp_downloadSettings_bucket` env variable). The default filename is `settings.secret.json`, but you can change that as well. The settings file downloaded from GCS will NOT persist on the disk.
 
-Please note that settings specific to the web server, API and other web-specific things are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same naming convention.
+Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same naming convention.
 
 ### TypeScript vs Javascript
 
@@ -26,22 +26,24 @@ Whenever possible we'll use TypeScript to write the core logic of Strautomator. 
 
 ### Database
 
-By default Strautomator will use the Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, such as MongoDB or DynamoDB.
+By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, such as MongoDB or DynamoDB.
 
 The following tables / collections are used:
 
 - **users** registered user details
 - **activities** summary of activities processed
 - **activities-failed** summary of failed processed activities
+- **subscriptions** PRO accounts subscription data
 
 ### Make
 
-There's a Makefile with a bunch of helper commands that you should use. For instance to update dependencies to their latest versions:
+All the necessary commands to update, build and deploy the Strautomator Core are done using make. For instance, to update the Node.js dependencies and set a new package version:
 
     $ make update
 
-This will also control the module's versioning automatically. You should change the version on the package.json manually, ever.
+Or to do a "dry run" and test the startup routing with the current settings:
 
-## Why having 2 distinct repos / projects, you might ask...
+    $ make dry-run
 
-First because the original plan for Strautomator was to be command line tool, and not a web app. Second, by keeping the core login decoupled from the web frontend we can easily reuse it on Cloud Functions and other platforms. It adds a bit of complexity on dependencies and build steps, but we think it's worth it.
+Please have a look on the provided Makefile for all available commands.
+
