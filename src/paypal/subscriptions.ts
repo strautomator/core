@@ -240,11 +240,6 @@ export class PayPalSubscriptions {
                 dateUpdated: moment(res.update_time).toDate()
             }
 
-            // Next payment date?
-            if (res.billing_info && res.billing_info.next_billing_time) {
-                subscription.dateNextPayment = moment(res.billing_info.next_billing_time).toDate()
-            }
-
             // Has email assigned?
             if (res.subscriber && res.subscriber.email_address) {
                 subscription.email = res.subscriber.email_address
@@ -256,12 +251,19 @@ export class PayPalSubscriptions {
                 subscription.approvalUrl = approvalLink.href
             }
 
-            // A payment was already made? Fill last payment details.
-            if (res.billing_info.last_payment) {
-                subscription.lastPayment = {
-                    amount: parseFloat(res.billing_info.last_payment.amount.value),
-                    currency: res.billing_info.last_payment.currency_code,
-                    date: moment(res.billing_info.last_payment.time).toDate()
+            // Payment info available?
+            if (res.billing_info) {
+                if (res.billing_info.next_billing_time) {
+                    subscription.dateNextPayment = moment(res.billing_info.next_billing_time).toDate()
+                }
+
+                // A payment was already made? Fill last payment details.
+                if (res.billing_info.last_payment) {
+                    subscription.lastPayment = {
+                        amount: parseFloat(res.billing_info.last_payment.amount.value),
+                        currency: res.billing_info.last_payment.currency_code,
+                        date: moment(res.billing_info.last_payment.time).toDate()
+                    }
                 }
             }
 
