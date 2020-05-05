@@ -47,7 +47,10 @@
                 "user": null,
                 "pass": null
             }
-        }
+        },
+        // Base email template. Can have HTML code inside. The actual message
+        // should be replaced by the tag ${contents}.
+        "template": "<p>${contents}</p><div>-<br /><small>Sport frei!Email sent by the Strautomator bot</small></div>"
     },
     "maps": {
         // Cache geolocation results for 20 minutes. Value set in seconds.
@@ -95,20 +98,19 @@
         "billingPlan": {
             // Default currency is EUR.
             "currency": "EUR",
-            // Names and descriptions used on PayPal billing plans. The name will be suffix-ed with
-            // a frequency and price, like 1.00 / month.
-            "name": "Strautomator Pro subscription",
+            // Names and descriptions used on PayPal billing plans.
+            "name": "Strautomator Pro donation",
             "productName": "Strautomator Pro account",
-            "description": "A Strautomator Pro account subscription.",
+            "description": "Donate to get a PRO account on Strautomator",
             // Subscription agreements are et to start in 10 minutes after they are created.
             "startMinutes": 10
         }
     },
     "plans": {
-        // Free accounts are limited to 2 recipes and conditions.
+        // Free accounts are limited to 3 recipes and conditions.
         "free": {
-            "maxRecipes": 2,
-            "maxConditions": 2,
+            "maxRecipes": 3,
+            "maxConditions": 3,
             // Links on 1 out of 5 processed activities on free accounts.
             "linksOn": 5
         },
@@ -120,7 +122,7 @@
             "linksOn": false,
             // Default donation (subscription) prices to get a Pro account.
             "price": {
-                "month": 1.09,
+                "month": 1.29,
                 "year": 9.99
             }
         }
