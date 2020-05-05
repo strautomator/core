@@ -118,6 +118,7 @@ export class StravaAPI {
      * Refresh OAuth2 tokens from Strava.
      * @param refreshToken The refresh token for the user / client.
      * @param accessToken Previous access token.
+     * @event Strava.refreshToken
      */
     refreshToken = async (refreshToken: string, accessToken?: string): Promise<StravaTokens> => {
         try {

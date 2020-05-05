@@ -273,6 +273,7 @@ export class PayPalSubscriptions {
     /**
      * Create a new subscription agreement for the specified billing plan.
      * @param billingPlan The billing plan chosen by the user.
+     * @event PayPal.subscriptionCreated
      */
     createSubscription = async (billingPlan: PayPalBillingPlan, userId: string): Promise<PayPalSubscription> => {
         try {

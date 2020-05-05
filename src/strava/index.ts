@@ -51,14 +51,14 @@ export class Strava {
     init = async (): Promise<void> => {
         await api.init()
 
-        eventManager.on("Users.delete", this.onUsersDelete)
+        eventManager.on("Users.delete", this.onUserDelete)
     }
 
     /**
      * Cancel webhooks and revoke token for user after it gets deleted from the database.
      * @param user User that was deleted from the database.
      */
-    private onUsersDelete = async (user: UserData): Promise<void> => {
+    private onUserDelete = async (user: UserData): Promise<void> => {
         try {
             await this.webhooks.cancelSubscription(user)
         } catch (ex) {
