@@ -118,10 +118,10 @@
             "maxConditions": 999,
             // No links on Pro accounts processed activities.
             "linksOn": false,
-            // Prices for Pro account.
+            // Default donation (subscription) prices to get a Pro account.
             "price": {
-                "month": 1.49,
-                "year": 11.99
+                "month": 1.09,
+                "year": 9.99
             }
         }
     },

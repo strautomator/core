@@ -121,9 +121,13 @@ export class PayPal {
             const billingPlans = await paypalSubscriptions.getBillingPlans()
             const frequencies = Object.keys(settings.plans.pro.price)
 
-            // Match existing plans by looking for the frequency and price on the title.
+            // Match existing plans by looking for the frequency and price.
             for (let plan of billingPlans) {
-                api.currentBillingPlans[plan.id] = plan
+                const price = settings.plans.pro.price[plan.frequency]
+
+                if (plan.price == price) {
+                    api.currentBillingPlans[plan.id] = plan
+                }
             }
 
             // Make sure we have a billing plan for each frequency defined on the settings.

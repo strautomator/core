@@ -33,7 +33,11 @@ export class Users {
             settings.users.idleDays = 2
         }
 
+        // PayPal events.
+        eventManager.on("PayPal.subscriptionCreated", this.onPayPalSubscription)
         eventManager.on("PayPal.subscriptionUpdated", this.onPayPalSubscription)
+
+        // Strava events.
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
     }
 
@@ -49,9 +53,25 @@ export class Users {
 
         try {
             const isPro = subscription.status == "ACTIVE"
-            await this.update({id: subscription.userId, isPro: isPro})
+            const subEnabled = subscription.status != "CANCELLED" && subscription.status != "EXPIRED"
+            const data: Partial<UserData> = {
+                id: subscription.userId,
+                isPro: isPro,
+                subscription: {
+                    id: subscription.id,
+                    source: "paypal",
+                    enabled: subEnabled
+                }
+            }
 
-            logger.info("Users.onPayPalSubscription", `User ${subscription.userId}, isPro = ${isPro}`)
+            // Email passed?
+            if (subscription.email) {
+                data.email = subscription.email
+            }
+
+            // Save updated user on the database.
+            await this.update(data)
+            logger.info("Users.onPayPalSubscription", `User ${subscription.userId}, subscription ${subscription.id}, isPro = ${isPro}`)
         } catch (ex) {
             logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} isPro status`)
         }

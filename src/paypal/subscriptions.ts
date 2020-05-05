@@ -3,6 +3,7 @@
 import {PayPalBillingPlan, PayPalSubscription} from "./types"
 import api from "./api"
 import database from "../database"
+import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
@@ -234,7 +235,7 @@ export class PayPalSubscriptions {
                 id: res.id,
                 userId: null,
                 status: res.status,
-                billingPlan: api.currentBillingPlans[res.plan_id],
+                billingPlan: api.currentBillingPlans[res.plan_id] || ({id: res.plan_id} as PayPalBillingPlan),
                 dateCreated: moment(res.create_time).toDate(),
                 dateUpdated: moment(res.update_time).toDate(),
                 dateNextPayment: moment(res.billing_info.next_billing_time).toDate()
@@ -260,7 +261,7 @@ export class PayPalSubscriptions {
                 }
             }
 
-            logger.error("PayPal.getSubscription", id, subscription.email)
+            logger.info("PayPal.getSubscription", id, `Plan ${res.plan_id}`, `Last updated ${subscription.dateUpdated.toString()}`)
 
             return subscription
         } catch (ex) {
@@ -314,10 +315,39 @@ export class PayPalSubscriptions {
             }
 
             await database.set("subscriptions", subscription, res.id)
+            logger.info("PayPal.createSubscription", `User ${userId}, plan ${billingPlan.id}`, `Created: ${subscription.id}`)
+            eventManager.emit("PayPal.subscriptionCreated", subscription)
 
             return subscription
         } catch (ex) {
-            logger.error("PayPal.createBillingAgreement", `Could not create billing agreement for plan ${billingPlan.id}`)
+            logger.error("PayPal.createSubscription", `Could not create subscription for user ${userId}, plan ${billingPlan.id}`)
+            throw ex
+        }
+    }
+
+    /**
+     * Cancel the specified subscription.
+     * @param subscription The subscription to be cancelled.
+     */
+    cancelSubscription = async (subscription: PayPalSubscription, reason?: string): Promise<void> => {
+        try {
+            const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED"}
+
+            const options = {
+                url: `/v1/billing/subscriptions/${subscription.id}/cancel`,
+                method: "POST",
+                data: {
+                    reason: reason
+                }
+            }
+
+            // Cancel subscription and updated the database.
+            await api.makeRequest(options)
+            await database.merge("subscriptions", data)
+
+            logger.info("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Cancelled")
+        } catch (ex) {
+            logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Could not cancel`)
             throw ex
         }
     }

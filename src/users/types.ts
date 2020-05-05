@@ -33,8 +33,8 @@ export interface UserData {
     recipes?: UserRecipeMap
     /** User preferences. */
     preferences?: UserPreferences
-    /** PayPal subsccription ID (for PRO accounts). */
-    subscriptionId?: string
+    /** Subscription details (for PRO accounts). */
+    subscription?: UserSubscription
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */
@@ -55,4 +55,16 @@ export interface UserPreferences {
     units?: "metric" | "imperial"
     /** Prefered weather provider. */
     weatherProvider?: "darksky" | "openweathermap" | "weatherbit"
+}
+
+/**
+ * User subscription (PRO) summary.
+ */
+export interface UserSubscription {
+    /** Subscription ID. */
+    id: string
+    /** Subscription source. */
+    source: "paypal" | "github"
+    /** Enabled? */
+    enabled: boolean
 }
