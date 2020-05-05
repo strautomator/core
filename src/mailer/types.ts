@@ -8,7 +8,9 @@ export interface EmailSendingOptions {
     to: string
     /** Email subject. */
     subject: string
-    /** Email body. */
+    /** Optional from (default is taken from the settings). */
+    from?: string
+    /** Email contents . */
     body: string
     /** Objects user for tags replacement. */
     data?: any[]

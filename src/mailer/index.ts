@@ -1,6 +1,7 @@
 // Strautomator Core: Mailer
 
 import {EmailSendingOptions} from "./types"
+import eventManager from "../eventmanager"
 import logger = require("anyhow")
 import nodemailer = require("nodemailer")
 const settings = require("setmeup").settings
@@ -50,9 +51,27 @@ export class Mailer {
                 logger.error("Mailer.init", `Could not verify connection to ${smtp.host} ${smtp.port}, but will proceed anyways`, ex)
             }
 
+            eventManager.on("Admin.alert", this.onAdminAlert)
+
             logger.info("Mailer.init", smtp.host, smtp.port)
         } catch (ex) {
             logger.error("Mailer.init", ex)
+        }
+    }
+
+    /**
+     * Send an email to the admin when an alert is triggered.
+     */
+    private onAdminAlert = async (message: string, title?: string) => {
+        try {
+            const options: EmailSendingOptions = {
+                to: settings.mailer.adminEmail,
+                subject: title || "Admin alert",
+                body: message
+            }
+            await this.send(options)
+        } catch (ex) {
+            logger.error("Mailer.onAdminAlert", `Failed to send email with admin alert`)
         }
     }
 
@@ -70,7 +89,15 @@ export class Mailer {
         }
 
         try {
-            await this.client.send(options)
+            const html = settings.mailer.template.replace("${contents}", options.body)
+            const sendingOptions = {
+                from: `"${settings.app.title}" <${options.from || settings.mailer.from}>`,
+                to: options.to,
+                subject: options.subject,
+                html: html
+            }
+
+            await this.client.sendMail(sendingOptions)
         } catch (ex) {
             logger.error("Mailer.send", options.to, options.subject, ex)
         }
