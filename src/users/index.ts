@@ -1,6 +1,7 @@
 // Strautomator Core: Users
 
 import {UserData} from "./types"
+import {PayPalSubscription} from "../paypal/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 import {encryptData} from "../database/crypto"
 import database from "../database"
@@ -32,7 +33,28 @@ export class Users {
             settings.users.idleDays = 2
         }
 
+        eventManager.on("PayPal.subscriptionUpdated", this.onPayPalSubscription)
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
+    }
+
+    /**
+     * Set user isPro status when a PayPal subscription status changes.
+     * @param subscription The PayPal ssubscription details.
+     */
+    private onPayPalSubscription = async (subscription: PayPalSubscription): Promise<void> => {
+        if (!subscription) {
+            logger.error("Users.onPayPalSubscription", "Missing subscription data")
+            return
+        }
+
+        try {
+            const isPro = subscription.status == "ACTIVE"
+            await this.update({id: subscription.userId, isPro: isPro})
+
+            logger.info("Users.onPayPalSubscription", `User ${subscription.userId}, isPro = ${isPro}`)
+        } catch (ex) {
+            logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} isPro status`)
+        }
     }
 
     /**
@@ -46,6 +68,7 @@ export class Users {
             return
         }
 
+        // Masked token used on warning logs.
         const maskedToken = `${refreshToken.substring(0, 3)}***${refreshToken.substring(refreshToken.length - 1)}`
 
         try {
@@ -235,7 +258,7 @@ export class Users {
      * @param user User to be updated.
      * @param merge Set to true to fully replace data instead of merging, default is false.
      */
-    update = async (user: UserData, replace?: boolean): Promise<void> => {
+    update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
         try {
             if (!replace) {
                 await database.merge("users", user)
@@ -284,18 +307,6 @@ export class Users {
         } catch (ex) {
             logger.error("Users.setActivityCount", user.id, user.displayName, ex)
         }
-    }
-
-    // HELPERS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Check if the passed user has a valid Pro account.
-     * @param user The user to be checked.
-     */
-    isPro = (user: UserData): boolean => {
-        const now = new Date()
-        return user.dateBilling && user.dateBilling >= now
     }
 }
 

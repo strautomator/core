@@ -154,7 +154,7 @@ export class PayPal {
 
             // No webhooks on PayPal yet? Register one now.
             if (!existingWebhook) {
-                logger.warn("PayPal.setupWebhook", "No matching webhooks found on PayPal, will register one now")
+                logger.warn("PayPal.setupWebhook", "No matching webhook (URL) found on PayPal, will register one now")
                 await paypalWebhooks.createWebhook()
             }
         } catch (ex) {

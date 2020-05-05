@@ -1,7 +1,9 @@
 // Strautomator Core: PayPal Webhooks
 
-import {PayPalWebhook} from "./types"
+import {PayPalWebhook, PayPalSubscription} from "./types"
 import api from "./api"
+import database from "../database"
+import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
@@ -9,9 +11,9 @@ const settings = require("setmeup").settings
 /**
  * PayPal Webhooks API.
  */
-export class PayPalProducts {
+export class PayPalWebhooks {
     private constructor() {}
-    private static _instance: PayPalProducts
+    private static _instance: PayPalWebhooks
     static get Instance() {
         return this._instance || (this._instance = new this())
     }
@@ -109,6 +111,7 @@ export class PayPalProducts {
         try {
             const resourceDetails = []
             const resource = data.resource
+            let subscription: PayPalSubscription
 
             // Get and log webhook event details.
             if (resource) {
@@ -118,14 +121,36 @@ export class PayPalProducts {
                 if (resource.amount) resourceDetails.push(`${resource.amount.total} ${resource.amount.currency}`)
                 if (resource.state) resourceDetails.push(`State: ${resource.state}`)
                 if (resource.status) resourceDetails.push(resource.status)
+
+                // EUser email present on event?
+                if (resource.subscriber && resource.subscriber.email_address) resourceDetails.push(`Email: ${resource.subscriber.email_address}`)
             } else {
                 resourceDetails.push("No resource details found")
             }
 
             logger.info("PayPal.processWebhook", data.event_type, resourceDetails.join(", "))
 
-            // User started a subscription? Save the details on his account.
-            if (data.event_type == "PAYMENT.SALE.COMPLETED") {
+            // Webhook event referencing a subscription?
+            if (resource.billing_agreement_id) {
+                subscription = await database.get("subscriptions", resource.billing_agreement_id)
+
+                // Oops... event for a subscription that was not saved on the database?
+                if (!subscription) {
+                    const msg = `Payment of ${resource.amount.total} ${resource.amount.currency} for subscription ${resource.billing_agreement_id}, but subscription was not found on the database.`
+                    eventManager.emit("Admin.alert", msg)
+                    return
+                }
+
+                // User just activated (yay!) or cancelled (oh no!) a subscription?
+                if (data.event_type == "PAYMENT.SALE.COMPLETED") {
+                    subscription.status = "ACTIVE"
+                } else if (data.event_type == "BILLING.SUBSCRIPTION.CANCELLED") {
+                    subscription.status = "CANCELLED"
+                }
+
+                // Save updated subscription on the database, and emit event to update the user.
+                await database.merge("subscriptions", {id: subscription.id, status: subscription.status, date: subscription.dateUpdated})
+                eventManager.emit("PayPal.subscriptionUpdated", subscription)
             }
         } catch (ex) {
             logger.error("PayPal.processWebhook", `ID ${data.id}`, data.event_type, ex)
@@ -134,4 +159,4 @@ export class PayPalProducts {
 }
 
 // Exports...
-export default PayPalProducts.Instance
+export default PayPalWebhooks.Instance

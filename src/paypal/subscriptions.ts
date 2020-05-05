@@ -233,12 +233,22 @@ export class PayPalSubscriptions {
             const subscription: PayPalSubscription = {
                 id: res.id,
                 userId: null,
-                email: res.subscriber.email_address,
                 status: res.status,
                 billingPlan: api.currentBillingPlans[res.plan_id],
                 dateCreated: moment(res.create_time).toDate(),
                 dateUpdated: moment(res.update_time).toDate(),
                 dateNextPayment: moment(res.billing_info.next_billing_time).toDate()
+            }
+
+            // Has email assigned?
+            if (res.subscriber && res.subscriber.email_address) {
+                subscription.email = res.subscriber.email_address
+            }
+
+            // Still needs to be approved?
+            const approvalLink = _.find(res.links, {rel: "approve"})
+            if (approvalLink) {
+                subscription.approvalUrl = approvalLink.href
             }
 
             // A payment was already made? Fill last payment details.

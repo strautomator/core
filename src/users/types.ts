@@ -1,6 +1,5 @@
 // Strautomator Core: User types
 
-import {PayPalSubscription} from "../paypal/types"
 import {RecipeData} from "../recipes/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 
@@ -20,6 +19,8 @@ export interface UserData {
     id: string
     /** User's display (taken from one of the user profile fields). */
     displayName?: string
+    /** Is activated with a Pro account? */
+    isPro?: boolean
     /** User profile data from Strava. */
     profile: StravaProfile
     /** User strava access and refresh tokens. */
@@ -32,14 +33,12 @@ export interface UserData {
     recipes?: UserRecipeMap
     /** User preferences. */
     preferences?: UserPreferences
-    /** PayPal subsccription (if subscribed to the service). */
-    paypalSubscription?: PayPalSubscription
+    /** PayPal subsccription ID (for PRO accounts). */
+    subscriptionId?: string
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */
     dateRegistered?: Date
-    /** Next billing date (UTC). */
-    dateBilling?: Date
     /** Date of last received activity from Strava. */
     dateLastActivity?: Date
     /** Recipes counter. */
