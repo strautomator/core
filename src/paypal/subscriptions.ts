@@ -286,8 +286,8 @@ export class PayPalSubscriptions {
                     start_date: moment(new Date()).add(settings.paypal.billingPlan.startMinutes, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
                     application_context: {
                         brand_name: settings.app.title,
-                        return_url: `${settings.app.url}billing/success`,
-                        cancel_url: `${settings.app.url}billing`,
+                        return_url: `${settings.app.url}donate/success`,
+                        cancel_url: `${settings.app.url}donate`,
                         shipping_preference: "NO_SHIPPING",
                         payment_method: {
                             payer_selected: "PAYPAL",
