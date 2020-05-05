@@ -237,8 +237,12 @@ export class PayPalSubscriptions {
                 status: res.status,
                 billingPlan: api.currentBillingPlans[res.plan_id] || ({id: res.plan_id} as PayPalBillingPlan),
                 dateCreated: moment(res.create_time).toDate(),
-                dateUpdated: moment(res.update_time).toDate(),
-                dateNextPayment: moment(res.billing_info.next_billing_time).toDate()
+                dateUpdated: moment(res.update_time).toDate()
+            }
+
+            // Next payment date?
+            if (res.billing_info && res.billing_info.next_billing_time) {
+                subscription.dateNextPayment = moment(res.billing_info.next_billing_time).toDate()
             }
 
             // Has email assigned?
