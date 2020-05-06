@@ -29,10 +29,6 @@ export class StravaWebhooks {
         return `${baseUrl}strava/${settings.strava.api.urlToken}`
     }
 
-    /**
-     * The callback URL to be set on Strava.
-     */
-
     // GET WEBHOOKS
     // --------------------------------------------------------------------------
 

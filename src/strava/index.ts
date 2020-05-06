@@ -53,12 +53,7 @@ export class Strava {
 
         // Make sure there's a valid webhook set on Strava.
         try {
-            const webhook = await this.webhooks.getWebhook()
-
-            if (!webhook || webhook.callbackUrl != this.webhooks.callbackUrl) {
-                await this.webhooks.cancelWebhook()
-                await this.webhooks.createWebhook()
-            }
+            await this.webhooks.getWebhook()
         } catch (ex) {
             logger.error("Strava.init", ex)
         }
