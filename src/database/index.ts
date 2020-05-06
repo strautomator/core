@@ -41,8 +41,8 @@ export class Database {
 
             this.firestore = new Firestore(options)
 
-            const prefix = settings.database.collectionPrefix
-            const logPrefix = prefix ? `Collections prefixed with "${prefix}"` : "No collections prefix"
+            const suffix = settings.database.collectionSuffix
+            const logPrefix = suffix ? `Collections suffixd with "${suffix}"` : "No collection suffix"
 
             cache.setup("database", settings.database.cacheDuration)
             logger.info("Database.init", logPrefix)
@@ -61,7 +61,7 @@ export class Database {
      * @param id Optional document ID.
      */
     doc = (collection: string, id?: string): DocumentReference => {
-        const colname = `${settings.database.collectionPrefix}${collection}`
+        const colname = `${collection}${settings.database.collectionSuffix}`
         return id ? this.firestore.collection(colname).doc(id) : this.firestore.collection(colname).doc()
     }
 
@@ -72,7 +72,7 @@ export class Database {
      * @param id Optional unique ID, will be auto generated if not present.
      */
     set = async (collection: string, data: any, id?: string): Promise<number> => {
-        const colname = `${settings.database.collectionPrefix}${collection}`
+        const colname = `${collection}${settings.database.collectionSuffix}`
         const table = this.firestore.collection(colname)
         const doc = table.doc(id)
 
@@ -101,7 +101,7 @@ export class Database {
         cryptoProcess(encryptedData, true)
 
         if (!doc) {
-            const colname = `${settings.database.collectionPrefix}${collection}`
+            const colname = `${collection}${settings.database.collectionSuffix}`
             const table = this.firestore.collection(colname)
             doc = table.doc(data.id)
         }
@@ -121,7 +121,7 @@ export class Database {
      * @param skipCache If set to true, will not lookup on in-memory cache.
      */
     get = async (collection: string, id: string, skipCache?: boolean): Promise<any> => {
-        const colname = `${settings.database.collectionPrefix}${collection}`
+        const colname = `${collection}${settings.database.collectionSuffix}`
 
         // First check if document is cached.
         if (!skipCache && settings.database.cacheDuration) {
@@ -161,7 +161,7 @@ export class Database {
      * @param orderBy Order by field, optional.
      */
     search = async (collection: string, queryList?: any[], orderBy?: string): Promise<any[]> => {
-        const colname = `${settings.database.collectionPrefix}${collection}`
+        const colname = `${collection}${settings.database.collectionSuffix}`
         let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
 
         // Make sure query list is an array by itself.
@@ -205,7 +205,7 @@ export class Database {
      * @param value Optional increment valud, default is 1, can also be negative.
      */
     increment = async (collection: string, id: string, field: string, value?: number): Promise<void> => {
-        const colname = `${settings.database.collectionPrefix}${collection}`
+        const colname = `${collection}${settings.database.collectionSuffix}`
         const table = this.firestore.collection(colname)
         const doc = table.doc(id)
 

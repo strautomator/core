@@ -3,8 +3,8 @@
 {
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
-        // you might add a default prefix to Firestore collection names.
-        "collectionPrefix": "",
+        // you might add a default suffix to Firestore collection names.
+        "collectionSuffix": "",
         // Encryption key and IV must be set on the settings.secret.json file, or via the
         // $SMU_database_crypto_key and $SMU_database_crypto_iv environment variables.
         "crypto": {

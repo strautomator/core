@@ -3,8 +3,8 @@
 {
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
-        // you might add a default prefix to Firestore collection names.
-        "collectionPrefix": "dev-",
+        // you might add a default suffix to Firestore collection names.
+        "collectionSuffix": "-dev",
         // Default encryption key on development.
         "crypto": {
             "key": "StrautomateAndProtectWithThisKey",
