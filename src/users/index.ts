@@ -188,7 +188,7 @@ export class Users {
         try {
             return await database.get("users", id)
         } catch (ex) {
-            logger.error("Users.getById", ex)
+            logger.error("Users.getById", id, ex)
             throw ex
         }
     }

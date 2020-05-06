@@ -100,6 +100,7 @@ export class PayPalAPI {
     makeRequest = async (reqOptions: any): Promise<any> => {
         try {
             if (this.auth.expiresAt < moment().unix()) {
+                logger.info("PayPal.makeRequest", reqOptions.url, "Token expired, will fetch a new one")
                 await this.authenticate()
             }
 
