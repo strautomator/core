@@ -68,6 +68,7 @@ export class PayPalAPI {
             const options = {
                 method: "POST",
                 url: `${settings.paypal.api.baseUrl}oauth2/token`,
+                timeout: settings.oauth.tokenTimeout,
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },

@@ -93,9 +93,13 @@ export class StravaAPI {
                 code: code
             }
 
-            // Post data to Strava.
-            const tokenUrl = `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`
-            const res = await this.axios.post(tokenUrl)
+            // Post auth data to Strava.
+            const reqOptions = {
+                method: "POST",
+                url: `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`,
+                timeout: settings.oauth.tokenTimeout
+            }
+            const res = await this.axios(reqOptions)
 
             if (res == null || res.data == null) {
                 throw new Error("Invalid access token")
@@ -134,9 +138,13 @@ export class StravaAPI {
                 qs.access_token = accessToken
             }
 
-            // Post data to Strava.
-            const tokenUrl = `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`
-            const res = await this.axios.post(tokenUrl)
+            // Post auth data to Strava.
+            const reqOptions = {
+                method: "POST",
+                url: `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`,
+                timeout: settings.oauth.tokenTimeout
+            }
+            const res = await this.axios(reqOptions)
 
             if (res == null || res.data == null) {
                 throw new Error("Invalid or empty token response")
