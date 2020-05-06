@@ -51,6 +51,18 @@ export class Strava {
     init = async (): Promise<void> => {
         await api.init()
 
+        // Make sure there's a valid webhook set on Strava.
+        try {
+            const webhook = await this.webhooks.getWebhook()
+
+            if (!webhook || webhook.callbackUrl != this.webhooks.callbackUrl) {
+                await this.webhooks.cancelWebhook()
+                await this.webhooks.createWebhook()
+            }
+        } catch (ex) {
+            logger.error("Strava.init", ex)
+        }
+
         eventManager.on("Users.delete", this.onUserDelete)
     }
 
@@ -60,15 +72,9 @@ export class Strava {
      */
     private onUserDelete = async (user: UserData): Promise<void> => {
         try {
-            await this.webhooks.cancelSubscription(user)
-        } catch (ex) {
-            logger.error("Users.onUsersDelete", `Failed to cancel webhooks for user ${user.id} - ${user.displayName}`)
-        }
-
-        try {
             await this.revokeToken(user.stravaTokens.accessToken)
         } catch (ex) {
-            logger.error("Users.onUsersDelete", `Failed to revoke token for user ${user.id} - ${user.displayName}`)
+            logger.error("Strava.onUsersDelete", `Failed to revoke token for user ${user.id} - ${user.displayName}`)
         }
     }
 

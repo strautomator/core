@@ -1,10 +1,9 @@
 // Strautomator Core: Strava Webhooks
 
-import {StravaWebhook, StravaWebhookReset} from "./types"
-import {UserData} from "../users/types"
+import {StravaWebhook} from "./types"
 import api from "./api"
-import users from "../users"
 import logger = require("anyhow")
+import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
@@ -17,25 +16,59 @@ export class StravaWebhooks {
         return this._instance || (this._instance = new this())
     }
 
+    /**
+     * Copy of current webook registered on Strava.
+     */
+    current: StravaWebhook = null
+
+    /**
+     * The expected callback URL to be registered on Strava.
+     */
+    get callbackUrl(): string {
+        const baseUrl = settings.api.url || `${settings.app.url}api/`
+        return `${baseUrl}strava/${settings.strava.api.urlToken}`
+    }
+
+    /**
+     * The callback URL to be set on Strava.
+     */
+
     // GET WEBHOOKS
     // --------------------------------------------------------------------------
 
     /**
      * Check a subscription status based on its ID.
      */
-    getSubscriptions = async (): Promise<StravaWebhook[]> => {
+    getWebhook = async (): Promise<StravaWebhook> => {
         try {
             const query = {
                 client_id: settings.strava.api.clientId,
                 client_secret: settings.strava.api.clientSecret
             }
 
-            const data = await api.get(null, `push_subscriptions`, query)
-            logger.info("Strava.getSubscriptions", `${data.length} subscriptions registered`)
+            const result = await api.get(null, `push_subscriptions`, query)
 
-            return data
+            // No webhooks registered? Return null then.
+            if (result.length == 0) {
+                logger.info("Strava.getWebhook", "No webhook registered on Strava")
+                return null
+            }
+
+            // Build result.
+            const data = result[0]
+            const webhook: StravaWebhook = {
+                id: data.id,
+                callbackUrl: data.callback_url,
+                dateUpdated: moment(data.updated_at).toDate()
+            }
+
+            // Set as curent webhook.
+            this.current = webhook
+            logger.info("Strava.getWebhook", `ID ${webhook.id}`, webhook.callbackUrl)
+
+            return webhook
         } catch (ex) {
-            logger.error("Strava.getSubscriptions", ex)
+            logger.error("Strava.getWebhook", ex)
             throw ex
         }
     }
@@ -44,14 +77,12 @@ export class StravaWebhooks {
     // --------------------------------------------------------------------------
 
     /**
-     * Subscribe to activities updates sent by Strava, and return the subscription ID
-     * @param user The relevant user to receive activities from.
+     * Subscribe to activities updates sent by Strava.
      */
-    setSubscription = async (user: UserData): Promise<number> => {
+    createWebhook = async (): Promise<void> => {
         try {
-            const baseUrl = settings.api.url || `${settings.app.url}api/`
             const query = {
-                callback_url: `${baseUrl}strava/${settings.strava.api.urlToken}/${user.id}`,
+                callback_url: this.callbackUrl,
                 client_id: settings.strava.api.clientId,
                 client_secret: settings.strava.api.clientSecret,
                 verify_token: settings.strava.api.verifyToken
@@ -59,22 +90,24 @@ export class StravaWebhooks {
 
             const result = await api.post(null, "push_subscriptions", query)
 
+            // Make sure a valid response was sent by Strava.
             if (!result.id) {
                 throw new Error("Missing subscription ID from Strava")
             }
 
-            // Save subscription to user on the database.
-            user.stravaWebhook = result.id
-            await users.update({id: user.id, stravaWebhook: result.id} as UserData)
+            // Set as current.
+            this.current = {
+                id: result.id,
+                callbackUrl: this.callbackUrl,
+                dateUpdated: new Date()
+            }
 
-            logger.info("Strava.setSubscription", `User ${user.id} - ${user.displayName}`, `Subscription ${result.id}`)
-
-            return result.id
+            logger.info("Strava.createWebhook", `ID ${result.id}`, this.callbackUrl)
         } catch (ex) {
             if (ex.response && ex.response.data && ex.response.data.errors) {
-                logger.error("Strava.setSubscription", user.id, ex, ex.response.data.errors[0])
+                logger.error("Strava.createWebhook", ex, ex.response.data.errors[0])
             } else {
-                logger.error("Strava.setSubscription", user.id, ex)
+                logger.error("Strava.createWebhook", ex)
             }
 
             throw ex
@@ -83,12 +116,12 @@ export class StravaWebhooks {
 
     /**
      * Cancel a subscription (mostly called when user cancel the account).
-     * @param user The user which should have the subscription cancelled.
+     * It won't trigger if there's no current webhook registered on Strava.
      */
-    cancelSubscription = async (user: UserData): Promise<void> => {
+    cancelWebhook = async (): Promise<void> => {
         try {
-            if (!user.stravaWebhook) {
-                logger.warn("Strava.cancelSubscription", `User ${user.id}, ${user.displayName} has no active webhook subscription`)
+            if (!this.current) {
+                logger.warn("Strava.cancelWebhook", "No webhook  registered on Strava, won't cancel")
                 return
             }
 
@@ -97,72 +130,17 @@ export class StravaWebhooks {
                 client_secret: settings.strava.api.clientSecret
             }
 
-            await api.delete(null, `push_subscriptions/${user.stravaWebhook}`, query)
-            logger.info("Strava.cancelSubscription", `User ${user.id}, ${user.displayName}`, `Subscription ${user.stravaWebhook} cancelled`)
+            await api.delete(null, `push_subscriptions/${this.current.id}`, query)
+            logger.info("Strava.cancelWebhook", `Subscription ${this.current.id} cancelled`)
+
+            this.current = null
         } catch (ex) {
-            logger.error("Strava.cancelSubscription", `User ${user.id}, ${user.displayName}`, ex)
-            throw ex
-        }
-    }
-
-    // WEBHOOKS MAINTENANCE
-    // --------------------------------------------------------------------------
-
-    /**
-     * Periodically check user subscriptions and renew them, if needed.
-     */
-    resetSubscriptions = async (): Promise<StravaWebhookReset> => {
-        try {
-            let removeCount = 0
-            let renewCount = 0
-            const subscriptions = await this.getSubscriptions()
-
-            logger.info("Strava.resetSubscriptions", `${subscriptions.length} webhooks will be cleared`)
-
-            // Iterate subscriptions to remove existing ones.
-            for (let s of subscriptions) {
-                try {
-                    const query = {
-                        client_id: settings.strava.api.clientId,
-                        client_secret: settings.strava.api.clientSecret
-                    }
-
-                    // Delete existing subscription.
-                    await api.delete(null, `push_subscriptions/${s.id}`, query)
-                    removeCount++
-                } catch (ex) {
-                    logger.warn("Strava.resetSubscriptions", `Could not remove subscription ${s.id}`, ex)
-                }
+            if (ex.response && ex.response.data && ex.response.data.errors) {
+                logger.error("Strava.cancelWebhook", ex, ex.response.data.errors[0])
+            } else {
+                logger.error("Strava.cancelWebhook", ex)
             }
 
-            const activeUsers = await users.getActive()
-
-            logger.info("Strava.resetSubscriptions", `Removed ${removeCount} webhooks`, `Will renew webhooks for ${activeUsers.length} users now`)
-
-            // Iterate active users to renew subscriptions.
-            for (let user of activeUsers) {
-                try {
-                    await this.setSubscription(user)
-                    renewCount++
-                } catch (ex) {
-                    logger.debug("Strava.resetSubscriptions", `Could not set subscription for user ${user.id}, ${user.displayName}`, ex)
-                }
-            }
-
-            // Not subscriptions renewed?
-            if (renewCount == 0) {
-                logger.warn("Strava.resetSubscriptions", "No subscriptions were renewed (count = 0)")
-            }
-
-            // Result with removed and renewed counts.
-            const result: StravaWebhookReset = {
-                removedSubscriptions: removeCount,
-                renewedSubscriptions: renewCount
-            }
-
-            return result
-        } catch (ex) {
-            logger.error("Strava.resetSubscriptions", ex)
             throw ex
         }
     }

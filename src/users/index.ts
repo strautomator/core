@@ -255,11 +255,6 @@ export class Users {
                 if (docData.recipes) {
                     userData.recipeCount = Object.keys(docData.recipes).length
                 }
-
-                // TODO! Migrate stravaSubscription to stravaWebhook.
-                if (docData.stravaSubscription) {
-                    userData.stravaWebhook = docData.stravaSubscription
-                }
             }
 
             // Save user to the database.

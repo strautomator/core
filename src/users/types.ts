@@ -25,8 +25,6 @@ export interface UserData {
     profile: StravaProfile
     /** User strava access and refresh tokens. */
     stravaTokens?: StravaTokens
-    /** Strava webhook ID (used for subscription / webhooks). */
-    stravaWebhook?: number
     /** User email, optional. */
     email?: string
     /** List of user recipes. */

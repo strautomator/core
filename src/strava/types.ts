@@ -249,16 +249,6 @@ export interface StravaWebhook {
 }
 
 /**
- * Result from a resetSubscriptions() call.
- */
-export interface StravaWebhookReset {
-    /** How many subscriptions were removed. */
-    removedSubscriptions: number
-    /** How many subscriptions were re-added. */
-    renewedSubscriptions: number
-}
-
-/**
  * Strava sport types.
  */
 export enum StravaSport {
