@@ -51,6 +51,10 @@ export * from "./users/types"
 export const startup = async (dryRun?: boolean) => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
+    // Set it to gracefully shutdown.
+    process.on("SIGINT", shutdown)
+    process.on("SIGTERM", shutdown)
+
     try {
         const settings = setmeup.settings
 
@@ -116,5 +120,17 @@ export const startup = async (dryRun?: boolean) => {
 // Shutdown script.
 export const shutdown = async () => {
     logger.warn("Strautomator.shutdown", "Terminating the service now...")
-    cache.clear()
+
+    try {
+        cache.clear()
+
+        // Remove Strava webhook on development.
+        if (process.env.NODE_ENV == "development") {
+            await strava.webhooks.cancelWebhook()
+        }
+    } catch (ex) {
+        logger.warn("Strautomator.shutdown", ex)
+    }
+
+    logger.warn("Strautomator.shutdown", "Service terminated!")
 }
