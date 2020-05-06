@@ -35,6 +35,8 @@ import {PayPal} from "./paypal"
 export const paypal: PayPal = PayPal.Instance
 import {Strava} from "./strava"
 export const strava: Strava = Strava.Instance
+import {Twitter} from "./twitter"
+export const twitter: Twitter = Twitter.Instance
 import {Weather} from "./weather"
 export const weather: Weather = Weather.Instance
 import {Users} from "./users"
@@ -110,7 +112,7 @@ export const startup = async (dryRun?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, mailer, maps, paypal, strava, users, weather]) {
+    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather]) {
         try {
             await coreModule.init()
         } catch (ex) {
