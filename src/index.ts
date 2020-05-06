@@ -42,6 +42,10 @@ export const users: Users = Users.Instance
 import {Recipes} from "./recipes"
 export const recipes: Recipes = Recipes.Instance
 
+// Export event manager.
+import {EventManager} from "./eventmanager"
+export const events: EventManager = EventManager.Instance
+
 // Export types.
 export * from "./recipes/types"
 export * from "./strava/types"
