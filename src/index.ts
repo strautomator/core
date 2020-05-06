@@ -47,6 +47,9 @@ export * from "./recipes/types"
 export * from "./strava/types"
 export * from "./users/types"
 
+// Flag if the server is shutting down.
+let terminating = false
+
 // Startup script.
 export const startup = async (dryRun?: boolean) => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
@@ -118,8 +121,14 @@ export const startup = async (dryRun?: boolean) => {
 }
 
 // Shutdown script.
-export const shutdown = async () => {
-    logger.warn("Strautomator.shutdown", "Terminating the service now...")
+export const shutdown = async (code) => {
+    if (terminating) return
+    terminating = true
+
+    // Code defaults to 0.
+    if (!code) code = 0
+
+    logger.warn("Strautomator.shutdown", `Code ${code}`, "Terminating the service now...")
 
     try {
         cache.clear()
@@ -133,4 +142,5 @@ export const shutdown = async () => {
     }
 
     logger.warn("Strautomator.shutdown", "Service terminated!")
+    process.exit()
 }
