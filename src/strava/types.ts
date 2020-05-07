@@ -34,8 +34,6 @@ export interface StravaActivity {
     locationEnd?: [number, number]
     /** Gear used. */
     gear?: StravaGear
-    /** Suffer score. */
-    sufferScore?: number
     /** Average speed. */
     speedAvg?: number
     /** Maximum speed. */
@@ -111,7 +109,6 @@ export function toStravaActivity(data): StravaActivity {
         movingTime: data.moving_time,
         locationStart: data.start_latlng,
         locationEnd: data.end_latlng,
-        sufferScore: data.suffer_score,
         wattsAvg: data.average_watts,
         wattsWeighted: data.weighted_average_watts,
         hrAvg: data.average_heartrate,

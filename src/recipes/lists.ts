@@ -41,6 +41,9 @@ export const recipePropertyList = [
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
     {value: "speedAvg", text: "Average speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h"},
     {value: "speedMax", text: "Max speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h"},
+    {value: "hrAvg", text: "Average heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm"},
+    {value: "hrMax", text: "Max heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm"},
+    {value: "calories", text: "Calories", type: "number", operators: recipeOperatorList.number, suffix: "kcal"},
     {value: "device", text: "Device name", type: "text", operators: recipeOperatorList.text}
 ]
 
