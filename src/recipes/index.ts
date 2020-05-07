@@ -375,7 +375,7 @@ export class Recipes {
         const op = condition.operator
 
         // Stop here if activity has no location data.
-        if (!activity[prop] || !!activity[prop].length) {
+        if (!activity[prop] || !activity[prop].length) {
             return false
         }
 
