@@ -36,7 +36,7 @@ export class StravaActivities {
         logger.debug("Strava.getActivity", id)
 
         try {
-            const data = await api.get(tokens, `activities/${id}`)
+            const data = await api.get(tokens, `activities/${id}?include_all_efforts=false`)
             const activity = toStravaActivity(data)
 
             // Activity's gear was set?
@@ -158,10 +158,17 @@ export class StravaActivities {
                 retryCount = 0
             }
 
+            let activity: StravaActivity
             let recipeIds = []
 
             // Get activity details from Strava.
-            let activity = await this.getActivity(user.stravaTokens, activityId)
+            try {
+                activity = await this.getActivity(user.stravaTokens, activityId)
+            } catch (ex) {
+                logger.error("Strava.processActivity", `Activity ${activityId} for user ${user.id} not found`)
+                return
+            }
+
             let recipe: RecipeData
 
             // Evaluate each of user's recipes, and set update to true if something was processed.
