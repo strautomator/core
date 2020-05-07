@@ -1,7 +1,9 @@
 // Strautomator Core: PayPal
 
 import {PayPalBillingPlan, PayPalProduct} from "./types"
+import {UserData} from "../users/types"
 import api from "./api"
+import eventManager from "../eventmanager"
 import paypalProducts from "./products"
 import paypalSubscriptions from "./subscriptions"
 import paypalWebhooks from "./webhooks"
@@ -77,11 +79,35 @@ export class PayPal {
             // Setup the product and billing plans on PayPal.
             await this.setupProduct()
             await this.setupBillingPlans()
+
+            // Unsubscribe when user gets deleted.
+            eventManager.on("Users.delete", this.onUserDelete)
         } catch (ex) {
             logger.error("PayPal.init", ex)
             throw ex
         }
     }
+
+    /**
+     * Unsubscribe when user gets deleted.
+     * @param user User that was deleted from the database.
+     */
+    private onUserDelete = async (user: UserData): Promise<void> => {
+        try {
+            if (user.subscription && user.subscription.enabled && user.subscription.source == "paypal") {
+                const subscription = await paypalSubscriptions.getSubscription(user.subscription.id)
+
+                if (subscription) {
+                    await paypalSubscriptions.cancelSubscription(subscription)
+                }
+            }
+        } catch (ex) {
+            logger.debug("PayPal.onUsersDelete", `Failed to cancel subscription ${user.subscription.id} for user ${user.id} - ${user.displayName}`)
+        }
+    }
+
+    // BASIC SETUP
+    // --------------------------------------------------------------------------
 
     /**
      * Create the Strautomator product on PayPal, if one does not exist yet.

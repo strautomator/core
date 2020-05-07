@@ -338,8 +338,7 @@ export class PayPalSubscriptions {
      */
     cancelSubscription = async (subscription: PayPalSubscription, reason?: string): Promise<void> => {
         try {
-            const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED"}
-
+            const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: new Date()}
             const options = {
                 url: `/v1/billing/subscriptions/${subscription.id}/cancel`,
                 method: "POST",
