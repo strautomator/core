@@ -168,8 +168,9 @@ export class StravaAPI {
     /**
      * Revoke the passed access token.
      * @param accessToken Access token to be deauthorized.
+     * @param userId ID of the token's owner.
      */
-    revokeToken = async (accessToken?: string): Promise<void> => {
+    revokeToken = async (accessToken: string, userId: string): Promise<void> => {
         try {
             const qs: any = {
                 access_token: accessToken
@@ -183,10 +184,9 @@ export class StravaAPI {
                 throw new Error("Invalid or empty token response")
             }
 
-            const maskedToken = `${accessToken.substring(0, 3)}***${accessToken.substring(accessToken.length - 1)}`
-            logger.info("Strava.revokeToken", `Token ${maskedToken} deauthorized`)
+            logger.info("Strava.revokeToken", `Token for user ${userId} deauthorized`)
         } catch (ex) {
-            logger.error("Strava.revokeToken", ex)
+            logger.error("Strava.revokeToken", `User ${userId}`, ex)
         }
     }
 
