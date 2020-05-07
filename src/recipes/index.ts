@@ -374,6 +374,11 @@ export class Recipes {
         const prop = condition.property
         const op = condition.operator
 
+        // Stop here if activity has no location data.
+        if (!activity[prop] || !!activity[prop].length) {
+            return false
+        }
+
         // Parse condition and activity's coordinates.
         const arr = condition.value.toString().split(",")
         const cLat = parseFloat(arr[0])
@@ -409,6 +414,11 @@ export class Recipes {
     private checkTimestamp = (activity: StravaActivity, condition: RecipeCondition): boolean => {
         const prop = condition.property
         const op = condition.operator
+
+        // Stop here if field has no data on it.
+        if (!activity[prop]) {
+            return false
+        }
 
         // Parse condition and activity's date.
         const value = parseInt(condition.value as string)
