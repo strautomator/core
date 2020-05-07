@@ -44,8 +44,14 @@ export interface StravaActivity {
     wattsAvg?: number
     /** Weighted average watts. */
     wattsWeighted?: number
+    /** Average heart rate. */
+    hrAvg?: number
+    /** Maximum heart rate. */
+    hrMax?: number
     /** Average cadence. */
     cadenceAvg?: number
+    /** Calories. */
+    calories?: number
     /** Average temperature. */
     temperature?: number
     /** Device name. */
@@ -99,7 +105,6 @@ export function toStravaActivity(data): StravaActivity {
         commute: data.commute,
         dateStart: data.start_date_local,
         dateEnd: data.start_date_local + data.elapsed_time,
-        distance: parseFloat((data.distance / 1000).toFixed(1)),
         elevationGain: data.total_elevation_gain,
         elevationMax: data.elev_high,
         totalTime: data.elapsed_time,
@@ -107,25 +112,31 @@ export function toStravaActivity(data): StravaActivity {
         locationStart: data.start_latlng,
         locationEnd: data.end_latlng,
         sufferScore: data.suffer_score,
-        speedAvg: data.average_speed,
-        speedMax: data.max_speed,
         wattsAvg: data.average_watts,
         wattsWeighted: data.weighted_average_watts,
+        hrAvg: data.average_heartrate,
+        hrMax: data.max_heartrate,
         cadenceAvg: data.average_cadence,
+        calories: data.calories,
         temperature: data.average_temp,
         device: data.device_name,
         updatedFields: []
     }
 
+    // Optional fields that need parsing.
+    if (data.distance) {
+        activity.distance = parseFloat((data.distance / 1000).toFixed(1))
+    }
+    if (data.average_speed) {
+        activity.speedAvg = parseFloat((data.average_speed * 3.6).toFixed(1))
+    }
+    if (data.max_speed) {
+        activity.speedMax = parseFloat((data.max_speed * 3.6).toFixed(1))
+    }
+
     // Set activity gear.
     if (data.gear) {
         activity.gear = toStravaGear(data.gear)
-    }
-
-    // Sometimes Strava returns a wrong (much lower) average speed, so make sure we have the correct value here.
-    const calculatedSpeed = activity.distance / (activity.movingTime / 3600)
-    if (calculatedSpeed > activity.speedAvg * 1.01) {
-        activity.speedAvg = parseFloat(calculatedSpeed.toFixed(2))
     }
 
     return activity
