@@ -22,7 +22,7 @@ build:
 # Update dependencies and set new version
 update:
 	-ncu -u
-	npm version $(shell date '+%y.%-V%u.%-d%H%M') --force --allow-same-version --no-git-tag-version
+	npm version $(shell date '+%y.%-V%u.1%-H%M') --force --allow-same-version --no-git-tag-version
 	npm install
 	$(TSC)
 

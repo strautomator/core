@@ -53,6 +53,8 @@ export interface UserPreferences {
     units?: "metric" | "imperial"
     /** Prefered weather provider. */
     weatherProvider?: "darksky" | "openweathermap" | "weatherbit"
+    /** Opt in to have activities shared on Strautomator's Twitter? */
+    twitterShare?: boolean
 }
 
 /**
