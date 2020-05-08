@@ -43,6 +43,8 @@ export interface UserData {
     recipeCount?: number
     /** Processed activities counter. */
     activityCount?: number
+    /** Temporarily disable processing user activities? */
+    suspended?: boolean
 }
 
 /**

@@ -154,6 +154,11 @@ export class StravaActivities {
                 return
             }
 
+            // User suspended? Stop here.
+            if (user.suspended) {
+                logger.info("Strava.processActivity", `User ${user.id} is suspended, won't process activity ${activityId}`)
+            }
+
             // Retry count defaults to 0.
             if (!retryCount) {
                 retryCount = 0
@@ -164,7 +169,6 @@ export class StravaActivities {
 
             // Get activity details from Strava.
             try {
-                
                 activity = await this.getActivity(user, activityId)
             } catch (ex) {
                 logger.error("Strava.processActivity", `Activity ${activityId} for user ${user.id} not found`)
