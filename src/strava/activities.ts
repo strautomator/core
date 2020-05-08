@@ -32,12 +32,13 @@ export class StravaActivities {
      * @param tokens Strava access tokens.
      * @param id The activity ID.
      */
-    getActivity = async (tokens: StravaTokens, id: number | string): Promise<StravaActivity> => {
+    getActivity = async (user: UserData, id: number | string): Promise<StravaActivity> => {
         logger.debug("Strava.getActivity", id)
 
         try {
+            const tokens = user.stravaTokens
             const data = await api.get(tokens, `activities/${id}?include_all_efforts=false`)
-            const activity = toStravaActivity(data)
+            const activity = toStravaActivity(data, user.profile.units)
 
             // Activity's gear was set?
             // First we try fetching gear details from cached database user.
@@ -163,7 +164,8 @@ export class StravaActivities {
 
             // Get activity details from Strava.
             try {
-                activity = await this.getActivity(user.stravaTokens, activityId)
+                
+                activity = await this.getActivity(user, activityId)
             } catch (ex) {
                 logger.error("Strava.processActivity", `Activity ${activityId} for user ${user.id} not found`)
                 return

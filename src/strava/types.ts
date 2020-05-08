@@ -94,7 +94,7 @@ export interface StravaProcessedActivity {
  * Helper to transform data from the API to a StravaActivity interface.
  * @param data Input data.
  */
-export function toStravaActivity(data): StravaActivity {
+export function toStravaActivity(data, units: string): StravaActivity {
     const activity: StravaActivity = {
         id: data.id,
         type: data.type,
@@ -120,20 +120,41 @@ export function toStravaActivity(data): StravaActivity {
         updatedFields: []
     }
 
-    // Optional fields that need parsing.
-    if (data.distance) {
-        activity.distance = parseFloat((data.distance / 1000).toFixed(1))
-    }
-    if (data.average_speed) {
-        activity.speedAvg = parseFloat((data.average_speed * 3.6).toFixed(1))
-    }
-    if (data.max_speed) {
-        activity.speedMax = parseFloat((data.max_speed * 3.6).toFixed(1))
-    }
-
     // Set activity gear.
     if (data.gear) {
         activity.gear = toStravaGear(data.gear)
+    }
+
+    // Convert values according to the specified units.
+    if (units == "imperial") {
+        const feet = 3.28084
+        const miles = 0.621371
+
+        if (data.total_elevation_gain) {
+            activity.elevationGain = Math.round(data.total_elevation_gain * feet)
+        }
+        if (data.elev_high) {
+            activity.elevationMax = Math.round(data.elev_high * feet)
+        }
+        if (data.distance) {
+            activity.distance = parseFloat(((data.distance / 1000) * miles).toFixed(1))
+        }
+        if (data.average_speed) {
+            activity.speedAvg = parseFloat((data.average_speed * 3.6 * miles).toFixed(1))
+        }
+        if (data.max_speed) {
+            activity.speedMax = parseFloat((data.max_speed * 3.6 * miles).toFixed(1))
+        }
+    } else {
+        if (data.distance) {
+            activity.distance = parseFloat((data.distance / 1000).toFixed(1))
+        }
+        if (data.average_speed) {
+            activity.speedAvg = parseFloat((data.average_speed * 3.6).toFixed(1))
+        }
+        if (data.max_speed) {
+            activity.speedMax = parseFloat((data.max_speed * 3.6).toFixed(1))
+        }
     }
 
     return activity
@@ -187,8 +208,8 @@ export interface StravaProfile {
     shoes?: StravaGear[]
     /** URL to the profile avatar. */
     urlAvatar?: string
-    /** Measurement preference (feet or meters). */
-    units?: string
+    /** Measurement preference. */
+    units?: "metric" | "imperial"
 }
 
 /**
@@ -203,13 +224,9 @@ export function toStravaProfile(data): StravaProfile {
         lastName: data.lastname,
         dateCreated: data.created_at,
         dateUpdated: data.updated_at,
+        units: data.measurement_preference == "feet" ? "imperial" : "metric",
         bikes: [],
         shoes: []
-    }
-
-    // Has measurement preference?
-    if (data.measurement_preference) {
-        profile.units = data.measurement_preference
     }
 
     // Has bikes?
