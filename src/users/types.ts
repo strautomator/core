@@ -49,8 +49,6 @@ export interface UserData {
  * User preferences.
  */
 export interface UserPreferences {
-    /** Temperature and distance units (metric or imperial). */
-    units?: "metric" | "imperial"
     /** Prefered weather provider. */
     weatherProvider?: "darksky" | "openweathermap" | "weatherbit"
     /** Opt in to have activities shared on Strautomator's Twitter? */

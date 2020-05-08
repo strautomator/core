@@ -187,6 +187,8 @@ export interface StravaProfile {
     shoes?: StravaGear[]
     /** URL to the profile avatar. */
     urlAvatar?: string
+    /** Measurement preference (feet or meters). */
+    units?: string
 }
 
 /**
@@ -203,6 +205,11 @@ export function toStravaProfile(data): StravaProfile {
         dateUpdated: data.updated_at,
         bikes: [],
         shoes: []
+    }
+
+    // Has measurement preference?
+    if (data.measurement_preference) {
+        profile.units = data.measurement_preference
     }
 
     // Has bikes?
