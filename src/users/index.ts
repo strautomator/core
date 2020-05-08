@@ -92,7 +92,7 @@ export class Users {
         const maskedToken = `${refreshToken.substring(0, 3)}***${refreshToken.substring(refreshToken.length - 1)}`
 
         try {
-            const user = await this.getByToken(refreshToken, true)
+            const user = await this.getByToken({refreshToken: refreshToken})
 
             // User not found?
             if (!user) {
@@ -195,17 +195,31 @@ export class Users {
 
     /**
      * Get the user for the passed access token.
-     * @param accessToken The user's plain-text access token.
-     * @param isBoolean Get by refresh token instead of access token.
+     * @param tokens The user's Strava access and refrsh token tokens.
      */
-    getByToken = async (accessToken: string, isRefresh?: boolean): Promise<UserData> => {
+    getByToken = async (tokens: StravaTokens): Promise<UserData> => {
         try {
-            const encryptedToken = encryptData(accessToken)
-            const field = isRefresh ? "stravaTokens.refreshToken" : "stravaTokens.accessToken"
-            const users = await database.search("users", [field, "==", encryptedToken])
+            let users: UserData[]
+            let encryptedToken: string
 
-            if (users.length > 0) {
-                return users[0]
+            // Access token was passed?
+            if (tokens.accessToken) {
+                encryptedToken = encryptData(tokens.accessToken)
+                users = await database.search("users", ["stravaTokens.accessToken", "==", encryptedToken])
+
+                if (users.length > 0) {
+                    return users[0]
+                }
+            }
+
+            // Refresh token was passed?
+            if (tokens.refreshToken) {
+                encryptedToken = encryptData(tokens.refreshToken)
+                users = await database.search("users", ["stravaTokens.refreshToken", "==", encryptedToken])
+
+                if (users.length > 0) {
+                    return users[0]
+                }
             }
 
             return null
