@@ -9,8 +9,8 @@ export const recipeOperatorList = {
         {value: "=", text: "is exactly", description: "Text matches the specified value"}
     ],
     location: [
-        {value: "=", text: "within 40m of", description: ""},
-        {value: "like", text: "within 500m of", description: ""}
+        {value: "=", text: "within 60m of", description: ""},
+        {value: "like", text: "within 650m of", description: ""}
     ],
     number: [
         {value: "=", text: "is exactly", description: "Number matches the specified value"},

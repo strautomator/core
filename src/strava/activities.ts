@@ -211,6 +211,7 @@ export class StravaActivities {
                 try {
                     await this.saveProcessedActivity(user, activity, recipeIds)
                     await users.setActivityCount(user)
+                    user.activityCount++
                 } catch (ex) {
                     logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, "Can't save to database", ex)
                 }

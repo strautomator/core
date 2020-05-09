@@ -387,11 +387,11 @@ export class Recipes {
         const activityLong = activity[prop][0]
         let radius
 
-        // When using "equals" use around 40m radius, and "like" use 500m radius.
+        // When using "equals" use around 60m radius, and "like" use 650m radius.
         if (op == RecipeOperator.Equal) {
-            radius = 0.00037
+            radius = 0.00055
         } else if (op == RecipeOperator.Like) {
-            radius = 0.00458
+            radius = 0.00592
         } else {
             throw new Error(`Invalid operator ${op} for ${prop}`)
         }
