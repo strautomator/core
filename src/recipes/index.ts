@@ -384,7 +384,7 @@ export class Recipes {
         const cLat = parseFloat(arr[0])
         const cLong = parseFloat(arr[1])
         const activityLat = activity[prop][0]
-        const activityLong = activity[prop][0]
+        const activityLong = activity[prop][1]
         let radius
 
         // When using "equals" use around 60m radius, and "like" use 650m radius.
@@ -397,7 +397,7 @@ export class Recipes {
         }
 
         // Check if activity start / end location matches the one defined on the condition.
-        const valid = activityLat < cLat + radius && activityLat > cLat - radius && activityLong < cLong + radius && activityLong > cLong - radius
+        const valid = activityLat <= cLat + radius && activityLat >= cLat - radius && activityLong <= cLong + radius && activityLong >= cLong - radius
 
         if (!valid) {
             logger.debug("Recipes.checkLocation", `Activity ${activity.id}`, condition, `Failed`)
