@@ -116,9 +116,8 @@ export class StravaActivities {
     setActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
         logger.debug("Strava.setActivity", activity.id)
 
+        const data: any = {}
         const logResult = []
-        const data = {}
-        let hasDescription = false
 
         try {
             if (!activity.updatedFields || activity.updatedFields.length == 0) {
@@ -126,25 +125,26 @@ export class StravaActivities {
                 return
             }
 
-            for (let field of activity.updatedFields) {
-                data[field] = activity[field]
-                logResult.push(`${field}=${activity[field]}`)
+            // Add link back to Strautomator on 20% of activities (at max, depending on user PRO status and settings).
+            if (!user.isPro && user.activityCount > 0 && user.activityCount % settings.plans.free.linksOn == 0) {
+                let text = _.sample(settings.plans.free.linksTexts)
 
-                if (field == "description") {
-                    hasDescription = true
+                // If activity has a description, add link on a new line.
+                if (activity.description && activity.description.length > 0) {
+                    text = `\n${text}`
+                }
+
+                // Update description with link-back and add to list of updated fields.
+                activity.description += `${text} ${settings.app.url}`
+                if (activity.updatedFields.indexOf("description") < 0) {
+                    activity.updatedFields.push("description")
                 }
             }
 
-            // Add link back to Strautomator on 20% of activities (at max, depending on user PRO status and settings).
-            if (!user.isPro && user.activityCount > 0 && user.activityCount % settings.plans.free.linksOn == 0) {
-                const link = settings.app.url.replace("https://", "").replace("/", "")
-                const text = _.sample(settings.plans.free.linksTexts)
-
-                activity.description += `\n${text} ${link}`
-
-                if (!hasDescription) {
-                    activity.updatedFields.push("description")
-                }
+            // Set fields to be updated on the activity.
+            for (let field of activity.updatedFields) {
+                data[field] = activity[field]
+                logResult.push(`${field}=${activity[field]}`)
             }
 
             await api.put(user.stravaTokens, `activities/${activity.id}`, null, data)

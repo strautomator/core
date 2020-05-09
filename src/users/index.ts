@@ -333,6 +333,7 @@ export class Users {
     setActivityCount = async (user: UserData): Promise<void> => {
         try {
             await database.increment("users", user.id, "activityCount")
+            logger.info("Users.setActivityCount", user.id, `Activity count: ${user.activityCount + 1}`)
         } catch (ex) {
             logger.error("Users.setActivityCount", user.id, user.displayName, ex)
         }

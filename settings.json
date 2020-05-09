@@ -121,7 +121,7 @@
             // Text of links to be added on the percentage above. The app.url will be
             // appended at the end of the text. String is added on a new line on the
             // activity description.
-            "linksTexts": ["Updated by", "Automated with", "With a little touch from"]
+            "linksTexts": ["Updated by", "Automated with", "With a little touch from", "Powered by", "Spiced up with"]
         },
         // Pro accounts are limited to 999 (unlimited) recipes and conditions.
         "pro": {
