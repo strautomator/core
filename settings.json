@@ -117,7 +117,11 @@
             "maxRecipes": 3,
             "maxConditions": 3,
             // Links on 1 out of 5 processed activities on free accounts.
-            "linksOn": 5
+            "linksOn": 5,
+            // Text of links to be added on the percentage above. The app.url will be
+            // appended at the end of the text. String is added on a new line on the
+            // activity description.
+            "linksTexts": ["Updated by", "Automated with", "With a little touch from"]
         },
         // Pro accounts are limited to 999 (unlimited) recipes and conditions.
         "pro": {

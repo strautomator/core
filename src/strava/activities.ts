@@ -110,14 +110,15 @@ export class StravaActivities {
 
     /**
      * Updates a single activity on Strava.
-     * @param tokens Strava access tokens.
+     * @param user Owner of the activity.
      * @param activity The ativity data.
      */
-    setActivity = async (tokens: StravaTokens, activity: StravaActivity): Promise<void> => {
+    setActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
         logger.debug("Strava.setActivity", activity.id)
 
         const logResult = []
         const data = {}
+        let hasDescription = false
 
         try {
             if (!activity.updatedFields || activity.updatedFields.length == 0) {
@@ -128,9 +129,25 @@ export class StravaActivities {
             for (let field of activity.updatedFields) {
                 data[field] = activity[field]
                 logResult.push(`${field}=${activity[field]}`)
+
+                if (field == "description") {
+                    hasDescription = true
+                }
             }
 
-            await api.put(tokens, `activities/${activity.id}`, null, data)
+            // Add link back to Strautomator on 20% of activities (at max, depending on user PRO status and settings).
+            if (!user.isPro && user.activityCount > 0 && user.activityCount % settings.plans.free.linksOn == 0) {
+                const link = settings.app.url.replace("https://", "").replace("/", "")
+                const text = _.sample(settings.plans.free.linksTexts)
+
+                activity.description += `\n${text} ${link}`
+
+                if (!hasDescription) {
+                    activity.updatedFields.push("description")
+                }
+            }
+
+            await api.put(user.stravaTokens, `activities/${activity.id}`, null, data)
 
             logger.info("Strava.setActivity", activity.id, logResult.join(", "))
         } catch (ex) {
@@ -189,7 +206,7 @@ export class StravaActivities {
                 logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, `Recipes: ${recipeIds.join(", ")}`)
 
                 try {
-                    await this.setActivity(user.stravaTokens, activity)
+                    await this.setActivity(user, activity)
                 } catch (ex) {
                     if (retryCount < settings.strava.api.maxRetry) {
                         const retryJob = async () => {
@@ -201,15 +218,16 @@ export class StravaActivities {
                     } else {
                         logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, ex)
 
-                        // Save failed activity to database.
-                        await this.saveProcessedActivity(user, activity, recipeIds, true)
+                        // Save failed activity to database. and stop here.
+                        await this.saveProcessedActivity(user, activity, recipeIds, false)
+                        return
                     }
                 }
 
                 // Save activity to the database and update count on user data.
                 // If failed, log error but this is not essential so won't throw.
                 try {
-                    await this.saveProcessedActivity(user, activity, recipeIds)
+                    await this.saveProcessedActivity(user, activity, recipeIds, true)
                     await users.setActivityCount(user)
                     user.activityCount++
                 } catch (ex) {
@@ -228,11 +246,12 @@ export class StravaActivities {
      * @param user The activity's owner.
      * @param activity The Strava activity details.
      * @param recipeIds Array of triggered recipe IDs.
-     * @param failed If true, mark activity as failed so it gets stored on a different collection.
+     * @param success If false, mark activity as failed so it gets stored on a different collection.
      */
-    saveProcessedActivity = async (user: UserData, activity: StravaActivity, recipeIds: string[], failed?: boolean): Promise<void> => {
+    saveProcessedActivity = async (user: UserData, activity: StravaActivity, recipeIds: string[], success: boolean): Promise<void> => {
         try {
             let recipeDetails = {}
+            let updatedFields = {}
 
             // Get recipe summary.
             for (let id of recipeIds) {
@@ -241,6 +260,11 @@ export class StravaActivities {
                     conditions: _.map(user.recipes[id].conditions, recipes.getConditionSummary),
                     actions: _.map(user.recipes[id].actions, recipes.getActionSummary)
                 }
+            }
+
+            // Get updated fields.
+            for (let field of activity.updatedFields) {
+                updatedFields[field] = activity[field]
             }
 
             // Data to be saved on the database.
@@ -253,11 +277,12 @@ export class StravaActivities {
                     id: user.id,
                     displayName: user.displayName
                 },
-                recipes: recipeDetails
+                recipes: recipeDetails,
+                updatedFields: updatedFields
             }
 
             // Get correct collection depending if activity failed to process.
-            const table = failed ? "activities-failed" : "activities"
+            const table = success ? "activities" : "activities-failed"
 
             // Save and return result.
             await database.set(table, data, activity.id.toString())

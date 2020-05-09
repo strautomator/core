@@ -90,6 +90,10 @@ export interface StravaProcessedActivity {
             actions: string[]
         }
     }
+    /** List of fields updated on the activity. */
+    updatedFields: {
+        [id: string]: any
+    }
 }
 
 /**
