@@ -2,6 +2,10 @@
 // Here are most of the Strautomator settings.
 
 {
+    "app": {
+        // Hashtag used on social media.
+        "hashtag": "#strautomator.com"
+    },
     // Bunq integration settings.
     "bunq": {
         "currency": "EUR"

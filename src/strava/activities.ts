@@ -136,8 +136,18 @@ export class StravaActivities {
 
                 // Update description with link-back and add to list of updated fields.
                 activity.description += `${text} ${settings.app.url}`
+                ∂
                 if (activity.updatedFields.indexOf("description") < 0) {
                     activity.updatedFields.push("description")
+                }
+            }
+
+            // User has set the hashtag preference? Add it to the name of the activity.
+            if (user.preferences && user.preferences.activityHashtag) {
+                activity.name += ` ${settings.app.hashtag}`
+
+                if (activity.updatedFields.indexOf("name") < 0) {
+                    activity.updatedFields.push("name")
                 }
             }
 

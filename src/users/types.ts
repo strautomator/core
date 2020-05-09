@@ -51,10 +51,12 @@ export interface UserData {
  * User preferences.
  */
 export interface UserPreferences {
-    /** Prefered weather provider. */
-    weatherProvider?: "darksky" | "openweathermap" | "weatherbit"
+    /** Add a #strautomator.com hashtag on name of processed activities? */
+    activityHashtag?: boolean
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
+    /** Prefered weather provider. */
+    weatherProvider?: "darksky" | "openweathermap" | "weatherbit"
 }
 
 /**
