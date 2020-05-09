@@ -57,13 +57,13 @@ export class Weather {
                 await darksky.init()
                 this.providers.push(darksky)
             }
-            if (!settings.weather.openweathermap.disabled) {
-                await openweathermap.init()
-                this.providers.push(openweathermap)
-            }
             if (!settings.weather.weatherbit.disabled) {
                 await weatherbit.init()
                 this.providers.push(weatherbit)
+            }
+            if (!settings.weather.openweathermap.disabled) {
+                await openweathermap.init()
+                this.providers.push(openweathermap)
             }
 
             cache.setup("weather", settings.weather.cacheDuration)
@@ -110,9 +110,9 @@ export class Weather {
             } catch (ex) {
                 logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider ${provider} failed, will try another`)
 
-                // Try again with a random provider, if the prefered failed.
+                // Try again with a different provider.
                 try {
-                    providerModule = _.sample(_.filter(this.providers, (p) => p.name != provider))
+                    providerModule = _.filter(this.providers, (p) => p.name != provider)[0]
                     weather = await providerModule.getActivityWeather(activity)
                 } catch (ex) {
                     logger.debug("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider ${provider} also failed, won't try again`)
