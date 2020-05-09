@@ -1,5 +1,7 @@
 // Strautomator Core: Strava types
 
+import moment = require("moment")
+
 /**
  * An activity on Strava.
  */
@@ -17,7 +19,7 @@ export interface StravaActivity {
     /** Start date and time, local time. */
     dateStart: Date
     /** End date and time, local time. */
-    dateEnd: Date
+    dateEnd?: Date
     /** Total distance in kilometers. */
     distance?: number
     /** Total elevation gain in meters. */
@@ -101,8 +103,7 @@ export function toStravaActivity(data, units: string): StravaActivity {
         name: data.name,
         description: data.description,
         commute: data.commute,
-        dateStart: data.start_date_local,
-        dateEnd: data.start_date_local + data.elapsed_time,
+        dateStart: new Date(data.start_date_local),
         elevationGain: data.total_elevation_gain,
         elevationMax: data.elev_high,
         totalTime: data.elapsed_time,
@@ -118,6 +119,11 @@ export function toStravaActivity(data, units: string): StravaActivity {
         temperature: data.average_temp,
         device: data.device_name,
         updatedFields: []
+    }
+
+    // Set end date.
+    if (data.elapsed_time) {
+        activity.dateEnd = moment(activity.dateStart).add(data.elapsed_time, "s").toDate()
     }
 
     // Set activity gear.

@@ -61,7 +61,7 @@ export class DarkSky implements WeatherProvider {
             }
 
             // Get weather report for end location.
-            if (!onlyStart) {
+            if (!onlyStart && activity.dateEnd) {
                 const queryEnd = getLatLongTime(activity.locationEnd, activity.dateEnd)
                 const endResult: any = await axios({url: baseUrl + queryEnd})
                 weather.end = this.toWeatherSummary(endResult.data)

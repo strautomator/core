@@ -83,6 +83,10 @@ export class Weather {
      */
     getActivityWeather = async (activity: StravaActivity, provider?: string): Promise<ActivityWeather> => {
         try {
+            if (!activity.locationEnd && !activity.locationEnd) {
+                throw new Error(`No location data for activity ${activity.id}`)
+            }
+
             let weather: ActivityWeather
 
             // Default provider is darksky.
