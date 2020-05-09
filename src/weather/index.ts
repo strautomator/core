@@ -120,6 +120,11 @@ export class Weather {
                 }
             }
 
+            // Make sure weather result is valid.
+            if (!weather) {
+                throw new Error(`Could not get weather data for activity ${activity.id}`)
+            }
+
             // Set proper weather unicode icon.
             this.processWeather(weather)
 
@@ -131,6 +136,7 @@ export class Weather {
             return weather
         } catch (ex) {
             logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, ex)
+            return null
         }
     }
 

@@ -243,8 +243,13 @@ export class Recipes {
             if (processedValue.indexOf("${weather.") >= 0) {
                 if (activity.locationStart && activity.locationStart.length > 0) {
                     const weatherSummary = await weather.getActivityWeather(activity)
-                    const weatherDetails = weatherSummary.start || weatherSummary.end
-                    processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
+
+                    if (weatherSummary) {
+                        const weatherDetails = weatherSummary.start || weatherSummary.end
+                        processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
+                    } else {
+                        processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
+                    }
                 } else {
                     logger.warn("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
                     processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
