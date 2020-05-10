@@ -136,7 +136,7 @@ export class StravaActivities {
 
                 // Update description with link-back and add to list of updated fields.
                 activity.description += `${text} ${settings.app.url}`
-                ∂
+
                 if (activity.updatedFields.indexOf("description") < 0) {
                     activity.updatedFields.push("description")
                 }
