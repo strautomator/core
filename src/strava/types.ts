@@ -44,6 +44,8 @@ export interface StravaActivity {
     wattsAvg?: number
     /** Weighted average watts. */
     wattsWeighted?: number
+    /** Watts comes from a power meter? */
+    hasPowerMeter?: boolean
     /** Average heart rate. */
     hrAvg?: number
     /** Maximum heart rate. */
@@ -116,6 +118,7 @@ export function toStravaActivity(data, units: string): StravaActivity {
         locationEnd: data.end_latlng,
         wattsAvg: data.average_watts,
         wattsWeighted: data.weighted_average_watts,
+        hasPowerMeter: data.device_watts,
         hrAvg: data.average_heartrate,
         hrMax: data.max_heartrate,
         cadenceAvg: data.average_cadence,
