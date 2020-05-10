@@ -1,5 +1,7 @@
 // Strautomator Core: Recipe types
 
+import {StravaSport} from "../strava/types"
+
 /**
  * User's recipe definition.
  */
@@ -12,6 +14,8 @@ export interface RecipeData {
     conditions: RecipeCondition[]
     /** List of actions to be executed. */
     actions: RecipeAction[]
+    /** Default recipe for a specific sport (applies to all incoming activities). */
+    defaultFor?: StravaSport
 }
 
 /**

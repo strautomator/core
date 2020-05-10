@@ -182,6 +182,10 @@ export class StravaActivities {
         logger.debug("Strava.processActivity", user.id, activityId, retryCount)
 
         try {
+            let activity: StravaActivity
+            let recipe: RecipeData
+            let recipeIds = []
+
             if (Object.keys(user.recipes).length == 0) {
                 logger.info("Strava.processActivity", `User ${user.id} has no recipes, won't process activity ${activityId}`)
                 return
@@ -197,9 +201,6 @@ export class StravaActivities {
                 retryCount = 0
             }
 
-            let activity: StravaActivity
-            let recipeIds = []
-
             // Get activity details from Strava.
             try {
                 activity = await this.getActivity(user, activityId)
@@ -208,10 +209,11 @@ export class StravaActivities {
                 return
             }
 
-            let recipe: RecipeData
+            // Get recipes, having the defaults first.
+            const recipes = _.sortBy(Object.values(user.recipes), (r: RecipeData) => r.defaultFor || "")
 
             // Evaluate each of user's recipes, and set update to true if something was processed.
-            for (recipe of Object.values(user.recipes)) {
+            for (recipe of recipes) {
                 if (await recipes.evaluate(user, recipe.id, activity)) {
                     recipeIds.push(recipe.id)
                 }

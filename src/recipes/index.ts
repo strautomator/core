@@ -58,37 +58,40 @@ export class Recipes {
                 throw new Error(`Recipe title is too long (max length is ${settings.recipes.maxLength.title})`)
             }
 
-            if (!recipe.conditions || !_.isArray(recipe.conditions) || recipe.conditions.length < 0) {
-                throw new Error("Missing recipe conditions")
-            }
-
             if (!recipe.actions || !_.isArray(recipe.actions) || recipe.actions.length < 0) {
                 throw new Error("Missing recipe actions")
             }
 
-            // Parse recipe conditions.
-            for (let condition of recipe.conditions) {
-                if (!condition.property) {
-                    throw new Error(`Missing condition property`)
-                }
-                if (!Object.values(RecipeOperator).includes(condition.operator)) {
-                    throw new Error(`Invalid condition operator: ${condition.operator}`)
-                }
-                if (condition.value === null || condition.value === "") {
-                    throw new Error(`Missing condition value`)
-                }
-                if (_.isString(condition.value) && (condition.value as string).length > settings.recipes.maxLength.conditionValue) {
-                    throw new Error(`Condition value is too long (max length is ${settings.recipes.maxLength.conditionValue})`)
-                }
-                if (condition.friendlyValue && _.isString(condition.friendlyValue) && (condition.friendlyValue as string).length > settings.recipes.maxLength.conditionValue) {
-                    throw new Error(`Condition friendly value is too long (max length is ${settings.recipes.maxLength.conditionValue})`)
+            // Non-default recipes must have conditions defined.
+            if (!recipe.defaultFor) {
+                if (!recipe.conditions || !_.isArray(recipe.conditions) || recipe.conditions.length < 0) {
+                    throw new Error("Missing recipe conditions")
                 }
 
-                // Check for non-schema fields.
-                const keys = Object.keys(condition)
-                for (let key of keys) {
-                    if (["property", "operator", "value", "friendlyValue"].indexOf(key) < 0) {
-                        throw new Error(`Invalid field: ${key}`)
+                // Parse recipe conditions.
+                for (let condition of recipe.conditions) {
+                    if (!condition.property) {
+                        throw new Error(`Missing condition property`)
+                    }
+                    if (!Object.values(RecipeOperator).includes(condition.operator)) {
+                        throw new Error(`Invalid condition operator: ${condition.operator}`)
+                    }
+                    if (condition.value === null || condition.value === "") {
+                        throw new Error(`Missing condition value`)
+                    }
+                    if (_.isString(condition.value) && (condition.value as string).length > settings.recipes.maxLength.conditionValue) {
+                        throw new Error(`Condition value is too long (max length is ${settings.recipes.maxLength.conditionValue})`)
+                    }
+                    if (condition.friendlyValue && _.isString(condition.friendlyValue) && (condition.friendlyValue as string).length > settings.recipes.maxLength.conditionValue) {
+                        throw new Error(`Condition friendly value is too long (max length is ${settings.recipes.maxLength.conditionValue})`)
+                    }
+
+                    // Check for non-schema fields.
+                    const keys = Object.keys(condition)
+                    for (let key of keys) {
+                        if (["property", "operator", "value", "friendlyValue"].indexOf(key) < 0) {
+                            throw new Error(`Invalid field: ${key}`)
+                        }
                     }
                 }
             }
@@ -135,48 +138,57 @@ export class Recipes {
             throw new Error(`Recipe ${id} not found`)
         }
 
-        // Iterate conditions.
-        for (let c of recipe.conditions) {
-            try {
-                const prop = c.property.toLowerCase()
-
-                // Location condition.
-                if (prop.indexOf("location") >= 0) {
-                    if (!this.checkLocation(activity, c)) {
-                        return false
-                    }
-                }
-
-                // Day of week condition.
-                else if (prop.indexOf("weekday") >= 0) {
-                    if (!this.checkWeekday(activity, c)) {
-                        return false
-                    }
-                }
-
-                // Time based condition.
-                else if (prop.indexOf("date") >= 0) {
-                    if (!this.checkTimestamp(activity, c)) {
-                        return false
-                    }
-                }
-
-                // Number condition.
-                else if (_.isNumber(activity[c.property])) {
-                    if (!this.checkNumber(activity, c)) {
-                        return false
-                    }
-                }
-
-                // Text condition.
-                else {
-                    if (!this.checkText(activity, c)) {
-                        return false
-                    }
-                }
-            } catch (ex) {
-                logger.error("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, Object.values(c).join(", "), ex)
+        // If recipe is default for a sport, check the type.
+        if (recipe.defaultFor) {
+            if (activity.type != recipe.defaultFor) {
                 return false
+            }
+        }
+
+        // Otherwise iterate conditions and evaluate each one.
+        else {
+            for (let c of recipe.conditions) {
+                try {
+                    const prop = c.property.toLowerCase()
+
+                    // Location condition.
+                    if (prop.indexOf("location") >= 0) {
+                        if (!this.checkLocation(activity, c)) {
+                            return false
+                        }
+                    }
+
+                    // Day of week condition.
+                    else if (prop.indexOf("weekday") >= 0) {
+                        if (!this.checkWeekday(activity, c)) {
+                            return false
+                        }
+                    }
+
+                    // Time based condition.
+                    else if (prop.indexOf("date") >= 0) {
+                        if (!this.checkTimestamp(activity, c)) {
+                            return false
+                        }
+                    }
+
+                    // Number condition.
+                    else if (_.isNumber(activity[c.property])) {
+                        if (!this.checkNumber(activity, c)) {
+                            return false
+                        }
+                    }
+
+                    // Text condition.
+                    else {
+                        if (!this.checkText(activity, c)) {
+                            return false
+                        }
+                    }
+                } catch (ex) {
+                    logger.error("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, Object.values(c).join(", "), ex)
+                    return false
+                }
             }
         }
 
