@@ -118,6 +118,10 @@ export class StravaActivities {
 
         const data: any = {}
         const logResult = []
+        const useHashtag = user.preferences && user.preferences.activityHashtag
+
+        // Add link back to Strautomator on 20% of activities (depending on user PRO status and settings).
+        const shouldAddLink = user.activityCount > 0 && user.activityCount % settings.plans.free.linksOn == 0
 
         try {
             if (!activity.updatedFields || activity.updatedFields.length == 0) {
@@ -125,29 +129,31 @@ export class StravaActivities {
                 return
             }
 
-            // Add link back to Strautomator on 20% of activities (at max, depending on user PRO status and settings).
-            if (!user.isPro && user.activityCount > 0 && user.activityCount % settings.plans.free.linksOn == 0) {
-                let text = _.sample(settings.plans.free.linksTexts)
+            // Time to add a link on activity description?
+            if (shouldAddLink) {
+                if (!user.isPro && !useHashtag) {
+                    let text = _.sample(settings.plans.free.linksTexts)
 
-                // If activity has a description, add link on a new line.
-                if (activity.description && activity.description.length > 0) {
-                    text = `\n${text}`
+                    // If activity has a description, add link on a new line.
+                    if (activity.description && activity.description.length > 0) {
+                        text = `\n${text}`
+                    }
+
+                    // Update description with link-back and add to list of updated fields.
+                    activity.description += `${text} ${settings.app.url}`
+
+                    if (activity.updatedFields.indexOf("description") < 0) {
+                        activity.updatedFields.push("description")
+                    }
                 }
 
-                // Update description with link-back and add to list of updated fields.
-                activity.description += `${text} ${settings.app.url}`
+                // User has set the hashtag preference? Add it to the name of the activity instead of link on description.
+                else if (useHashtag) {
+                    activity.name += ` ${settings.app.hashtag}`
 
-                if (activity.updatedFields.indexOf("description") < 0) {
-                    activity.updatedFields.push("description")
-                }
-            }
-
-            // User has set the hashtag preference? Add it to the name of the activity.
-            if (user.preferences && user.preferences.activityHashtag) {
-                activity.name += ` ${settings.app.hashtag}`
-
-                if (activity.updatedFields.indexOf("name") < 0) {
-                    activity.updatedFields.push("name")
+                    if (activity.updatedFields.indexOf("name") < 0) {
+                        activity.updatedFields.push("name")
+                    }
                 }
             }
 
