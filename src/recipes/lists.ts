@@ -30,7 +30,6 @@ export const recipeOperatorList = {
  * List of possible recipe properties, with descriptions and operators.
  */
 export const recipePropertyList = [
-    {value: "name", text: "Name", type: "text", operators: recipeOperatorList.text},
     {value: "distance", text: "Distance", type: "number", operators: recipeOperatorList.number, suffix: "km", impSuffix: "mi"},
     {value: "speedAvg", text: "Average speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
     {value: "speedMax", text: "Max speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
@@ -46,6 +45,7 @@ export const recipePropertyList = [
     {value: "hrAvg", text: "Average heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm"},
     {value: "hrMax", text: "Max heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm"},
     {value: "calories", text: "Calories", type: "number", operators: recipeOperatorList.number, suffix: "kcal"},
+    {value: "name", text: "Name", type: "text", operators: recipeOperatorList.text},
     {value: "device", text: "Device name", type: "text", operators: recipeOperatorList.text}
 ]
 

@@ -141,6 +141,12 @@
         }
     },
     "recipes": {
+        // Rename activity names on specific days (if user has opted-in).
+        "calendar": {
+            "01-01": ["Happy new year!"],
+            "05-01": ["Working hard on Worker's Day!"],
+            "12-25": ["Ho ho ho!", "Merry xmas"]
+        },
         // Max length for specific properties.
         "maxLength": {
             "title": 40,
