@@ -210,10 +210,10 @@ export class StravaActivities {
             }
 
             // Get recipes, having the defaults first.
-            const recipes = _.sortBy(Object.values(user.recipes), ["defaultFor"])
+            const sortedRecipes = _.sortBy(Object.values(user.recipes), ["defaultFor"])
 
             // Evaluate each of user's recipes, and set update to true if something was processed.
-            for (recipe of recipes) {
+            for (recipe of sortedRecipes) {
                 if (await recipes.evaluate(user, recipe.id, activity)) {
                     recipeIds.push(recipe.id)
                 }
