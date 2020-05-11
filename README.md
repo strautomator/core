@@ -41,7 +41,7 @@ All the necessary commands to update, build and deploy the Strautomator Core are
 
     $ make update
 
-Or to do a "dry run" and test the startup routing with the current settings:
+Or to do a "dry run" and test the startup routine with the current settings:
 
     $ make dry-run
 
