@@ -2,7 +2,7 @@
 
 This is the core module of Strautomator, and contains most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web).
 
-**Please note that Strautomator is still in beta! Its internals, API specs and general settings will likely change a lot before we hit a stable release.**
+**Please note that Strautomator is still in beta! Its internals, API specs and general settings could likely change before we hit a stable release.**
 
 ### Settings
 
@@ -20,20 +20,32 @@ If you want to download settings from Google Cloud Storage, you must define the 
 
 Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same naming convention.
 
-### TypeScript vs Javascript
-
-Whenever possible we'll use TypeScript to write the core logic of Strautomator. In other words, **always**. The TypeScript compiler is included as a package dependecy and compiled to JS right after install.
-
 ### Database
 
 By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, such as MongoDB or DynamoDB.
 
-The following tables / collections are used:
+The following collections are used:
 
 - **users** registered user details
 - **activities** summary of activities processed
 - **activities-failed** summary of failed processed activities
-- **subscriptions** PRO accounts subscription data
+- **recipe-stats** automation recipe stats
+- **subscriptions** donations / subscriptions data
+
+Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
+
+### 3rd party integrations
+
+You'll have to register an account and get the necessary credentials for the 3rd party integrations:
+
+- Google Cloud Platform
+- Strava API
+- PayPal API
+- Dark Sky (optional)
+- OpenWeatherMap (optional)
+- Weatherbit (optional)
+
+If you need help getting any of those, or have questions, just open a [new issue](https://github.com/strautomator/core/issues/new) and I'll be glad to help.
 
 ### Make
 
@@ -46,4 +58,3 @@ Or to do a "dry run" and test the startup routine with the current settings:
     $ make dry-run
 
 Please have a look on the provided Makefile for all available commands.
-
