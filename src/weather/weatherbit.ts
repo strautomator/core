@@ -19,6 +19,8 @@ export class Weatherbit implements WeatherProvider {
 
     /** Weather provider name for Weatherbit. */
     name: string = "weatherbit"
+    /** Weatherbit provider. */
+    title: string = "Weatherbit"
 
     // INIT
     // --------------------------------------------------------------------------

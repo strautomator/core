@@ -19,6 +19,8 @@ export class DarkSky implements WeatherProvider {
 
     /** Weather provider name for Dark Sky. */
     name: string = "darksky"
+    /** Dark Sky provider. */
+    title: string = "Dark Sky"
 
     // INIT
     // --------------------------------------------------------------------------

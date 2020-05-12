@@ -18,6 +18,8 @@ export class OpenWeatherMap implements WeatherProvider {
 
     /** Weather provider name for OpenWeatherMap. */
     name: string = "openweathermap"
+    /** OpenWeatherMap provider. */
+    title: string = "OpenWeatherMap"
 
     // INIT
     // --------------------------------------------------------------------------
