@@ -55,7 +55,7 @@ export class ClimaCell implements WeatherProvider {
             }
 
             const fields = "temp,humidity,wind_speed,wind_direction,baro_pressure,precipitation,precipitation_type,cloud_cover,weather_code"
-            const baseQuery = `timestep=10&unit_system=si&fields=${fields}&apikey=${settings.weather.climacell.secret}&`
+            const baseQuery = `timestep=30&unit_system=si&fields=${fields}&apikey=${settings.weather.climacell.secret}&`
             const baseUrl = `${settings.weather.climacell.baseUrl}historical/climacell?${baseQuery}`
 
             // Get weather report for start location.
@@ -84,6 +84,8 @@ export class ClimaCell implements WeatherProvider {
      * @param data Data from ClimaCell.
      */
     private toWeatherSummary = (data): WeatherSummary => {
+        data = data[0]
+
         const precipType = data.precipitation_type ? data.precipitation_type.value : ""
 
         return {
