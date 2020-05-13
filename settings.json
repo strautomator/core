@@ -190,6 +190,13 @@
     "weather": {
         // Cache weather results for 20 minutes. Value set in seconds.
         "cacheDuration": 1200,
+        "climacell": {
+            // Base URL to the ClimaCell weather API.
+            "baseUrl": "https://api.climacell.co/v3/weather/",
+            // The ClimaCell API secret MUST be set via secret settings or
+            // via the SMU_climacell_api_secret environment variable.
+            "secret": null
+        },
         "darksky": {
             // Base URL to the Dark Sky weather API.
             "baseUrl": "https://api.darksky.net/forecast/",

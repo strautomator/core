@@ -2,6 +2,7 @@
 
 import {ActivityWeather, MoonPhase, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
+import climacell from "./climacell"
 import darksky from "./darksky"
 import openweathermap from "./openweathermap"
 import weatherbit from "./weatherbit"
@@ -53,6 +54,10 @@ export class Weather {
      */
     init = async (): Promise<void> => {
         try {
+            if (!settings.weather.climacell.disabled) {
+                await climacell.init()
+                this.providers.push(climacell)
+            }
             if (!settings.weather.darksky.disabled) {
                 await darksky.init()
                 this.providers.push(darksky)
