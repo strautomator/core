@@ -1,6 +1,6 @@
 // Strautomator Core: Weather - ClimaCell
 
-import {ActivityWeather, MoonPhase, WeatherProvider, WeatherSummary} from "./types"
+import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
 import logger = require("anyhow")
 import moment = require("moment")
