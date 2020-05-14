@@ -74,12 +74,6 @@ export class Weather {
 
             cache.setup("weather", settings.weather.cacheDuration)
             logger.info("Weather.init", `Loaded ${this.providers.length} providers`)
-            const moment = require("moment")
-            const dateStart = moment().subtract(6, "h").toDate()
-            const dateEnd = new Date()
-            const a = {id: 123, locationStart: [51, 13], locationEnd: [50, 12], dateStart: dateStart, dateEnd: dateEnd}
-            const test = await this.getActivityWeather(a as StravaActivity, "weatherapi")
-            console.dir(test)
         } catch (ex) {
             logger.error("Weather.init", ex)
         }
