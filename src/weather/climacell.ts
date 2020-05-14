@@ -50,26 +50,26 @@ export class ClimaCell implements WeatherProvider {
         try {
             const getLatLongTime = (location: number[], date: Date) => {
                 const startTime = moment(date).toISOString()
-                const endTime = moment(date).add(30, "m").toISOString()
-                return `lat=${location[0]}&lon=${location[0]}&start_time=${startTime}&end_time=${endTime}`
+                const endTime = moment(date).add(2, "h").toISOString()
+                return `lat=${location[0]}&lon=${location[1]}&start_time=${startTime}&end_time=${endTime}`
             }
 
-            const fields = "temp,humidity,wind_speed,wind_direction,baro_pressure,precipitation,precipitation_type,cloud_cover,weather_code"
-            const baseQuery = `timestep=30&unit_system=si&fields=${fields}&apikey=${settings.weather.climacell.secret}&`
-            const baseUrl = `${settings.weather.climacell.baseUrl}historical/climacell?${baseQuery}`
+            const fields = "temp,humidity,wind_speed,wind_direction,baro_pressure,precipitation,precipitation_type,cloud_cover,weather_groups"
+            const baseQuery = `unit_system=si&fields=${fields}&apikey=${settings.weather.climacell.secret}&`
+            const baseUrl = `${settings.weather.climacell.baseUrl}historical/station?${baseQuery}`
 
             // Get weather report for start location.
             const queryStart = getLatLongTime(activity.locationStart, activity.dateStart)
             const startResult: any = await axios({url: baseUrl + queryStart})
             const weather: ActivityWeather = {
-                start: this.toWeatherSummary(startResult.data)
+                start: this.toWeatherSummary(startResult.data, activity.dateStart)
             }
 
             // Get weather report for end location.
             if (!onlyStart && activity.dateEnd) {
                 const queryEnd = getLatLongTime(activity.locationEnd, activity.dateEnd)
                 const endResult: any = await axios({url: baseUrl + queryEnd})
-                weather.end = this.toWeatherSummary(endResult.data)
+                weather.end = this.toWeatherSummary(endResult.data, activity.dateEnd)
             }
 
             return weather
@@ -83,16 +83,36 @@ export class ClimaCell implements WeatherProvider {
      * Transform data from the ClimaCell API to a WeatherSummary.
      * @param data Data from ClimaCell.
      */
-    private toWeatherSummary = (data): WeatherSummary => {
+    private toWeatherSummary = (data: any, date: Date): WeatherSummary => {
         data = data[0]
 
-        const precipType = data.precipitation_type ? data.precipitation_type.value : ""
+        const hour = date.getHours()
+        const isDaylight = hour > 6 && hour < 19
+        const cloudCover = data.cloud_cover.value
+
+        let precipType = data.precipitation_type ? data.precipitation_type.value : null
+        let iconText: string
+
+        // No precipitation? Set it to null.
+        if (precipType == "none") {
+            precipType = null
+        }
+
+        if (cloudCover < 10) {
+            iconText = isDaylight ? "clear-day" : "clear-night"
+        } else if (cloudCover < 50) {
+            iconText = isDaylight ? "partly-cloudy-day" : "partly-cloudy-night"
+        } else if (precipType) {
+            iconText = precipType
+        } else {
+            iconText = "cloudy"
+        }
 
         return {
-            summary: data.summary,
-            iconText: data.weather_code.value,
+            provider: this.name,
+            iconText: iconText,
             temperature: data.temp.value.toFixed(0) + "°" + data.temp.units,
-            humidity: data.humidity.value.toFixed(0) + data.humidity.units,
+            humidity: data.humidity.value ? data.humidity.value.toFixed(0) + data.humidity.units : null,
             pressure: data.baro_pressure.value.toFixed(0) + data.baro_pressure.units,
             windSpeed: data.wind_speed.value.toFixed(1) + data.wind_speed.units,
             windBearing: data.wind_direction.value,

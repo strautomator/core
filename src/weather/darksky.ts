@@ -1,6 +1,6 @@
 // Strautomator Core: Weather - Dark Sky
 
-import {ActivityWeather, MoonPhase, WeatherProvider, WeatherSummary} from "./types"
+import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
 import logger = require("anyhow")
 import moment = require("moment")
@@ -81,17 +81,8 @@ export class DarkSky implements WeatherProvider {
      * @param data Data from Dark Sky.
      */
     private toWeatherSummary = (data): WeatherSummary => {
-        let moon: MoonPhase
-
-        if (data.currently.moonPhase > 0.4 && data.currently.moonPhase < 0.6) {
-            moon = MoonPhase.Full
-        } else if (data.currently.moonPhase < 0.1 || data.currently.moonPhase > 0.9) {
-            moon = MoonPhase.New
-        } else {
-            moon = MoonPhase.Quarter
-        }
-
         return {
+            provider: this.name,
             summary: data.currently.summary,
             iconText: data.currently.icon,
             temperature: data.currently.temperature.toFixed(0) + "°C",
@@ -99,8 +90,7 @@ export class DarkSky implements WeatherProvider {
             pressure: data.currently.pressure.toFixed(0) + "hPa",
             windSpeed: data.currently.windSpeed.toFixed(1) + "m/s",
             windBearing: data.currently.windBearing,
-            precipType: data.currently.precipType,
-            moon: moon
+            precipType: data.currently.precipType
         }
     }
 }

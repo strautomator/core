@@ -31,6 +31,7 @@ export class Weather {
      */
     get emptySummary() {
         const emptySummary: WeatherSummary = {
+            provider: "",
             summary: "",
             icon: "",
             iconText: "",
@@ -73,6 +74,12 @@ export class Weather {
 
             cache.setup("weather", settings.weather.cacheDuration)
             logger.info("Weather.init", `Loaded ${this.providers.length} providers`)
+            const moment = require("moment")
+            const dateStart = moment().subtract(6, "h").toDate()
+            const dateEnd = new Date()
+            const a = {id: 123, locationStart: [51, 13], locationEnd: [50, 12], dateStart: dateStart, dateEnd: dateEnd}
+            const test = await this.getActivityWeather(a as StravaActivity, "weatherapi")
+            console.dir(test)
         } catch (ex) {
             logger.error("Weather.init", ex)
         }
@@ -117,7 +124,8 @@ export class Weather {
 
                 // Try again with a different provider.
                 try {
-                    providerModule = _.filter(this.providers, (p) => p.name != provider)[0]
+                    providerModule = _.reject(this.providers, {name: provider})[0]
+                    provider = providerModule.name
                     weather = await providerModule.getActivityWeather(activity)
                 } catch (ex) {
                     logger.debug("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider ${provider} also failed, won't try again`)
@@ -128,6 +136,14 @@ export class Weather {
             // Make sure weather result is valid.
             if (!weather) {
                 throw new Error(`Could not get weather data for activity ${activity.id}`)
+            }
+
+            // Get moon phases.
+            if (weather.start) {
+                weather.start.moon = this.getMoonPhase(activity.dateStart)
+            }
+            if (weather.end) {
+                weather.end.moon = this.getMoonPhase(activity.dateEnd)
             }
 
             // Set proper weather unicode icon.
@@ -149,6 +165,43 @@ export class Weather {
     // --------------------------------------------------------------------------
 
     /**
+     * Get the moon phase for the specified date.
+     * @param date Date to get the moon phase for.
+     */
+    getMoonPhase = (date: Date): MoonPhase => {
+        let year = date.getFullYear()
+        let month = date.getMonth() + 1
+        let day = date.getDate()
+        let zone = date.getTimezoneOffset() / 1440
+        let phase
+
+        if (month < 3) {
+            year--
+            month += 12
+        }
+
+        let c = 365.25 * year
+        let e = 30.6 * month
+
+        // Get total elapsed days and divide by moon cycle.
+        let jd = c + e + day + zone - 694039.09
+        jd /= 29.5305882
+
+        // Get only the integer part of the result and leave fractional part out.
+        phase = parseInt(jd.toString())
+        jd -= phase
+
+        // Here's the actual moon phase. From 0 (new moon) to 4 (full moon) to 7 (waning crescent).
+        phase = Math.round(jd * 8)
+        if (phase >= 8) phase = 0
+
+        // Return  moon phase.
+        if (phase == 0) return MoonPhase.New
+        if (phase == 4) return MoonPhase.Full
+        return MoonPhase.Quarter
+    }
+
+    /**
      * Process weather result to get correct icon, remove invalid fields etc..
      * @param weather The activity weather details.
      */
@@ -156,6 +209,11 @@ export class Weather {
         for (let data of [weather.start, weather.end]) {
             if (data) {
                 let unicode: string
+
+                // Replace spaces with dashes.
+                if (data.iconText) {
+                    data.iconText = data.iconText.replace(/ /g, "-")
+                }
 
                 // Property select correct weather icon.
                 switch (data.iconText) {
@@ -172,6 +230,8 @@ export class Weather {
                         unicode = "2744"
                         break
                     case "sleet":
+                    case "freezing-rain":
+                    case "ice-pellets":
                         unicode = "1F328"
                         break
                     case "wind":
@@ -208,6 +268,18 @@ export class Weather {
                 // No precipitation?
                 if (!data.precipType) {
                     data.precipType = null
+                }
+
+                // No summary yet? Set one now.
+                if (!data.summary) {
+                    const arr = data.iconText.split("-")
+
+                    let summary = arr[0]
+                    if (arr.length > 1) {
+                        summary += " " + arr[1]
+                    }
+
+                    data.summary = summary
                 }
             }
         }

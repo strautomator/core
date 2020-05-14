@@ -56,7 +56,9 @@ export interface UserPreferences {
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
     /** Prefered weather provider. */
-    weatherProvider?: "darksky" | "openweathermap" | "weatherbit"
+    weatherProvider?: "climacell" | "darksky" | "openweathermap" | "weatherbit"
+    /** Weather temperature unit. */
+    weatherUnit?: "c" | "f"
 }
 
 /**

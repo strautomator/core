@@ -16,8 +16,10 @@ export interface ActivityWeather {
  * Weather summary. Most values are strings appended with their units / scales.
  */
 export interface WeatherSummary {
+    /** Provider where this summary was taken from. */
+    provider: string
     /** Short weather description. */
-    summary: string
+    summary?: string
     /** Weather unicode icon. */
     icon?: string
     /** Weather icon text. */
@@ -51,8 +53,10 @@ export enum MoonPhase {
  * Weather providers.
  */
 export interface WeatherProvider {
-    /** Name of the provider. */
+    /** Name of the provider (lowercased). */
     name: string
+    /** Title of the provider (shown to users). */
+    title: string
     /** Main implementation to get an activity weather. */
     getActivityWeather: Function
 }

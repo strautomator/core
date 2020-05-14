@@ -130,6 +130,7 @@ export class Weatherbit implements WeatherProvider {
         }
 
         return {
+            provider: this.name,
             summary: data.weather.description,
             iconText: iconText,
             temperature: data.temp.toFixed(0) + "°C",

@@ -104,6 +104,7 @@ export class OpenWeatherMap implements WeatherProvider {
         }
 
         return {
+            provider: this.name,
             summary: data.weather[0].description,
             iconText: iconText,
             temperature: data.main.temp.toFixed(0) + "°C",
