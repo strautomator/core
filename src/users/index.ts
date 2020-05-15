@@ -28,9 +28,9 @@ export class Users {
      * Init the Users manager.
      */
     init = async (): Promise<void> => {
-        if (!settings.users.idleDays || settings.users.idleDays < 2) {
-            logger.warn("Users.init", "idleDays setting must be at least 2, force setting it to 2 now")
-            settings.users.idleDays = 2
+        if (!settings.users.idleDays || settings.users.idleDays < 7) {
+            logger.warn("Users.init", "idleDays setting must be at least 7, force setting it to 7 now")
+            settings.users.idleDays = 7
         }
 
         // PayPal events.

@@ -213,14 +213,14 @@
         },
         "weatherapi": {
             // Base URL to the WeatherAPI.com.
-            "baseUrl": "https://api.weatherapi.com/v1/history.json",
+            "baseUrl": "https://api.weatherapi.com/v1/",
             // The WeatherAPI.com secret MUST be set via secret settings or
             // via the SMU_weather_weatherapi_secret environment variable.
             "secret": null
         },
         "weatherbit": {
             // Base URL to the Weatherbit API.
-            "baseUrl": "https://api.weatherbit.io/v2.0/history/hourly",
+            "baseUrl": "https://api.weatherbit.io/v2.0/current",
             // The Weatherbit API secret MUST be set via secret settings or
             // via the SMU_weather_weatherbit_secret environment variable.
             "secret": null

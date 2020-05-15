@@ -1,3 +1,5 @@
+MOCHA:= ./node_modules/.bin/mocha
+ISTANBUL:= ./node_modules/.bin/nyc
 TYPEDOC:= ./node_modules/.bin/typedoc
 TSC:= ./node_modules/.bin/tsc
 
@@ -31,4 +33,9 @@ dry-run:
 	$(TSC)
 	node dry-run.js
 
-.PHONY: docs
+# Run basic tests.
+test:
+	$(TSC)
+	@NODE_ENV=test $(MOCHA) --trace-warnings --exit -u tdd -R spec
+
+.PHONY: docs test

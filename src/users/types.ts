@@ -53,10 +53,12 @@ export interface UserData {
 export interface UserPreferences {
     /** Add a #strautomator.com hashtag on name of processed activities? */
     activityHashtag?: boolean
+    /** Language used on automations. Lowercased 2 letter country code. */
+    language?: string
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
     /** Prefered weather provider. */
-    weatherProvider?: "climacell" | "darksky" | "openweathermap" | "weatherbit"
+    weatherProvider?: "climacell" | "darksky" | "openweathermap" | "weatherbit" | "weatherapi"
     /** Weather temperature unit. */
     weatherUnit?: "c" | "f"
 }
