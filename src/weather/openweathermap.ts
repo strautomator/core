@@ -2,12 +2,14 @@
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
+import {UserPreferences} from "../users/types"
 import logger = require("anyhow")
+import moment = require("moment")
 const axios = require("axios").default
 const settings = require("setmeup").settings
 
 /**
- * OpenWeatherMap weather API.
+ * OpenWeatherMap weather API. Only supports ccurrent weather (no historical data).
  */
 export class OpenWeatherMap implements WeatherProvider {
     private constructor() {}
@@ -43,18 +45,26 @@ export class OpenWeatherMap implements WeatherProvider {
     /**
      * Return the weather for the specified activity. Only works for the current weather.
      * @param activity The Strava activity.
+     * @param preferences User preferences to correctly set weathre units.
      */
-    getActivityWeather = async (activity: StravaActivity): Promise<ActivityWeather> => {
+    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
         try {
-            const baseUrl = `${settings.weather.openweathermap.baseUrl}?appid=${settings.weather.openweathermap.secret}`
-            const location = activity.locationEnd || activity.locationStart
-            const query = `&units=metric&lat=${location[0]}&lon=${location[0]}`
+            if (!activity.locationEnd) {
+                throw new Error(`Activity ${activity.id} has no location data`)
+            }
+            if (moment(activity.dateEnd).unix() < moment().subtract(1, "h").unix()) {
+                throw new Error(`Activity ${activity.id} ended more than 1 hour ago, OpenWeatherMap only supports realtime weather`)
+            }
+
+            const weather: ActivityWeather = {provider: this.name}
 
             // Get current weather report.
+            const lang = preferences.language || "en"
+            const units = preferences.weatherUnit == "f" ? "imperial" : "metric"
+            const baseUrl = `${settings.weather.openweathermap.baseUrl}?appid=${settings.weather.openweathermap.secret}`
+            const query = `&units=${units}&lang=${lang}&lat=${activity.locationEnd[0]}&lon=${activity.locationEnd[1]}`
             const result: any = await axios({url: baseUrl + query})
-            const weather: ActivityWeather = {
-                start: this.toWeatherSummary(result.data)
-            }
+            weather.end = this.toWeatherSummary(result.data, preferences)
 
             return weather
         } catch (ex) {
@@ -66,10 +76,13 @@ export class OpenWeatherMap implements WeatherProvider {
     /**
      * Transform data from the OpenWeatherMap API to a WeatherSummary.
      * @param data Data from OpenWeatherMap.
+     * @param preferences User preferences.
      */
-    private toWeatherSummary = (data): WeatherSummary => {
+    private toWeatherSummary = (data: any, preferences: UserPreferences): WeatherSummary => {
+        logger.debug("OpenWeatherMap.toWeatherSummary", data)
+
         const code = data.weather[0].icon.substring(1)
-        let iconText: string
+        let iconText, precipType, wind
 
         switch (code) {
             case "2":
@@ -96,21 +109,28 @@ export class OpenWeatherMap implements WeatherProvider {
         }
 
         // Get correct precipitation type.
-        let precipType: string = null
         if (data.snow) {
             precipType = "snow"
         } else if (data.rain) {
             precipType = "rain"
         }
 
+        // Get correct wind speed.
+        if (preferences.weatherUnit == "f") {
+            wind = data.wind.speed.toFixed(0) + " mph"
+        } else {
+            wind = data.wind.speed.toFixed(1) + " m/s"
+        }
+
+        const tempUnit = preferences.weatherUnit ? preferences.weatherUnit.toUpperCase() : "C"
+
         return {
-            provider: this.name,
             summary: data.weather[0].description,
             iconText: iconText,
-            temperature: data.main.temp.toFixed(0) + "°C",
+            temperature: data.main.temp.toFixed(0) + "°" + tempUnit,
             humidity: data.main.humidity.toFixed(0) + "%",
-            pressure: data.main.pressure.toFixed(0) + "hPa",
-            windSpeed: data.wind.speed.toFixed(1) + "m/s",
+            pressure: data.main.pressure.toFixed(0) + " hPa",
+            windSpeed: wind,
             windBearing: data.wind.deg,
             precipType: precipType
         }

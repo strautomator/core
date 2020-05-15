@@ -2,13 +2,14 @@
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
+import {UserPreferences} from "../users/types"
 import logger = require("anyhow")
 import moment = require("moment")
 const axios = require("axios").default
 const settings = require("setmeup").settings
 
 /**
- * Weatherbit weather API.
+ * Weatherbit weather API. Only supports ccurrent weather (no historical data).
  */
 export class Weatherbit implements WeatherProvider {
     private constructor() {}
@@ -44,41 +45,26 @@ export class Weatherbit implements WeatherProvider {
     /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
-     * @param onlyStart If true, will NOT get weather for the end location.
+     * @param preferences User preferences to correctly set weathre units.
      */
-    getActivityWeather = async (activity: StravaActivity, onlyStart?: boolean): Promise<ActivityWeather> => {
+    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
         try {
-            const getLatLongTime = (location: number[], date: Date, plus: boolean) => {
-                let start: any = moment(date)
-                let end: any = moment(date)
-
-                if (plus) {
-                    end.add(1, "h")
-                } else {
-                    start.subtract(1, "h")
-                }
-
-                start = start.format("YYYY-MM-DD:HH")
-                end = end.format("YYYY-MM-DD:HH")
-
-                return `&lat=${location[0]}&lon=${location[0]}&start_date=${start}&end_date=${end}&tz=local`
+            if (!activity.locationEnd) {
+                throw new Error(`Activity ${activity.id} has no location data`)
+            }
+            if (moment(activity.dateEnd).unix() < moment().subtract(1, "h").unix()) {
+                throw new Error(`Activity ${activity.id} ended more than 1 hour ago, Weatherbit only supports realtime weather`)
             }
 
+            const weather: ActivityWeather = {provider: this.name}
+
+            // Get current weather report.
+            const lang = preferences.language || "en"
+            const units = preferences.weatherUnit == "f" ? "I" : "M"
             const baseUrl = `${settings.weather.weatherbit.baseUrl}?key=${settings.weather.weatherbit.secret}`
-
-            // Get weather report for start location.
-            const queryStart = getLatLongTime(activity.locationStart, activity.dateStart, true)
-            const startResult: any = await axios({url: baseUrl + queryStart})
-            const weather: ActivityWeather = {
-                start: this.toWeatherSummary(startResult.data)
-            }
-
-            // Get weather report for end location.
-            if (!onlyStart && activity.dateEnd) {
-                const queryEnd = getLatLongTime(activity.locationEnd, activity.dateEnd, false)
-                const endResult: any = await axios({url: baseUrl + queryEnd})
-                weather.end = this.toWeatherSummary(endResult.data)
-            }
+            const baseQuery = `&lat=${activity.locationEnd[0]}&lon=${activity.locationEnd[1]}&tz=local&lang=${lang}&units=${units}`
+            const result: any = await axios({url: baseUrl + baseQuery})
+            weather.end = this.toWeatherSummary(result.data.data[0], preferences)
 
             return weather
         } catch (ex) {
@@ -90,13 +76,15 @@ export class Weatherbit implements WeatherProvider {
     /**
      * Transform data from the Weatherbit API to a WeatherSummary.
      * @param data Data from Weatherbit.
+     * @param preferences User preferences.
      */
-    private toWeatherSummary = (data): WeatherSummary => {
-        data = data.data[0]
+    private toWeatherSummary = (data: any, preferences: UserPreferences): WeatherSummary => {
+        logger.debug("Weatherbit.toWeatherSummary", data)
 
         const code = data.weather.code.substring(1)
-        let iconText: string
+        let iconText, precipType, wind
 
+        // Get correct icon text based on the wather code.
         switch (code) {
             case "2":
                 iconText = "thunderstorm"
@@ -122,21 +110,28 @@ export class Weatherbit implements WeatherProvider {
         }
 
         // Get correct precipitation type.
-        let precipType: string = null
         if (data.snow) {
             precipType = "snow"
         } else if (data.rain) {
             precipType = "rain"
         }
 
+        // Get correct wind speed.
+        if (preferences.weatherUnit == "f") {
+            wind = data.wind_spd.toFixed(0) + " mph"
+        } else {
+            wind = data.wind_spd.toFixed(1) + " m/s"
+        }
+
+        const tempUnit = preferences.weatherUnit ? preferences.weatherUnit.toUpperCase() : "C"
+
         return {
-            provider: this.name,
             summary: data.weather.description,
             iconText: iconText,
-            temperature: data.temp.toFixed(0) + "°C",
+            temperature: data.temp.toFixed(0) + "°" + tempUnit,
             humidity: data.rh.toFixed(0) + "%",
-            pressure: data.pres.toFixed(0) + "hPa",
-            windSpeed: data.wind_spd.toFixed(1) + "m/s",
+            pressure: data.pres.toFixed(0) + " hPa",
+            windSpeed: wind,
             windBearing: data.wind_dir,
             precipType: precipType
         }

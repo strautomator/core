@@ -2,6 +2,8 @@
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
+import {UserPreferences} from "../users/types"
+import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
 const axios = require("axios").default
@@ -44,32 +46,57 @@ export class ClimaCell implements WeatherProvider {
     /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
-     * @param onlyStart If true, will NOT get weather for the end location.
+     * @param preferences User preferences to correctly set weathre units.
      */
-    getActivityWeather = async (activity: StravaActivity, onlyStart?: boolean): Promise<ActivityWeather> => {
+    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
         try {
-            const getLatLongTime = (location: number[], date: Date) => {
-                const startTime = moment(date).toISOString()
-                const endTime = moment(date).add(2, "h").toISOString()
-                return `lat=${location[0]}&lon=${location[1]}&start_time=${startTime}&end_time=${endTime}`
+            if (!activity.locationStart && !activity.locationEnd) {
+                throw new Error(`Activity ${activity.id} has no location data`)
             }
 
-            const fields = "temp,humidity,wind_speed,wind_direction,baro_pressure,precipitation,precipitation_type,cloud_cover,weather_groups"
-            const baseQuery = `unit_system=si&fields=${fields}&apikey=${settings.weather.climacell.secret}&`
-            const baseUrl = `${settings.weather.climacell.baseUrl}historical/station?${baseQuery}`
+            const weather: ActivityWeather = {provider: this.name}
+
+            // Base query parameters.
+            const units = preferences.weatherUnit == "f" ? "us" : "si"
+            const fields = "temp,humidity,wind_speed,wind_direction,baro_pressure,precipitation,precipitation_type,cloud_cover"
+            const baseQuery = `unit_system=${units}&apikey=${settings.weather.climacell.secret}&`
+
+            // Helpers to build the API URL. If date is older than 1 hour, use historical data, otherwise realtime.
+            const getUrl = (location: number[], date: Date) => {
+                const mDate = moment(date)
+                let startTime = mDate.toISOString()
+                let endpoint
+
+                // Get correct endpoint depending on how far back the specified date is.
+                if (mDate.unix() <= moment().subtract(5, "h").unix()) {
+                    endpoint = `historical/station?&fields=${fields}&start_time=${startTime}&end_time=${mDate.add(2, "h").toISOString()}&`
+                } else if (mDate.unix() <= moment().subtract(1, "h").unix()) {
+                    endpoint = `historical/climacell?fields=${fields},weather_code&timestep=60&start_time=${startTime}&end_time=now&`
+                } else {
+                    endpoint = `realtime?fields=${fields},weather_code&`
+                }
+
+                return `${settings.weather.climacell.baseUrl}${endpoint}${baseQuery}lat=${location[0]}&lon=${location[1]}`
+            }
 
             // Get weather report for start location.
-            const queryStart = getLatLongTime(activity.locationStart, activity.dateStart)
-            const startResult: any = await axios({url: baseUrl + queryStart})
-            const weather: ActivityWeather = {
-                start: this.toWeatherSummary(startResult.data, activity.dateStart)
+            if (activity.dateStart && activity.locationStart) {
+                try {
+                    const startResult: any = await axios({url: getUrl(activity.locationStart, activity.dateStart)})
+                    weather.start = this.toWeatherSummary(startResult.data, activity.dateStart)
+                } catch (ex) {
+                    logger.error("ClimaCell.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
+                }
             }
 
             // Get weather report for end location.
-            if (!onlyStart && activity.dateEnd) {
-                const queryEnd = getLatLongTime(activity.locationEnd, activity.dateEnd)
-                const endResult: any = await axios({url: baseUrl + queryEnd})
-                weather.end = this.toWeatherSummary(endResult.data, activity.dateEnd)
+            if (activity.dateEnd && activity.locationEnd) {
+                try {
+                    const endResult: any = await axios({url: getUrl(activity.locationEnd, activity.dateEnd)})
+                    weather.end = this.toWeatherSummary(endResult.data, activity.dateEnd)
+                } catch (ex) {
+                    logger.error("ClimaCell.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)
+                }
             }
 
             return weather
@@ -84,7 +111,10 @@ export class ClimaCell implements WeatherProvider {
      * @param data Data from ClimaCell.
      */
     private toWeatherSummary = (data: any, date: Date): WeatherSummary => {
-        data = data[0]
+        logger.debug("ClimaCell.toWeatherSummary", data)
+
+        // If data is collection of results, use the first one only.
+        if (_.isArray(data)) data = data[0]
 
         const hour = date.getHours()
         const isDaylight = hour > 6 && hour < 19
@@ -98,7 +128,9 @@ export class ClimaCell implements WeatherProvider {
             precipType = null
         }
 
-        if (cloudCover < 10) {
+        if (data.weather_code && data.weather_code.value) {
+            iconText = data.weather_code.value
+        } else if (cloudCover < 10) {
             iconText = isDaylight ? "clear-day" : "clear-night"
         } else if (cloudCover < 50) {
             iconText = isDaylight ? "partly-cloudy-day" : "partly-cloudy-night"
@@ -108,13 +140,17 @@ export class ClimaCell implements WeatherProvider {
             iconText = "cloudy"
         }
 
+        // Replace underscore with dashes on weather code.
+        if (data.iconText) {
+            data.iconText = data.iconText.replace(/_/g, "-")
+        }
+
         return {
-            provider: this.name,
             iconText: iconText,
             temperature: data.temp.value.toFixed(0) + "°" + data.temp.units,
             humidity: data.humidity.value ? data.humidity.value.toFixed(0) + data.humidity.units : null,
-            pressure: data.baro_pressure.value.toFixed(0) + data.baro_pressure.units,
-            windSpeed: data.wind_speed.value.toFixed(1) + data.wind_speed.units,
+            pressure: data.baro_pressure.value.toFixed(0) + " " + data.baro_pressure.units,
+            windSpeed: data.wind_speed.value.toFixed(1) + " " + data.wind_speed.units,
             windBearing: data.wind_direction.value,
             precipType: precipType
         }

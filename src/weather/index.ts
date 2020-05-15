@@ -5,6 +5,7 @@ import {StravaActivity} from "../strava/types"
 import climacell from "./climacell"
 import darksky from "./darksky"
 import openweathermap from "./openweathermap"
+import weatherapi from "./weatherapi"
 import weatherbit from "./weatherbit"
 import _ = require("lodash")
 import cache = require("bitecache")
@@ -31,7 +32,6 @@ export class Weather {
      */
     get emptySummary() {
         const emptySummary: WeatherSummary = {
-            provider: "",
             summary: "",
             icon: "",
             iconText: "",
@@ -55,13 +55,13 @@ export class Weather {
      */
     init = async (): Promise<void> => {
         try {
-            if (!settings.weather.climacell.disabled) {
-                await climacell.init()
-                this.providers.push(climacell)
-            }
             if (!settings.weather.darksky.disabled) {
                 await darksky.init()
                 this.providers.push(darksky)
+            }
+            if (!settings.weather.climacell.disabled) {
+                await climacell.init()
+                this.providers.push(climacell)
             }
             if (!settings.weather.weatherbit.disabled) {
                 await weatherbit.init()
@@ -70,6 +70,10 @@ export class Weather {
             if (!settings.weather.openweathermap.disabled) {
                 await openweathermap.init()
                 this.providers.push(openweathermap)
+            }
+            if (!settings.weather.weatherapi.disabled) {
+                await weatherapi.init()
+                this.providers.push(weatherapi)
             }
 
             cache.setup("weather", settings.weather.cacheDuration)
@@ -110,13 +114,17 @@ export class Weather {
             // Get correct provider module.
             let providerModule: WeatherProvider = _.find(this.providers, {name: provider})
 
-            // Try fetching weather data from the providers.
+            // Try fetching weather data from the preferred provider.
             try {
                 weather = await providerModule.getActivityWeather(activity)
+
+                if (!weather.start && !weather.end) {
+                    throw new Error("No weather returned for start and end")
+                }
             } catch (ex) {
                 logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider ${provider} failed, will try another`)
 
-                // Try again with a different provider.
+                // Try again with a different provider if first failed.
                 try {
                     providerModule = _.reject(this.providers, {name: provider})[0]
                     provider = providerModule.name
@@ -204,9 +212,9 @@ export class Weather {
             if (data) {
                 let unicode: string
 
-                // Replace spaces with dashes.
-                if (data.iconText) {
-                    data.iconText = data.iconText.replace(/ /g, "-")
+                // Set defaults.
+                if (!data.precipType) {
+                    data.precipType = null
                 }
 
                 // Property select correct weather icon.

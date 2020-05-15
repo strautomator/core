@@ -2,6 +2,7 @@
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
+import {UserPreferences} from "../users/types"
 import logger = require("anyhow")
 import moment = require("moment")
 const axios = require("axios").default
@@ -44,29 +45,45 @@ export class DarkSky implements WeatherProvider {
     /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
-     * @param onlyStart If true, will NOT get weather for the end location.
+     * @param preferences User preferences to correctly set weathre units.
      */
-    getActivityWeather = async (activity: StravaActivity, onlyStart?: boolean): Promise<ActivityWeather> => {
+    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
         try {
-            const getLatLongTime = (location: number[], date: Date) => {
-                let timestamp = moment(date).unix()
-                return `${location[0]},${location[0]},${timestamp}?units=si`
+            if (!activity.locationStart && !activity.locationEnd) {
+                throw new Error(`Activity ${activity.id} has no location data`)
             }
 
-            const baseUrl = `${settings.weather.darksky.baseUrl}${settings.weather.darksky.secret}/`
+            const weather: ActivityWeather = {provider: this.name}
+
+            // Get defaults based on user preference.
+            const units = preferences.weatherUnit == "f" ? "us" : "si"
+            const lang = preferences.language || "en"
+
+            // Helper to get the API URL.
+            const getUrl = (location: number[], date: Date) => {
+                const timestamp = moment(date).unix()
+                const endpoint = `${location[0]},${location[1]},${timestamp}?units=${units}&lang=${lang}`
+                return `${settings.weather.darksky.baseUrl}${settings.weather.darksky.secret}/${endpoint}`
+            }
 
             // Get weather report for start location.
-            const queryStart = getLatLongTime(activity.locationStart, activity.dateStart)
-            const startResult: any = await axios({url: baseUrl + queryStart})
-            const weather: ActivityWeather = {
-                start: this.toWeatherSummary(startResult.data)
+            if (activity.dateStart && activity.locationStart) {
+                try {
+                    const startResult: any = await axios({url: getUrl(activity.locationStart, activity.dateStart)})
+                    weather.start = this.toWeatherSummary(startResult.data, preferences)
+                } catch (ex) {
+                    logger.error("DarkSky.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
+                }
             }
 
             // Get weather report for end location.
-            if (!onlyStart && activity.dateEnd) {
-                const queryEnd = getLatLongTime(activity.locationEnd, activity.dateEnd)
-                const endResult: any = await axios({url: baseUrl + queryEnd})
-                weather.end = this.toWeatherSummary(endResult.data)
+            if (activity.dateEnd && activity.locationEnd) {
+                try {
+                    const endResult: any = await axios({url: getUrl(activity.locationEnd, activity.dateEnd)})
+                    weather.end = this.toWeatherSummary(endResult.data, preferences)
+                } catch (ex) {
+                    logger.error("DarkSky.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)
+                }
             }
 
             return weather
@@ -80,17 +97,21 @@ export class DarkSky implements WeatherProvider {
      * Transform data from the Dark Sky API to a WeatherSummary.
      * @param data Data from Dark Sky.
      */
-    private toWeatherSummary = (data): WeatherSummary => {
+    private toWeatherSummary = (data: any, preferences: UserPreferences): WeatherSummary => {
+        logger.debug("DarkSky.toWeatherSummary", data)
+
+        const tempUnit = preferences.weatherUnit ? preferences.weatherUnit.toUpperCase() : "C"
+        const windUnit = preferences.weatherUnit == "f" ? " mph" : " m/s"
+
         return {
-            provider: this.name,
             summary: data.currently.summary,
             iconText: data.currently.icon,
-            temperature: data.currently.temperature.toFixed(0) + "°C",
+            temperature: data.currently.temperature.toFixed(0) + "°" + tempUnit,
             humidity: (data.currently.humidity * 100).toFixed(0) + "%",
-            pressure: data.currently.pressure.toFixed(0) + "hPa",
-            windSpeed: data.currently.windSpeed.toFixed(1) + "m/s",
+            pressure: data.currently.pressure.toFixed(0) + " hPa",
+            windSpeed: data.currently.windSpeed.toFixed(1) + windUnit,
             windBearing: data.currently.windBearing,
-            precipType: data.currently.precipType
+            precipType: data.currently.precipType || null
         }
     }
 }

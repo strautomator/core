@@ -5,7 +5,7 @@
  */
 export interface ActivityWeather {
     /** Weather at the activity start. */
-    start: WeatherSummary
+    start?: WeatherSummary
     /** Weather at the activity end. */
     end?: WeatherSummary
     /** Weather provider. */
@@ -16,8 +16,6 @@ export interface ActivityWeather {
  * Weather summary. Most values are strings appended with their units / scales.
  */
 export interface WeatherSummary {
-    /** Provider where this summary was taken from. */
-    provider: string
     /** Short weather description. */
     summary?: string
     /** Weather unicode icon. */
