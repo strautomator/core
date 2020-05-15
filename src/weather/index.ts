@@ -2,6 +2,7 @@
 
 import {ActivityWeather, MoonPhase, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
+import {UserPreferences} from "../users/types"
 import climacell from "./climacell"
 import darksky from "./darksky"
 import openweathermap from "./openweathermap"
@@ -91,7 +92,7 @@ export class Weather {
      * @param activity The Strava activity.
      * @param provider The prefered weather provider, use DarkSky by default.
      */
-    getActivityWeather = async (activity: StravaActivity, provider?: string): Promise<ActivityWeather> => {
+    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
         try {
             if (!activity.locationEnd && !activity.locationEnd) {
                 throw new Error(`No location data for activity ${activity.id}`)
@@ -100,9 +101,7 @@ export class Weather {
             let weather: ActivityWeather
 
             // Default provider is darksky.
-            if (!provider) {
-                provider = "darksky"
-            }
+            let provider: string = preferences.weatherProvider ? preferences.weatherProvider : "darksky"
 
             // Look on cache first.
             const cached: ActivityWeather = cache.get(`weather`, activity.id.toString())
@@ -116,7 +115,7 @@ export class Weather {
 
             // Try fetching weather data from the preferred provider.
             try {
-                weather = await providerModule.getActivityWeather(activity)
+                weather = await providerModule.getActivityWeather(activity, preferences)
 
                 if (!weather.start && !weather.end) {
                     throw new Error("No weather returned for start and end")
@@ -128,7 +127,7 @@ export class Weather {
                 try {
                     providerModule = _.sample(_.reject(this.providers, {name: provider}))
                     provider = providerModule.name
-                    weather = await providerModule.getActivityWeather(activity)
+                    weather = await providerModule.getActivityWeather(activity, preferences)
                 } catch (ex) {
                     logger.debug("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider ${provider} also failed, won't try again`)
                     throw ex

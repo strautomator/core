@@ -254,10 +254,10 @@ export class Recipes {
             // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
             if (processedValue.indexOf("${weather.") >= 0) {
                 if (activity.locationStart && activity.locationStart.length > 0) {
-                    const weatherSummary = await weather.getActivityWeather(activity)
+                    const weatherSummary = await weather.getActivityWeather(activity, user.preferences)
 
                     if (weatherSummary) {
-                        const weatherDetails = weatherSummary.start || weatherSummary.end
+                        const weatherDetails = weatherSummary.end || weatherSummary.start
                         processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
                     } else {
                         processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
