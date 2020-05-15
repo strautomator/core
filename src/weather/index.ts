@@ -126,7 +126,7 @@ export class Weather {
 
                 // Try again with a different provider if first failed.
                 try {
-                    providerModule = _.reject(this.providers, {name: provider})[0]
+                    providerModule = _.sample(_.reject(this.providers, {name: provider}))
                     provider = providerModule.name
                     weather = await providerModule.getActivityWeather(activity)
                 } catch (ex) {
@@ -223,17 +223,25 @@ export class Weather {
                         unicode = "2600"
                         break
                     case "rain":
+                    case "drizzle":
                         unicode = "1F327"
                         break
                     case "hail":
+                    case "ice-pellets":
+                    case "ice-pellets-light":
+                    case "ice-pellets-heavy":
                         unicode = "1F327"
                         break
                     case "snow":
+                    case "snow-light":
+                    case "snow-heavy":
                         unicode = "2744"
                         break
                     case "sleet":
+                    case "flurries":
                     case "freezing-rain":
-                    case "ice-pellets":
+                    case "freezing-rain-light":
+                    case "freezing-rain-heavy":
                         unicode = "1F328"
                         break
                     case "wind":
@@ -243,17 +251,21 @@ export class Weather {
                         unicode = "1F32B"
                         break
                     case "cloudy":
+                    case "mostly-cloudy":
                         unicode = "2601"
                         break
+                    case "partly-cloudy":
                     case "partly-cloudy-day":
                         unicode = "26C5"
                         break
+                    case "tstorm":
                     case "thunderstorm":
                         unicode = "26C8"
                         break
                     case "tornado":
                         unicode = "1F32A"
                         break
+                    case "mostly-clear":
                     case "partly-cloudy-night":
                         unicode = "1F319"
                         break

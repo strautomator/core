@@ -124,8 +124,12 @@ export class OpenWeatherMap implements WeatherProvider {
 
         const tempUnit = preferences.weatherUnit ? preferences.weatherUnit.toUpperCase() : "C"
 
+        // Capitalize the summary.
+        let summary = data.weather[0].description
+        summary = summary.charAt(0).toUpperCase() + summary.slice(1)
+
         return {
-            summary: data.weather[0].description,
+            summary: summary,
             iconText: iconText,
             temperature: data.main.temp.toFixed(0) + "°" + tempUnit,
             humidity: data.main.humidity.toFixed(0) + "%",
