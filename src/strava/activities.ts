@@ -209,8 +209,8 @@ export class StravaActivities {
                 return
             }
 
-            // Get recipes, having the defaults first.
-            const sortedRecipes = _.sortBy(Object.values(user.recipes), ["defaultFor"])
+            // Get recipes, having the defaults first and then sorted by order.
+            const sortedRecipes = _.sortBy(Object.values(user.recipes), ["defaultFor", "order"])
 
             // Evaluate each of user's recipes, and set update to true if something was processed.
             for (recipe of sortedRecipes) {

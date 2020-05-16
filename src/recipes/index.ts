@@ -209,7 +209,7 @@ export class Recipes {
      * @param action Recipe action to be executed.
      */
     processAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
-        logger.debug("Recipes.processAction", activity, action)
+        logger.debug("Recipes.processAction", user, activity, action)
 
         try {
             if (!activity.updatedFields) {

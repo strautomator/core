@@ -14,6 +14,8 @@ export interface RecipeData {
     conditions: RecipeCondition[]
     /** List of actions to be executed. */
     actions: RecipeAction[]
+    /** Order of execution (1 executes first, then 2, 3...) */
+    order?: number
     /** Default recipe for a specific sport (applies to all incoming activities). */
     defaultFor?: StravaSport
 }
