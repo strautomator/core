@@ -146,12 +146,14 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
                 continue
             }
 
+            const weatherPropValue = summary[weatherProp].replace(/[^\d.-]/g, "")
+
             if (op == RecipeOperator.Equal) {
-                valid = valid || summary[weatherProp] === value
+                valid = valid || weatherPropValue == value
             } else if (op == RecipeOperator.GreaterThan) {
-                valid = valid || summary[weatherProp] > value
+                valid = valid || weatherPropValue > value
             } else if (op == RecipeOperator.LessThan) {
-                valid = valid || summary[weatherProp] < value
+                valid = valid || weatherPropValue < value
             } else {
                 throw new Error(`Invalid operator ${op} for ${prop}`)
             }

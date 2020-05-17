@@ -1,7 +1,7 @@
 const core = require("./lib/index.js")
 
 const dryRun = async () => {
-    await core.startup(false)
+    await core.startup()
     process.exit(0)
 }
 
