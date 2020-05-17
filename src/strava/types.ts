@@ -72,6 +72,8 @@ export interface StravaProcessedActivity {
     id: number
     /** Activity type (Ride, Run, etc). */
     type: StravaSport
+    /** Name of the saved activity. */
+    name: string
     /** Start date of the activity. */
     dateStart: Date
     /** Processing date. */

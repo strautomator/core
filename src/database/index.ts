@@ -1,6 +1,6 @@
 // Strautomator Core: Database
 
-import {DocumentReference, FieldValue, Firestore} from "@google-cloud/firestore"
+import {DocumentReference, FieldValue, Firestore, OrderByDirection} from "@google-cloud/firestore"
 import {cryptoProcess} from "./crypto"
 import _ = require("lodash")
 import cache = require("bitecache")
@@ -159,8 +159,9 @@ export class Database {
      * @param collection Name of the collection.
      * @param queryList List of query in the format [property, operator, value].
      * @param orderBy Order by field, optional.
+     * @param limit Limit results, optional.
      */
-    search = async (collection: string, queryList?: any[], orderBy?: string): Promise<any[]> => {
+    search = async (collection: string, queryList?: any[], orderBy?: string | [string, OrderByDirection], limit?: number): Promise<any[]> => {
         const colname = `${collection}${settings.database.collectionSuffix}`
         let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
 
@@ -178,7 +179,16 @@ export class Database {
 
         // Order by field?
         if (orderBy) {
-            filteredTable = filteredTable.orderBy(orderBy)
+            if (_.isArray(orderBy)) {
+                filteredTable = filteredTable.orderBy(orderBy[0], (orderBy as any)[1])
+            } else {
+                filteredTable = filteredTable.orderBy(orderBy as string)
+            }
+        }
+
+        // Limit results?
+        if (limit) {
+            filteredTable = filteredTable.limit(limit)
         }
 
         const snapshot = await filteredTable.get()

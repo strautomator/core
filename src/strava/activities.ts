@@ -262,10 +262,11 @@ export class StravaActivities {
     /**
      * Get saved processed activities for the specified user.
      * @param user The activities owner.
+     * @param limit Limit how many results should be returned?
      */
-    getProcessedActivites = async (user: UserData): Promise<StravaProcessedActivity[]> => {
+    getProcessedActivites = async (user: UserData, limit?: number): Promise<StravaProcessedActivity[]> => {
         try {
-            const activities = await database.search("activities", ["user.id", "==", user.id])
+            const activities = await database.search("activities", ["user.id", "==", user.id], ["dateProcessed", "desc"], limit)
             logger.info("Strava.getProcessedActivites", `User ${user.id}`, `Got ${activities} processed activities`)
 
             return activities
@@ -304,6 +305,7 @@ export class StravaActivities {
             const data: StravaProcessedActivity = {
                 id: activity.id,
                 type: activity.type,
+                name: activity.name,
                 dateStart: activity.dateStart,
                 dateProcessed: new Date(),
                 user: {
