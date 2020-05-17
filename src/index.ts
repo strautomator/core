@@ -57,7 +57,7 @@ export * from "./users/types"
 let terminating = false
 
 // Startup script.
-export const startup = async (dryRun?: boolean) => {
+export const startup = async (noAwait?: boolean) => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
     // Set it to gracefully shutdown.
@@ -103,25 +103,21 @@ export const startup = async (dryRun?: boolean) => {
             }
         }
     } catch (ex) {
-        if (dryRun === false) {
-            logger.error("Strautomator.startup", "Failed to load settings", ex)
-        } else {
-            logger.error("Strautomator.startup", "Failed to load settings, will exit...")
-            return process.exit(1)
-        }
+        logger.error("Strautomator.startup", "Failed to load settings, will exit...")
+        return process.exit(1)
     }
 
     // Try starting individual modules now.
     for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather]) {
         try {
-            await coreModule.init()
-        } catch (ex) {
-            if (dryRun === false) {
-                logger.debug("Strautomator.startup", "Failed to start a core module", ex)
+            if (noAwait) {
+                coreModule.init()
             } else {
-                logger.error("Strautomator.startup", "Failed to start a core module, will exit...")
-                return process.exit(1)
+                await coreModule.init()
             }
+        } catch (ex) {
+            logger.error("Strautomator.startup", "Failed to start a core module, will exit...")
+            return process.exit(1)
         }
     }
 }
