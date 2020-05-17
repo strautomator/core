@@ -33,7 +33,7 @@ export class StravaActivities {
      * @param id The activity ID.
      */
     getActivity = async (user: UserData, id: number | string): Promise<StravaActivity> => {
-        logger.debug("Strava.getActivity", id)
+        logger.debug("Strava.getActivity", `User ${user.id}`, id)
 
         try {
             const tokens = user.stravaTokens
@@ -237,7 +237,7 @@ export class StravaActivities {
                         logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, ex)
 
                         // Save failed activity to database. and stop here.
-                        await this.saveProcessedActivity(user, activity, recipeIds, false)
+                        await this.saveProcessedActivity(user, activity, recipeIds, ex)
                         return
                     }
                 }
@@ -245,17 +245,32 @@ export class StravaActivities {
                 // Save activity to the database and update count on user data.
                 // If failed, log error but this is not essential so won't throw.
                 try {
-                    await this.saveProcessedActivity(user, activity, recipeIds, true)
+                    await this.saveProcessedActivity(user, activity, recipeIds)
                     await users.setActivityCount(user)
                     user.activityCount++
                 } catch (ex) {
                     logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, "Can't save to database", ex)
                 }
             } else {
-                logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId} from ${activity.dateStart}`, `No matching recipes`)
+                logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, `No matching recipes`)
             }
         } catch (ex) {
             logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, ex)
+        }
+    }
+
+    /**
+     * Get saved processed activities for the specified user.
+     * @param user The activities owner.
+     */
+    getProcessedActivites = async (user: UserData): Promise<StravaProcessedActivity[]> => {
+        try {
+            const activities = await database.search("activities", ["user.id", "==", user.id])
+            logger.info("Strava.getProcessedActivites", `User ${user.id}`, `Got ${activities} processed activities`)
+
+            return activities
+        } catch (ex) {
+            logger.error("Strava.getProcessedActivites", `User ${user.id}`, ex)
         }
     }
 
@@ -264,9 +279,9 @@ export class StravaActivities {
      * @param user The activity's owner.
      * @param activity The Strava activity details.
      * @param recipeIds Array of triggered recipe IDs.
-     * @param success If false, mark activity as failed so it gets stored on a different collection.
+     * @param error If errored, this will contain the error details.
      */
-    saveProcessedActivity = async (user: UserData, activity: StravaActivity, recipeIds: string[], success: boolean): Promise<void> => {
+    saveProcessedActivity = async (user: UserData, activity: StravaActivity, recipeIds: string[], error?: string): Promise<void> => {
         try {
             let recipeDetails = {}
             let updatedFields = {}
@@ -296,14 +311,12 @@ export class StravaActivities {
                     displayName: user.displayName
                 },
                 recipes: recipeDetails,
-                updatedFields: updatedFields
+                updatedFields: updatedFields,
+                error: error.toString() || null
             }
 
-            // Get correct collection depending if activity failed to process.
-            const table = success ? "activities" : "activities-failed"
-
             // Save and return result.
-            await database.set(table, data, activity.id.toString())
+            await database.set("activities", data, activity.id.toString())
             logger.debug("Strava.saveProcessedActivity", data)
         } catch (ex) {
             logger.error("Strava.saveProcessedActivity", `User ${user.id} - ${user.displayName}`, `Activity ${activity.id}`, ex)

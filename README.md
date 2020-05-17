@@ -28,7 +28,6 @@ The following collections are used:
 
 - **users** registered user details
 - **activities** summary of activities processed
-- **activities-failed** summary of failed processed activities
 - **recipe-stats** automation recipe stats
 - **subscriptions** donations / subscriptions data
 

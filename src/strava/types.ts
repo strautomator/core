@@ -98,6 +98,8 @@ export interface StravaProcessedActivity {
     updatedFields: {
         [id: string]: any
     }
+    /** If failed, this will contain the error description. */
+    error?: string
 }
 
 /**
