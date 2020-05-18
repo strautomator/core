@@ -267,7 +267,7 @@ export class StravaActivities {
     getProcessedActivites = async (user: UserData, limit?: number): Promise<StravaProcessedActivity[]> => {
         try {
             const activities = await database.search("activities", ["user.id", "==", user.id], ["dateProcessed", "desc"], limit)
-            logger.info("Strava.getProcessedActivites", `User ${user.id}`, `Got ${activities} processed activities`)
+            logger.info("Strava.getProcessedActivites", `User ${user.id}`, `Got ${activities.length} processed activities`)
 
             return activities
         } catch (ex) {
