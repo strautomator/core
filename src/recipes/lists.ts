@@ -48,7 +48,7 @@ export const recipePropertyList = [
     {value: "calories", text: "Calories", type: "number", operators: recipeOperatorList.number, suffix: "kcal"},
     {value: "name", text: "Name", type: "text", operators: recipeOperatorList.text},
     {value: "device", text: "Device name", type: "text", operators: recipeOperatorList.text},
-    {value: "weather.temperature", text: "Weather temperature", type: "number", operators: recipeOperatorList.number, suffix: "°C", impSuffix: "°F"},
+    {value: "weather.temperature", text: "Weather temperature", type: "number", operators: recipeOperatorList.number, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "m/s", impSuffix: "mph"}
 ]
 
