@@ -3,10 +3,10 @@
 import {RecipeCondition, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
+import {WeatherSummary} from "../weather/types"
 import weather from "../weather"
 import logger = require("anyhow")
 import moment = require("moment")
-import {WeatherSummary} from "src/weather/types"
 
 /**
  * Check if the passed location based condition is valid.
