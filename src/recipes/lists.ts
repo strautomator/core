@@ -4,25 +4,36 @@
  * List of possible recipe operators for the different data types.
  */
 export const recipeOperatorList = {
+    // Free text.
     text: [
         {value: "like", text: "has", description: "Text contains the specified value"},
         {value: "=", text: "is exactly", description: "Text matches the specified value"}
     ],
+    // Location coordinates.
     location: [
         {value: "=", text: "within 60m of", description: ""},
         {value: "like", text: "within 650m of", description: ""}
     ],
+    // Only positive numbers.
     number: [
         {value: "=", text: "is exactly", description: "Number matches the specified value"},
         {value: "<", text: "is lower than", description: "Number less than the specified value"},
         {value: ">", text: "is higher than", description: "Number greater than the specified value"}
     ],
+    //Any number.
+    anyNumber: [
+        {value: "=", text: "is exactly", description: "Number matches the specified value"},
+        {value: "<", text: "is lower than", description: "Number less than the specified value"},
+        {value: ">", text: "is higher than", description: "Number greater than the specified value"}
+    ],
+    // Time.
     time: [
         {value: "<", text: "is before", description: ""},
         {value: ">", text: "is after", description: ""},
         {value: "like", text: "is around", description: "Time within 20 minutes of the specified value"},
         {value: "=", text: "is exactly", description: "Time within 1 minute of the specified value"}
     ],
+    // Day of week.
     day: [{value: "=", text: "is", description: ""}]
 }
 
@@ -48,7 +59,7 @@ export const recipePropertyList = [
     {value: "calories", text: "Calories", type: "number", operators: recipeOperatorList.number, suffix: "kcal"},
     {value: "name", text: "Name", type: "text", operators: recipeOperatorList.text},
     {value: "device", text: "Device name", type: "text", operators: recipeOperatorList.text},
-    {value: "weather.temperature", text: "Weather temperature", type: "number", operators: recipeOperatorList.number, suffix: "°C", fSuffix: "°F"},
+    {value: "weather.temperature", text: "Weather temperature", type: "number", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "m/s", impSuffix: "mph"},
     {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%"}
 ]
