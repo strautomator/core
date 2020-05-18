@@ -164,7 +164,7 @@ export class Recipes {
                     }
 
                     // Location condition.
-                    if (prop.indexOf("location") >= 0) {
+                    else if (prop.indexOf("location") >= 0) {
                         if (!checkLocation(activity, c)) {
                             return false
                         }
@@ -198,7 +198,7 @@ export class Recipes {
                         }
                     }
                 } catch (ex) {
-                    logger.error("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, Object.values(c).join(", "), ex)
+                    logger.error("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `${c.property} ${c.operator} ${c.value}`, ex)
                     return false
                 }
             }
