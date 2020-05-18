@@ -313,8 +313,12 @@ export class StravaActivities {
                     displayName: user.displayName
                 },
                 recipes: recipeDetails,
-                updatedFields: updatedFields,
-                error: error.toString() || null
+                updatedFields: updatedFields
+            }
+
+            // Make sure error is a string (if an error was passed).
+            if (error) {
+                data.error = error.toString()
             }
 
             // Save and return result.
