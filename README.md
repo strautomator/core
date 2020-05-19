@@ -2,8 +2,6 @@
 
 This is the core module of Strautomator, and contains most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web).
 
-**Please note that Strautomator is still in beta! Its internals, API specs and general settings could likely change before we hit a stable release.**
-
 ### Settings
 
 Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its docs. The settings are splitted as follows:
@@ -27,7 +25,7 @@ By default Strautomator uses Google Cloud Firestore to store its data. But the [
 The following collections are used:
 
 - **users** registered user details
-- **activities** summary of activities processed
+- **activities** summary of processed activities
 - **recipe-stats** automation recipe stats
 - **subscriptions** donations / subscriptions data
 
@@ -40,9 +38,7 @@ You'll have to register an account and get the necessary credentials for the 3rd
 - Google Cloud Platform
 - Strava API
 - PayPal API
-- Dark Sky (optional)
-- OpenWeatherMap (optional)
-- Weatherbit (optional)
+- Weather providers (Dark Sky, ClimaCell etc...)
 
 If you need help getting any of those, or have questions, just open a [new issue](https://github.com/strautomator/core/issues/new) and I'll be glad to help.
 
