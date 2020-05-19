@@ -50,6 +50,7 @@ export const recipePropertyList = [
     {value: "dateEnd", text: "End time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
     {value: "weekday", text: "Week day", type: "day", operators: recipeOperatorList.day},
     {value: "movingTime", text: "Moving time", type: "number", operators: recipeOperatorList.number, suffix: "h"},
+    {value: "totalTime", text: "Total elapsed time", type: "number", operators: recipeOperatorList.number, suffix: "h"},
     {value: "locationStart", text: "Starting location", type: "location", operators: recipeOperatorList.location},
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
     {value: "wattsAvg", text: "Average power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},

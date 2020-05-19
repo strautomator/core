@@ -135,8 +135,7 @@
             "linksOn": false,
             // Default donation (subscription) prices to get a Pro account.
             "price": {
-                "month": 1.29,
-                "year": 9.99
+                "year": 8.99
             }
         }
     },
@@ -144,8 +143,8 @@
         // Rename activity names on specific days (if user has opted-in).
         "calendar": {
             "01-01": ["Happy new year!"],
-            "05-01": ["Working hard on Worker's Day!"],
-            "12-25": ["Ho ho ho!", "Merry xmas"]
+            "05-01": ["Working hard on Worker's Day :-)"],
+            "12-25": ["Ho ho ho!", "Merry xmas!"]
         },
         // Max length for specific properties.
         "maxLength": {
@@ -163,13 +162,13 @@
             "tokenUrl": "https://www.strava.com/oauth/token",
             "scopes": "read,profile:read_all,activity:read_all,activity:write",
             // Maximum concurrent requests per instance.
-            "maxConcurrent": 6,
+            "maxConcurrent": 4,
             // Maximum requests per minute per instance. Default maximum on Strava
             // is around 40 requests per minute total, so for 2 instances we use 30
             // as load balancing is not done on a perfect 50/50 level.
             "maxPerMinute": 30,
-            // Default page size 120, max is 200.
-            "pageSize": 120,
+            // Default page size 150, max is 200.
+            "pageSize": 150,
             // How many times should Strautomator retry failed jobs, for instance
             // when updating user activities on Strava? After last fail, it will
             // save the job details to the database for post processing.
