@@ -57,7 +57,7 @@ export * from "./users/types"
 let terminating = false
 
 // Startup script.
-export const startup = async (noAwait?: boolean) => {
+export const startup = async (quickStart?: boolean) => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
     // Set it to gracefully shutdown.
@@ -110,8 +110,8 @@ export const startup = async (noAwait?: boolean) => {
     // Try starting individual modules now.
     for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather]) {
         try {
-            if (noAwait) {
-                coreModule.init()
+            if (quickStart) {
+                coreModule.init(quickStart)
             } else {
                 await coreModule.init()
             }

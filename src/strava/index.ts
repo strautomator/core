@@ -47,13 +47,18 @@ export class Strava {
 
     /**
      * Init the Strava wrapper.
+     * @param quickStart If true, will not wait to setup Strava webhooks, default is false.
      */
-    init = async (): Promise<void> => {
+    init = async (quickStart?: boolean): Promise<void> => {
         await api.init()
 
         // Make sure there's a valid webhook set on Strava.
         try {
-            await this.webhooks.getWebhook()
+            if (!quickStart) {
+                await this.webhooks.getWebhook()
+            } else {
+                this.webhooks.getWebhook()
+            }
         } catch (ex) {
             logger.error("Strava.init", ex)
         }

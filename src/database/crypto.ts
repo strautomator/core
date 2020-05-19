@@ -67,7 +67,7 @@ export function decryptData(value: string): string {
         value = value.toString()
 
         if (value.substring(0, 5) != "enc::") {
-            logger.warn("Database.decrypt", value, "Value does not seem to be encrypted, will return itself")
+            logger.debug("Database.decrypt", value, "Value does not seem to be encrypted, will return itself")
             return value
         }
 

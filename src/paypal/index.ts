@@ -63,8 +63,9 @@ export class PayPal {
     /**
      * Init the PayPal wrapper. It will first get active billing plans from PayPal,
      * parse them, and create new ones in case the frequency or price has changed.
+     * @param quickStart If true, will not wait to setup PayPal products and billing plans.
      */
-    init = async (): Promise<void> => {
+    init = async (quickStart?: boolean): Promise<void> => {
         try {
             if (!settings.paypal.api.clientId) {
                 throw new Error("Missing the mandatory paypal.api.clientId setting")
@@ -73,12 +74,14 @@ export class PayPal {
                 throw new Error("Missing the mandatory paypal.api.clientSecret setting")
             }
 
-            // Try authenticating first.
-            await api.authenticate()
-
-            // Setup the product and billing plans on PayPal.
-            await this.setupProduct()
-            await this.setupBillingPlans()
+            // Wait for the setup the product and billing plans on PayPal, if quickStart was not set.
+            if (!quickStart) {
+                await api.authenticate()
+                await this.setupProduct()
+                await this.setupBillingPlans()
+            } else {
+                this.setupBillingPlans()
+            }
 
             // Unsubscribe when user gets deleted.
             eventManager.on("Users.delete", this.onUserDelete)
@@ -147,6 +150,11 @@ export class PayPal {
     setupBillingPlans = async () => {
         try {
             api.currentBillingPlans = {}
+
+            // Make sure the API has a product setup before.
+            if (!api.currentProduct) {
+                await this.setupProduct()
+            }
 
             const billingPlans = await paypalSubscriptions.getBillingPlans()
             const frequencies = Object.keys(settings.plans.pro.price)

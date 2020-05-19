@@ -23,8 +23,9 @@ export class Mailer {
 
     /**
      * Init the Email manager.
+     * @param quickStart If true, will not validate SMTP cconnection, default is false.
      */
-    init = async (): Promise<void> => {
+    init = async (quickStart?: boolean): Promise<void> => {
         try {
             if (settings.mailer.disabled) {
                 logger.warn("Mailer.init", "Disabled on settings, emails will not be sent")
@@ -45,10 +46,13 @@ export class Mailer {
             const smtp = settings.mailer.smtp
             this.client = nodemailer.createTransport(smtp)
 
-            try {
-                await this.client.verify()
-            } catch (ex) {
-                logger.error("Mailer.init", `Could not verify connection to ${smtp.host} ${smtp.port}, but will proceed anyways`, ex)
+            // Validate connection only if quickStart was not set.
+            if (!quickStart) {
+                try {
+                    await this.client.verify()
+                } catch (ex) {
+                    logger.error("Mailer.init", `Could not verify connection to ${smtp.host} ${smtp.port}, but will proceed anyways`, ex)
+                }
             }
 
             eventManager.on("Admin.alert", this.onAdminAlert)

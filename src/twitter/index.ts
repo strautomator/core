@@ -20,7 +20,7 @@ export class Twitter {
     client: TwitterLite
 
     /**
-     * The Twitter handle name (set on init).
+     * The Twitter handle name.
      */
     screenName: string
 
@@ -29,8 +29,9 @@ export class Twitter {
 
     /**
      * Init the Twitter wrapper.
+     * @param quickStart If true, will not wait to get Twitter account details, default is false.
      */
-    init = async (): Promise<void> => {
+    init = async (quickStart?: boolean): Promise<void> => {
         try {
             if (!settings.twitter.api.consumerKey) {
                 throw new Error("Missing the twitter.api.consumerKey setting")
@@ -53,11 +54,12 @@ export class Twitter {
                 access_token_secret: settings.twitter.api.tokenSecret
             })
 
-            // Get user screen name.
-            const res = await this.client.get("account/verify_credentials")
-            this.screenName = res.screen_name
-
-            logger.info("Twitter.init", `Logged in as ${this.screenName}`)
+            // Get user screen name straight away, but only if quickStart was not set.
+            if (!quickStart) {
+                await this.getAccountDetails()
+            } else {
+                this.getAccountDetails()
+            }
         } catch (ex) {
             logger.error("Twitter.init", ex)
         }
@@ -65,6 +67,21 @@ export class Twitter {
 
     // POSTING
     // --------------------------------------------------------------------------
+
+    /**
+     * Get details for the logged account.
+     */
+    getAccountDetails = async (): Promise<any> => {
+        try {
+            const res = await this.client.get("account/verify_credentials")
+            this.screenName = res.screen_name
+
+            logger.info("Twitter.getAccountDetails", `Logged in as ${this.screenName}`)
+            return res
+        } catch (ex) {
+            logger.error("Twitter.getAccountDetails", ex)
+        }
+    }
 
     /**
      * Post a message to Twitter.
@@ -77,7 +94,7 @@ export class Twitter {
 
             logger.info("Twitter.post", status)
         } catch (ex) {
-            logger.error("Twitter.post", ex)
+            logger.error("Twitter.post", status, ex)
         }
     }
 }
