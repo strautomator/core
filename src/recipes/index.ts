@@ -238,15 +238,18 @@ export class Recipes {
             // Change activity gear?
             if (action.type == RecipeActionType.Gear) {
                 let gear = _.find(user.profile.bikes, {id: action.value})
+
                 if (!gear) {
                     gear = _.find(user.profile.shoes, {id: action.value})
                 }
+
                 if (!gear) {
                     this.reportInvalidAction(user, action, "Gear not found")
                 } else {
                     activity.gear = gear
                     activity.updatedFields.push("gear")
                 }
+
                 return
             }
 

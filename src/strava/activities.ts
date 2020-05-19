@@ -159,8 +159,13 @@ export class StravaActivities {
 
             // Set fields to be updated on the activity.
             for (let field of activity.updatedFields) {
-                data[field] = activity[field]
-                logResult.push(`${field}=${activity[field]}`)
+                if (field == "gear") {
+                    data["gear_id"] = activity.gear.id
+                    logResult.push(`${field}=${activity.gear.name}`)
+                } else {
+                    data[field] = activity[field]
+                    logResult.push(`${field}=${activity[field]}`)
+                }
             }
 
             await api.put(user.stravaTokens, `activities/${activity.id}`, null, data)
