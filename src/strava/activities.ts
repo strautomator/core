@@ -303,7 +303,11 @@ export class StravaActivities {
 
             // Get updated fields.
             for (let field of activity.updatedFields) {
-                updatedFields[field] = activity[field]
+                if (field == "gear") {
+                    updatedFields[field] = `${activity.gear.name} (${activity.gear.id})`
+                } else {
+                    updatedFields[field] = activity[field]
+                }
             }
 
             // Data to be saved on the database.
