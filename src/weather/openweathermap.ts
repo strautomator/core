@@ -43,6 +43,31 @@ export class OpenWeatherMap implements WeatherProvider {
     // --------------------------------------------------------------------------
 
     /**
+     * Get current weather conditions for the specified coordinates.
+     * @param coordinates Array with latitude and longitude.
+     * @param preferences User preferences to get proper weather units.
+     */
+    getCurrentWeather = async (coordinates: [number, number], preferences: UserPreferences): Promise<WeatherSummary> => {
+        try {
+            if (!preferences) preferences = {}
+
+            const lang = preferences.language || "en"
+            const units = preferences.weatherUnit == "f" ? "imperial" : "metric"
+            const baseUrl = `${settings.weather.openweathermap.baseUrl}?appid=${settings.weather.openweathermap.secret}`
+            const query = `&units=${units}&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}`
+            const weatherUrl = baseUrl + query
+
+            const res = await axios({url: weatherUrl})
+            const result = this.toWeatherSummary(res.data, preferences)
+
+            logger.info("OpenWeatherMap.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            return result
+        } catch (ex) {
+            logger.error("OpenWeatherMap.getCurrentWeather", coordinates, ex)
+        }
+    }
+
+    /**
      * Return the weather for the specified activity. Only works for the current weather.
      * @param activity The Strava activity.
      * @param preferences User preferences to correctly set weathre units.

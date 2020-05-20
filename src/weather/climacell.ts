@@ -44,6 +44,30 @@ export class ClimaCell implements WeatherProvider {
     // --------------------------------------------------------------------------
 
     /**
+     * Get current weather conditions for the specified coordinates.
+     * @param coordinates Array with latitude and longitude.
+     * @param preferences User preferences to get proper weather units.
+     */
+    getCurrentWeather = async (coordinates: [number, number], preferences: UserPreferences): Promise<WeatherSummary> => {
+        try {
+            if (!preferences) preferences = {}
+
+            const units = preferences.weatherUnit == "f" ? "us" : "si"
+            const fields = "temp,humidity,wind_speed,wind_direction,baro_pressure,precipitation,precipitation_type,cloud_cover"
+            const baseQuery = `unit_system=${units}&apikey=${settings.weather.climacell.secret}&`
+            const weatherUrl = `${settings.weather.climacell.baseUrl}${`realtime?fields=${fields},weather_code&`}${baseQuery}lat=${coordinates[0]}&lon=${coordinates[1]}`
+
+            const res = await axios({url: weatherUrl})
+            const result = this.toWeatherSummary(res.data, new Date())
+
+            logger.info("ClimaCell.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            return result
+        } catch (ex) {
+            logger.error("ClimaCell.getCurrentWeather", coordinates, ex)
+        }
+    }
+
+    /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
      * @param preferences User preferences to correctly set weathre units.

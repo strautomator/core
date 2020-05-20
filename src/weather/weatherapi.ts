@@ -44,6 +44,31 @@ export class WeatherAPI implements WeatherProvider {
     // --------------------------------------------------------------------------
 
     /**
+     * Get current weather conditions for the specified coordinates.
+     * @param coordinates Array with latitude and longitude.
+     * @param preferences User preferences to get proper weather units.
+     */
+    getCurrentWeather = async (coordinates: [number, number], preferences: UserPreferences): Promise<WeatherSummary> => {
+        try {
+            if (!preferences) preferences = {}
+
+            const lang = preferences.language || "en"
+            const baseUrl = settings.weather.weatherapi.baseUrl
+            const baseQuery = `key=${settings.weather.weatherapi.secret}&lang=${lang}&q=`
+            const currentQuery = `${baseQuery}${coordinates[0]},${coordinates[1]}`
+            const weatherUrl = `${baseUrl}current.json?${currentQuery}`
+
+            const res = await axios({url: weatherUrl})
+            const result = this.toWeatherSummary(res.data, new Date(), preferences)
+
+            logger.info("WeatherAPI.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            return result
+        } catch (ex) {
+            logger.error("WeatherAPI.getCurrentWeather", coordinates, ex)
+        }
+    }
+
+    /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
      * @param preferences User preferences to correctly set weathre units.
@@ -145,13 +170,19 @@ export class WeatherAPI implements WeatherProvider {
 
         // Get correct temperature based on weather units.
         if (preferences.weatherUnit == "f") {
-            temperature = (data.temp_f || data.avgtemp_f).toFixed(0) + "°F"
+            temperature = data.temp_f || data.avgtemp_f
+            if (temperature) {
+                temperature = temperature.toFixed(0) + "°F"
+            }
             wind = data.wind_mph || data.maxwind_mph || null
             if (!isNaN(wind)) {
                 wind = parseFloat(wind).toFixed(0) + " mph"
             }
         } else {
-            temperature = (data.temp_c || data.avgtemp_c).toFixed(0) + "°C"
+            temperature = data.temp_c || data.avgtemp_c
+            if (temperature) {
+                temperature = temperature.toFixed(0) + "°C"
+            }
             wind = data.wind_kph || data.maxwind_kph || null
             if (!isNaN(wind)) {
                 wind = parseFloat(wind).toFixed(0) + " kph"
@@ -159,7 +190,7 @@ export class WeatherAPI implements WeatherProvider {
         }
 
         return {
-            summary: data.condition.text,
+            summary: data.condition ? data.condition.text : null,
             iconText: iconText,
             temperature: temperature,
             humidity: humidity ? parseInt(humidity).toFixed(0) + "%" : null,
@@ -195,8 +226,11 @@ export class WeatherAPI implements WeatherProvider {
             }
         }
 
+        // Data is for current conditions?
         if (!result) {
             result = data.current
+        } else if (result.curent) {
+            result = result.current
         }
 
         if (!result) {

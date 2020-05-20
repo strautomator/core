@@ -43,6 +43,31 @@ export class Weatherbit implements WeatherProvider {
     // --------------------------------------------------------------------------
 
     /**
+     * Get current weather conditions for the specified coordinates.
+     * @param coordinates Array with latitude and longitude.
+     * @param preferences User preferences to get proper weather units.
+     */
+    getCurrentWeather = async (coordinates: [number, number], preferences: UserPreferences): Promise<WeatherSummary> => {
+        try {
+            if (!preferences) preferences = {}
+
+            const lang = preferences.language || "en"
+            const units = preferences.weatherUnit == "f" ? "I" : "M"
+            const baseUrl = `${settings.weather.weatherbit.baseUrl}?key=${settings.weather.weatherbit.secret}`
+            const baseQuery = `&lat=${coordinates[0]}&lon=${coordinates[1]}&tz=local&lang=${lang}&units=${units}`
+            const weatherUrl = baseUrl + baseQuery
+
+            const res = await axios({url: weatherUrl})
+            const result = this.toWeatherSummary(res.data.data[0], preferences)
+
+            logger.info("Weatherbit.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            return result
+        } catch (ex) {
+            logger.error("Weatherbit.getCurrentWeather", coordinates, ex)
+        }
+    }
+
+    /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
      * @param preferences User preferences to correctly set weathre units.

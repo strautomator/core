@@ -43,6 +43,31 @@ export class DarkSky implements WeatherProvider {
     // --------------------------------------------------------------------------
 
     /**
+     * Get current weather conditions for the specified coordinates.
+     * @param coordinates Array with latitude and longitude.
+     * @param preferences User preferences to get proper weather units.
+     */
+    getCurrentWeather = async (coordinates: [number, number], preferences: UserPreferences): Promise<WeatherSummary> => {
+        try {
+            if (!preferences) preferences = {}
+
+            const units = preferences.weatherUnit == "f" ? "us" : "si"
+            const lang = preferences.language || "en"
+            const timestamp = moment().subtract(10, "m").unix()
+            const endpoint = `${coordinates[0]},${coordinates[1]},${timestamp}?units=${units}&lang=${lang}`
+            const weatherUrl = `${settings.weather.darksky.baseUrl}${settings.weather.darksky.secret}/${endpoint}`
+
+            const res = await axios({url: weatherUrl})
+            const result = this.toWeatherSummary(res.data, preferences)
+
+            logger.info("DarkSky.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            return result
+        } catch (ex) {
+            logger.error("DarkSky.getCurrentWeather", coordinates, ex)
+        }
+    }
+
+    /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
      * @param preferences User preferences to correctly set weathre units.
