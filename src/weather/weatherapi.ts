@@ -188,7 +188,7 @@ export class WeatherAPI implements WeatherProvider {
             }
             wind = data.wind_kph || data.maxwind_kph || null
             if (!isNaN(wind)) {
-                wind = parseFloat(wind).toFixed(0) + " kph"
+                wind = (parseFloat(wind) / 3.6).toFixed(1) + " m/s"
             }
         }
 

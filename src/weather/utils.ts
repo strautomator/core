@@ -9,7 +9,7 @@ import logger = require("anyhow")
  */
 export function processWeatherSummary(summary: WeatherSummary, date: Date): void {
     try {
-        let unicode: string
+        let unicode: string = "2601"
 
         // Set moon phase.
         summary.moon = getMoonPhase(date)
