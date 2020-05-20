@@ -9,6 +9,7 @@ import logger = require("anyhow")
  */
 export function processWeatherSummary(summary: WeatherSummary, date: Date): void {
     try {
+        let hour = date.getHours()
         let unicode: string = "2601"
 
         // Set moon phase.
@@ -17,6 +18,11 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date): void
         // Set defaults.
         if (!summary.precipType) {
             summary.precipType = null
+        }
+
+        // Set correct day / night icons.
+        if (summary.iconText == "clear") {
+            summary.iconText = hour > 5 && hour < 20 ? "clear-day" : "clear-night"
         }
 
         // Property select correct weather icon.
