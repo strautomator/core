@@ -57,4 +57,6 @@ export interface WeatherProvider {
     title: string
     /** Main implementation to get an activity weather. */
     getActivityWeather: Function
+    /** IMplementation to get current weather. */
+    getCurrentWeather: Function
 }
