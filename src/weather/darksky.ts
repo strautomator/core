@@ -1,6 +1,7 @@
 // Strautomator Core: Weather - Dark Sky
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
+import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
 import logger = require("anyhow")
@@ -53,12 +54,12 @@ export class DarkSky implements WeatherProvider {
 
             const units = preferences.weatherUnit == "f" ? "us" : "si"
             const lang = preferences.language || "en"
-            const timestamp = moment().subtract(10, "m").unix()
-            const endpoint = `${coordinates[0]},${coordinates[1]},${timestamp}?units=${units}&lang=${lang}`
+            const now = moment().subtract(10, "m")
+            const endpoint = `${coordinates[0]},${coordinates[1]},${now.unix()}?units=${units}&lang=${lang}`
             const weatherUrl = `${settings.weather.darksky.baseUrl}${settings.weather.darksky.secret}/${endpoint}`
 
             const res = await axios({url: weatherUrl})
-            const result = this.toWeatherSummary(res.data, preferences)
+            const result = this.toWeatherSummary(res.data, now.toDate(), preferences)
 
             logger.info("DarkSky.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
             return result
@@ -95,7 +96,7 @@ export class DarkSky implements WeatherProvider {
             if (activity.dateStart && activity.locationStart) {
                 try {
                     const startResult: any = await axios({url: getUrl(activity.locationStart, activity.dateStart)})
-                    weather.start = this.toWeatherSummary(startResult.data, preferences)
+                    weather.start = this.toWeatherSummary(startResult.data, activity.dateStart, preferences)
                 } catch (ex) {
                     logger.error("DarkSky.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
                 }
@@ -105,7 +106,7 @@ export class DarkSky implements WeatherProvider {
             if (activity.dateEnd && activity.locationEnd) {
                 try {
                     const endResult: any = await axios({url: getUrl(activity.locationEnd, activity.dateEnd)})
-                    weather.end = this.toWeatherSummary(endResult.data, preferences)
+                    weather.end = this.toWeatherSummary(endResult.data, activity.dateEnd, preferences)
                 } catch (ex) {
                     logger.error("DarkSky.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)
                 }
@@ -122,13 +123,13 @@ export class DarkSky implements WeatherProvider {
      * Transform data from the Dark Sky API to a WeatherSummary.
      * @param data Data from Dark Sky.
      */
-    private toWeatherSummary = (data: any, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("DarkSky.toWeatherSummary", data)
 
         const tempUnit = preferences.weatherUnit ? preferences.weatherUnit.toUpperCase() : "C"
         const windUnit = preferences.weatherUnit == "f" ? " mph" : " m/s"
 
-        return {
+        const result: WeatherSummary = {
             summary: data.currently.summary,
             iconText: data.currently.icon,
             temperature: data.currently.temperature.toFixed(0) + "°" + tempUnit,
@@ -138,6 +139,10 @@ export class DarkSky implements WeatherProvider {
             windBearing: data.currently.windBearing,
             precipType: data.currently.precipType || null
         }
+
+        // Process and return weather summary.
+        processWeatherSummary(result, date)
+        return result
     }
 }
 

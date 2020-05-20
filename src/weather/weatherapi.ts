@@ -1,6 +1,7 @@
 // Strautomator Core: WeatherAPI.com (NOT WORKING YET)
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
+import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
 import _ = require("lodash")
@@ -57,9 +58,11 @@ export class WeatherAPI implements WeatherProvider {
             const baseQuery = `key=${settings.weather.weatherapi.secret}&lang=${lang}&q=`
             const currentQuery = `${baseQuery}${coordinates[0]},${coordinates[1]}`
             const weatherUrl = `${baseUrl}current.json?${currentQuery}`
+            const now = new Date()
 
             const res = await axios({url: weatherUrl})
-            const result = this.toWeatherSummary(res.data, new Date(), preferences)
+            const data = this.filterData(res.data, now)
+            const result = this.toWeatherSummary(data, now, preferences)
 
             logger.info("WeatherAPI.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
             return result
@@ -189,7 +192,7 @@ export class WeatherAPI implements WeatherProvider {
             }
         }
 
-        return {
+        const result: WeatherSummary = {
             summary: data.condition ? data.condition.text : null,
             iconText: iconText,
             temperature: temperature,
@@ -197,8 +200,12 @@ export class WeatherAPI implements WeatherProvider {
             pressure: pressure ? parseInt(pressure) + "hPa" : null,
             windSpeed: wind,
             windBearing: data.wind_degree ? data.wind_degree : null,
-            precipType: precipType
+            precipType: precipType || null
         }
+
+        // Process and return weather summary.
+        processWeatherSummary(result, date)
+        return result
     }
 
     /**
@@ -224,13 +231,8 @@ export class WeatherAPI implements WeatherProvider {
                 if (!hourData) hourData = _.find(result.hour, {date: mDate.add(2, "h").format(hourFormat)})
                 result = hourData || result.day
             }
-        }
-
-        // Data is for current conditions?
-        if (!result) {
+        } else {
             result = data.current
-        } else if (result.curent) {
-            result = result.current
         }
 
         if (!result) {

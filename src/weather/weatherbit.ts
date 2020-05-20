@@ -1,6 +1,7 @@
 // Strautomator Core: Weather - Weatherbit
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
+import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
 import logger = require("anyhow")
@@ -58,7 +59,7 @@ export class Weatherbit implements WeatherProvider {
             const weatherUrl = baseUrl + baseQuery
 
             const res = await axios({url: weatherUrl})
-            const result = this.toWeatherSummary(res.data.data[0], preferences)
+            const result = this.toWeatherSummary(res.data.data[0], new Date(), preferences)
 
             logger.info("Weatherbit.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
             return result
@@ -89,7 +90,7 @@ export class Weatherbit implements WeatherProvider {
             const baseUrl = `${settings.weather.weatherbit.baseUrl}?key=${settings.weather.weatherbit.secret}`
             const baseQuery = `&lat=${activity.locationEnd[0]}&lon=${activity.locationEnd[1]}&tz=local&lang=${lang}&units=${units}`
             const result: any = await axios({url: baseUrl + baseQuery})
-            weather.end = this.toWeatherSummary(result.data.data[0], preferences)
+            weather.end = this.toWeatherSummary(result.data.data[0], new Date(), preferences)
 
             return weather
         } catch (ex) {
@@ -103,7 +104,7 @@ export class Weatherbit implements WeatherProvider {
      * @param data Data from Weatherbit.
      * @param preferences User preferences.
      */
-    private toWeatherSummary = (data: any, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("Weatherbit.toWeatherSummary", data)
 
         const code = data.weather.code.substring(1)
@@ -150,7 +151,7 @@ export class Weatherbit implements WeatherProvider {
 
         const tempUnit = preferences.weatherUnit ? preferences.weatherUnit.toUpperCase() : "C"
 
-        return {
+        const result: WeatherSummary = {
             summary: data.weather.description,
             iconText: iconText,
             temperature: data.temp.toFixed(0) + "°" + tempUnit,
@@ -158,8 +159,12 @@ export class Weatherbit implements WeatherProvider {
             pressure: data.pres.toFixed(0) + " hPa",
             windSpeed: wind,
             windBearing: data.wind_dir,
-            precipType: precipType
+            precipType: precipType || null
         }
+
+        // Process and return weather summary.
+        processWeatherSummary(result, date)
+        return result
     }
 }
 

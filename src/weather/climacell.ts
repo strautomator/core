@@ -1,6 +1,7 @@
 // Strautomator Core: Weather - ClimaCell
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
+import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
 import _ = require("lodash")
@@ -169,15 +170,19 @@ export class ClimaCell implements WeatherProvider {
             data.iconText = data.iconText.replace(/_/g, "-")
         }
 
-        return {
+        const result: WeatherSummary = {
             iconText: iconText,
             temperature: data.temp.value.toFixed(0) + "°" + data.temp.units,
             humidity: data.humidity.value ? data.humidity.value.toFixed(0) + data.humidity.units : null,
             pressure: data.baro_pressure.value.toFixed(0) + " " + data.baro_pressure.units,
             windSpeed: data.wind_speed.value.toFixed(1) + " " + data.wind_speed.units,
             windBearing: data.wind_direction.value,
-            precipType: precipType
+            precipType: precipType || null
         }
+
+        // Process and return weather summary.
+        processWeatherSummary(result, date)
+        return result
     }
 }
 

@@ -1,6 +1,7 @@
 // Strautomator Core: Weather - OpenWeatherMap
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
+import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
 import logger = require("anyhow")
@@ -58,7 +59,7 @@ export class OpenWeatherMap implements WeatherProvider {
             const weatherUrl = baseUrl + query
 
             const res = await axios({url: weatherUrl})
-            const result = this.toWeatherSummary(res.data, preferences)
+            const result = this.toWeatherSummary(res.data, new Date(), preferences)
 
             logger.info("OpenWeatherMap.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
             return result
@@ -89,7 +90,7 @@ export class OpenWeatherMap implements WeatherProvider {
             const baseUrl = `${settings.weather.openweathermap.baseUrl}?appid=${settings.weather.openweathermap.secret}`
             const query = `&units=${units}&lang=${lang}&lat=${activity.locationEnd[0]}&lon=${activity.locationEnd[1]}`
             const result: any = await axios({url: baseUrl + query})
-            weather.end = this.toWeatherSummary(result.data, preferences)
+            weather.end = this.toWeatherSummary(result.data, new Date(), preferences)
 
             return weather
         } catch (ex) {
@@ -103,7 +104,7 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param data Data from OpenWeatherMap.
      * @param preferences User preferences.
      */
-    private toWeatherSummary = (data: any, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("OpenWeatherMap.toWeatherSummary", data)
 
         const code = data.weather[0].icon.substring(1)
@@ -153,7 +154,7 @@ export class OpenWeatherMap implements WeatherProvider {
         let summary = data.weather[0].description
         summary = summary.charAt(0).toUpperCase() + summary.slice(1)
 
-        return {
+        const result: WeatherSummary = {
             summary: summary,
             iconText: iconText,
             temperature: data.main.temp.toFixed(0) + "°" + tempUnit,
@@ -161,8 +162,12 @@ export class OpenWeatherMap implements WeatherProvider {
             pressure: data.main.pressure.toFixed(0) + " hPa",
             windSpeed: wind,
             windBearing: data.wind.deg,
-            precipType: precipType
+            precipType: precipType || null
         }
+
+        // Process and return weather summary.
+        processWeatherSummary(result, date)
+        return result
     }
 }
 
