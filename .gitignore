@@ -2,9 +2,10 @@
 .DS_Store
 .history
 .nyc_output
-coverage
-docs
-lib
-node_modules
+coverage/
+docs/
+lib/
+node_modules/
+test/
 settings.secret.json
 *.log

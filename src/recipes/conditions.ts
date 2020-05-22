@@ -7,9 +7,10 @@ import {WeatherSummary} from "../weather/types"
 import weather from "../weather"
 import logger = require("anyhow")
 import moment = require("moment")
+import polyline = require("@mapbox/polyline")
 
 /**
- * Check if the passed location based condition is valid.
+ * Check if the activity starts, passes on or ends on the specified location.
  * @param activity The Strava activity to be checked.
  * @param condition The location based recipe condition.
  */
@@ -26,9 +27,10 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
     const arr = condition.value.toString().split(",")
     const cLat = parseFloat(arr[0])
     const cLong = parseFloat(arr[1])
-    const activityLat = activity[prop][0]
-    const activityLong = activity[prop][1]
-    let radius
+
+    // Checking for a point in the activity polyline, or for a single lat / long?
+    let coordinates = prop == "polyline" ? polyline.decode(activity.polyline) : [[activity[prop][0], activity[prop][1]]]
+    let radius: number
 
     // When using "equals" use around 60m radius, and "like" use 650m radius.
     if (op == RecipeOperator.Equal) {
@@ -39,14 +41,15 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
-    // Check if activity start / end location matches the one defined on the condition.
-    const valid = activityLat <= cLat + radius && activityLat >= cLat - radius && activityLong <= cLong + radius && activityLong >= cLong - radius
-
-    if (!valid) {
-        logger.debug("Recipes.checkLocation", `Activity ${activity.id}`, condition, `Failed`)
+    // Check if activity passed near the specified location.
+    for (let [lat, long] of coordinates) {
+        if (lat <= cLat + radius && lat >= cLat - radius && long <= cLong + radius && long >= cLong - radius) {
+            return true
+        }
     }
 
-    return valid
+    logger.debug("Recipes.checkLocation", `Activity ${activity.id}`, condition, `Failed`)
+    return false
 }
 
 /**

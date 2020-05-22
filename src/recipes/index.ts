@@ -164,14 +164,14 @@ export class Recipes {
                     }
 
                     // Location condition.
-                    else if (prop.indexOf("location") >= 0) {
+                    else if (prop.indexOf("location") >= 0 || prop == "polyline") {
                         if (!checkLocation(activity, c)) {
                             return false
                         }
                     }
 
                     // Day of week condition.
-                    else if (prop.indexOf("weekday") >= 0) {
+                    else if (prop == "weekday") {
                         if (!checkWeekday(activity, c)) {
                             return false
                         }
