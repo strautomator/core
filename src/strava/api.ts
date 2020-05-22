@@ -38,17 +38,26 @@ export class StravaAPI {
      */
     init = async (): Promise<void> => {
         try {
-            if (!settings.strava.api.clientId) {
-                throw new Error("Missing the strava.api.clientId setting")
+            const nodeEnv = process.env.NODE_ENV
+
+            if (nodeEnv != "test") {
+                if (!settings.strava.api.clientId) {
+                    throw new Error("Missing the strava.api.clientId setting")
+                }
+                if (!settings.strava.api.clientSecret) {
+                    throw new Error("Missing the strava.api.clientSecret setting")
+                }
+                if (!settings.strava.api.verifyToken) {
+                    throw new Error("Missing the strava.api.verifyToken setting")
+                }
+                if (!settings.strava.api.urlToken) {
+                    throw new Error("Missing the strava.api.urlToken setting")
+                }
             }
-            if (!settings.strava.api.clientSecret) {
-                throw new Error("Missing the strava.api.clientSecret setting")
-            }
-            if (!settings.strava.api.verifyToken) {
-                throw new Error("Missing the strava.api.verifyToken setting")
-            }
-            if (!settings.strava.api.urlToken) {
-                throw new Error("Missing the strava.api.urlToken setting")
+
+            // The token can NOT be set in production.
+            if (settings.strava.api.token && nodeEnv == "production") {
+                throw new Error("The strava.api.token setting cannot be hard coded in production")
             }
 
             // Create the bottleneck rate limiter.

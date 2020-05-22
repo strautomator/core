@@ -10,7 +10,6 @@ import database from "../database"
 import recipes from "../recipes"
 import users from "../users"
 import _ = require("lodash")
-import cache = require("bitecache")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
 
@@ -45,7 +44,6 @@ export class StravaActivities {
             // Otherwise get directly from the API.
             if (data.gear_id) {
                 try {
-                    let user: UserData = cache.get("database", `users-${data.athlete.id}`)
                     let gear: StravaGear
 
                     // Search for bikes.

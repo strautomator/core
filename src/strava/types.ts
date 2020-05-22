@@ -34,6 +34,8 @@ export interface StravaActivity {
     locationStart?: [number, number]
     /** End location (latitude and longitude). */
     locationEnd?: [number, number]
+    /** Map encoded as polyline. */
+    polyline?: string
     /** Gear used. */
     gear?: StravaGear
     /** Average speed. */
@@ -143,6 +145,11 @@ export function toStravaActivity(data, units: string): StravaActivity {
     // Set activity gear.
     if (data.gear) {
         activity.gear = toStravaGear(data.gear)
+    }
+
+    // Set polyline.
+    if (data.map) {
+        activity.polyline = data.map.polyline
     }
 
     // Convert values according to the specified units.
