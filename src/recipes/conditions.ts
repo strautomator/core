@@ -5,6 +5,7 @@ import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
 import {WeatherSummary} from "../weather/types"
 import weather from "../weather"
+import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
 import polyline = require("@mapbox/polyline")
@@ -98,6 +99,11 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
     const prop = condition.property
     const op = condition.operator
 
+    // No valid start date? Stop here.
+    if (!activity["dateStart"]) {
+        return false
+    }
+
     // Parse condition and activity's date.
     const value = parseInt(condition.value as string)
     const weekday = moment(activity["dateStart"]).day()
@@ -182,6 +188,11 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
     const prop = condition.property
     const op = condition.operator
 
+    // No valid number set? Stop here.
+    if (_.isNil(activity[prop])) {
+        return false
+    }
+
     const value = condition.value
     const aNumber = activity[prop]
     let valid: boolean = true
@@ -209,6 +220,11 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
 export const checkText = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
     const op = condition.operator
+
+    // No valid number set? Stop here.
+    if (_.isNil(activity[prop])) {
+        return false
+    }
 
     // Parse condition and activity's lowercased values.
     const value = condition.value.toString().toLowerCase()

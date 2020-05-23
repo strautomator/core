@@ -9,11 +9,6 @@ export const recipeOperatorList = {
         {value: "like", text: "has", description: "Text contains the specified value"},
         {value: "=", text: "is exactly", description: "Text matches the specified value"}
     ],
-    // Location coordinates.
-    location: [
-        {value: "=", text: "within 60m of", description: ""},
-        {value: "like", text: "within 650m of", description: ""}
-    ],
     // Only positive numbers.
     number: [
         {value: "=", text: "is exactly", description: "Number matches the specified value"},
@@ -25,6 +20,11 @@ export const recipeOperatorList = {
         {value: "=", text: "is exactly", description: "Number matches the specified value"},
         {value: "<", text: "is lower than", description: "Number less than the specified value"},
         {value: ">", text: "is higher than", description: "Number greater than the specified value"}
+    ],
+    // Location coordinates.
+    location: [
+        {value: "=", text: "within 60m of", description: ""},
+        {value: "like", text: "within 650m of", description: ""}
     ],
     // Time.
     time: [
