@@ -67,8 +67,12 @@ export class Recipes {
                 throw new Error("Recipe order must be a number")
             }
 
+            // Default recipes for a specific sport type should have no conditions.
+            if (recipe.defaultFor) {
+                recipe.conditions = []
+            }
             // Non-default recipes must have conditions defined.
-            if (!recipe.defaultFor) {
+            else {
                 if (!recipe.conditions || !_.isArray(recipe.conditions) || recipe.conditions.length < 0) {
                     throw new Error("Missing recipe conditions")
                 }
