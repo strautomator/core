@@ -135,7 +135,7 @@
             "linksOn": false,
             // Subscription prices on PayPal to get a Pro account.
             "price": {
-                "year": 8.99
+                "year": 7.99
             },
             // Sponsorship price set on GitHub (USD).
             "githubPrice": 1.0
