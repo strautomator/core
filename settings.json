@@ -103,9 +103,9 @@
             // Default currency is EUR.
             "currency": "EUR",
             // Names and descriptions used on PayPal billing plans.
-            "name": "Strautomator Pro donation",
+            "name": "Strautomator Pro subscription",
             "productName": "Strautomator Pro account",
-            "description": "Donate to get a PRO account on Strautomator",
+            "description": "Subscribe to get a PRO account on Strautomator",
             // Subscription agreements are et to start in 10 minutes after they are created.
             "startMinutes": 10
         }
@@ -133,10 +133,12 @@
             "maxConditions": 999,
             // No links on Pro accounts processed activities.
             "linksOn": false,
-            // Default donation (subscription) prices to get a Pro account.
+            // Subscription prices on PayPal to get a Pro account.
             "price": {
                 "year": 8.99
-            }
+            },
+            // Sponsorship price set on GitHub (USD).
+            "githubPrice": 1.0
         }
     },
     "recipes": {

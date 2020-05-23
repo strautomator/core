@@ -27,7 +27,7 @@ The following collections are used:
 - **users** registered user details
 - **activities** summary of processed activities
 - **recipe-stats** automation recipe stats
-- **subscriptions** donations / subscriptions data
+- **subscriptions** subscriptions data
 
 Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
 
