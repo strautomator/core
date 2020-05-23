@@ -6,10 +6,6 @@
         // Hashtag used on social media.
         "hashtag": "#strautomator.com"
     },
-    // Bunq integration settings.
-    "bunq": {
-        "currency": "EUR"
-    },
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.
@@ -100,8 +96,8 @@
             ]
         },
         "billingPlan": {
-            // Default currency is EUR.
-            "currency": "EUR",
+            // Default currency is USD.
+            "currency": "USD",
             // Names and descriptions used on PayPal billing plans.
             "name": "Strautomator Pro subscription",
             "productName": "Strautomator Pro account",
