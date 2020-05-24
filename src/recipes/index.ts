@@ -106,8 +106,11 @@ export class Recipes {
                 }
             }
 
+            // Sort recipe actions, webhook should come last.
+            const sortedActions = _.sortBy(recipe.actions, ["type"])
+
             // Parse recipe actions.
-            for (let action of recipe.actions) {
+            for (let action of sortedActions) {
                 if (!Object.values(RecipeActionType).includes(action.type)) {
                     throw new Error(`Invalid action type: ${action.type}`)
                 }
