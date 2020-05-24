@@ -65,7 +65,8 @@ export enum RecipeActionType {
     Commute = "commute",
     Name = "name",
     Description = "description",
-    Gear = "gear"
+    Gear = "gear",
+    Webhook = "webhook"
 }
 
 /**

@@ -10,8 +10,9 @@ import weather from "../weather"
 import _ = require("lodash")
 import jaul = require("jaul")
 import logger = require("anyhow")
-
+const axios = require("axios").default
 const settings = require("setmeup").settings
+const packageVersion = require("../../package.json").version
 
 /**
  * Evaluate and process automation recipes.
@@ -230,6 +231,26 @@ export class Recipes {
         try {
             if (!activity.updatedFields) {
                 activity.updatedFields = []
+            }
+
+            // Dispatch acctivity to webhook?
+            if (action.type == RecipeActionType.Webhook) {
+                const options = {
+                    method: "POST",
+                    url: action.value,
+                    timeout: settings.recipes.webhook.timeout,
+                    headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`},
+                    data: activity
+                }
+
+                // Dispatch webhook.
+                try {
+                    await axios(options)
+                } catch (exReq) {
+                    logger.warn("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, `Webhook failed: ${action.value}`, exReq)
+                }
+
+                return
             }
 
             // Mark activity as commute?

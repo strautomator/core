@@ -149,6 +149,10 @@
             "title": 40,
             "conditionValue": 120,
             "actionValue": 300
+        },
+        // Webhook timeout is set to 5 seconds by default.
+        "webhook": {
+            "timeout": 5000
         }
     },
     "strava": {
