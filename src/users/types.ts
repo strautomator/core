@@ -70,7 +70,7 @@ export interface UserSubscription {
     /** Subscription ID. */
     id: string
     /** Subscription source. */
-    source: "paypal" | "github"
+    source: "paypal" | "github" | "friend"
     /** Enabled? */
     enabled: boolean
 }
