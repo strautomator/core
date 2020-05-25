@@ -261,7 +261,7 @@ export class PayPalSubscriptions {
                 if (res.billing_info.last_payment) {
                     subscription.lastPayment = {
                         amount: parseFloat(res.billing_info.last_payment.amount.value),
-                        currency: res.billing_info.last_payment.currency_code,
+                        currency: res.billing_info.last_payment.amount.currency_code,
                         date: moment(res.billing_info.last_payment.time).toDate()
                     }
                 }
