@@ -267,7 +267,7 @@ export class PayPalSubscriptions {
                 }
             }
 
-            logger.info("PayPal.getSubscription", id, `Plan ${res.plan_id}`, `Last updated ${subscription.dateUpdated.toString()}`)
+            logger.info("PayPal.getSubscription", id, `Plan ${res.plan_id}`, `Last updated ${moment(subscription.dateUpdated).format("llll")}`)
 
             return subscription
         } catch (ex) {
@@ -340,7 +340,7 @@ export class PayPalSubscriptions {
         try {
             const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: new Date()}
             const options = {
-                url: `/v1/billing/subscriptions/${subscription.id}/cancel`,
+                url: `billing/subscriptions/${subscription.id}/cancel`,
                 method: "POST",
                 data: {
                     reason: reason
