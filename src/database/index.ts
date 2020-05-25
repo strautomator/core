@@ -40,6 +40,7 @@ export class Database {
             }
 
             this.firestore = new Firestore(options)
+            this.firestore.settings({ignoreUndefinedProperties: true})
 
             const suffix = settings.database.collectionSuffix
             const logPrefix = suffix ? `Collections suffixd with "${suffix}"` : "No collection suffix"
