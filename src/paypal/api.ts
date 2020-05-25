@@ -127,7 +127,12 @@ export class PayPalAPI {
             // Dispatch request to PayPal.
             const res = await axios(options)
 
-            if (!res || !res.data) {
+            if (!res) {
+                logger.warn("PayPal.makeRequest", options.method, options.url, "Got no response")
+                return null
+            }
+
+            if (!res.data && res.status != 204) {
                 logger.warn("PayPal.makeRequest", options.method, options.url, "Got an empty response")
                 return null
             }

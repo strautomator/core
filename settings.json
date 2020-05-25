@@ -129,7 +129,7 @@
             "maxConditions": 999,
             // No links on Pro accounts processed activities.
             "linksOn": false,
-            // Subscription prices on PayPal to get a Pro account.
+            // Subscription prices on PayPal to get a PRO account.
             "price": {
                 "year": 7.99
             },
