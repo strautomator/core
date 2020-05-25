@@ -7,6 +7,7 @@ import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
+import {stat} from "fs"
 const settings = require("setmeup").settings
 
 /**
@@ -354,6 +355,25 @@ export class PayPalSubscriptions {
             logger.info("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Cancelled")
         } catch (ex) {
             logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Could not cancel`)
+            throw ex
+        }
+    }
+
+    /**
+     * Fix a dangling subscription by force updating its details on the database.
+     * @param subscription The dangling subscription.
+     */
+    fixSubscription = async (subscription: PayPalSubscription): Promise<void> => {
+        try {
+            if (subscription.status != "ACTIVE") {
+                throw new Error(`Subscription ${subscription.id} is not active`)
+            }
+
+            await database.merge("subscriptions", subscription)
+            logger.info("PayPal.fixSubscription", `Subscription ${subscription.id} for user ${subscription.userId}`, "Fixed")
+            eventManager.emit("PayPal.subscriptionUpdated", subscription)
+        } catch (ex) {
+            logger.error("PayPal.fixSubscription", `Could not fix subscription ${subscription.id} for user ${subscription.userId}`)
             throw ex
         }
     }
