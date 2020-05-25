@@ -7,7 +7,6 @@ import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
-import {stat} from "fs"
 const settings = require("setmeup").settings
 
 /**
