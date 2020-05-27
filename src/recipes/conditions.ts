@@ -193,11 +193,14 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
         return false
     }
 
-    const value = condition.value
+    const value = parseFloat(condition.value as any)
+    const diff = value * 0.1
     const aNumber = activity[prop]
     let valid: boolean = true
 
-    if (op == RecipeOperator.Equal && aNumber != value) {
+    if (op == RecipeOperator.Like) {
+        valid = aNumber > value + diff || aNumber < value - diff
+    } else if (op == RecipeOperator.Equal && Math.round(aNumber) != Math.round(value)) {
         valid = false
     } else if (op == RecipeOperator.GreaterThan && aNumber <= value) {
         valid = false

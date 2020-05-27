@@ -12,12 +12,14 @@ export const recipeOperatorList = {
     // Only positive numbers.
     number: [
         {value: "=", text: "is exactly", description: "Number matches the specified value"},
+        {value: "like", text: "is around (±10%)", description: "Number is around (±10%) the specified value"},
         {value: "<", text: "is lower than", description: "Number less than the specified value"},
         {value: ">", text: "is higher than", description: "Number greater than the specified value"}
     ],
     //Any number.
     anyNumber: [
         {value: "=", text: "is exactly", description: "Number matches the specified value"},
+        {value: "like", text: "is around (±10%)", description: "Number is around (±10%) the specified value"},
         {value: "<", text: "is lower than", description: "Number less than the specified value"},
         {value: ">", text: "is higher than", description: "Number greater than the specified value"}
     ],
