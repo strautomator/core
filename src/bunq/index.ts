@@ -1,8 +1,9 @@
 // Strautomator Core: bunq
 
-import {BunqPayment} from "./types"
+import {BunqPayment, BunqUser} from "./types"
 import {BunqClient} from "./client"
 import {UserData} from "../users/types"
+import database from "../database"
 import strava from "../strava"
 import logger = require("anyhow")
 import moment = require("moment")
@@ -41,7 +42,7 @@ export class Bunq {
         settings.bunq.api.environment = settings.bunq.api.environment.toUpperCase()
     }
 
-    // MAIN METHODS
+    // REGISTRATION AND SETUP
     // --------------------------------------------------------------------------
 
     /**
@@ -57,8 +58,26 @@ export class Bunq {
             return client
         } catch (ex) {
             logger.error("Bunq.register", user, ex)
+            throw ex
         }
     }
+
+    /**
+     * Update (or create) a bunq user on the database.
+     * @param user The main user account.
+     * @param bunqUser The bunq user to be saved.
+     */
+    saveBunqUser = async (user: UserData, bunqUser: BunqUser) => {
+        try {
+            await database.set("bunq", bunqUser, bunqUser.id.toString())
+            logger.info("Bunq.saveBunqUser", `User ${user.id}`, `ID on bunq: ${bunqUser.id}`)
+        } catch (ex) {
+            logger.error("Bunq.saveBunqUser", `User ${user.id}`, `ID on bunq: ${bunqUser.id}`, ex)
+        }
+    }
+
+    // PAYMENTS
+    // --------------------------------------------------------------------------
 
     /**
      * Create a payment request for the specified user.

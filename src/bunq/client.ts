@@ -58,6 +58,7 @@ export class BunqClient {
                     if (err) throw err
                     this.bunqUser = {
                         cryptoKey: buffer.toString("hex"),
+                        dateAuth: new Date(),
                         sessionStore: {}
                     } as any
                 })
@@ -226,13 +227,15 @@ export class BunqClient {
      * Get the user account details.
      * @param user Bunq user details.
      */
-    getUserDetails = async () => {
+    getUserDetails = async (): Promise<void> => {
         try {
             const users = await this.client.getUsers(true)
             const userDetails = users[Object.keys(users)[0]]
 
             logger.info("BunqClient.getUserDetails", this.userSummary, userDetails.public_nick_name)
-            return userDetails
+
+            this.bunqUser.id = userDetails.id
+            this.bunqUser.email = _.find(userDetails.alias, {type: "EMAIL"}).value
         } catch (ex) {
             logger.error("BunqClient.getUserDetails", this.userSummary, ex)
             throw ex
@@ -267,7 +270,6 @@ export class BunqClient {
 
         try {
             const accounts = await this.getAccounts()
-
             const acc = _.find(accounts, (a) => {
                 return _.find(a.alias, {value: alias}) != null
             })
