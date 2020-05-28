@@ -48,12 +48,13 @@ export class Bunq {
      * Register a new bunq user.
      * @param user The user connecting to a bunq account.
      */
-    register = async (user: UserData) => {
+    register = async (user: UserData): Promise<BunqClient> => {
         try {
             const client = new BunqClient()
             await client.setup(user, true)
 
             this.clients[user.id] = client
+            return client
         } catch (ex) {
             logger.error("Bunq.register", user, ex)
         }
