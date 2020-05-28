@@ -43,6 +43,8 @@ import {Users} from "./users"
 export const users: Users = Users.Instance
 import {Recipes} from "./recipes"
 export const recipes: Recipes = Recipes.Instance
+import {Bunq} from "./bunq"
+export const bunq: Bunq = Bunq.Instance
 
 // Export event manager.
 import {EventManager} from "./eventmanager"
@@ -108,7 +110,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather]) {
+    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, bunq]) {
         try {
             if (quickStart) {
                 coreModule.init(quickStart)

@@ -1,6 +1,6 @@
 // Strautomator Core: bunq
 
-import {BunqPayment, BunqUser} from "./types"
+import {BunqPayment} from "./types"
 import {BunqClient} from "./client"
 import {UserData} from "../users/types"
 import strava from "../strava"
@@ -21,7 +21,7 @@ export class Bunq {
     /**
      * Holds a list of active bunq clients.
      */
-    clients: {[id: string]: BunqUser}
+    clients: {[id: string]: BunqClient}
 
     /**
      * Init the bunq wrapper.
@@ -44,10 +44,16 @@ export class Bunq {
     // MAIN METHODS
     // --------------------------------------------------------------------------
 
+    /**
+     * Register a new bunq user.
+     * @param user The user connecting to a bunq account.
+     */
     register = async (user: UserData) => {
         try {
             const client = new BunqClient()
             await client.setup(user, true)
+
+            this.clients[user.id] = client
         } catch (ex) {
             logger.error("Bunq.register", user, ex)
         }
@@ -58,6 +64,8 @@ export class Bunq {
      * @param user The user.
      */
     payForActivities = async (user: UserData): Promise<BunqPayment> => {
+        let payment: BunqPayment
+
         try {
             if (!user.bunqId) {
                 const err = new Error(`User ${user.id} has no bunq ID assigned`) as any
@@ -68,6 +76,7 @@ export class Bunq {
             // First try registering the bunq client.
             const client = new BunqClient()
             await client.setup(user)
+            this.clients[user.id] = client
 
             // User still has a valid token?
             if (!client.authenticated) {
@@ -109,19 +118,29 @@ export class Bunq {
             // Get dates on the correct format.
             const dates = `from ${moment(dateFrom).format("L")} to ${moment(dateTo).format("L")}`
 
-            const payment: BunqPayment = {
+            payment = {
                 description: `${distance}km and ${elevation}m on Strava, ${dates}`,
                 amount: amount,
                 date: new Date()
             }
 
             await client.makePayment(payment)
-
-            return null
         } catch (ex) {
             logger.error("Bunq.payForActivities", user, ex)
             throw ex
         }
+
+        // Destroy the client after everything has finished.
+        if (this.clients[user.id]) {
+            try {
+                await this.clients[user.id].destroy()
+                delete this.clients[user.id]
+            } catch (ex) {
+                logger.warn("Bunq.payForActivities", "Could not destroy the client session")
+            }
+        }
+
+        return payment
     }
 }
 
