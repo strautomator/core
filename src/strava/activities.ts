@@ -79,7 +79,7 @@ export class StravaActivities {
     /**
      * Get list of activities from Strava.
      * @param tokens Strava access tokens.
-     * @param query Query options, currently only supports "since".
+     * @param query Query options.
      */
     getActivities = async (tokens: StravaTokens, query: any): Promise<StravaActivity[]> => {
         logger.debug("Strava.getActivities", query)

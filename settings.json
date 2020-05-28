@@ -6,6 +6,21 @@
         // Hashtag used on social media.
         "hashtag": "#strautomator.com"
     },
+    "bunq": {
+        "api": {
+            // The bunq's key, clientId and clientSecret must be set on your settings.secret.json file
+            // or via environment variables. These are required only if bunq integration is enabled.
+            "key": null,
+            "clientId": null,
+            "clientSecret": null,
+            // To connect to the bunq sandbox during development, set this to "SANDBOX".
+            "environment": "PRODUCTION"
+        },
+        "schedule": {
+            // Payments are processed at 4PM by default.
+            "time": "16:00"
+        }
+    },
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.
@@ -14,7 +29,7 @@
         "crypto": {
             "algorithm": "aes-256-cbc",
             // List of property names that should be saved in encrypted format.
-            "fields": ["accessToken", "refreshToken", "password"]
+            "fields": ["accessToken", "refreshToken", "password", "cryptoKey"]
         }
     },
     "gcp": {
@@ -71,6 +86,11 @@
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
         }
     },
+    "oauth": {
+        // Token exchange requests times out in 10 seconds. This applies to all
+        // OAuth2 modules (Strava, PayPal, etc).
+        "tokenTimeout": 10000
+    },
     "paypal": {
         "api": {
             // The PayPal API client ID and secret must be set on the settings.secret.json file,
@@ -105,11 +125,6 @@
             // Subscription agreements are et to start in 10 minutes after they are created.
             "startMinutes": 10
         }
-    },
-    "oauth": {
-        // Token exchange requests times out in 10 seconds. This applies to all
-        // OAuth2 modules (Strava, PayPal, etc).
-        "tokenTimeout": 10000
     },
     "plans": {
         // Free accounts are limited to 3 recipes and conditions.

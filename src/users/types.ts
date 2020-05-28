@@ -33,6 +33,8 @@ export interface UserData {
     preferences?: UserPreferences
     /** Subscription details (for PRO accounts). */
     subscription?: UserSubscription
+    /** ID of the bunq account (if registered). */
+    bunqId?: string
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */

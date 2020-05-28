@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "20.222.10004",
+    "version": "20.224.12334",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "private": true,
@@ -10,7 +10,8 @@
         "postinstall": "tsc"
     },
     "dependencies": {
-        "@google-cloud/firestore": "^3.8.0",
+        "@bunq-community/bunq-js-client": "^1.1.2",
+        "@google-cloud/firestore": "^3.8.1",
         "@google-cloud/storage": "^5.0.1",
         "@googlemaps/google-maps-services-js": "^2.6.1",
         "@mapbox/polyline": "^1.1.1",
@@ -19,7 +20,7 @@
         "bottleneck": "^2.19.5",
         "jaul": "^1.3.3",
         "moment": "2.26.0",
-        "nodemailer": "^6.4.6",
+        "nodemailer": "^6.4.8",
         "paypal-rest-sdk": "^1.8.1",
         "setmeup": "^1.5.4",
         "typescript": "^3.9.3",
