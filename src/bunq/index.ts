@@ -22,20 +22,22 @@ export class Bunq {
     /**
      * Holds a list of active bunq clients.
      */
-    clients: {[id: string]: BunqClient}
+    clients: {[id: string]: BunqClient} = {}
 
     /**
      * Init the bunq wrapper.
      */
     init = async (): Promise<void> => {
-        if (!settings.bunq.api.key) {
-            throw new Error("Missing the mandatory bunq.api.key setting")
-        }
-        if (!settings.bunq.api.clientId) {
-            throw new Error("Missing the mandatory bunq.api.clientId setting")
-        }
-        if (!settings.bunq.api.clientSecret) {
-            throw new Error("Missing the mandatory bunq.api.clientSecret setting")
+        try {
+            if (!settings.bunq.api.clientId) {
+                throw new Error("Missing the mandatory bunq.api.clientId setting")
+            }
+            if (!settings.bunq.api.clientSecret) {
+                throw new Error("Missing the mandatory bunq.api.clientSecret setting")
+            }
+        } catch (ex) {
+            logger.error("Bunq.init", ex)
+            throw ex
         }
 
         // Force environment to uppercase.

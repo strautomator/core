@@ -54,14 +54,14 @@ export class BunqClient {
         try {
             // Is it a new registration? If so, create a new random encryption key.
             if (newRegistration) {
-                crypto.randomBytes(16, function (err, buffer) {
-                    if (err) throw err
-                    this.bunqUser = {
-                        cryptoKey: buffer.toString("hex"),
-                        dateAuth: new Date(),
-                        sessionStore: {}
-                    } as any
-                })
+                let key = crypto.randomBytes(16).toString("hex")
+                if (key.length < 32) key = `A${key}`
+
+                this.bunqUser = {
+                    cryptoKey: key,
+                    dateAuth: new Date(),
+                    sessionStore: {}
+                } as any
             } else {
                 let bunqUser: BunqUser = await database.get("bunq", userData.bunqId)
 
@@ -135,7 +135,8 @@ export class BunqClient {
 
         // Setup client.
         try {
-            await this.client.run(settings.bunq.api.key, settings.bunq.api.ips, settings.bunq.api.environment, this.bunqUser.cryptoKey)
+            const apiKey = settings.bunq.api.key || false
+            await this.client.run(apiKey, [], settings.bunq.api.environment, this.bunqUser.cryptoKey)
             await this.client.install()
         } catch (ex) {
             logger.error("BunqClient.setup", this.userSummary, "Install error", ex)
@@ -144,7 +145,7 @@ export class BunqClient {
 
         // Register device and session.
         try {
-            await this.client.registerDevice(`${settings.app.title} - ${this.userId}`)
+            await this.client.registerDevice(settings.app.title)
             await this.client.registerSession()
         } catch (ex) {
             logger.error("BunqClient.setup", this.userSummary, "Session registration error", ex)
