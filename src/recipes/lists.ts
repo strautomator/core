@@ -57,6 +57,7 @@ export const recipePropertyList = [
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
     {value: "polyline", text: "Passes on location", type: "location", operators: recipeOperatorList.location},
     {value: "wattsAvg", text: "Average power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},
+    {value: "wattsWeighted", text: "Normalized power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},
     {value: "wattsMax", text: "Max power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},
     {value: "hrAvg", text: "Average heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm"},
     {value: "hrMax", text: "Max heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm"},

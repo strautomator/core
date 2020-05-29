@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaGear, StravaTokens, StravaProcessedActivity} from "./types"
+import {StravaActivity, StravaGear, StravaProcessedActivity} from "./types"
 import {toStravaActivity} from "./types"
 import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
@@ -27,8 +27,37 @@ export class StravaActivities {
     // --------------------------------------------------------------------------
 
     /**
+     * Get list of activities from Strava.
+     * @param user The owner of the activity.
+     * @param query Query options.
+     */
+    getActivities = async (user: UserData, query: any): Promise<StravaActivity[]> => {
+        logger.debug("Strava.getActivities", `User ${user.id}`, query)
+
+        const arrLogQuery = Object.entries(query).map((p) => p[0] + "=" + p[1])
+        const logQuery = arrLogQuery.join(", ")
+
+        try {
+            // Default query options.
+            if (!query.per_page) {
+                query.per_page = 200
+            }
+
+            // Fetch user activities from Strava.
+            const tokens = user.stravaTokens
+            const activities = await api.get(tokens, "athlete/activities", query)
+
+            logger.info("Strava.getActivities", `User ${user.id}`, logQuery, `Got ${activities.length} activities`)
+            return activities
+        } catch (ex) {
+            logger.error("Strava.getActivities", `User ${user.id}`, logQuery, ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get a single activity from Strava.
-     * @param tokens Strava access tokens.
+     * @param user The owner of the activity.
      * @param id The activity ID.
      */
     getActivity = async (user: UserData, id: number | string): Promise<StravaActivity> => {
@@ -69,36 +98,36 @@ export class StravaActivities {
                 activity.gear = null
             }
 
+            logger.info("Strava.getActivity", `User ${user.id}`, `Activity ${id}`, activity.name)
             return activity
         } catch (ex) {
-            logger.error("Strava.getActivity", id, ex)
+            logger.error("Strava.getActivity", `User ${user.id}`, `Activity ${id}`, ex)
             throw ex
         }
     }
 
     /**
-     * Get list of activities from Strava.
-     * @param tokens Strava access tokens.
-     * @param query Query options.
+     * Get an activity stream.
+     * @param user The owner of the activity.
+     * @param id The activity ID.
      */
-    getActivities = async (tokens: StravaTokens, query: any): Promise<StravaActivity[]> => {
-        logger.debug("Strava.getActivities", query)
-
-        const arrLogQuery = Object.entries(query).map((p) => p[0] + "=" + p[1])
-        const logQuery = arrLogQuery.join(", ")
+    getStream = async (user: UserData, id: number | string): Promise<any> => {
+        logger.debug("Strava.getStream", `User ${user.id}`, id)
 
         try {
-            // Default query options.
-            if (!query.per_page) {
-                query.per_page = 200
+            const tokens = user.stravaTokens
+            const data = await api.get(tokens, `activities/${id}/streams`)
+            let datapoints = 0
+
+            // Count how many stream data points we have for this activity.
+            for (let stream of data) {
+                if (stream.data) datapoints += stream.data.length
             }
 
-            // Fetch user activities from Strava.
-            let activities = await api.get(tokens, "athlete/activities", query)
-
-            return activities
+            logger.info("Strava.getStream", `User ${user.id}`, `Activity ${id}`, `${datapoints} data points`)
+            return data
         } catch (ex) {
-            logger.error("Strava.getActivities", logQuery, ex)
+            logger.error("Strava.getStream", `User ${user.id}`, `Activity ${id}`, ex)
             throw ex
         }
     }

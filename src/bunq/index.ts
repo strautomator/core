@@ -128,7 +128,7 @@ export class Bunq {
             }
 
             const query = {after: dateFrom.unix(), before: dateTo.unix()}
-            const activities = await strava.activities.getActivities(user.stravaTokens, query)
+            const activities = await strava.activities.getActivities(user, query)
 
             // Iterate activities to calculate the total payment amount.
             for (let a of activities) {
