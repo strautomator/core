@@ -29,6 +29,11 @@ export class Bunq {
      */
     init = async (): Promise<void> => {
         try {
+            if (settings.bunq.disabled) {
+                logger.warn("Bunq.init", "Disabled on settings, bunq integration won't work")
+                return
+            }
+
             if (!settings.bunq.api.clientId) {
                 throw new Error("Missing the mandatory bunq.api.clientId setting")
             }

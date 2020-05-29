@@ -200,7 +200,7 @@ export class BunqClient {
 
     /**
      * Get the OAuth2 access token based on the provided authorization code.
-     * This method will return null when it fails to get the token.
+     * This method will return false when it fails to get the token.
      * @param code The authorization code provided via the auth callback URL.
      */
     getOAuthToken = async (code: string) => {
@@ -214,6 +214,7 @@ export class BunqClient {
                 throw new Error("Invalid access token")
             }
 
+            this.bunqUser.dateAuth = new Date()
             logger.info("BunqClient.getOAuthToken", this.userSummary, "Got a new access token")
             return true
         } catch (ex) {

@@ -1,6 +1,10 @@
 // STRAUTOMATOR CORE SETTINGS (PRODUCTION)
 
 {
+    "bunq": {
+        // Disable bunq on production while the integration is being ironed out.
+        "disabled": true
+    },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
         // you might add a default suffix to Firestore collection names.

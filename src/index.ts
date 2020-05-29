@@ -112,10 +112,16 @@ export const startup = async (quickStart?: boolean) => {
     // Try starting individual modules now.
     for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, bunq]) {
         try {
-            if (quickStart) {
-                coreModule.init(quickStart)
+            const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
+
+            if (modSettings && modSettings.disabled) {
+                logger.warn("Strautomator.startup", coreModule.constructor.name, "Module is disabled on settings")
             } else {
-                await coreModule.init()
+                if (quickStart) {
+                    coreModule.init(quickStart)
+                } else {
+                    await coreModule.init()
+                }
             }
         } catch (ex) {
             logger.error("Strautomator.startup", "Failed to start a core module, will exit...")
