@@ -185,7 +185,8 @@ export class BunqClient {
      * The authentication URL used to start the OAuth2 flow with bunq.
      */
     get authUrl(): string {
-        const redirectUrl = settings.app.url + "bunq/auth/callback"
+        const apiUrl = settings.api.url || `${settings.app.url}api/`
+        const redirectUrl = apiUrl + "bunq/auth/callback"
         const sandbox = settings.bunq.api.environment == "SANDBOX"
         return this.client.formatOAuthAuthorizationRequestUrl(settings.bunq.api.clientId, redirectUrl, false, sandbox)
     }
