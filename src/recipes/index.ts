@@ -1,18 +1,15 @@
 // Strautomator Core: Recipes
 
 import {recipePropertyList, recipeActionList} from "./lists"
+import {defaultAction, commuteAction, gearAction, webhookAction} from "./actions"
 import {checkText, checkLocation, checkWeekday, checkTimestamp, checkWeather, checkNumber} from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator, RecipeStats} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
-import weather from "../weather"
 import _ = require("lodash")
-import jaul = require("jaul")
 import logger = require("anyhow")
-const axios = require("axios").default
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Evaluate and process automation recipes.
@@ -106,11 +103,8 @@ export class Recipes {
                 }
             }
 
-            // Sort recipe actions, webhook should come last.
-            const sortedActions = _.sortBy(recipe.actions, ["type"])
-
             // Parse recipe actions.
-            for (let action of sortedActions) {
+            for (let action of recipe.actions) {
                 if (!Object.values(RecipeActionType).includes(action.type)) {
                     throw new Error(`Invalid action type: ${action.type}`)
                 }
@@ -160,66 +154,81 @@ export class Recipes {
 
         // Otherwise iterate conditions and evaluate each one.
         else {
-            for (let c of recipe.conditions) {
-                try {
-                    const prop = c.property.toLowerCase()
-
-                    // Weather conditions.
-                    if (prop.indexOf("weather") >= 0) {
-                        if (!(await checkWeather(activity, c, user.preferences))) {
-                            return false
-                        }
-                    }
-
-                    // Location condition.
-                    else if (prop.indexOf("location") >= 0 || prop == "polyline") {
-                        if (!checkLocation(activity, c)) {
-                            return false
-                        }
-                    }
-
-                    // Day of week condition.
-                    else if (prop == "weekday") {
-                        if (!checkWeekday(activity, c)) {
-                            return false
-                        }
-                    }
-
-                    // Time based condition.
-                    else if (prop.indexOf("date") >= 0) {
-                        if (!checkTimestamp(activity, c)) {
-                            return false
-                        }
-                    }
-
-                    // Number condition.
-                    else if (_.isNumber(activity[c.property])) {
-                        if (!checkNumber(activity, c)) {
-                            return false
-                        }
-                    }
-
-                    // Text condition.
-                    else {
-                        if (!checkText(activity, c)) {
-                            return false
-                        }
-                    }
-                } catch (ex) {
-                    logger.error("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `${c.property} ${c.operator} ${c.value}`, ex)
+            for (let condition of recipe.conditions) {
+                if (!this.checkCondition(user, activity, condition)) {
                     return false
                 }
             }
         }
 
+        // Sort recipe actions, webhook should come last.
+        const sortedActions = _.sortBy(recipe.actions, ["type"])
+
         // Iterate and execute actions.
-        for (let action of recipe.actions) {
+        for (let action of sortedActions) {
             await this.processAction(user, activity, action)
         }
 
         // Update recipe stats and return OK.
         await this.updateStats(user, recipe, activity)
         return true
+    }
+
+    /**
+     * Check if the passed condition is valid for the activity.
+     * @param user The recipe's owner.
+     * @param activity Strava activity to be evaluated.
+     * @param condition The recipe condition.
+     */
+    checkCondition = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+        try {
+            const prop = condition.property.toLowerCase()
+
+            // Weather conditions.
+            if (prop.indexOf("weather") >= 0) {
+                if (!(await checkWeather(activity, condition, user.preferences))) {
+                    return false
+                }
+            }
+
+            // Location condition.
+            else if (prop.indexOf("location") >= 0 || prop == "polyline") {
+                if (!checkLocation(activity, condition)) {
+                    return false
+                }
+            }
+
+            // Day of week condition.
+            else if (prop == "weekday") {
+                if (!checkWeekday(activity, condition)) {
+                    return false
+                }
+            }
+
+            // Time based condition.
+            else if (prop.indexOf("date") >= 0) {
+                if (!checkTimestamp(activity, condition)) {
+                    return false
+                }
+            }
+
+            // Number condition.
+            else if (_.isNumber(activity[condition.property])) {
+                if (!checkNumber(activity, condition)) {
+                    return false
+                }
+            }
+
+            // Text condition.
+            else {
+                if (!checkText(activity, condition)) {
+                    return false
+                }
+            }
+        } catch (ex) {
+            logger.error("Recipes.checkCondition", `User ${user.id}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`, ex)
+            return false
+        }
     }
 
     /**
@@ -231,102 +240,26 @@ export class Recipes {
     processAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
         logger.debug("Recipes.processAction", user, activity, action)
 
-        try {
-            if (!activity.updatedFields) {
-                activity.updatedFields = []
-            }
-
-            // Dispatch acctivity to webhook?
-            if (action.type == RecipeActionType.Webhook) {
-                const options = {
-                    method: "POST",
-                    url: action.value,
-                    timeout: settings.recipes.webhook.timeout,
-                    headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`},
-                    data: activity
-                }
-
-                // Dispatch webhook.
-                try {
-                    await axios(options)
-                } catch (exReq) {
-                    logger.warn("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, `Webhook failed: ${action.value}`, exReq)
-                }
-
-                return
-            }
-
-            // Mark activity as commute?
-            if (action.type == RecipeActionType.Commute) {
-                activity.commute = true
-                activity.updatedFields.push("commute")
-                return
-            }
-
-            // Change activity gear?
-            if (action.type == RecipeActionType.Gear) {
-                let gear = _.find(user.profile.bikes, {id: action.value})
-
-                if (!gear) {
-                    gear = _.find(user.profile.shoes, {id: action.value})
-                }
-
-                if (!gear) {
-                    this.reportInvalidAction(user, action, "Gear not found")
-                } else {
-                    activity.gear = gear
-                    activity.updatedFields.push("gear")
-                }
-
-                return
-            }
-
-            let processedValue = action.value
-
-            // Append suffixes to values before processing.
-            const activityWithSuffix: StravaActivity = _.cloneDeep(activity)
-            for (let prop of recipePropertyList) {
-                if (prop.suffix && activityWithSuffix[prop.value]) {
-                    activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${prop.suffix}`
-                }
-            }
-
-            // Iterate activity properties and replace keywords set on the action value.
-            processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
-
-            // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
-            if (processedValue.indexOf("${weather.") >= 0) {
-                if (activity.locationStart && activity.locationStart.length > 0) {
-                    const weatherSummary = await weather.getActivityWeather(activity, user.preferences)
-
-                    if (weatherSummary) {
-                        const weatherDetails = weatherSummary.end || weatherSummary.start
-                        processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
-                    } else {
-                        processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
-                    }
-                } else {
-                    logger.warn("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
-                    processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
-                }
-            }
-
-            // Change activity name?
-            if (action.type == RecipeActionType.Name) {
-                activity.name = processedValue
-                activity.updatedFields.push("name")
-                return
-            }
-
-            // Change activity description?
-            if (action.type == RecipeActionType.Description) {
-                activity.description = processedValue
-                activity.updatedFields.push("description")
-                return
-            }
-        } catch (ex) {
-            logger.error("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, `Action ${action.type}`, ex)
+        if (!activity.updatedFields) {
+            activity.updatedFields = []
         }
+
+        // Dispatch acctivity to webhook?
+        if (action.type == RecipeActionType.Webhook) {
+            return webhookAction(user, activity, action)
+        }
+
+        // Mark activity as commute?
+        if (action.type == RecipeActionType.Commute) {
+            return commuteAction(user, activity, action)
+        }
+
+        // Change activity gear?
+        if (action.type == RecipeActionType.Gear) {
+            return gearAction(user, activity, action)
+        }
+
+        return defaultAction(user, activity, action)
     }
 
     /**
