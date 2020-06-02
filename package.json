@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "20.225.11846",
+    "version": "20.232.12252",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "private": true,
@@ -10,8 +10,7 @@
         "postinstall": "tsc"
     },
     "dependencies": {
-        "@bunq-community/bunq-js-client": "^1.1.2",
-        "@google-cloud/firestore": "^3.8.1",
+        "@google-cloud/firestore": "^3.8.4",
         "@google-cloud/storage": "^5.0.1",
         "@googlemaps/google-maps-services-js": "^2.6.1",
         "@mapbox/polyline": "^1.1.1",
@@ -27,12 +26,12 @@
         "twitter-lite": "^0.13.0"
     },
     "devDependencies": {
-        "@types/node": "^14.0.5",
+        "@types/node": "^14.0.9",
         "chai": "^4.2.0",
         "chalk": "^4.0.0",
         "mocha": "^7.2.0",
         "mocha-lcov-reporter": "^1.3.0",
-        "nyc": "^15.0.1",
+        "nyc": "^15.1.0",
         "typedoc": "^0.17.7"
     },
     "peerDependencies": {
