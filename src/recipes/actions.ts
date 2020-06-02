@@ -45,7 +45,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, ac
                     processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
                 }
             } else {
-                logger.warn("Recipes.processAction", `User ${user.id}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
+                logger.warn("Recipes.defaultAction", `User ${user.id}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
                 processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
             }
         }
@@ -54,14 +54,12 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, ac
         if (action.type == RecipeActionType.Name) {
             activity.name = processedValue
             activity.updatedFields.push("name")
-            return
         }
 
         // Change activity description?
-        if (action.type == RecipeActionType.Description) {
+        else if (action.type == RecipeActionType.Description) {
             activity.description = processedValue
             activity.updatedFields.push("description")
-            return
         }
     } catch (ex) {
         logger.error("Recipes.defaultAction", `User ${user.id}`, `Activity ${activity.id}`, ex)
@@ -76,9 +74,8 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, ac
  */
 export const commuteAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
     try {
-        activity.commute = action.value ? true : false
+        activity.commute = action.value === false ? false : true
         activity.updatedFields.push("commute")
-        return
     } catch (ex) {
         logger.error("Recipes.commuteAction", `User ${user.id}`, `Activity ${activity.id}`, ex)
     }
@@ -92,20 +89,20 @@ export const commuteAction = async (user: UserData, activity: StravaActivity, ac
  */
 export const gearAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
     try {
-        let gear = _.find(user.profile.bikes, {id: action.value})
+        let gear
 
-        if (!gear) {
+        if (activity.type == "Ride" || activity.type == "VirtualRide" || activity.type == "EBikeRide") {
+            gear = _.find(user.profile.bikes, {id: action.value})
+        } else {
             gear = _.find(user.profile.shoes, {id: action.value})
         }
 
         if (!gear) {
-            this.reportInvalidAction(user, action, "Gear not found")
+            logger.error("Recipes.gearAction", `User ${user.id}`, `Activity ${activity.id}`, `Gear ${action.value} not found`)
         } else {
             activity.gear = gear
             activity.updatedFields.push("gear")
         }
-
-        return
     } catch (ex) {
         logger.error("Recipes.gearAction", `User ${user.id}`, `Activity ${activity.id}`, ex)
     }
@@ -127,15 +124,8 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, ac
             data: activity
         }
 
-        // Dispatch webhook.
-        try {
-            await axios(options)
-        } catch (exReq) {
-            logger.warn("Recipes.webhookAction", `User ${user.id}`, `Activity ${activity.id}`, `Webhook failed: ${action.value}`, exReq)
-        }
-
-        return
+        await axios(options)
     } catch (ex) {
-        logger.error("Recipes.webhookAction", `User ${user.id}`, `Activity ${activity.id}`, ex)
+        logger.error("Recipes.webhookAction", `User ${user.id}`, `Activity ${activity.id}`, action.value, ex)
     }
 }

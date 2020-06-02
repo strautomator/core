@@ -108,11 +108,22 @@ export class Recipes {
                 if (!Object.values(RecipeActionType).includes(action.type)) {
                     throw new Error(`Invalid action type: ${action.type}`)
                 }
+
+                // Some actions must have a value.
                 if (action.type != RecipeActionType.Commute) {
                     if (action.value === null || action.value === "") {
                         throw new Error(`Missing action value`)
                     }
                 }
+
+                // Webhook value must be an URL.
+                if (action.type != RecipeActionType.Webhook) {
+                    const isUrl = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/.test(action.value)
+                    if (!isUrl) {
+                        throw new Error(`Webhook URL is not valid`)
+                    }
+                }
+
                 if (action.value && _.isString(action.value) && (action.value as string).length > settings.recipes.maxLength.actionValue) {
                     throw new Error(`Action value is too long (max length is ${settings.recipes.maxLength.actionValue})`)
                 }
@@ -244,11 +255,6 @@ export class Recipes {
             activity.updatedFields = []
         }
 
-        // Dispatch acctivity to webhook?
-        if (action.type == RecipeActionType.Webhook) {
-            return webhookAction(user, activity, action)
-        }
-
         // Mark activity as commute?
         if (action.type == RecipeActionType.Commute) {
             return commuteAction(user, activity, action)
@@ -259,6 +265,12 @@ export class Recipes {
             return gearAction(user, activity, action)
         }
 
+        // Dispatch acctivity to webhook?
+        if (action.type == RecipeActionType.Webhook) {
+            return webhookAction(user, activity, action)
+        }
+
+        // Other actions (set description or name).
         return defaultAction(user, activity, action)
     }
 
