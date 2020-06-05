@@ -329,27 +329,40 @@ export class Recipes {
     // --------------------------------------------------------------------------
 
     /**
-     * Get stats for the specified recipe.
-     * @param user The user to have activity count incremented.
-     * @param recipe The recipe to be updated.
+     * Get stats for the specified recipe, or all recipes if no recipe is passed.
+     * @param user The user owner of the recipe(s).
+     * @param recipe Optional recipe to be fetched.
      */
-    getStats = async (user: UserData, recipe: RecipeData): Promise<RecipeStats> => {
-        const id = `${user.id}-${recipe.id}`
-
+    getStats = async (user: UserData, recipe?: RecipeData): Promise<RecipeStats | RecipeStats[]> => {
         try {
-            const stats: RecipeStats = await database.get("recipe-stats", id)
+            if (recipe) {
+                const id = `${user.id}-${recipe.id}`
+                const stats: RecipeStats = await database.get("recipe-stats", id)
 
-            // No stats for the specified recipe? Return null.
-            if (!stats) {
-                logger.info("Recipe.getStats", id, `No stats`)
-                return null
+                // No stats for the specified recipe? Return null.
+                if (!stats) {
+                    logger.info("Recipe.getStats", `User ${user.id}`, `No stats for recipe ${recipe.id}`)
+                    return null
+                }
+
+                const lastTrigger = moment(stats.dateLastTrigger).format("lll")
+                logger.info("Recipe.getStats", `User ${user.id}`, `Recipe ${recipe.id}`, `${stats.activities.length} activities`, `Last triggered: ${lastTrigger}`)
+                return stats
+            } else {
+                const arrStats: RecipeStats[] = await database.search("recipe-stats", ["userId", "==", user.id])
+
+                // No recipe stats found at all for the user?
+                if (arrStats.length == 0) {
+                    logger.info("Recipe.getStats", `User ${user.id}`, "No recipe stats found")
+                    return []
+                }
+
+                logger.info("Recipe.getStats", `User ${user.id}`, `${arrStats.length} recipe stats found`)
+                return arrStats
             }
-
-            const lastTrigger = moment(stats.dateLastTrigger).format("lll")
-            logger.info("Recipe.getStats", id, `${stats.activities.length} activities`, `Last triggered: ${lastTrigger}`)
-            return stats
         } catch (ex) {
-            logger.error("Recipes.getStats", id, ex)
+            const recipeLog = recipe ? `Recipe ${recipe.id}` : `All recipes`
+            logger.error("Recipes.getStats", `User ${user.id}`, recipeLog, ex)
             throw ex
         }
     }
