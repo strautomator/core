@@ -389,6 +389,7 @@ export class Recipes {
             if (!exists) {
                 stats = {
                     id: id,
+                    userId: user.id,
                     activities: [activity.id],
                     dateLastTrigger: now
                 }
