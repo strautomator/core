@@ -50,8 +50,10 @@ export interface RecipeCondition {
  * Recipe stats saved on the database.
  */
 export interface RecipeStats {
-    /** The ID is on the format of UserID */
+    /** The ID is on the format of UserID-RecipeID. */
     id: string
+    /** User that owns this recipe. */
+    userId: string
     /** List of activity IDs that triggered this recipe. */
     activities: number[]
     /** When was it last triggered. */
