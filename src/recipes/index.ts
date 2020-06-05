@@ -9,6 +9,7 @@ import {UserData} from "../users/types"
 import database from "../database"
 import _ = require("lodash")
 import logger = require("anyhow")
+import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
@@ -324,17 +325,48 @@ export class Recipes {
         return `${fieldText} ${operatorText} ${valueText}`
     }
 
+    // STATS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Get stats for the specified recipe.
+     * @param user The user to have activity count incremented.
+     * @param recipe The recipe to be updated.
+     */
+    getStats = async (user: UserData, recipe: RecipeData): Promise<RecipeStats> => {
+        const id = `${user.id}-${recipe.id}`
+
+        try {
+            const stats: RecipeStats = await database.get("recipe-stats", id)
+
+            // No stats for the specified recipe? Return null.
+            if (!stats) {
+                logger.info("Recipe.getStats", id, `No stats`)
+                return null
+            }
+
+            const lastTrigger = moment(stats.dateLastTrigger).format("lll")
+            logger.info("Recipe.getStats", id, `${stats.activities.length} activities`, `Last triggered: ${lastTrigger}`)
+            return stats
+        } catch (ex) {
+            logger.error("Recipes.getStats", id, ex)
+            throw ex
+        }
+    }
+
     /**
      * Increment a recipe's trigger count.
      * @param user The user to have activity count incremented.
      * @param recipe The recipe to be updated.
+     * @param activity The activity that triggered the recipe.
      */
     updateStats = async (user: UserData, recipe: RecipeData, activity: StravaActivity): Promise<void> => {
+        const id = `${user.id}-${recipe.id}`
+
         try {
             const now = new Date()
 
-            // Set ID and check if a stats document already exists.
-            const id = `${user.id}-${recipe.id}`
+            // Check if a stats document already exists.
             const doc = database.doc("recipe-stats", id)
             const docSnapshot = await doc.get()
             const exists = docSnapshot.exists
@@ -363,20 +395,8 @@ export class Recipes {
             await database.merge("recipe-stats", stats, doc)
             logger.info("Recipe.updateStats", id, `Added activity ${activity.id}`)
         } catch (ex) {
-            logger.error("Recipes.updateStats", `User ${user.id}`, `Recipe ${recipe.id}`, `Activity ${activity.id}`, ex)
+            logger.error("Recipes.updateStats", id, `Activity ${activity.id}`, ex)
         }
-    }
-
-    // HELPERS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Alert when a specific action has invalid parameters.
-     * @param user The recipe's owner.
-     * @param action The action with an invalid parameter.
-     */
-    reportInvalidAction = (user: UserData, action: RecipeAction, message?: string) => {
-        logger.warn("Recipes.reportInvalidAction", `User ${user.id}`, `Action ${action.type}: ${action.value}`, message)
     }
 }
 
