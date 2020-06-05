@@ -62,48 +62,10 @@ export interface StravaActivity {
     temperature?: number
     /** Device name. */
     device?: string
-    /** Fields that were updated by Strautomator. */
+    /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
-}
-
-/**
- * Processed activity details to be saved on the database.
- */
-export interface StravaProcessedActivity {
-    /** Activity ID. */
-    id: number
-    /** Activity type (Ride, Run, etc). */
-    type: StravaSport
-    /** Name of the saved activity. */
-    name: string
-    /** Start date of the activity. */
-    dateStart: Date
-    /** Processing date. */
-    dateProcessed: Date
-    /** User details for this activity. */
-    user: {
-        /** User ID. */
-        id: string
-        /** User display name. */
-        displayName: string
-    }
-    /** List of recipes applied to the activity. */
-    recipes: {
-        [id: string]: {
-            /** Title of the recipe. */
-            title: string
-            /** Conditions of the recipe (summary text)/ */
-            conditions: string[]
-            /** Actions of the recipe (summary text)/ */
-            actions: string[]
-        }
-    }
-    /** List of fields updated on the activity. */
-    updatedFields: {
-        [id: string]: any
-    }
-    /** If failed, this will contain the error description. */
-    error?: string
+    /** Was a link to Strautomator added to the activity (internal use only)? */
+    linkback?: boolean
 }
 
 /**
@@ -185,6 +147,48 @@ export function toStravaActivity(data, units: string): StravaActivity {
     }
 
     return activity
+}
+
+/**
+ * Processed activity details to be saved on the database.
+ */
+export interface StravaProcessedActivity {
+    /** Activity ID. */
+    id: number
+    /** Activity type (Ride, Run, etc). */
+    type: StravaSport
+    /** Name of the saved activity. */
+    name: string
+    /** Start date of the activity. */
+    dateStart: Date
+    /** Processing date. */
+    dateProcessed: Date
+    /** User details for this activity. */
+    user: {
+        /** User ID. */
+        id: string
+        /** User display name. */
+        displayName: string
+    }
+    /** List of recipes applied to the activity. */
+    recipes: {
+        [id: string]: {
+            /** Title of the recipe. */
+            title: string
+            /** Conditions of the recipe (summary text)/ */
+            conditions: string[]
+            /** Actions of the recipe (summary text)/ */
+            actions: string[]
+        }
+    }
+    /** List of fields updated on the activity. */
+    updatedFields: {
+        [id: string]: any
+    }
+    /** Was a link to Strautomator added to the activity? */
+    linkback?: boolean
+    /** If failed, this will contain the error description. */
+    error?: string
 }
 
 /**

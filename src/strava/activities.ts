@@ -141,14 +141,14 @@ export class StravaActivities {
      * @param activity The ativity data.
      */
     setActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
-        logger.debug("Strava.setActivity", activity.id)
+        logger.debug("Strava.setActivity", user.id, activity.id)
 
         const data: any = {}
         const logResult = []
         const useHashtag = user.preferences && user.preferences.activityHashtag
 
-        // Add link back to Strautomator on 20% of activities (depending on user PRO status and settings).
-        const shouldAddLink = user.activityCount > 0 && user.activityCount % settings.plans.free.linksOn == 0
+        // Add link back to Strautomator on some percentage of activities (depending on user PRO status and settings).
+        const shouldAddLink = !user.isPro && user.activityCount > 0 && user.activityCount % settings.plans.free.linksOn == 0
 
         try {
             if (!activity.updatedFields || activity.updatedFields.length == 0) {
@@ -156,9 +156,12 @@ export class StravaActivities {
                 return
             }
 
-            // Time to add a link on activity description?
+            // Time to add a linkback on the activity?
             if (shouldAddLink) {
-                if (!user.isPro && !useHashtag) {
+                activity.linkback = true
+
+                // By default, link will be added to the description.
+                if (!useHashtag) {
                     let text = _.sample(settings.plans.free.linksTexts)
 
                     // If activity has a description, add link on a new line.
@@ -174,8 +177,8 @@ export class StravaActivities {
                     }
                 }
 
-                // User has set the hashtag preference? Add it to the name of the activity instead of link on description.
-                else if (useHashtag) {
+                // User has set the hashtag preference? Add it to the name of the activity instead.
+                else {
                     activity.name += ` ${settings.app.hashtag}`
 
                     if (activity.updatedFields.indexOf("name") < 0) {
@@ -350,6 +353,11 @@ export class StravaActivities {
                 },
                 recipes: recipeDetails,
                 updatedFields: updatedFields
+            }
+
+            // Linkback added to activity?
+            if (activity.linkback) {
+                data.linkback = true
             }
 
             // Make sure error is a string (if an error was passed).
