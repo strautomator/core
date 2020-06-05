@@ -118,7 +118,7 @@ export class Recipes {
                 }
 
                 // Webhook value must be an URL.
-                if (action.type != RecipeActionType.Webhook) {
+                if (action.type == RecipeActionType.Webhook) {
                     const isUrl = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/.test(action.value)
                     if (!isUrl) {
                         throw new Error(`Webhook URL is not valid`)
