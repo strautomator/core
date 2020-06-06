@@ -54,9 +54,9 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
 }
 
 /**
- * Check if the passed date time based condition is valid.
+ * Check if the passed datetime (timestamp in seconds) based condition is valid.
  * @param activity The Strava activity to be checked.
- * @param condition The date time based recipe condition.
+ * @param condition The datetime based recipe condition.
  */
 export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
@@ -69,18 +69,19 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
 
     // Parse condition and activity's date.
     const value = parseInt(condition.value as string)
-    const aTime = parseInt(moment(activity[prop]).format("Hmm"))
+    const aDate = moment(activity[prop])
+    const aTime = aDate.seconds() + aDate.minutes() * 60 + aDate.hours() * 3600
     let valid: boolean = true
 
-    // Check it time is greater, less or around 15min of the condition's time.
+    // Check it time is greater, less, exactly, or around 30 min of the condition's time.
     if (op == RecipeOperator.GreaterThan) {
         valid = value > aTime
     } else if (op == RecipeOperator.LessThan) {
         valid = value < aTime
     } else if (op == RecipeOperator.Like) {
-        valid = value >= aTime - 20 && value <= aTime + 20
+        valid = value >= aTime - 1800 && value <= aTime + 1800
     } else if (op == RecipeOperator.Equal) {
-        valid = value >= aTime - 1 && value <= aTime + 1
+        valid = value >= aTime - 120 && value <= aTime + 120
     }
 
     if (!valid) {

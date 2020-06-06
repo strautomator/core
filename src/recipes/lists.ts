@@ -32,8 +32,8 @@ export const recipeOperatorList = {
     time: [
         {value: "<", text: "is before", description: ""},
         {value: ">", text: "is after", description: ""},
-        {value: "like", text: "is around", description: "Time within 20 minutes of the specified value"},
-        {value: "=", text: "is exactly", description: "Time within 1 minute of the specified value"}
+        {value: "like", text: "is around (± 30min)", description: "Time within 30 minutes of the specified value"},
+        {value: "=", text: "is at (± 2min)", description: "Time within 2 minutes of the specified value"}
     ],
     // Day of week.
     day: [{value: "=", text: "is", description: ""}]
@@ -48,11 +48,11 @@ export const recipePropertyList = [
     {value: "speedMax", text: "Max speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
     {value: "elevationGain", text: "Elevation gain", type: "number", operators: recipeOperatorList.number, suffix: "m", impSuffix: "ft"},
     {value: "elevationMax", text: "Elevation max", type: "number", operators: recipeOperatorList.number, suffix: "m", impSuffix: "ft"},
-    {value: "dateStart", text: "Start time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
-    {value: "dateEnd", text: "End time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
+    {value: "dateStart", text: "Start time", type: "time", operators: recipeOperatorList.time, suffix: "h", mask: "HH:MM"},
+    {value: "dateEnd", text: "End time", type: "time", operators: recipeOperatorList.time, suffix: "h", mask: "HH:MM"},
     {value: "weekday", text: "Week day", type: "day", operators: recipeOperatorList.day},
-    {value: "movingTime", text: "Moving time", type: "number", operators: recipeOperatorList.number, suffix: "h"},
-    {value: "totalTime", text: "Total elapsed time", type: "number", operators: recipeOperatorList.number, suffix: "h"},
+    {value: "movingTime", text: "Moving time", type: "time", operators: recipeOperatorList.time, suffix: "h", mask: "HH:MM"},
+    {value: "totalTime", text: "Total elapsed time", type: "time", operators: recipeOperatorList.time, suffix: "h", mask: "HH:MM"},
     {value: "locationStart", text: "Starting location", type: "location", operators: recipeOperatorList.location},
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
     {value: "polyline", text: "Passes on location", type: "location", operators: recipeOperatorList.location},
