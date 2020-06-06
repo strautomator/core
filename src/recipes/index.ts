@@ -198,45 +198,42 @@ export class Recipes {
 
             // Weather conditions.
             if (prop.indexOf("weather") >= 0) {
-                if (!(await checkWeather(activity, condition, user.preferences))) {
-                    return false
-                }
+                const valid = await checkWeather(activity, condition, user.preferences)
+                if (!valid) return false
             }
 
             // Location condition.
             else if (prop.indexOf("location") >= 0 || prop == "polyline") {
-                if (!checkLocation(activity, condition)) {
-                    return false
-                }
+                const valid = checkLocation(activity, condition)
+                if (!valid) return false
             }
 
             // Day of week condition.
             else if (prop == "weekday") {
-                if (!checkWeekday(activity, condition)) {
-                    return false
-                }
+                const valid = checkWeekday(activity, condition)
+                if (!valid) return false
             }
 
             // Time based condition.
             else if (prop.indexOf("date") >= 0) {
-                if (!checkTimestamp(activity, condition)) {
-                    return false
-                }
+                const valid = checkTimestamp(activity, condition)
+                if (!valid) return false
             }
 
             // Number condition.
             else if (_.isNumber(activity[condition.property])) {
-                if (!checkNumber(activity, condition)) {
-                    return false
-                }
+                const valid = checkNumber(activity, condition)
+                if (!valid) return false
             }
 
             // Text condition.
             else {
-                if (!checkText(activity, condition)) {
-                    return false
-                }
+                const valid = checkText(activity, condition)
+                if (!valid) return false
             }
+
+            logger.info("Recipes.checkCondition", `User ${user.id}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`)
+            return true
         } catch (ex) {
             logger.error("Recipes.checkCondition", `User ${user.id}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`, ex)
             return false
