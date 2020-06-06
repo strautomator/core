@@ -167,7 +167,10 @@ export class Recipes {
         // Otherwise iterate conditions and evaluate each one.
         else {
             for (let condition of recipe.conditions) {
-                if (!this.checkCondition(user, activity, condition)) {
+                const valid = await this.checkCondition(user, activity, condition)
+                if (!valid) {
+                    const logValue = activity[condition.property] ? `Not a match: ${activity[condition.property]}` : "No match"
+                    logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
                     return false
                 }
             }
@@ -203,7 +206,7 @@ export class Recipes {
             }
 
             // Location condition.
-            else if (prop.indexOf("location") >= 0 || prop == "polyline") {
+            else if (prop.indexOf("location") == 0 || prop == "polyline") {
                 const valid = checkLocation(activity, condition)
                 if (!valid) return false
             }

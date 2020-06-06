@@ -200,7 +200,7 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
     let valid: boolean = true
 
     if (op == RecipeOperator.Like) {
-        valid = aNumber < value + diff && aNumber > value - diff
+        valid = value < aNumber + diff && value > aNumber - diff
     } else if (op == RecipeOperator.Equal && Math.round(aNumber) != Math.round(value)) {
         valid = false
     } else if (op == RecipeOperator.GreaterThan && aNumber <= value) {
