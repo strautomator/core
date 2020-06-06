@@ -215,7 +215,7 @@ export class Recipes {
             }
 
             // Time based condition.
-            else if (prop.indexOf("date") == 0) {
+            else if (prop.indexOf("date") == 0 || prop.indexOf("Time") > 0) {
                 const valid = checkTimestamp(activity, condition)
                 if (!valid) return false
             }

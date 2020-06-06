@@ -78,10 +78,10 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         valid = value > aTime
     } else if (op == RecipeOperator.LessThan) {
         valid = value < aTime
-    } else if (op == RecipeOperator.Like) {
-        valid = value >= aTime - 1800 && value <= aTime + 1800
     } else if (op == RecipeOperator.Equal) {
         valid = value >= aTime - 120 && value <= aTime + 120
+    } else if (op == RecipeOperator.Like) {
+        valid = value >= aTime - 1800 && value <= aTime + 1800
     }
 
     if (!valid) {
