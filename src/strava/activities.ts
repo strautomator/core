@@ -249,8 +249,12 @@ export class StravaActivities {
 
             // Evaluate each of user's recipes, and set update to true if something was processed.
             for (recipe of sortedRecipes) {
-                if (await recipes.evaluate(user, recipe.id, activity)) {
-                    recipeIds.push(recipe.id)
+                try {
+                    if (await recipes.evaluate(user, recipe.id, activity)) {
+                        recipeIds.push(recipe.id)
+                    }
+                } catch (innerEx) {
+                    logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, innerEx)
                 }
             }
 
