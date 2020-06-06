@@ -262,6 +262,10 @@ export class StravaActivities {
             if (recipeIds.length > 0) {
                 logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, `Recipes: ${recipeIds.join(", ")}`)
 
+                // Remove duplicates from list of updated fields.
+                activity.updatedFields = _.uniq(activity.updatedFields)
+
+                // Save, and if it fails try again once.
                 try {
                     await this.setActivity(user, activity)
                 } catch (ex) {
