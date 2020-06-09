@@ -33,6 +33,8 @@ export interface UserData {
     preferences?: UserPreferences
     /** Subscription details (for PRO accounts). */
     subscription?: UserSubscription
+    /** Custom "linksOn" value for linkbacks (default is set on settings). */
+    linksOn?: number
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */
