@@ -45,7 +45,13 @@ export class StravaActivities {
 
             // Fetch user activities from Strava.
             const tokens = user.stravaTokens
-            const activities = await api.get(tokens, "athlete/activities", query)
+            const data = await api.get(tokens, "athlete/activities", query)
+            const activities: StravaActivity[] = []
+
+            // Iterate and transform activities from raw strava data to StravaActivity models.
+            for (let activity of data) {
+                activities.push(toStravaActivity(activity, user.profile.units))
+            }
 
             logger.info("Strava.getActivities", `User ${user.id}`, logQuery, `Got ${activities.length} activities`)
             return activities
@@ -231,6 +237,7 @@ export class StravaActivities {
             // User suspended? Stop here.
             if (user.suspended) {
                 logger.info("Strava.processActivity", `User ${user.id} is suspended, won't process activity ${activityId}`)
+                return null
             }
 
             // Retry count defaults to 0.
@@ -242,8 +249,7 @@ export class StravaActivities {
             try {
                 activity = await this.getActivity(user, activityId)
             } catch (ex) {
-                logger.error("Strava.processActivity", `Activity ${activityId} for user ${user.id} not found`)
-                throw ex
+                throw new Error(`Activity ${activityId} not found`)
             }
 
             // Get recipes, having the defaults first and then sorted by order.
@@ -303,6 +309,7 @@ export class StravaActivities {
             }
         } catch (ex) {
             logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, ex)
+            throw ex
         }
 
         return null
