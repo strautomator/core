@@ -28,7 +28,7 @@ export interface StravaActivity {
     elevationMax?: number
     /** Total elapsed time in seconds. */
     totalTime: number
-    /** Elapsed moving time in secods. */
+    /** Elapsed moving time in seconds. */
     movingTime: number
     /** Start location (latitude and longitude). */
     locationStart?: [number, number]
