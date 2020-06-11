@@ -168,9 +168,10 @@ export class Recipes {
         else {
             for (let condition of recipe.conditions) {
                 const valid = await this.checkCondition(user, activity, condition)
+
                 if (!valid) {
                     const logValue = activity[condition.property] ? `Not a match: ${activity[condition.property]}` : "No match"
-                    logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
+                    logger.info("Recipes.evaluate", `User ${user.id}, activity ${activity.id}, recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
                     return false
                 }
             }
