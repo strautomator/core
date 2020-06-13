@@ -175,6 +175,8 @@ export class StravaActivities {
                     // If activity has a description, add link on a new line.
                     if (activity.description && activity.description.length > 0) {
                         text = `\n${text}`
+                    } else {
+                        activity.description = ""
                     }
 
                     // Update description with link-back and add to list of updated fields.
