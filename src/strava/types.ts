@@ -79,7 +79,7 @@ export function toStravaActivity(data, units: string): StravaActivity {
         name: data.name,
         description: data.description,
         commute: data.commute,
-        dateStart: new Date(data.start_date_local),
+        dateStart: moment(data.start_date_local).toDate(),
         elevationGain: data.total_elevation_gain,
         elevationMax: data.elev_high,
         totalTime: data.elapsed_time,
@@ -101,7 +101,7 @@ export function toStravaActivity(data, units: string): StravaActivity {
 
     // Set end date.
     if (data.elapsed_time) {
-        activity.dateEnd = moment(activity.dateStart).add(data.elapsed_time, "s").toDate()
+        activity.dateEnd = moment(data.start_date_local).add(data.elapsed_time, "s").toDate()
     }
 
     // Set activity gear.

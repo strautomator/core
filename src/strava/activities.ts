@@ -11,6 +11,7 @@ import recipes from "../recipes"
 import users from "../users"
 import _ = require("lodash")
 import logger = require("anyhow")
+import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
@@ -189,6 +190,10 @@ export class StravaActivities {
 
                 // User has set the hashtag preference? Add it to the name of the activity instead.
                 else {
+                    if (!activity.name) {
+                        activity.name = ""
+                    }
+
                     activity.name += ` ${settings.app.hashtag}`
 
                     if (activity.updatedFields.indexOf("name") < 0) {
@@ -369,7 +374,7 @@ export class StravaActivities {
                 type: activity.type,
                 name: activity.name,
                 dateStart: activity.dateStart,
-                dateProcessed: new Date(),
+                dateProcessed: moment().toDate(),
                 user: {
                     id: user.id,
                     displayName: user.displayName
