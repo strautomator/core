@@ -98,10 +98,12 @@ export class PayPalAPI {
 
             // Try fetching a new token from PayPal.
             const res = await axios(options)
+            const expiresIn = res.data.expires_in ? res.data.expires_in : 3600
 
+            // Set auth token and expiry timestamp.
             this.auth = {
                 accessToken: res.data.access_token,
-                expiresAt: res.data.expires_in + moment().unix() - 120
+                expiresAt: expiresIn + moment().unix() - 120
             }
 
             logger.info("PayPal.authenticate", "Got a new token")
@@ -116,7 +118,7 @@ export class PayPalAPI {
      */
     makeRequest = async (reqOptions: any): Promise<any> => {
         try {
-            if (this.auth.expiresAt < moment().unix()) {
+            if (this.auth.expiresAt <= moment().unix()) {
                 logger.info("PayPal.makeRequest", reqOptions.url, "Token expired, will fetch a new one")
                 await this.authenticate()
             }
