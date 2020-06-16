@@ -6,21 +6,6 @@
         // Hashtag used on social media.
         "hashtag": "#strautomator.com"
     },
-    "bunq": {
-        "api": {
-            // The bunq's key, clientId and clientSecret must be set on your settings.secret.json file
-            // or via environment variables. These are required only if bunq integration is enabled.
-            "key": null,
-            "clientId": null,
-            "clientSecret": null,
-            // To connect to the bunq sandbox during development, set this to "SANDBOX".
-            "environment": "PRODUCTION"
-        },
-        "schedule": {
-            // Payments are processed at 4PM by default.
-            "time": "16:00"
-        }
-    },
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.
