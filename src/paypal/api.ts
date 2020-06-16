@@ -13,14 +13,31 @@ const packageVersion = require("../../package.json").version
 const parseResponseError = (err) => {
     if (!err.response || !err.response.data) return err
 
+    const details = []
     const data = err.response.data
-    let details = data.name ? data.name : ""
 
-    if (data.details && data.details.length > 0) {
-        details += " - " + _.map(data.details, "issue").join(", ")
+    if (err.response.status) {
+        details.push(`Status ${err.response.status}`)
     }
 
-    return details
+    if (data.name) {
+        details.push(data.name)
+    } else if (data.message) {
+        details.push(data.message)
+    }
+
+    if (data.details && data.details.length > 0) {
+        for (let d of data.details) {
+            const issue = `${d.issue} ${d.description}`.trim()
+            details.push(issue)
+        }
+    }
+
+    if (details.length == 0) {
+        details.push(JSON.stringify(err, null, 0))
+    }
+
+    return details.join(", ")
 }
 
 /**
@@ -84,7 +101,7 @@ export class PayPalAPI {
 
             this.auth = {
                 accessToken: res.data.access_token,
-                expiresAt: res.data.expiresIn + moment().unix() - 120
+                expiresAt: res.data.expires_in + moment().unix() - 120
             }
 
             logger.info("PayPal.authenticate", "Got a new token")
