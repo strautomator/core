@@ -180,8 +180,14 @@ export class StravaActivities {
                         activity.description = ""
                     }
 
+                    // Make sure app URL does not end with / (better optics).
+                    let appUrl = settings.app.url
+                    if (appUrl.substring(appUrl.length - 1) == "/") {
+                        appUrl = appUrl.substring(0, appUrl.length - 1)
+                    }
+
                     // Update description with link-back and add to list of updated fields.
-                    activity.description += `${text} ${settings.app.url}`
+                    activity.description += `${text} ${appUrl}`
 
                     if (activity.updatedFields.indexOf("description") < 0) {
                         activity.updatedFields.push("description")
