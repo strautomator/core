@@ -171,39 +171,52 @@ export class StravaActivities {
 
                 // By default, link will be added to the description.
                 if (!useHashtag) {
-                    let text = _.sample(settings.plans.free.linksTexts)
-
-                    // If activity has a description, add link on a new line.
-                    if (activity.description && activity.description.length > 0) {
-                        text = `\n${text}`
-                    } else {
-                        activity.description = ""
-                    }
+                    let appUrl = settings.app.url
 
                     // Make sure app URL does not end with / (better optics).
-                    let appUrl = settings.app.url
                     if (appUrl.substring(appUrl.length - 1) == "/") {
                         appUrl = appUrl.substring(0, appUrl.length - 1)
                     }
 
-                    // Update description with link-back and add to list of updated fields.
-                    activity.description += `${text} ${appUrl}`
+                    // Only proceed if a linkback was not previously added.
+                    const alreadyLinked = activity.description ? activity.description.indexOf(appUrl) >= 0 : false
+                    if (!alreadyLinked) {
+                        let text = _.sample(settings.plans.free.linksTexts)
 
-                    if (activity.updatedFields.indexOf("description") < 0) {
-                        activity.updatedFields.push("description")
+                        // If activity has a description, add link on a new line.
+                        if (activity.description && activity.description.length > 0) {
+                            text = `\n${text}`
+                        } else {
+                            activity.description = ""
+                        }
+
+                        // Update description with link-back and add to list of updated fields.
+                        activity.description += `${text} ${appUrl}`
+
+                        if (activity.updatedFields.indexOf("description") < 0) {
+                            activity.updatedFields.push("description")
+                        }
+                    } else {
+                        logResult.push("Linkback already present on description")
                     }
                 }
 
-                // User has set the hashtag preference? Add it to the name of the activity instead.
+                // User has set the hashtag preference? Add it to the name of the activity instead, but
+                // only if no hashtag was previously set on the activity.
                 else {
-                    if (!activity.name) {
-                        activity.name = ""
-                    }
+                    const alreadyLinked = activity.name ? activity.name.indexOf(settings.app.hashtag) >= 0 : false
+                    if (!alreadyLinked) {
+                        if (!activity.name) {
+                            activity.name = ""
+                        }
 
-                    activity.name += ` ${settings.app.hashtag}`
+                        activity.name += ` ${settings.app.hashtag}`
 
-                    if (activity.updatedFields.indexOf("name") < 0) {
-                        activity.updatedFields.push("name")
+                        if (activity.updatedFields.indexOf("name") < 0) {
+                            activity.updatedFields.push("name")
+                        }
+                    } else {
+                        logResult.push("Linkback hashtag already present on title")
                     }
                 }
             }
