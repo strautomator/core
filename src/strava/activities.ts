@@ -216,7 +216,7 @@ export class StravaActivities {
                             activity.updatedFields.push("name")
                         }
                     } else {
-                        logResult.push("Linkback hashtag already present on title")
+                        logResult.push("Linkback hashtag already present on name")
                     }
                 }
             }
