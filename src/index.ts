@@ -1,14 +1,15 @@
 // Strautomator Core
 
-// Logging module.
-import logger = require("anyhow")
-logger.setup("console")
-logger.levelOnConsole = true
-
 // Node env defaults to development.
 if (!process.env.NODE_ENV) {
     process.env.NODE_ENV = "development"
 }
+
+// Logs to the console by default.
+import logger = require("anyhow")
+logger.appName = "Strautomator"
+logger.levelOnConsole = true
+logger.setup("console")
 
 // Defaults to gcp-credentials.json on home directory if no credentials were set for gcloud.
 if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
@@ -16,6 +17,11 @@ if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CRED
     const credPath = `${homedir}/gcp-credentials.json`
     process.env.GOOGLE_APPLICATION_CREDENTIALS = credPath
     logger.warn("Strautomator.startup", `GOOGLE_APPLICATION_CREDENTIALS defaulting to ${credPath}`)
+}
+
+// If the Google Cloud Logging env variable (GOOGLE_LOGNAME) is set then setup logging to Google.
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.GOOGLE_LOGNAME) {
+    logger.setup("gcloud", {logName: process.env.GOOGLE_LOGNAME})
 }
 
 // Init settings.
