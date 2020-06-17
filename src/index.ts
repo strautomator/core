@@ -19,9 +19,20 @@ if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CRED
     logger.warn("Strautomator.startup", `GOOGLE_APPLICATION_CREDENTIALS defaulting to ${credPath}`)
 }
 
-// If the Google Cloud Logging env variable (GOOGLE_LOGNAME) is set then setup logging to Google.
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.GOOGLE_LOGNAME) {
-    logger.setup("gcloud", {logName: process.env.GOOGLE_LOGNAME})
+// Detect if running on Google Cloud Run, and if so, create a custom logger to log
+// JSON payloads instead of only the message strings.
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.K_SERVICE && process.env.K_REVISION) {
+    const consoleLog = (level, message) => {
+        level = level.toUpperCase()
+        if (level == "WARN") level = "WARNING"
+        console.log(JSON.stringify({severity: level, message: message}))
+    }
+    const gcloudLogging = {
+        name: "gcloud",
+        log: consoleLog
+    }
+
+    logger.setup(gcloudLogging)
 }
 
 // Init settings.
