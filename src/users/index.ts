@@ -52,16 +52,19 @@ export class Users {
         }
 
         try {
-            const isPro = subscription.status == "ACTIVE"
             const subEnabled = subscription.status != "CANCELLED" && subscription.status != "EXPIRED"
             const data: Partial<UserData> = {
                 id: subscription.userId,
-                isPro: isPro,
                 subscription: {
                     id: subscription.id,
                     source: "paypal",
                     enabled: subEnabled
                 }
+            }
+
+            // User activated a PRO account?
+            if (subscription.status == "ACTIVE") {
+                data.isPro = true
             }
 
             // Email passed?
@@ -71,9 +74,9 @@ export class Users {
 
             // Save updated user on the database.
             await this.update(data)
-            logger.info("Users.onPayPalSubscription", `User ${subscription.userId}, subscription ${subscription.id}, isPro = ${isPro}`)
+            logger.info("Users.onPayPalSubscription", `User ${subscription.userId}, subscription ${subscription.id}, enabled = ${subEnabled}`)
         } catch (ex) {
-            logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} isPro status`)
+            logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
         }
     }
 

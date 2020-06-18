@@ -149,6 +149,11 @@ export class PayPalWebhooks {
                     subscription.status = "CANCELLED"
                 }
 
+                // Email present on subscription details?
+                if (resource.subscriber && resource.subscriber.email_address) {
+                    subscription.email = resource.subscriber.email_address
+                }
+
                 // Save updated subscription on the database, and emit event to update the user.
                 await database.merge("subscriptions", {id: subscription.id, status: subscription.status, date: subscription.dateUpdated})
                 eventManager.emit("PayPal.subscriptionUpdated", subscription)
