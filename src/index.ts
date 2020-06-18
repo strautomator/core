@@ -11,6 +11,10 @@ logger.appName = "Strautomator"
 logger.levelOnConsole = true
 logger.setup("console")
 
+// Log unhandled exceptions and rejections.
+logger.uncaughtExceptions = true
+logger.unhandledRejections = true
+
 // Defaults to gcp-credentials.json on home directory if no credentials were set for gcloud.
 if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     const homedir = require("os").homedir()
@@ -32,6 +36,7 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.K_SERVICE) {
         log: consoleLog
     }
 
+    logger.info("Strautomator.startup", `Google Cloud detected, switching from text to JSON logging now`)
     logger.levelOnConsole = false
     logger.setup(gcloudLogging)
 }
