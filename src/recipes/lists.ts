@@ -57,8 +57,8 @@ export const recipePropertyList = [
     {value: "elevationMax", text: "Elevation max", type: "number", operators: recipeOperatorList.number, suffix: "m", impSuffix: "ft"},
     {value: "dateStart", text: "Start time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
     {value: "dateEnd", text: "End time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
-    {value: "movingTime", text: "Moving time", type: "elapsedTime", operators: recipeOperatorList.time, suffix: "h"},
-    {value: "totalTime", text: "Total elapsed time", type: "elapsedTime", operators: recipeOperatorList.time, suffix: "h"},
+    {value: "movingTime", text: "Moving time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "h"},
+    {value: "totalTime", text: "Total elapsed time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "h"},
     {value: "weekday", text: "Week day", type: "day", operators: recipeOperatorList.day},
     {value: "locationStart", text: "Starting location", type: "location", operators: recipeOperatorList.location},
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
@@ -71,7 +71,7 @@ export const recipePropertyList = [
     {value: "calories", text: "Calories", type: "number", operators: recipeOperatorList.number, suffix: "kcal"},
     {value: "name", text: "Name", type: "text", operators: recipeOperatorList.text},
     {value: "device", text: "Device name", type: "text", operators: recipeOperatorList.text},
-    {value: "weather.temperature", text: "Weather temperature", type: "number", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
+    {value: "weather.temperature", text: "Weather temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "m/s", impSuffix: "mph"},
     {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%"}
 ]
