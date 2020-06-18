@@ -97,6 +97,7 @@ export class Weather {
             if (!activity.locationEnd && !activity.locationEnd) {
                 throw new Error(`No location data for activity ${activity.id}`)
             }
+            if (!preferences) preferences = {}
 
             let weather: ActivityWeather
 
