@@ -21,7 +21,7 @@ if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CRED
 
 // Detect if running on Google Cloud Run, and if so, create a custom logger to log
 // JSON payloads instead of only the message strings.
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.K_SERVICE && process.env.K_REVISION) {
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.K_SERVICE) {
     const consoleLog = (level, message) => {
         level = level.toUpperCase()
         if (level == "WARN") level = "WARNING"
@@ -32,6 +32,7 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.K_SERVICE && proce
         log: consoleLog
     }
 
+    logger.levelOnConsole = false
     logger.setup(gcloudLogging)
 }
 
