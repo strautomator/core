@@ -170,7 +170,9 @@ export class Recipes {
                 const valid = await this.checkCondition(user, activity, condition)
 
                 if (!valid) {
-                    const logValue = activity[condition.property] ? `Not a match: ${activity[condition.property]}` : "No match"
+                    // Do not log polyline contents.
+                    const conditionProp = condition.property == "polyline" ? null : activity[condition.property]
+                    const logValue = conditionProp ? `Not a match: ${conditionProp}` : "No match"
                     logger.info("Recipes.evaluate", `User ${user.id}, activity ${activity.id}, recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
                     return false
                 }
