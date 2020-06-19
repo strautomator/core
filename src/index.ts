@@ -23,9 +23,8 @@ if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CRED
     logger.warn("Strautomator.startup", `GOOGLE_APPLICATION_CREDENTIALS defaulting to ${credPath}`)
 }
 
-// Detect if running on Google Cloud Run, and if so, create a custom logger to log
-// JSON payloads instead of only the message strings.
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.K_SERVICE) {
+// Check if JSON logging (for Google Cloud Logging) should be used instead of simple text.
+if (process.env.NODE_ENV == "production" && process.env.JSON_LOGGING) {
     const consoleLog = (level, message) => {
         level = level.toUpperCase()
         if (level == "WARN") level = "WARNING"
@@ -36,7 +35,7 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.K_SERVICE) {
         log: consoleLog
     }
 
-    logger.info("Strautomator.startup", `Google Cloud detected, switching from text to JSON logging now`)
+    logger.info("Strautomator.startup", "Switching to JSON logging now")
     logger.levelOnConsole = false
     logger.setup(gcloudLogging)
 }
