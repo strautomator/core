@@ -380,7 +380,7 @@ export class Recipes {
         const id = `${user.id}-${recipe.id}`
 
         try {
-            const now = new Date()
+            const now = moment.utc().toDate()
 
             // Check if a stats document already exists.
             const doc = database.doc("recipe-stats", id)

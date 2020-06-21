@@ -242,7 +242,7 @@ export class Users {
      */
     upsert = async (profile: StravaProfile, stravaTokens: StravaTokens): Promise<UserData> => {
         try {
-            const now = new Date()
+            const now = moment.utc().toDate()
 
             const userData: UserData = {
                 id: profile.id,

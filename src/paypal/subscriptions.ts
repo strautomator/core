@@ -289,7 +289,7 @@ export class PayPalSubscriptions {
                 returnRepresentation: true,
                 data: {
                     plan_id: billingPlan.id,
-                    start_date: moment(new Date()).add(settings.paypal.billingPlan.startMinutes, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
+                    start_date: moment.utc().add(settings.paypal.billingPlan.startMinutes, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
                     application_context: {
                         brand_name: settings.app.title,
                         return_url: `${settings.app.url}billing/success`,
@@ -338,7 +338,7 @@ export class PayPalSubscriptions {
      */
     cancelSubscription = async (subscription: PayPalSubscription, reason?: string): Promise<void> => {
         try {
-            const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: new Date()}
+            const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: moment.utc().toDate()}
             const options = {
                 url: `billing/subscriptions/${subscription.id}/cancel`,
                 method: "POST",

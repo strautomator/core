@@ -95,7 +95,7 @@ export class StravaWebhooks {
             this.current = {
                 id: result.id,
                 callbackUrl: this.callbackUrl,
-                dateUpdated: new Date()
+                dateUpdated: moment.utc().toDate()
             }
 
             logger.info("Strava.createWebhook", `ID ${result.id}`, this.callbackUrl)
