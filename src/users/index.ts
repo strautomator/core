@@ -276,7 +276,7 @@ export class Users {
 
             // Save user to the database.
             await database.merge("users", userData, doc)
-            logger.info("Users.upsert", userData.id, userData.displayName, `Has ${userData.recipeCount} recipes`, `Last updated on Strava: ${profile.dateUpdated}`)
+            logger.info("Users.upsert", userData.id, userData.displayName, `Has ${userData.recipeCount} recipes`)
 
             return userData
         } catch (ex) {
@@ -315,14 +315,15 @@ export class Users {
     delete = async (user: UserData): Promise<void> => {
         try {
             await database.doc("users", user.id).delete()
+            logger.warn("Users.delete", user.id, user.displayName)
 
             // Publish delete event.
             eventManager.emit("Users.delete", user)
         } catch (ex) {
             if (user.profile) {
-                logger.error("Users.update", user.id, user.displayName, ex)
+                logger.error("Users.delete", user.id, user.displayName, ex)
             } else {
-                logger.error("Users.update", user.id, ex)
+                logger.error("Users.delete", user.id, ex)
             }
 
             throw ex

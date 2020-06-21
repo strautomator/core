@@ -17,9 +17,11 @@ export interface StravaActivity {
     /** Marked as coomute? */
     commute?: boolean
     /** Start date and time, local time. */
-    dateStart: Date
+    dateStart?: Date
     /** End date and time, local time. */
     dateEnd?: Date
+    /** Stores the original UTC offset (timezone) in minutes. */
+    utcStartOffset?: number
     /** Total distance in kilometers. */
     distance?: number
     /** Total elevation gain in meters. */
@@ -73,16 +75,8 @@ export interface StravaActivity {
  * @param data Input data.
  */
 export function toStravaActivity(data, units: string): StravaActivity {
-    let startDate
+    const startDate = moment.utc(data.start_date)
 
-    // Set start date with the correct timezone.
-    if (data.utc_offset) {
-        startDate = moment.utc(data.start_date).utcOffset(data.utc_offset / 3600, true)
-    } else {
-        startDate = moment.utc(data.start_date)
-    }
-
-    // Result activity.
     const activity: StravaActivity = {
         id: data.id,
         type: data.type,
@@ -90,6 +84,7 @@ export function toStravaActivity(data, units: string): StravaActivity {
         description: data.description,
         commute: data.commute,
         dateStart: startDate.toDate(),
+        utcStartOffset: data.utc_offset,
         elevationGain: data.total_elevation_gain,
         elevationMax: data.elev_high,
         totalTime: data.elapsed_time,
@@ -107,6 +102,11 @@ export function toStravaActivity(data, units: string): StravaActivity {
         temperature: data.average_temp,
         device: data.device_name,
         updatedFields: []
+    }
+
+    // Strava returns offset in seconds, but we store in minutes.
+    if (activity.utcStartOffset) {
+        activity.utcStartOffset = activity.utcStartOffset / 60
     }
 
     // Set end date.
@@ -171,6 +171,8 @@ export interface StravaProcessedActivity {
     name: string
     /** Start date of the activity. */
     dateStart: Date
+    /** Original UTC offset (timezone) of the activity. */
+    utcStartOffset: number
     /** Processing date. */
     dateProcessed: Date
     /** User details for this activity. */

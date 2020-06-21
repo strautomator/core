@@ -253,7 +253,7 @@ export class Database {
         } else {
             for ([key, value] of Object.entries(data)) {
                 if (_.isObject(value) && value._seconds > 0) {
-                    data[key] = new Date(value._seconds * 1000)
+                    data[key] = data[key].toDate()
                 }
             }
         }
