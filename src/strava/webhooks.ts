@@ -55,7 +55,7 @@ export class StravaWebhooks {
             const webhook: StravaWebhook = {
                 id: data.id,
                 callbackUrl: data.callback_url,
-                dateUpdated: moment(data.updated_at).toDate()
+                dateUpdated: moment.utc(data.updated_at).toDate()
             }
 
             // Set as curent webhook.

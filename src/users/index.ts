@@ -169,7 +169,7 @@ export class Users {
      */
     getIdle = async (): Promise<UserData[]> => {
         try {
-            const since = moment().subtract(settings.users.idleDays, "days")
+            const since = moment.utc().subtract(settings.users.idleDays, "days")
             const result = await database.search("users", ["dateLastActivity", "<", since.toDate()])
 
             // Remove user with no recipes.

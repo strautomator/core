@@ -393,7 +393,7 @@ export class StravaActivities {
                 type: activity.type,
                 name: activity.name,
                 dateStart: activity.dateStart,
-                dateProcessed: moment().toDate(),
+                dateProcessed: moment.utc().toDate(),
                 user: {
                     id: user.id,
                     displayName: user.displayName

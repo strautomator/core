@@ -73,13 +73,23 @@ export interface StravaActivity {
  * @param data Input data.
  */
 export function toStravaActivity(data, units: string): StravaActivity {
+    let startDate
+
+    // Set start date with the correct timezone.
+    if (data.utc_offset) {
+        startDate = moment.utc(data.start_date).utcOffset(data.utc_offset / 3600, true)
+    } else {
+        startDate = moment.utc(data.start_date)
+    }
+
+    // Result activity.
     const activity: StravaActivity = {
         id: data.id,
         type: data.type,
         name: data.name,
         description: data.description,
         commute: data.commute,
-        dateStart: moment(data.start_date_local).toDate(),
+        dateStart: startDate.toDate(),
         elevationGain: data.total_elevation_gain,
         elevationMax: data.elev_high,
         totalTime: data.elapsed_time,
@@ -101,7 +111,7 @@ export function toStravaActivity(data, units: string): StravaActivity {
 
     // Set end date.
     if (data.elapsed_time) {
-        activity.dateEnd = moment(data.start_date_local).add(data.elapsed_time, "s").toDate()
+        activity.dateEnd = startDate.add(data.elapsed_time, "s").toDate()
     }
 
     // Set activity gear.
@@ -253,8 +263,8 @@ export function toStravaProfile(data): StravaProfile {
         username: data.username,
         firstName: data.firstname,
         lastName: data.lastname,
-        dateCreated: data.created_at,
-        dateUpdated: data.updated_at,
+        dateCreated: moment.utc(data.created_at).toDate(),
+        dateUpdated: moment.utc(data.updated_at).toDate(),
         units: data.measurement_preference == "feet" ? "imperial" : "metric",
         bikes: [],
         shoes: []

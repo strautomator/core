@@ -47,7 +47,7 @@ export class PayPalProducts {
                 products.push({
                     id: p.id,
                     name: p.name,
-                    dateCreated: moment(p.create_time).toDate()
+                    dateCreated: moment.utc(p.create_time).toDate()
                 })
             }
 
@@ -90,7 +90,7 @@ export class PayPalProducts {
             return {
                 id: res.id,
                 name: res.name,
-                dateCreated: moment(res.create_time).toDate()
+                dateCreated: moment.utc(res.create_time).toDate()
             }
         } catch (ex) {
             logger.error("PayPal.createProduct", "Could not create a new product on PayPal")

@@ -94,7 +94,7 @@ export class PayPalSubscriptions {
                 id: res.id,
                 productId: res.product_id,
                 name: res.name,
-                dateCreated: moment(res.create_time).toDate(),
+                dateCreated: moment.utc(res.create_time).toDate(),
                 price: parseFloat(res.billing_cycles[0].pricing_scheme.fixed_price.value),
                 frequency: res.billing_cycles[0].frequency.interval_unit.toLowerCase(),
                 enabled: false
@@ -172,7 +172,7 @@ export class PayPalSubscriptions {
                 id: res.id,
                 productId: productId,
                 name: res.name,
-                dateCreated: moment(res.create_time).toDate(),
+                dateCreated: moment.utc(res.create_time).toDate(),
                 price: price,
                 frequency: frequency,
                 enabled: true
@@ -236,8 +236,8 @@ export class PayPalSubscriptions {
                 userId: null,
                 status: res.status,
                 billingPlan: api.currentBillingPlans[res.plan_id] || ({id: res.plan_id} as PayPalBillingPlan),
-                dateCreated: moment(res.create_time).toDate(),
-                dateUpdated: moment(res.update_time).toDate()
+                dateCreated: moment.utc(res.create_time).toDate(),
+                dateUpdated: moment.utc(res.update_time).toDate()
             }
 
             // Has email assigned?
@@ -254,7 +254,7 @@ export class PayPalSubscriptions {
             // Payment info available?
             if (res.billing_info) {
                 if (res.billing_info.next_billing_time) {
-                    subscription.dateNextPayment = moment(res.billing_info.next_billing_time).toDate()
+                    subscription.dateNextPayment = moment.utc(res.billing_info.next_billing_time).toDate()
                 }
 
                 // A payment was already made? Fill last payment details.
@@ -262,7 +262,7 @@ export class PayPalSubscriptions {
                     subscription.lastPayment = {
                         amount: parseFloat(res.billing_info.last_payment.amount.value),
                         currency: res.billing_info.last_payment.amount.currency_code,
-                        date: moment(res.billing_info.last_payment.time).toDate()
+                        date: moment.utc(res.billing_info.last_payment.time).toDate()
                     }
                 }
             }
@@ -316,8 +316,8 @@ export class PayPalSubscriptions {
                 userId: userId,
                 status: res.status,
                 billingPlan: billingPlan,
-                dateCreated: moment(res.create_time).toDate(),
-                dateUpdated: moment(res.create_time).toDate(),
+                dateCreated: moment.utc(res.create_time).toDate(),
+                dateUpdated: moment.utc(res.create_time).toDate(),
                 approvalUrl: _.find(res.links, {rel: "approve"}).href
             }
 

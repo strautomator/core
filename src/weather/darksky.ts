@@ -59,7 +59,7 @@ export class DarkSky implements WeatherProvider {
             const weatherUrl = `${settings.weather.darksky.baseUrl}${settings.weather.darksky.secret}/${endpoint}`
 
             const res = await axios({url: weatherUrl})
-            const result = this.toWeatherSummary(res.data, now.toDate(), preferences)
+            const result = this.toWeatherSummary(res.data, now.utc().toDate(), preferences)
 
             logger.info("DarkSky.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
             return result
