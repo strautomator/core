@@ -231,6 +231,38 @@ export class Database {
         await doc.update(data)
     }
 
+    /**
+     * Delete documents from the database, based on the passed search query.
+     * @param collection Name of the collection.
+     * @param queryList List of query in the format [property, operator, value].
+     */
+    delete = async (collection: string, queryList?: any[]): Promise<number> => {
+        const colname = `${collection}${settings.database.collectionSuffix}`
+        let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
+
+        if (!queryList || queryList.length < 1) {
+            throw new Error("A valid queryList is mandatory")
+        }
+
+        // Make sure query list is an array by itself.
+        if (_.isString(queryList[0])) {
+            queryList = [queryList]
+        }
+
+        // Iterate and build queries.
+        for (let query of queryList) {
+            filteredTable = filteredTable.where(query[0], query[1], query[2])
+        }
+
+        // Delete documents.
+        const snapshot = await filteredTable.get()
+        snapshot.forEach((doc) => doc.ref.delete())
+
+        logger.info("Database.delete", collection, queryList.join(", "), `Deleted ${snapshot.size} documents`)
+
+        return snapshot.size
+    }
+
     // HELPERS
     // --------------------------------------------------------------------------
 
