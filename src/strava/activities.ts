@@ -156,8 +156,9 @@ export class StravaActivities {
 
         // Add link back to Strautomator on some percentage of activities (depending on user PRO status and settings).
         // If user has a custom linksOn, it will add the linkback even if user has PRO status.
-        const linksOn = user.linksOn || settings.plans.free.linksOn
-        const shouldAddLink = (!user.isPro || user.linksOn > 0) && user.activityCount > 0 && user.activityCount % linksOn == 0
+        const defaultLinksOn = user.isPro ? 0 : settings.plans.free.linksOn
+        const linksOn = user.preferences ? user.preferences.linksOn || defaultLinksOn : defaultLinksOn
+        const shouldAddLink = (!user.isPro || linksOn > 0) && user.activityCount > 0 && user.activityCount % linksOn == 0
 
         try {
             if (!activity.updatedFields || activity.updatedFields.length == 0) {

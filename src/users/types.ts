@@ -33,8 +33,6 @@ export interface UserData {
     preferences?: UserPreferences
     /** Subscription details (for PRO accounts). */
     subscription?: UserSubscription
-    /** Custom "linksOn" value for linkbacks (default is set on settings). */
-    linksOn?: number
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */
@@ -53,6 +51,8 @@ export interface UserData {
  * User preferences.
  */
 export interface UserPreferences {
+    /** Custom "linksOn" value for linkbacks (default is set on settings). */
+    linksOn?: number
     /** Add a #strautomator.com hashtag on name of processed activities? */
     activityHashtag?: boolean
     /** Language used on automations. Lowercased 2 letter country code. */

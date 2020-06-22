@@ -261,7 +261,6 @@ export class Users {
 
             // Set registration date, if user does not exist yet.
             if (!exists) {
-                logger.info("Users.upsert", userData.id, userData.displayName, "New registration")
                 userData.dateRegistered = now
                 userData.recipes = {}
                 userData.recipeCount = 0
@@ -276,7 +275,14 @@ export class Users {
 
             // Save user to the database.
             await database.merge("users", userData, doc)
-            logger.info("Users.upsert", userData.id, userData.displayName, `Has ${userData.recipeCount} recipes`)
+
+            // If a new user, publish the user creation event.
+            if (!exists) {
+                logger.info("Users.upsert", userData.id, userData.displayName, `New registration`)
+                eventManager.emit("Users.create", userData)
+            } else {
+                logger.info("Users.upsert", userData.id, userData.displayName, `${userData.recipeCount} recipes, ${userData.activityCount} activities`)
+            }
 
             return userData
         } catch (ex) {
@@ -309,13 +315,16 @@ export class Users {
     }
 
     /**
-     * Delete the specified user from the database.
+     * Delete the specified user, its activities and automation stats from the database.
      * @param user User to be deleted.
      */
     delete = async (user: UserData): Promise<void> => {
         try {
             await database.doc("users", user.id).delete()
-            logger.warn("Users.delete", user.id, user.displayName)
+            const countActivities = await database.delete("activities", ["user.id", "==", user.id])
+            const countRecipeStats = await database.delete("recipe-stats", ["userId", "==", user.id])
+
+            logger.warn("Users.delete", user.id, user.displayName, `Removed ${countActivities} activities, ${countRecipeStats} recipe stats`)
 
             // Publish delete event.
             eventManager.emit("Users.delete", user)
