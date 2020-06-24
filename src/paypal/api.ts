@@ -1,11 +1,11 @@
 // Strautomator Core: PayPal API
 
 import {PayPalAuth, PayPalBillingPlan, PayPalProduct} from "./types"
+import {axiosRequest} from "../axios"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
 import querystring = require("querystring")
-const axios = require("axios").default
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
 
@@ -97,12 +97,12 @@ export class PayPalAPI {
             }
 
             // Try fetching a new token from PayPal.
-            const res = await axios(options)
-            const expiresIn = res.data.expires_in ? res.data.expires_in : 3600
+            const res = await axiosRequest(options)
+            const expiresIn = res.expires_in ? res.expires_in : 3600
 
             // Set auth token and expiry timestamp.
             this.auth = {
-                accessToken: res.data.access_token,
+                accessToken: res.access_token,
                 expiresAt: expiresIn + moment().unix() - 120
             }
 
@@ -144,19 +144,8 @@ export class PayPalAPI {
             }
 
             // Dispatch request to PayPal.
-            const res = await axios(options)
-
-            if (!res) {
-                logger.warn("PayPal.makeRequest", options.method, options.url, "Got no response")
-                return null
-            }
-
-            if (!res.data && res.status != 204) {
-                logger.warn("PayPal.makeRequest", options.method, options.url, "Got an empty response")
-                return null
-            }
-
-            return res.data
+            const res = await axiosRequest(options)
+            return res
         } catch (ex) {
             const err = parseResponseError(ex)
             logger.error("PayPal.makeRequest", reqOptions.method, reqOptions.url, err)

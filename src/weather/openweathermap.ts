@@ -4,9 +4,9 @@ import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
+import {axiosRequest} from "../axios"
 import logger = require("anyhow")
 import moment = require("moment")
-const axios = require("axios").default
 const settings = require("setmeup").settings
 
 /**
@@ -58,8 +58,8 @@ export class OpenWeatherMap implements WeatherProvider {
             const query = `&units=${units}&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}`
             const weatherUrl = baseUrl + query
 
-            const res = await axios({url: weatherUrl})
-            const result = this.toWeatherSummary(res.data, new Date(), preferences)
+            const res = await axiosRequest({url: weatherUrl})
+            const result = this.toWeatherSummary(res, new Date(), preferences)
 
             logger.info("OpenWeatherMap.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
             return result
@@ -89,8 +89,8 @@ export class OpenWeatherMap implements WeatherProvider {
             const units = preferences.weatherUnit == "f" ? "imperial" : "metric"
             const baseUrl = `${settings.weather.openweathermap.baseUrl}?appid=${settings.weather.openweathermap.secret}`
             const query = `&units=${units}&lang=${lang}&lat=${activity.locationEnd[0]}&lon=${activity.locationEnd[1]}`
-            const result: any = await axios({url: baseUrl + query})
-            weather.end = this.toWeatherSummary(result.data, new Date(), preferences)
+            const result: any = await axiosRequest({url: baseUrl + query})
+            weather.end = this.toWeatherSummary(result, new Date(), preferences)
 
             return weather
         } catch (ex) {

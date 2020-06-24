@@ -4,9 +4,9 @@ import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
+import {axiosRequest} from "../axios"
 import logger = require("anyhow")
 import moment = require("moment")
-const axios = require("axios").default
 const settings = require("setmeup").settings
 
 /**
@@ -58,8 +58,8 @@ export class DarkSky implements WeatherProvider {
             const endpoint = `${coordinates[0]},${coordinates[1]},${now.unix()}?units=${units}&lang=${lang}`
             const weatherUrl = `${settings.weather.darksky.baseUrl}${settings.weather.darksky.secret}/${endpoint}`
 
-            const res = await axios({url: weatherUrl})
-            const result = this.toWeatherSummary(res.data, now.utc().toDate(), preferences)
+            const res = await axiosRequest({url: weatherUrl})
+            const result = this.toWeatherSummary(res, now.utc().toDate(), preferences)
 
             logger.info("DarkSky.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
             return result
@@ -95,8 +95,8 @@ export class DarkSky implements WeatherProvider {
             // Get weather report for start location.
             if (activity.dateStart && activity.locationStart) {
                 try {
-                    const startResult: any = await axios({url: getUrl(activity.locationStart, activity.dateStart)})
-                    weather.start = this.toWeatherSummary(startResult.data, activity.dateStart, preferences)
+                    const startResult: any = await axiosRequest({url: getUrl(activity.locationStart, activity.dateStart)})
+                    weather.start = this.toWeatherSummary(startResult, activity.dateStart, preferences)
                 } catch (ex) {
                     logger.error("DarkSky.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
                 }
@@ -105,8 +105,8 @@ export class DarkSky implements WeatherProvider {
             // Get weather report for end location.
             if (activity.dateEnd && activity.locationEnd) {
                 try {
-                    const endResult: any = await axios({url: getUrl(activity.locationEnd, activity.dateEnd)})
-                    weather.end = this.toWeatherSummary(endResult.data, activity.dateEnd, preferences)
+                    const endResult: any = await axiosRequest({url: getUrl(activity.locationEnd, activity.dateEnd)})
+                    weather.end = this.toWeatherSummary(endResult, activity.dateEnd, preferences)
                 } catch (ex) {
                     logger.error("DarkSky.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)
                 }

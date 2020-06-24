@@ -4,13 +4,12 @@ import {recipePropertyList} from "./lists"
 import {RecipeAction, RecipeActionType} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
+import {axiosRequest} from "../axios"
 import weather from "../weather"
 import _ = require("lodash")
 import jaul = require("jaul")
 import logger = require("anyhow")
-const axios = require("axios").default
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Default action to change an activity's property (name or description).
@@ -120,11 +119,10 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, ac
             method: "POST",
             url: action.value,
             timeout: settings.recipes.webhook.timeout,
-            headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`},
             data: activity
         }
 
-        await axios(options)
+        await axiosRequest(options)
     } catch (ex) {
         logger.error("Recipes.webhookAction", `User ${user.id}`, `Activity ${activity.id}`, action.value, ex)
     }

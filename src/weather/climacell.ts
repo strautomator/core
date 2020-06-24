@@ -4,10 +4,10 @@ import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
+import {axiosRequest} from "../axios"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
-const axios = require("axios").default
 const settings = require("setmeup").settings
 
 /**
@@ -58,8 +58,8 @@ export class ClimaCell implements WeatherProvider {
             const baseQuery = `unit_system=${units}&apikey=${settings.weather.climacell.secret}&`
             const weatherUrl = `${settings.weather.climacell.baseUrl}${`realtime?fields=${fields},weather_code&`}${baseQuery}lat=${coordinates[0]}&lon=${coordinates[1]}`
 
-            const res = await axios({url: weatherUrl})
-            const result = this.toWeatherSummary(res.data, new Date())
+            const res = await axiosRequest({url: weatherUrl})
+            const result = this.toWeatherSummary(res, new Date())
 
             logger.info("ClimaCell.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
             return result
@@ -107,8 +107,8 @@ export class ClimaCell implements WeatherProvider {
             // Get weather report for start location.
             if (activity.dateStart && activity.locationStart) {
                 try {
-                    const startResult: any = await axios({url: getUrl(activity.locationStart, activity.dateStart)})
-                    weather.start = this.toWeatherSummary(startResult.data, activity.dateStart)
+                    const startResult: any = await axiosRequest({url: getUrl(activity.locationStart, activity.dateStart)})
+                    weather.start = this.toWeatherSummary(startResult, activity.dateStart)
                 } catch (ex) {
                     logger.error("ClimaCell.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
                 }
@@ -117,8 +117,8 @@ export class ClimaCell implements WeatherProvider {
             // Get weather report for end location.
             if (activity.dateEnd && activity.locationEnd) {
                 try {
-                    const endResult: any = await axios({url: getUrl(activity.locationEnd, activity.dateEnd)})
-                    weather.end = this.toWeatherSummary(endResult.data, activity.dateEnd)
+                    const endResult: any = await axiosRequest({url: getUrl(activity.locationEnd, activity.dateEnd)})
+                    weather.end = this.toWeatherSummary(endResult, activity.dateEnd)
                 } catch (ex) {
                     logger.error("ClimaCell.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)
                 }

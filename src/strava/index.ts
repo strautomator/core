@@ -91,6 +91,8 @@ export class Strava {
 
     /**
      * Shortcut to API's refreshToken().
+     * @param refreshToken The refresh token for the user / client.
+     * @param accessToken Previous access token.
      */
     refreshToken = async (refreshToken: string, accessToken?: string): Promise<StravaTokens> => {
         return await api.refreshToken(refreshToken, accessToken)
@@ -98,6 +100,8 @@ export class Strava {
 
     /**
      * Revoke the passed access token.
+     * @param accessToken Access token to be deauthorized.
+     * @param userId ID of the token's owner.
      */
     revokeToken = async (accessToken: string, userId: string): Promise<void> => {
         return await api.revokeToken(accessToken, userId)

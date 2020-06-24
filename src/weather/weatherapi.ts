@@ -4,10 +4,10 @@ import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
+import {axiosRequest} from "../axios"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
-const axios = require("axios").default
 const settings = require("setmeup").settings
 
 /**
@@ -60,8 +60,8 @@ export class WeatherAPI implements WeatherProvider {
             const weatherUrl = `${baseUrl}current.json?${currentQuery}`
             const now = new Date()
 
-            const res = await axios({url: weatherUrl})
-            const data = this.filterData(res.data, now)
+            const res = await axiosRequest({url: weatherUrl})
+            const data = this.filterData(res, now)
             const result = this.toWeatherSummary(data, now, preferences)
 
             logger.info("WeatherAPI.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
@@ -108,8 +108,8 @@ export class WeatherAPI implements WeatherProvider {
             // Get weather report for start location.
             if (activity.dateStart && activity.locationStart) {
                 try {
-                    const startResult: any = await axios({url: getUrl(activity.locationStart, activity.dateStart)})
-                    const startData = this.filterData(startResult.data, activity.dateStart)
+                    const startResult: any = await axiosRequest({url: getUrl(activity.locationStart, activity.dateStart)})
+                    const startData = this.filterData(startResult, activity.dateStart)
                     weather.start = this.toWeatherSummary(startData, activity.dateStart, preferences)
                 } catch (ex) {
                     logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
@@ -119,8 +119,8 @@ export class WeatherAPI implements WeatherProvider {
             // Get weather report for end location.
             if (activity.dateEnd && activity.locationEnd) {
                 try {
-                    const endResult: any = await axios({url: getUrl(activity.locationStart, activity.dateEnd)})
-                    const endData = this.filterData(endResult.data, activity.dateStart)
+                    const endResult: any = await axiosRequest({url: getUrl(activity.locationStart, activity.dateEnd)})
+                    const endData = this.filterData(endResult, activity.dateStart)
                     weather.end = this.toWeatherSummary(endData, activity.dateEnd, preferences)
                 } catch (ex) {
                     logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)

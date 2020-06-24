@@ -1,14 +1,13 @@
 // Strautomator Core: Strava API
 
 import {StravaTokens} from "./types"
+import {axiosRequest} from "../axios"
 import Bottleneck from "bottleneck"
 import eventManager from "../eventmanager"
 import logger = require("anyhow")
 import moment = require("moment")
 import querystring = require("querystring")
-const axios = require("axios").default
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Strava API handler.
@@ -19,11 +18,6 @@ export class StravaAPI {
     static get Instance(): StravaAPI {
         return this._instance || (this._instance = new this())
     }
-
-    /**
-     * Expose axios to outside modules.
-     */
-    axios = axios
 
     /**
      * API limiter module.
@@ -108,22 +102,23 @@ export class StravaAPI {
                 url: `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`,
                 timeout: settings.oauth.tokenTimeout
             }
-            const res = await this.axios(reqOptions)
 
-            if (res == null || res.data == null) {
-                throw new Error("Invalid access token")
+            const res = await axiosRequest(reqOptions)
+            if (!res) {
+                throw new Error("Invalid token response")
             }
 
             // Save new tokens to database.
             const tokens: StravaTokens = {
-                accessToken: res.data.access_token,
-                refreshToken: res.data.refresh_token,
-                expiresAt: res.data.expires_at
+                accessToken: res.access_token,
+                refreshToken: res.refresh_token,
+                expiresAt: res.expires_at
             }
 
             return tokens
         } catch (ex) {
             logger.error("Strava.getToken", ex)
+            throw ex
         }
     }
 
@@ -153,16 +148,17 @@ export class StravaAPI {
                 url: `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`,
                 timeout: settings.oauth.tokenTimeout
             }
-            const res = await this.axios(reqOptions)
 
-            if (res == null || res.data == null) {
-                throw new Error("Invalid or empty token response")
+            const res = await axiosRequest(reqOptions)
+            if (!res) {
+                throw new Error("Invalid token response")
             }
+
             // Save new tokens to database.
             const tokens: StravaTokens = {
-                accessToken: res.data.access_token,
-                refreshToken: res.data.refresh_token,
-                expiresAt: res.data.expires_at
+                accessToken: res.access_token,
+                refreshToken: res.refresh_token,
+                expiresAt: res.expires_at
             }
 
             // Publish event.
@@ -171,6 +167,7 @@ export class StravaAPI {
             return tokens
         } catch (ex) {
             logger.error("Strava.refreshToken", ex)
+            throw ex
         }
     }
 
@@ -185,13 +182,15 @@ export class StravaAPI {
                 access_token: accessToken
             }
 
-            // Post data to Strava.
-            const tokenUrl = `${settings.strava.api.deauthUrl}?${querystring.stringify(qs)}`
-            const res = await this.axios.post(tokenUrl)
-
-            if (res == null || res.data == null) {
-                throw new Error("Invalid or empty token response")
+            // Post auth data to Strava.
+            const reqOptions = {
+                method: "POST",
+                url: `${settings.strava.api.deauthUrl}?${querystring.stringify(qs)}`,
+                timeout: settings.oauth.tokenTimeout
             }
+
+            // Post data to Strava.
+            await axiosRequest(reqOptions)
 
             logger.info("Strava.revokeToken", `Token for user ${userId} deauthorized`)
         } catch (ex) {
@@ -216,8 +215,7 @@ export class StravaAPI {
 
             const options: any = {
                 url: `${settings.strava.api.baseUrl}${path}`,
-                method: method,
-                headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`}
+                method: method
             }
 
             // Renew token if it has expired.
@@ -245,14 +243,14 @@ export class StravaAPI {
                 options.data = body
             }
 
-            // Send request to Strava!
-            const res: any = await this.limiter.schedule({id: options.path}, () => axios(options))
+            // Send request to Strava.
+            const res: any = await this.limiter.schedule({id: options.path}, () => axiosRequest(options))
 
-            if (res == null || res.data == null) {
+            if (!res) {
                 throw new Error("Invalid or empty response")
             }
 
-            return res.data
+            return res
         } catch (ex) {
             logger.debug("Strava.makeRequest", path, method, ex)
             throw ex
