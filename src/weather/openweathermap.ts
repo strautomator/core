@@ -61,7 +61,10 @@ export class OpenWeatherMap implements WeatherProvider {
             const res = await axiosRequest({url: weatherUrl})
             const result = this.toWeatherSummary(res, new Date(), preferences)
 
-            logger.info("OpenWeatherMap.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            if (result) {
+                logger.info("OpenWeatherMap.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            }
+
             return result
         } catch (ex) {
             logger.error("OpenWeatherMap.getCurrentWeather", coordinates, ex)

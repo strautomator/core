@@ -61,7 +61,10 @@ export class ClimaCell implements WeatherProvider {
             const res = await axiosRequest({url: weatherUrl})
             const result = this.toWeatherSummary(res, new Date())
 
-            logger.info("ClimaCell.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            if (result) {
+                logger.info("ClimaCell.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            }
+
             return result
         } catch (ex) {
             logger.error("ClimaCell.getCurrentWeather", coordinates, ex)
@@ -147,6 +150,11 @@ export class ClimaCell implements WeatherProvider {
 
         let precipType = data.precipitation_type ? data.precipitation_type.value : null
         let iconText: string
+
+        // Make sure weather data was returned correctly.
+        if (data.temp.value === null && data.humidity.value === null) {
+            return null
+        }
 
         // No precipitation? Set it to null.
         if (precipType == "none") {

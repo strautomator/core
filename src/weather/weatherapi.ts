@@ -64,7 +64,10 @@ export class WeatherAPI implements WeatherProvider {
             const data = this.filterData(res, now)
             const result = this.toWeatherSummary(data, now, preferences)
 
-            logger.info("WeatherAPI.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            if (result) {
+                logger.info("WeatherAPI.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            }
+
             return result
         } catch (ex) {
             logger.error("WeatherAPI.getCurrentWeather", coordinates, ex)

@@ -61,7 +61,10 @@ export class Weatherbit implements WeatherProvider {
             const res = await axiosRequest({url: weatherUrl})
             const result = this.toWeatherSummary(res.data[0], new Date(), preferences)
 
-            logger.info("Weatherbit.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            if (result) {
+                logger.info("Weatherbit.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+            }
+
             return result
         } catch (ex) {
             logger.error("Weatherbit.getCurrentWeather", coordinates, ex)

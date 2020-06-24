@@ -4,7 +4,7 @@ This is the core module of Strautomator, and contains most of its business logic
 
 ### Settings
 
-Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its docs. The settings are splitted as follows:
+Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its [docs](https://setmeup.devv.com). The settings are splitted as follows:
 
 - **settings.json** - general settings shared by all environments
 - **settings.development.json** - development settings, mostly when running on your dev machine
@@ -12,17 +12,17 @@ Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) modul
 - **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
 - **GCS settings** - optional, will be downloaded from a Google Cloud Storage bucket on startup
 
-Additionally, you can also define settings via environment variables, prefixed by SMU and separating levels with underscore. So for instance to define the `app.title` via environment variables, you should set the value on `$SMU_app_title`. To define `gcp.projectId`, use `$SMU_gcp_projectId`. And so on.
+Additionally, you can also define settings via environment variables, prefixed by SMU and separating levels with underscore. So for instance to define the `app.title` via an environment variable, you should set the value on `$SMU_app_title`. To define `gcp.projectId`, use `$SMU_gcp_projectId`. And so on.
 
 If you want to download settings from Google Cloud Storage, you must define the `gcp.downloadSettings.bucket` (or via the `$SMU_gcp_downloadSettings_bucket` env variable). The default filename is `settings.secret.json`, but you can change that as well. The settings file downloaded from GCS will NOT persist on the disk.
 
-Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same naming convention.
+Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same procedure, same naming convention.
 
 ### Database
 
 By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, such as MongoDB or DynamoDB.
 
-The following collections are used:
+The following collections are currently used:
 
 - **users** registered user details
 - **activities** summary of processed activities
