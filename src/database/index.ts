@@ -70,9 +70,9 @@ export class Database {
      * Update or insert a new document on the specified database collection. Returns epoch timestamp.
      * @param collection Name of the collection.
      * @param data Document data.
-     * @param id Optional unique ID, will be auto generated if not present.
+     * @param id Unique ID of the document.
      */
-    set = async (collection: string, data: any, id?: string): Promise<number> => {
+    set = async (collection: string, data: any, id: string): Promise<number> => {
         const colname = `${collection}${settings.database.collectionSuffix}`
         const table = this.firestore.collection(colname)
         const doc = table.doc(id)
@@ -84,9 +84,7 @@ export class Database {
         const result = await doc.set(encryptedData)
 
         // Add result to cache if an ID was passed.
-        if (id) {
-            cache.set("database", `${collection}-${id}`, data)
-        }
+        cache.set("database", `${collection}-${id}`, data)
 
         return result.writeTime.seconds
     }
@@ -284,7 +282,7 @@ export class Database {
             }
         } else {
             for ([key, value] of Object.entries(data)) {
-                if (_.isObject(value) && value._seconds > 0) {
+                if (_.isObject(value) && value._seconds > 0 && value.toDate) {
                     data[key] = data[key].toDate()
                 }
             }

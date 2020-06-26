@@ -30,6 +30,13 @@
             "filename": "settings.secret.json"
         }
     },
+    "gearwear": {
+        // By default, when update mileage for gear components, get activities that happened
+        // 2 days ago (so users will have some time to set the correct activity gear).
+        "previousDays": 2,
+        // Remind user if mileage was not reset and current mileage has passed 20% of the alert value.
+        "reminderThreshold": 1.2
+    },
     "mailer": {
         // The default "from" on sent emails must be set on settings.secret.json file
         // or via the SMU_mailer_from environment variable.
@@ -47,10 +54,7 @@
                 "user": null,
                 "pass": null
             }
-        },
-        // Base email template. Can have HTML code inside. The actual message
-        // should be replaced by the tag ${contents}.
-        "template": "<p>${contents}</p><div>-<br /><small>Sport frei!Email sent by the Strautomator bot</small></div>"
+        }
     },
     "maps": {
         // Cache geolocation results for 20 minutes. Value set in seconds.
@@ -112,21 +116,24 @@
         }
     },
     "plans": {
-        // Free accounts are limited to 3 recipes and conditions.
         "free": {
+            // Free accounts are limited to 3 recipes and conditions, and 1 gear wear configuration.
             "maxRecipes": 3,
             "maxConditions": 3,
-            // Links on 1 out of 5 processed activities on free accounts.
+            "maxGearWear": 1,
+            // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5,
             // Text of links to be added on the percentage above. The app.url will be
             // appended at the end of the text. String is added on a new line on the
             // activity description.
-            "linksTexts": ["Updated by", "Automated with", "With a little touch from", "Powered by", "Spiced up with"]
+            "linksTexts": ["Powered by", "Updated by", "Automated with", "With a little touch from", "Powered by", "Spiced up with"]
         },
-        // Pro accounts are limited to 999 (unlimited) recipes and conditions.
+
         "pro": {
+            // Pro accounts are limited to 999 (virtually unlimited) recipes, conditions and gear wear configs.
             "maxRecipes": 999,
             "maxConditions": 999,
+            "maxGearWear": 999,
             // No links on Pro accounts processed activities.
             "linksOn": false,
             // Subscription prices on PayPal to get a PRO account.
