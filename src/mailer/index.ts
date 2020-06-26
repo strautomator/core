@@ -1,7 +1,8 @@
 // Strautomator Core: Mailer
 
-import {EmailSendingOptions} from "./types"
+import {EmailSendingOptions, EmailBaseTemplate, EmailTemplates} from "./types"
 import eventManager from "../eventmanager"
+import jaul = require("jaul")
 import logger = require("anyhow")
 import nodemailer = require("nodemailer")
 const settings = require("setmeup").settings
@@ -22,7 +23,7 @@ export class Mailer {
     // --------------------------------------------------------------------------
 
     /**
-     * Init the Email manager.
+     * Init the Email Manager.
      * @param quickStart If true, will not validate SMTP cconnection, default is false.
      */
     init = async (quickStart?: boolean): Promise<void> => {
@@ -83,7 +84,7 @@ export class Mailer {
     // --------------------------------------------------------------------------
 
     /**
-     * Send an email.
+     * Sends an email.
      * @param options Email sending options.
      */
     send = async (options: EmailSendingOptions): Promise<void> => {
@@ -92,18 +93,67 @@ export class Mailer {
             return
         }
 
+        let body: string = options.body
+        let subject: string = options.subject
+
         try {
-            const html = settings.mailer.template.replace("${contents}", options.body)
+            if (options.template) {
+                const template = EmailTemplates[options.template]
+
+                // If a template was passed, make sure it's valid.
+                if (!template) {
+                    throw new Error(`Invalid template: ${options.template}`)
+                }
+
+                // Template has a body defined?
+                if (template.body) {
+                    body = template.body
+                }
+
+                // Template has a subject defined?
+                if (template.subject) {
+                    subject = template.subject
+                }
+            }
+
+            // Make sure all necessary fields are filled in.
+            if (!options.to) {
+                throw new Error(`Missing 'to' address`)
+            }
+            if (!body) {
+                throw new Error(`Missing email body`)
+            }
+            if (!subject) {
+                throw new Error(`Missing email subject`)
+            }
+
+            // Replace keywords on the email template and subject.
+            if (options.data) {
+                body = jaul.data.replaceTags(body, options.data)
+                subject = jaul.data.replaceTags(subject, options.data)
+            }
+
+            // Replace default keywords (from app).
+            const defaultTags = {
+                appUrl: settings.app.url,
+                appTitle: settings.app.title
+            }
+            body = jaul.data.replaceTags(body, defaultTags)
+            subject = jaul.data.replaceTags(subject, defaultTags)
+
+            // Append body to the base HTML template.
+            body = EmailBaseTemplate.replace("${contents}", body)
+
             const sendingOptions = {
                 from: `"${settings.app.title}" <${options.from || settings.mailer.from}>`,
                 to: options.to,
-                subject: options.subject,
-                html: html
+                subject: subject,
+                html: body
             }
 
             await this.client.sendMail(sendingOptions)
         } catch (ex) {
-            logger.error("Mailer.send", options.to, options.subject, ex)
+            logger.error("Mailer.send", options.to, subject, ex)
         }
     }
 }
