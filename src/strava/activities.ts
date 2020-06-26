@@ -256,8 +256,22 @@ export class StravaActivities {
             let recipe: RecipeData
             let recipeIds = []
 
+            // If user has no recipes? Stop here.
             if (Object.keys(user.recipes).length == 0) {
-                logger.info("Strava.processActivity", `User ${user.id} has no recipes, won't process activity ${activityId}`)
+                const minDate = moment.utc().subtract(1, "month")
+
+                // If user registered more than 1 month ago and has no activities processed yet, then delete the account.
+                if (user.activityCount == 0 && minDate.isBefore(moment(user.dateRegistered))) {
+                    try {
+                        logger.info("Strava.processActivity", `User ${user.id} is dormant (no recipes, no processed activites for more than 1 month), will get deleted`)
+                        await users.delete(user)
+                    } catch (innerEx) {
+                        logger.error("Strava.processActivity", `User ${user.id}`, "There was an error auto deleting dormant user")
+                    }
+                } else {
+                    logger.info("Strava.processActivity", `User ${user.id} has no recipes, won't process activity ${activityId}`)
+                }
+
                 return null
             }
 
