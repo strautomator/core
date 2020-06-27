@@ -323,8 +323,9 @@ export class Users {
             await database.doc("users", user.id).delete()
             const countActivities = await database.delete("activities", ["user.id", "==", user.id])
             const countRecipeStats = await database.delete("recipe-stats", ["userId", "==", user.id])
+            const countGearWear = await database.delete("gearwear", ["userId", "==", user.id])
 
-            logger.warn("Users.delete", user.id, user.displayName, `Removed ${countActivities} activities, ${countRecipeStats} recipe stats`)
+            logger.warn("Users.delete", user.id, user.displayName, `Removed ${countActivities} activities, ${countRecipeStats} recipe stats, ${countGearWear} gearwear configs`)
 
             // Publish delete event.
             eventManager.emit("Users.delete", user)

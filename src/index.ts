@@ -65,12 +65,15 @@ import {Users} from "./users"
 export const users: Users = Users.Instance
 import {Recipes} from "./recipes"
 export const recipes: Recipes = Recipes.Instance
+import {GearWear} from "./gearwear"
+export const gearwear: GearWear = GearWear.Instance
 
 // Export event manager.
 import {EventManager} from "./eventmanager"
 export const events: EventManager = EventManager.Instance
 
 // Export types.
+export * from "./gearwear/types"
 export * from "./recipes/types"
 export * from "./strava/types"
 export * from "./users/types"
@@ -130,7 +133,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather]) {
+    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, gearwear]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 

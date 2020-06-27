@@ -1,4 +1,4 @@
-// Strautomator Core: Gear Wear
+// Strautomator Core: GearWear
 
 import {GearWearConfig, GearWearComponent} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
@@ -26,7 +26,7 @@ export class GearWear {
     // --------------------------------------------------------------------------
 
     /**
-     * Init the Gear Wear Manager.
+     * Init the GearWear Manager.
      */
     init = async () => {
         try {
@@ -42,9 +42,9 @@ export class GearWear {
     }
 
     /**
-     * Validate a gear wear configuration set by the user.
+     * Validate a gearwear configuration set by the user.
      * @param user The user object.
-     * @param gearwear The gear wear configuration.
+     * @param gearwear The gearwear configuration.
      */
     validate = (user: UserData, gearwear: GearWearConfig): void => {
         try {
@@ -67,11 +67,96 @@ export class GearWear {
         }
     }
 
+    // GET AND UPDATE
+    // --------------------------------------------------------------------------
+
+    /**
+     * Get list of GearWear configurations for the specified user.
+     * @param id The ID of the GearWeat to be fetched.
+     */
+    getById = async (id: string): Promise<GearWearConfig> => {
+        try {
+            const result: GearWearConfig = await database.get("gearwear", id)
+            return result
+        } catch (ex) {
+            logger.error("GearWear.getById", id, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get list of GearWear configurations for the specified user.
+     * @param user The user owner of the GearWear.
+     */
+    getForUser = async (user: UserData): Promise<GearWearConfig[]> => {
+        try {
+            const result: GearWearConfig[] = await database.search("gearwear", ["userId", "==", user.id])
+            logger.info("GearWear.getForUser", `User ${user.id}`, `${result.length} gearwear configurations`)
+
+            return result
+        } catch (ex) {
+            logger.error("GearWear.getForUser", `User ${user.id}`, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Create or update a GearWear config.
+     * @param user The user owner of the gear.
+     * @param gearwear The GearWear configuration.
+     */
+    upsert = async (user: UserData, gearwear: GearWearConfig): Promise<GearWearConfig> => {
+        try {
+            const doc = database.doc("gearwear", gearwear.id)
+            const docSnapshot = await doc.get()
+            const exists = docSnapshot.exists
+
+            const bike = _.find(user.profile.bikes, {id: gearwear.id})
+            const shoe = _.find(user.profile.shoes, {id: gearwear.id})
+            const gear: StravaGear = bike || shoe
+
+            if (!gear) {
+                throw new Error(`Gear ${gearwear.id} does not exist`)
+            }
+
+            // Get names of the components registered.
+            const componentNames = _.map(gearwear.components, "name")
+
+            // Set registration date, if user does not exist yet.
+            if (!exists) {
+                logger.info("GearWear.upsert", `User ${user.id}`, `New configuration for ${gearwear.id}`)
+            }
+
+            // Save user to the database.
+            await database.merge("gearwear", gearwear, doc)
+            logger.info("GearWear.upsert", `User ${user.id}`, `Gear ${gearwear.id} - ${gear.name}`, `Components: ${componentNames}`)
+
+            return gearwear
+        } catch (ex) {
+            logger.error("GearWear.upsert", `User ${user.id}`, `Gear ${gearwear.id}`, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Delete the specified GearWear configuration.
+     * @param user GearWear to be deleted.
+     */
+    delete = async (gearwear: GearWearConfig): Promise<void> => {
+        try {
+            await database.doc("gearwear", gearwear.id).delete()
+            logger.warn("GearWear.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id} deleted`)
+        } catch (ex) {
+            logger.error("Users.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id}`, ex)
+            throw ex
+        }
+    }
+
     // PROCESSING
     // --------------------------------------------------------------------------
 
     /**
-     * Process recent activities for all users that have gear wear confiogurations defined.
+     * Process recent activities for all users that have gearwear confiogurations defined.
      */
     processRecentActivities = async (): Promise<void> => {
         try {
@@ -105,7 +190,7 @@ export class GearWear {
     /**
      * Process a value string against an activity and return the final result.
      * @param user The user to fetch activities for.
-     * @param configs List of gear wear configurations.
+     * @param configs List of gearwear configurations.
      * @param tsAfter Get activities that occured after this timestamp.
      * @param tsBefore Get activities that occured before this timestamp.
      */
@@ -140,7 +225,7 @@ export class GearWear {
             logger.error("GearWear.processUserActivities", `User ${user.id}`, dateString, ex)
         }
 
-        // Iterate all gear wear configurations and remove the updating flag (if it was set).
+        // Iterate all gearwear configurations and remove the updating flag (if it was set).
         for (let config of configs) {
             try {
                 if (config.updating) {
@@ -156,7 +241,7 @@ export class GearWear {
     /**
      * Update gear component mileage with the provided Strava activity.
      * @param user The user owner of the gear and component.
-     * @param config The gear wear config.
+     * @param config The gearwear config.
      * @param activity Strava activity that should be used to update mileages.
      */
     updateMileage = async (user: UserData, config: GearWearConfig, activity: StravaActivity): Promise<void> => {

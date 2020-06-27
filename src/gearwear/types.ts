@@ -1,4 +1,4 @@
-// Strautomator Core: Gear Wear types
+// Strautomator Core: GearWear types
 
 /**
  * Gear / components wear configuration details.

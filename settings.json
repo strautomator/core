@@ -117,10 +117,10 @@
     },
     "plans": {
         "free": {
-            // Free accounts are limited to 3 recipes and conditions, and 1 gear wear configuration.
+            // Free accounts are limited to 3 recipes and conditions, and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxConditions": 3,
-            "maxGearWear": 1,
+            "maxGearWear": 2,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5,
             // Text of links to be added on the percentage above. The app.url will be
@@ -130,7 +130,7 @@
         },
 
         "pro": {
-            // Pro accounts are limited to 999 (virtually unlimited) recipes, conditions and gear wear configs.
+            // Pro accounts are limited to 999 (virtually unlimited) recipes, conditions and gearwear configs.
             "maxRecipes": 999,
             "maxConditions": 999,
             "maxGearWear": 999,
