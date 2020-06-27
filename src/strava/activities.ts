@@ -97,7 +97,7 @@ export class StravaActivities {
                     }
 
                     // Set correct activity gear.
-                    activity.gear = gear ? gear : await stravaAthletes.getGear(tokens, data.gear_id)
+                    activity.gear = gear ? gear : await stravaAthletes.getGear(user, data.gear_id)
                 } catch (ex) {
                     logger.warn("Strava.getActivity", id, "Could not get activity's gear details")
                 }

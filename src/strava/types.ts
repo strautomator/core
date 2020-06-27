@@ -116,7 +116,7 @@ export function toStravaActivity(data, units: string): StravaActivity {
 
     // Set activity gear.
     if (data.gear) {
-        activity.gear = toStravaGear(data.gear)
+        activity.gear = toStravaGear(data.gear, units)
     }
 
     // Set polyline.
@@ -213,18 +213,30 @@ export interface StravaGear {
     name: string
     /** Is it the primary gear for the user? */
     primary: boolean
+    /** Total mileage (taken from Strava, respecting the user's units). */
+    mileage: number
 }
 
 /**
  * Helper to transform data from the API to a StravaGear interface.
  * @param data Input data.
  */
-export function toStravaGear(data): StravaGear {
+export function toStravaGear(data, units: string): StravaGear {
     const gear = {
         id: data.id,
         name: data.name || data.description,
-        primary: data.primary
+        primary: data.primary,
+        mileage: data.distance / 1000
     }
+
+    // User using imperial units? Convert to miles.
+    if (units == "imperial" && gear.mileage > 0) {
+        const miles = 0.621371
+        gear.mileage = gear.mileage * miles
+    }
+
+    // Round mileage.
+    gear.mileage = Math.round(gear.mileage)
 
     return gear
 }
@@ -275,14 +287,14 @@ export function toStravaProfile(data): StravaProfile {
     // Has bikes?
     if (data.bikes && data.bikes.length > 0) {
         for (let bike of data.bikes) {
-            profile.bikes.push(toStravaGear(bike))
+            profile.bikes.push(toStravaGear(bike, profile.units))
         }
     }
 
     // Has shoes?
     if (data.shoes && data.shoes.length > 0) {
         for (let shoe of data.shoes) {
-            profile.shoes.push(toStravaGear(shoe))
+            profile.shoes.push(toStravaGear(shoe, profile.units))
         }
     }
 

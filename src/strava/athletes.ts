@@ -2,6 +2,7 @@
 
 import {StravaGear, StravaProfile, StravaTokens} from "./types"
 import {toStravaGear, toStravaProfile} from "./types"
+import {UserData} from "../users/types"
 import api from "./api"
 import logger = require("anyhow")
 
@@ -39,15 +40,15 @@ export class StravaAthletes {
 
     /**
      * Get gear details from Strava.
-     * @param tokens Strava access tokens.
+     * @param user User data.
      * @param id The gear ID string.
      */
-    getGear = async (tokens: StravaTokens, id: string): Promise<StravaGear> => {
+    getGear = async (user: UserData, id: string): Promise<StravaGear> => {
         logger.debug("Strava.getGear", id)
 
         try {
-            const data = await api.get(tokens, `gear/${id}`)
-            const gear = toStravaGear(data)
+            const data = await api.get(user.stravaTokens, `gear/${id}`)
+            const gear = toStravaGear(data, user.profile.units)
 
             return gear
         } catch (ex) {
