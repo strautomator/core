@@ -128,7 +128,6 @@
             // activity description.
             "linksTexts": ["Powered by", "Updated by", "Automated with", "With a little touch from", "Powered by", "Spiced up with"]
         },
-
         "pro": {
             // Pro accounts are limited to 999 (virtually unlimited) recipes, conditions and gearwear configs.
             "maxRecipes": 999,

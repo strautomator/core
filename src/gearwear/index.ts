@@ -42,9 +42,9 @@ export class GearWear {
     }
 
     /**
-     * Validate a gearwear configuration set by the user.
+     * Validate a GearWear configuration set by the user.
      * @param user The user object.
-     * @param gearwear The gearwear configuration.
+     * @param gearwear The GearWear configuration.
      */
     validate = (user: UserData, gearwear: GearWearConfig): void => {
         try {
@@ -60,6 +60,17 @@ export class GearWear {
 
             if (!gear) {
                 throw new Error(`User has no gear ID ${gearwear.id}`)
+            }
+
+            if (!gearwear.components) {
+                throw new Error("Missing gear components")
+            }
+
+            // Make sure resetDates array is present.
+            for (let comp of gearwear.components) {
+                if (!comp.resetDates) {
+                    comp.resetDates = []
+                }
             }
         } catch (ex) {
             logger.error("GearWear.validate", `User ${user.id}`, JSON.stringify(gearwear, null, 0), ex)
@@ -91,7 +102,7 @@ export class GearWear {
     getForUser = async (user: UserData): Promise<GearWearConfig[]> => {
         try {
             const result: GearWearConfig[] = await database.search("gearwear", ["userId", "==", user.id])
-            logger.info("GearWear.getForUser", `User ${user.id}`, `${result.length} gearwear configurations`)
+            logger.info("GearWear.getForUser", `User ${user.id}`, `${result.length} GearWear configurations`)
 
             return result
         } catch (ex) {
@@ -120,7 +131,7 @@ export class GearWear {
             }
 
             // Get names of the components registered.
-            const componentNames = _.map(gearwear.components, "name")
+            const componentNames = _.map(gearwear.components, "name").join(", ")
 
             // Set registration date, if user does not exist yet.
             if (!exists) {
@@ -156,7 +167,7 @@ export class GearWear {
     // --------------------------------------------------------------------------
 
     /**
-     * Process recent activities for all users that have gearwear confiogurations defined.
+     * Process recent activities for all users that have GearWear configurations defined.
      */
     processRecentActivities = async (): Promise<void> => {
         try {
@@ -164,7 +175,7 @@ export class GearWear {
             const tsAfter = moment.utc().subtract(days, "day").hour(0).minute(0).second(0).unix()
             const tsBefore = moment.utc().subtract(days, "day").hour(23).minute(59).second(59).unix()
 
-            // Get all gearwear configurations from the database,
+            // Get all GearWear configurations from the database,
             // and generate an array with all the user IDs.
             const gearwearList = await database.search("gearwear", null, ["userId", "asc"])
             const userIds = _.uniq(_.map(gearwearList, "userId"))
@@ -190,7 +201,7 @@ export class GearWear {
     /**
      * Process a value string against an activity and return the final result.
      * @param user The user to fetch activities for.
-     * @param configs List of gearwear configurations.
+     * @param configs List of GearWear configurations.
      * @param tsAfter Get activities that occured after this timestamp.
      * @param tsBefore Get activities that occured before this timestamp.
      */
@@ -225,7 +236,7 @@ export class GearWear {
             logger.error("GearWear.processUserActivities", `User ${user.id}`, dateString, ex)
         }
 
-        // Iterate all gearwear configurations and remove the updating flag (if it was set).
+        // Iterate all GearWear configurations and remove the updating flag (if it was set).
         for (let config of configs) {
             try {
                 if (config.updating) {
@@ -241,7 +252,7 @@ export class GearWear {
     /**
      * Update gear component mileage with the provided Strava activity.
      * @param user The user owner of the gear and component.
-     * @param config The gearwear config.
+     * @param config The GearWear configuration.
      * @param activity Strava activity that should be used to update mileages.
      */
     updateMileage = async (user: UserData, config: GearWearConfig, activity: StravaActivity): Promise<void> => {
