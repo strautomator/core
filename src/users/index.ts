@@ -341,6 +341,58 @@ export class Users {
     }
 
     /**
+     * Update the email address of the specified user.
+     * @param user User to be updated.
+     * @param email The new email address of the user.
+     */
+    setEmail = async (user: UserData, email: string): Promise<void> => {
+        try {
+            const validator = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+
+            // New email is mandatory.
+            if (!email) {
+                throw new Error("Missing email address")
+            }
+
+            email = email.trim().toLowerCase()
+
+            // Validate email address.
+            if (!validator.test(email)) {
+                throw new Error("Invalid email address")
+            }
+
+            // Make sure email has changed before proceeding. If not, stop here.
+            if (user.email && user.email == email) {
+                logger.warn("Users.setEmail", user.id, `Email ${email} hasn't changed`)
+                return
+            }
+
+            // Make sure email is unique in the database.
+            const existing = await database.search("users", ["email", "==", email])
+            if (existing.length > 0) {
+                throw new Error("Email already in use by another user")
+            }
+
+            // Save new email address.
+            const data: Partial<UserData> = {
+                id: user.id,
+                email: email.trim()
+            }
+            await database.merge("users", data)
+
+            logger.info("Users.setEmail", user.id, user.displayName, email)
+        } catch (ex) {
+            if (user.profile) {
+                logger.error("Users.setEmail", user.id, user.displayName, email, ex)
+            } else {
+                logger.error("Users.setEmail", user.id, email, ex)
+            }
+
+            throw ex
+        }
+    }
+
+    /**
      * Increment a user's activity count.
      * @param user The user to have activity count incremented.
      */
