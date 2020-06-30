@@ -84,10 +84,27 @@ export class GearWear {
                 throw new Error("Missing gear components")
             }
 
-            // Make sure resetDates array is present.
+            // Valid component fields.
+            const validCompFields = ["name", "currentMileage", "alertMileage", "dateAlertSent", "history"]
+
+            // Validate individual components.
             for (let comp of gearwear.components) {
-                if (!comp.resetDates) {
-                    comp.resetDates = []
+                if (comp.alertMileage < 100) {
+                    throw new Error("Minimum accepted alert mileage is 100")
+                }
+
+                // Make sure the history array is present.
+                if (!comp.history) {
+                    comp.history = []
+                }
+
+                // Remove non-relevant fields.
+                const compFields = Object.keys(comp)
+                for (let key of compFields) {
+                    if (validCompFields.indexOf(key) < 0) {
+                        logger.error("GearWear.validate", `User ${user.id}`, `Gear ${gearwear.id} - ${comp.name}`, `Removed invalid field: ${key}`)
+                        delete comp[key]
+                    }
                 }
             }
         } catch (ex) {
@@ -147,6 +164,9 @@ export class GearWear {
             if (!gear) {
                 throw new Error(`Gear ${gearwear.id} does not exist`)
             }
+
+            // Validate configuration before proceeeding.
+            this.validate(user, gearwear)
 
             // Get names of the components registered.
             const componentNames = _.map(gearwear.components, "name").join(", ")
@@ -363,22 +383,29 @@ export class GearWear {
      */
     resetMileage = async (config: GearWearConfig, componentName: string): Promise<void> => {
         try {
-            const component = _.find(config.components, {name: componentName})
+            const component: GearWearComponent = _.find(config.components, {name: componentName})
 
             if (!component) {
                 throw new Error(`Component not found`)
             }
 
+            const currentMileage = component.currentMileage
+
             // If current mileage is 0, then do nothing.
-            if (component.currentMileage == 0) {
+            if (currentMileage == 0) {
                 logger.warn("GearWear.resetMileage", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, "Mileage was already 0")
                 return
             }
 
-            // Update component with reset values.
-            component.currentMileage = 0
+            // Make sure history array is initialized.
+            if (!component.history) {
+                component.history = []
+            }
+
+            // Update component to mileage 0, and an event to the component history.
             component.dateAlertSent = null
-            component.resetDates.push(moment.utc().toDate())
+            component.currentMileage = 0
+            component.history.push({date: moment.utc().toDate(), mileage: currentMileage})
 
             // Save to the database and log.
             await database.set("gearwear", config, config.id)

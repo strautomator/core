@@ -40,6 +40,16 @@ export interface GearWearComponent {
     alertMileage: number
     /** Date when an alert was last sent to user. */
     dateAlertSent: Date
-    /** Dates when user has triggered the mileage reset. */
-    resetDates: Date[]
+    /** Dates and mileages when user has triggered the mileage reset. */
+    history: GearWearReset[]
+}
+
+/**
+ * Date and mileage when user triggered a mileage reset for a particular component.
+ */
+export interface GearWearReset {
+    /** The date. */
+    date: Date
+    /** The mileage the component had at the time of the reset. */
+    mileage: number
 }
