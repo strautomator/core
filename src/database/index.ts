@@ -327,10 +327,7 @@ export class Database {
             }
         } else {
             for ([key, value] of Object.entries(data)) {
-                if (key.indexOf("Dates") > 0 && _.isArray(value)) {
-                    const arrDates = value.map((d) => d.toDate())
-                    data[key] = arrDates
-                } else if (_.isObject(value) && value._seconds > 0 && value.toDate) {
+                if (_.isObject(value) && value._seconds > 0 && value.toDate) {
                     data[key] = data[key].toDate()
                 }
             }
