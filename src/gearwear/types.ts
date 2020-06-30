@@ -1,6 +1,18 @@
 // Strautomator Core: GearWear types
 
 /**
+ * GearWeat database state.
+ */
+export interface GearWearDbState {
+    /** How many activities were processed on the last execution of processRecentActivities(). */
+    recentActivityCount?: number
+    /** How many users had activities processed on the last execution of processRecentActivities(). */
+    recentUserCount?: number
+    /** Date of the last execution of processRecentActivities(). */
+    dateLastProcessed?: Date
+}
+
+/**
  * Gear / components wear configuration details.
  */
 export interface GearWearConfig {
@@ -24,8 +36,8 @@ export interface GearWearComponent {
     currentMileage: number
     /** Alert mileage of the component. */
     alertMileage: number
-    /** Was the alert recently sent to the user? */
-    alertSent: 0 | 1 | 2
+    /** Date when an alert was last sent to user. */
+    dateAlertSent: Date
     /** Dates when user has triggered the mileage reset. */
     resetDates: Date[]
 }
