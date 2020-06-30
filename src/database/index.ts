@@ -53,7 +53,7 @@ export class Database {
         }
     }
 
-    // METHODS
+    // DOCUMENT METHODS
     // --------------------------------------------------------------------------
 
     /**
@@ -261,6 +261,51 @@ export class Database {
         return snapshot.size
     }
 
+    // APP STATE METHODS
+    // --------------------------------------------------------------------------
+
+    /**
+     * State storage on the database (to share app state across multiple instances).
+     */
+    appState = {
+        /**
+         * Get a single document from the specified database collection.
+         * @param id ID of the desired state document.
+         * @param field The field
+         *
+         */
+        get: async (id: string): Promise<any> => {
+            const collection = "app-state"
+            const colname = `${collection}${settings.database.collectionSuffix}`
+
+            // Continue here with a regular database fetch.
+            const table = this.firestore.collection(colname)
+            const doc = await table.doc(id).get()
+
+            if (doc.exists) {
+                const result: any = doc.data()
+                this.transformData(result)
+                return result
+            }
+
+            return null
+        },
+        /**
+         * Update state.
+         * @param id ID of the desired state document.
+         *
+         */
+        set: async (id: string, data: any): Promise<void> => {
+            const collection = "app-state"
+            const colname = `${collection}${settings.database.collectionSuffix}`
+            const table = this.firestore.collection(colname)
+            const doc = table.doc(id)
+
+            // Save state data to the database.
+            await doc.set(data, {merge: true})
+        }
+    }
+
     // HELPERS
     // --------------------------------------------------------------------------
 
@@ -282,7 +327,10 @@ export class Database {
             }
         } else {
             for ([key, value] of Object.entries(data)) {
-                if (_.isObject(value) && value._seconds > 0 && value.toDate) {
+                if (key.indexOf("Dates") > 0 && _.isArray(value)) {
+                    const arrDates = value.map((d) => d.toDate())
+                    data[key] = arrDates
+                } else if (_.isObject(value) && value._seconds > 0 && value.toDate) {
                     data[key] = data[key].toDate()
                 }
             }
