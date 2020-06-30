@@ -363,7 +363,7 @@ export class GearWear {
                 // send an alert to the user.
                 if (component.currentMileage >= component.alertMileage) {
                     if (!component.dateAlertSent) {
-                        this.triggerMileageAlert(user, component, activity, false)
+                        this.triggerMileageAlert(user, component, activity)
                     } else if (component.currentMileage >= reminderMileage && moment.utc(component.dateAlertSent).isBefore(minReminderDate)) {
                         this.triggerMileageAlert(user, component, activity, true)
                     }
