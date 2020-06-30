@@ -37,7 +37,7 @@ export const EmailTemplates = {
             "Alert mileage: every ${alertMileage} ${units}" +
             "</p>" +
             "<p>" +
-            "To reset the current mileage, please go to your <a href='${appUrl}gear/edit?id=${gearId}&reset=true'>Gears</a> section on Strautomator." +
+            "To reset the current mileage, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +
             "</p>"
     },
     // Reminder sent if user hasn't reset the mileage on a gear component after it reaches 120% of the mileage threshold.
@@ -51,7 +51,7 @@ export const EmailTemplates = {
             "Alert mileage: every ${alertMileage} ${units}" +
             "</p>" +
             "<p>" +
-            "To reset the current mileage, please go to your <a href='${appUrl}gear/edit?id=${gearId}&reset=true'>Gears</a> section on Strautomator." +
+            "To reset the current mileage, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +
             "</p>"
     }
 }
