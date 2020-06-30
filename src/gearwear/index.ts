@@ -1,6 +1,6 @@
 // Strautomator Core: GearWear
 
-import {GearWearConfig, GearWearComponent} from "./types"
+import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
@@ -35,6 +35,24 @@ export class GearWear {
             }
             if (settings.gearwear.reminderThreshold <= 1) {
                 throw new Error(`The gearwear.reminderThreshold setting must be higher than 1`)
+            }
+
+            const state: GearWearDbState = await database.appState.get("gearwear")
+
+            if (state && state.dateLastProcessed) {
+                const lastDate = moment.utc(state.dateLastProcessed)
+
+                // Make sure the processing flag is not stuck due to whatever reason.
+                if (state.processing) {
+                    const minDate = moment.utc().subtract(25, "hours")
+
+                    if (lastDate.isBefore(minDate)) {
+                        await database.appState.set("gearwear", {processing: false})
+                        logger.warn("GearWear.init", `Stuck processing since ${lastDate.format("lll")}`, `Setting processing=false now`)
+                    }
+                } else {
+                    logger.info("GearWear.init", `Last processed at ${lastDate.format("lll")}, ${state.recentActivityCount} activities`)
+                }
             }
         } catch (ex) {
             logger.error("GearWear.init", ex)
@@ -171,6 +189,35 @@ export class GearWear {
      */
     processRecentActivities = async (): Promise<void> => {
         try {
+            let state: GearWearDbState = await database.appState.get("gearwear")
+
+            // First we check if method is currently processing or if it already ran successfully today.
+            // If so, log a warning and abort execution.
+            if (state) {
+                if (state.processing) {
+                    logger.warn("GearWear.processRecentActivities", "Abort", `Another execution is happening right now`)
+                    return
+                }
+
+                if (state.dateLastProcessed) {
+                    const today = moment.utc()
+                    const runDate = moment.utc(state.dateLastProcessed)
+
+                    if (runDate.dayOfYear() == today.dayOfYear() && state.recentActivityCount > 0) {
+                        logger.warn("GearWear.processRecentActivities", "Abort", `Already processed ${state.recentActivityCount} activities today`)
+                        return
+                    }
+                }
+            }
+
+            // Set processing flag.
+            await database.appState.set("gearwear", {processing: true})
+
+            // Count how many activities were processed for all users on this execution.
+            let activityCount = 0
+            let userCount = 0
+
+            // Get correct date and timestamps to fetch activities on Strava.
             const days = settings.gearwear.previousDays
             const tsAfter = moment.utc().subtract(days, "day").hour(0).minute(0).second(0).unix()
             const tsBefore = moment.utc().subtract(days, "day").hour(23).minute(59).second(59).unix()
@@ -182,31 +229,50 @@ export class GearWear {
 
             // Iterate user IDs to get user data and process recent activities for that particular user.
             for (let userId of userIds) {
-                const user = await users.getById(userId)
-                const tsLastActivity = moment.utc(user.dateLastActivity).unix()
+                try {
+                    const user = await users.getById(userId)
+                    const tsLastActivity = moment.utc(user.dateLastActivity).unix()
 
-                // Do not proceed if user has no email set or if no activities were pushed recently.
-                if (!user.email) {
-                    logger.error("GearWear.processRecentActivities", `User ${user.id} has no email, will not proceed`)
-                } else if (tsLastActivity >= tsAfter) {
-                    const userGears = _.remove(gearwearList, {userId: userId})
-                    await this.processUserActivities(user, userGears, tsAfter, tsBefore)
+                    // Do not proceed if user has no email set or if no activities were pushed recently.
+                    if (!user.email) {
+                        logger.error("GearWear.processRecentActivities", `User ${user.id} has no email, will not proceed`)
+                    } else if (tsLastActivity >= tsAfter) {
+                        const userGears = _.remove(gearwearList, {userId: userId})
+                        activityCount += await this.processUserActivities(user, userGears, tsAfter, tsBefore)
+                        userCount++
+                    }
+                } catch (userEx) {
+                    logger.error("GearWear.processRecentActivities", `Failed to process activities for user ${userId}`)
                 }
             }
+
+            // Save gearwear state to the database.
+            state = {
+                recentActivityCount: activityCount,
+                recentUserCount: userCount,
+                dateLastProcessed: moment.utc().toDate(),
+                processing: false
+            }
+
+            await database.appState.set("gearwear", state)
+            logger.info("GearWear.processRecentActivities", `Processed ${state.recentActivityCount} for ${state.recentUserCount} users`)
         } catch (ex) {
+            await database.appState.set("gearwear", {processing: false})
             logger.error("GearWear.processRecentActivities", ex)
         }
     }
 
     /**
-     * Process a value string against an activity and return the final result.
+     * Process recent activities for the specified user and increase the relevant GearWear mileages.
+     * Returns the number of processed actvities for the user.
      * @param user The user to fetch activities for.
      * @param configs List of GearWear configurations.
      * @param tsAfter Get activities that occured after this timestamp.
      * @param tsBefore Get activities that occured before this timestamp.
      */
-    processUserActivities = async (user: UserData, configs: GearWearConfig[], tsAfter: number, tsBefore: number): Promise<void> => {
-        const dateString = moment.utc(tsAfter * 1000 + 1000).format("ll")
+    processUserActivities = async (user: UserData, configs: GearWearConfig[], tsAfter: number, tsBefore: number): Promise<number> => {
+        let dateString = moment.utc(tsAfter * 1000 + 1000).format("ll")
+        let count = 0
 
         try {
             const query = {before: tsBefore, after: tsAfter}
@@ -215,7 +281,7 @@ export class GearWear {
             // No recent activities found? Stop here.
             if (activities.length == 0) {
                 logger.info("GearWear.processUserActivities", `User ${user.id}`, dateString, `No activities to process`)
-                return
+                return 0
             }
 
             logger.info("GearWear.processUserActivities", `User ${user.id}`, dateString, `Will process ${activities.length} activities`)
@@ -228,6 +294,7 @@ export class GearWear {
 
                 if (gearwear) {
                     await this.updateMileage(user, gearwear, activity)
+                    count++
                 } else {
                     logger.debug("GearWear.processUserActivities", `User ${user.id}`, dateString, `No config for gear ${activity.gear.id}`)
                 }
@@ -247,6 +314,8 @@ export class GearWear {
                 logger.error("GearWear.processUserActivities", `User ${user.id}`, dateString, `Gear ${config.id} updating=false`, ex)
             }
         }
+
+        return count
     }
 
     /**
@@ -265,14 +334,17 @@ export class GearWear {
 
             // Iterate and update mileage on gear components.
             for ([id, component] of Object.entries(config.components)) {
+                const minReminderDate = moment.utc().subtract(settings.gearwear.reminderDays, "days")
+                const reminderMileage = component.alertMileage * settings.gearwear.reminderThreshold
+
                 component.currentMileage += activity.distance
 
+                // Check if component has reached the initial or reminder mileage thresholds to
+                // send an alert to the user.
                 if (component.currentMileage >= component.alertMileage) {
-                    const reminderMileage = component.alertMileage * settings.gearwear.reminderThreshold
-
-                    if (component.alertSent == 0) {
+                    if (!component.dateAlertSent) {
                         this.triggerMileageAlert(user, component, activity, false)
-                    } else if (component.alertSent == 1 && component.currentMileage > reminderMileage) {
+                    } else if (component.currentMileage >= reminderMileage && moment.utc(component.dateAlertSent).isBefore(minReminderDate)) {
                         this.triggerMileageAlert(user, component, activity, true)
                     }
                 }
@@ -281,6 +353,38 @@ export class GearWear {
             await database.set("gearwear", config, config.id)
         } catch (ex) {
             logger.error("GearWear.updateMileage", `User ${user.id}`, `Gear ${config.id}`, `Activity ${activity.id}`, ex)
+        }
+    }
+
+    /**
+     * Reset the current mileage for the specified gear component.
+     * @param config The GearWear configuration.
+     * @param component The component to have its mileage set to 0.
+     */
+    resetMileage = async (config: GearWearConfig, componentName: string): Promise<void> => {
+        try {
+            const component = _.find(config.components, {name: componentName})
+
+            if (!component) {
+                throw new Error(`Component not found`)
+            }
+
+            // If current mileage is 0, then do nothing.
+            if (component.currentMileage == 0) {
+                logger.warn("GearWear.resetMileage", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, "Mileage was already 0")
+                return
+            }
+
+            // Update component with reset values.
+            component.currentMileage = 0
+            component.dateAlertSent = null
+            component.resetDates.push(moment.utc().toDate())
+
+            // Save to the database and log.
+            await database.set("gearwear", config, config.id)
+            logger.info("GearWear.resetMileage", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, "Mileage set to 0")
+        } catch (ex) {
+            logger.error("GearWear.resetMileage", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, ex)
         }
     }
 
@@ -297,7 +401,7 @@ export class GearWear {
         const logGear = `Gear ${activity.gear.id} - ${component.name}`
 
         try {
-            component.alertSent++
+            component.dateAlertSent = moment.utc().toDate()
 
             // Get bike or shoe details.
             const bike = _.find(user.profile.bikes, {id: activity.gear.id})
@@ -312,7 +416,7 @@ export class GearWear {
                 gearName: gear.name,
                 component: component.name,
                 currentMileage: component.currentMileage,
-                alertMileage: component.alertSent
+                alertMileage: component.alertMileage
             }
 
             // Dispatch email to user.

@@ -10,6 +10,8 @@ export interface GearWearDbState {
     recentUserCount?: number
     /** Date of the last execution of processRecentActivities(). */
     dateLastProcessed?: Date
+    /** Is the processRecentActivities() executing right now?  */
+    processing?: boolean
 }
 
 /**
