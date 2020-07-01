@@ -224,7 +224,7 @@ export class GearWear {
                     const runDate = moment.utc(state.dateLastProcessed)
 
                     if (runDate.dayOfYear() == today.dayOfYear() && state.recentActivityCount > 0) {
-                        logger.warn("GearWear.processRecentActivities", "Abort", `Already processed ${state.recentActivityCount} activities today`)
+                        logger.info("GearWear.processRecentActivities", `Already processed ${state.recentActivityCount} activities today`)
                         return
                     }
                 }
@@ -255,7 +255,7 @@ export class GearWear {
 
                     // Do not proceed if user has no email set or if no activities were pushed recently.
                     if (!user.email) {
-                        logger.error("GearWear.processRecentActivities", `User ${user.id} has no email, will not proceed`)
+                        logger.warn("GearWear.processRecentActivities", `User ${user.id} has no email, will not proceed`)
                     } else if (tsLastActivity >= tsAfter) {
                         const userGears = _.remove(gearwearList, {userId: userId})
                         activityCount += await this.processUserActivities(user, userGears, tsAfter, tsBefore)
@@ -275,7 +275,7 @@ export class GearWear {
             }
 
             await database.appState.set("gearwear", state)
-            logger.info("GearWear.processRecentActivities", `Processed ${state.recentActivityCount} for ${state.recentUserCount} users`)
+            logger.info("GearWear.processRecentActivities", `Processed ${state.recentActivityCount} activities for ${state.recentUserCount} users`)
         } catch (ex) {
             await database.appState.set("gearwear", {processing: false})
             logger.error("GearWear.processRecentActivities", ex)
@@ -304,7 +304,7 @@ export class GearWear {
                 return 0
             }
 
-            logger.info("GearWear.processUserActivities", `User ${user.id}`, dateString, `Will process ${activities.length} activities`)
+            logger.info("GearWear.processUserActivities", `User ${user.id}`, dateString, `Processing ${activities.length} activities`)
 
             // Iterate user activities to update the gear components mileage.
             for (let activity of activities) {

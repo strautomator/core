@@ -31,6 +31,7 @@ const failedAction = (user: UserData, activity: StravaActivity, recipe: RecipeDa
             }
         }
 
+        // Send email notification to user (do not wait, as this is not considered critical).
         mailer.send(options)
     }
 }
