@@ -10,6 +10,7 @@ import weather from "../weather"
 import _ = require("lodash")
 import jaul = require("jaul")
 import logger = require("anyhow")
+import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
@@ -26,6 +27,8 @@ const failedAction = (user: UserData, activity: StravaActivity, recipe: RecipeDa
             data: {
                 recipeId: recipe.id,
                 recipeTitle: recipe.title,
+                activityId: activity.id,
+                activityDate: moment(activity.dateStart).format("ll"),
                 action: action.friendlyValue,
                 errorMessage: error.message ? error.message : error.toString()
             }

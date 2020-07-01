@@ -35,15 +35,16 @@ export const EmailTemplates = {
         body:
             "<p>" +
             "Hello there!<br /><br />" +
-            "Just to let you know that one of your automations failed to execute properly, so you might waant to double check." +
+            "Just to let you know that one of your automations failed to execute properly, so you might waant to double check its configuration." +
             "</p>" +
             "<p>" +
-            "<b>${recipeTitle}</b><br />" +
-            "Action: ${action}<br /><br />" +
-            "Message: ${errorMessage}" +
+            "<strong>${recipeTitle}</strong><br />" +
+            "Action: ${action}<br />" +
+            "Message: ${errorMessage}<br />" +
+            "Activity: ID ${activityId}, on ${activityDate}" +
             "</p>" +
             "<p>" +
-            "Please <a href='${appUrl}automations/edit?id=${recipeId}'>click here</a> to check your automation details on Strautomator." +
+            "Please <a href='${appUrl}automations/edit?id=${recipeId}'>click here</a> to check the automation details on Strautomator." +
             "</p>"
     },
 
@@ -52,7 +53,7 @@ export const EmailTemplates = {
         subject: "Mileage alert! ${gearName} - ${component}",
         body:
             "<p>" +
-            "Gear: ${gearName} - ${component},<br />" +
+            "<strong>${gearName} - ${component}</strong><br />" +
             "Current mileage: ${currentMileage} ${units}<br />" +
             "Alert mileage: ${alertMileage} ${units}" +
             "</p>" +
@@ -67,7 +68,7 @@ export const EmailTemplates = {
         body:
             "<p>" +
             "This is a small reminder that you haven't reset the mileage for the gear / component below.<br /><br />" +
-            "Gear: ${gearName} - ${component}<br />" +
+            "<strong>${gearName} - ${component}</strong><br />" +
             "Current mileage: ${currentMileage} ${units}<br />" +
             "Alert mileage: ${alertMileage} ${units}" +
             "</p>" +
