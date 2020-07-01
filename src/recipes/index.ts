@@ -184,7 +184,7 @@ export class Recipes {
 
         // Iterate and execute actions.
         for (let action of sortedActions) {
-            await this.processAction(user, activity, action)
+            await this.processAction(user, activity, recipe, action)
         }
 
         // Update recipe stats and return OK.
@@ -250,9 +250,10 @@ export class Recipes {
      * Process a value string against an activity and return the final result.
      * @param user The user (owner of the activity).
      * @param activity A Strava activity.
+     * @param recipe The source recipe.
      * @param action Recipe action to be executed.
      */
-    processAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
+    processAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
         logger.debug("Recipes.processAction", user, activity, action)
 
         if (!activity.updatedFields) {
@@ -261,21 +262,21 @@ export class Recipes {
 
         // Mark activity as commute?
         if (action.type == RecipeActionType.Commute) {
-            return commuteAction(user, activity, action)
+            return commuteAction(user, activity, recipe, action)
         }
 
         // Change activity gear?
         if (action.type == RecipeActionType.Gear) {
-            return gearAction(user, activity, action)
+            return gearAction(user, activity, recipe, action)
         }
 
         // Dispatch acctivity to webhook?
         if (action.type == RecipeActionType.Webhook) {
-            return webhookAction(user, activity, action)
+            return webhookAction(user, activity, recipe, action)
         }
 
         // Other actions (set description or name).
-        return defaultAction(user, activity, action)
+        return defaultAction(user, activity, recipe, action)
     }
 
     /**

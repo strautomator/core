@@ -1,10 +1,11 @@
 // Strautomator Core: Recipe Action methods
 
 import {recipePropertyList} from "./lists"
-import {RecipeAction, RecipeActionType} from "./types"
-import {StravaActivity} from "../strava/types"
+import {RecipeAction, RecipeActionType, RecipeData} from "./types"
+import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
+import mailer from "../mailer"
 import weather from "../weather"
 import _ = require("lodash")
 import jaul = require("jaul")
@@ -12,12 +13,36 @@ import logger = require("anyhow")
 const settings = require("setmeup").settings
 
 /**
+ * Helper to log and alert users about failed actions.
+ */
+const failedAction = (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction, error: any): void => {
+    logger.error("Recipes.failedAction", `User ${user.id}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, error)
+
+    // If user has an email set, alert about the issue.
+    if (user.email) {
+        const options = {
+            to: user.email,
+            template: "RecipeFailedAction",
+            data: {
+                recipeId: recipe.id,
+                recipeTitle: recipe.title,
+                action: action.friendlyValue,
+                errorMessage: error.message ? error.message : error.toString()
+            }
+        }
+
+        mailer.send(options)
+    }
+}
+
+/**
  * Default action to change an activity's property (name or description).
  * @param user The activity owner.
  * @param activity The Strava activity details.
+ * @param recipe The source recipe.
  * @param action The action details.
  */
-export const defaultAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
+export const defaultAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
     try {
         let processedValue = action.value
 
@@ -61,7 +86,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, ac
             activity.updatedFields.push("description")
         }
     } catch (ex) {
-        logger.error("Recipes.defaultAction", `User ${user.id}`, `Activity ${activity.id}`, ex)
+        failedAction(user, activity, recipe, action, ex)
     }
 }
 
@@ -69,14 +94,15 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, ac
  * Set an activity as commute or not.
  * @param user The activity owner.
  * @param activity The Strava activity details.
+ * @param recipe The source recipe.
  * @param action The action details.
  */
-export const commuteAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
+export const commuteAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
     try {
         activity.commute = action.value === false ? false : true
         activity.updatedFields.push("commute")
     } catch (ex) {
-        logger.error("Recipes.commuteAction", `User ${user.id}`, `Activity ${activity.id}`, ex)
+        failedAction(user, activity, recipe, action, ex)
     }
 }
 
@@ -84,11 +110,12 @@ export const commuteAction = async (user: UserData, activity: StravaActivity, ac
  * Set an activity's gear.
  * @param user The activity owner.
  * @param activity The Strava activity details.
+ * @param recipe The source recipe.
  * @param action The action details.
  */
-export const gearAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
+export const gearAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
     try {
-        let gear
+        let gear: StravaGear
 
         if (activity.type == "Ride" || activity.type == "VirtualRide" || activity.type == "EBikeRide") {
             gear = _.find(user.profile.bikes, {id: action.value})
@@ -97,13 +124,13 @@ export const gearAction = async (user: UserData, activity: StravaActivity, actio
         }
 
         if (!gear) {
-            logger.error("Recipes.gearAction", `User ${user.id}`, `Activity ${activity.id}`, `Gear ${action.value} not found`)
+            throw new Error(`Gear ID ${action.value} not found`)
         } else {
             activity.gear = gear
             activity.updatedFields.push("gear")
         }
     } catch (ex) {
-        logger.error("Recipes.gearAction", `User ${user.id}`, `Activity ${activity.id}`, ex)
+        failedAction(user, activity, recipe, action, ex)
     }
 }
 
@@ -111,9 +138,10 @@ export const gearAction = async (user: UserData, activity: StravaActivity, actio
  * Dispatch activity and data via a webhook URL.
  * @param user The activity owner.
  * @param activity The Strava activity details.
+ * @param recipe The source recipe.
  * @param action The action details.
  */
-export const webhookAction = async (user: UserData, activity: StravaActivity, action: RecipeAction): Promise<void> => {
+export const webhookAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
     try {
         const options = {
             method: "POST",
@@ -124,6 +152,6 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, ac
 
         await axiosRequest(options)
     } catch (ex) {
-        logger.error("Recipes.webhookAction", `User ${user.id}`, `Activity ${activity.id}`, action.value, ex)
+        failedAction(user, activity, recipe, action, ex)
     }
 }
