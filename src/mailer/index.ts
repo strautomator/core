@@ -119,12 +119,13 @@ export class Mailer {
                 appUrl: settings.app.url,
                 appTitle: settings.app.title
             }
-            body = jaul.data.replaceTags(body, defaultTags)
-            subject = jaul.data.replaceTags(subject, defaultTags)
 
             // Append body to the base HTML template.
             body = EmailBaseTemplate.replace("${contents}", body)
+            body = jaul.data.replaceTags(body, defaultTags)
+            subject = jaul.data.replaceTags(subject, defaultTags)
 
+            // Send options.
             const sendingOptions = {
                 from: `"${settings.app.title}" <${options.from || settings.mailer.from}>`,
                 to: options.to,

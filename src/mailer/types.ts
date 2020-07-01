@@ -21,7 +21,7 @@ export interface EmailSendingOptions {
 /**
  * The base template used on all sent emails.
  */
-export const EmailBaseTemplate = "<div>${contents}</div><div>-<br /><small>Email sent by the ${appTitle} (do not reply)</small></div>"
+export const EmailBaseTemplate = "<div>${contents}</div><div>-<br /><small>Email automatically sent by ${appTitle} (do not reply)</small></div>"
 
 /**
  * Email templates.
