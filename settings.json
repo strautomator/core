@@ -40,9 +40,9 @@
         "reminderThreshold": 1.2
     },
     "mailer": {
-        // The default "from" on sent emails must be set on settings.secret.json file
+        // The default "from" on sent emails should be set on settings.secret.json file
         // or via the SMU_mailer_from environment variable.
-        "from": null,
+        "from": "noreply@strautomator.com",
         // Default SMTP settings are valid for SendGrid. You can overwrite these on
         // on your secret settings or via environment variables.
         "smtp": {
