@@ -17,6 +17,12 @@ export const axiosRequest = async (options: any): Promise<any> => {
         options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
         const res = await axios(options)
+
+        // Return true if response was a 204 with no body.
+        if (res.status == 204 && !res.data) {
+            return true
+        }
+
         return res.data
     } catch (ex) {
         const message = ex.toString().toUpperCase()
