@@ -21,7 +21,7 @@ export interface EmailSendingOptions {
 /**
  * The base template used on all sent emails.
  */
-export const EmailBaseTemplate = "<div>${contents$}</div><div>-<br /><small>Email sent by the ${appTitle} (do not reply)</small></div>"
+export const EmailBaseTemplate = "<div>${contents}</div><div>-<br /><small>Email sent by the ${appTitle} (do not reply)</small></div>"
 
 /**
  * Email templates.
@@ -49,12 +49,12 @@ export const EmailTemplates = {
 
     // Alert sent to user when a gear component has passed the defined mileage.
     GearWearAlert: {
-        subject: "Gear mileage alert! ${gear} - ${component}",
+        subject: "Mileage alert! ${gearName} - ${component}",
         body:
             "<p>" +
             "Gear: ${gearName} - ${component},<br />" +
             "Current mileage: ${currentMileage} ${units}<br />" +
-            "Alert mileage: every ${alertMileage} ${units}" +
+            "Alert mileage: ${alertMileage} ${units}" +
             "</p>" +
             "<p>" +
             "To reset the current mileage, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +
@@ -63,13 +63,13 @@ export const EmailTemplates = {
 
     // Reminder sent if user hasn't reset the mileage on a gear component after it reaches 120% of the mileage threshold.
     GearWearReminder: {
-        subject: "Gear mileage reminder! ${gear} - ${component}",
+        subject: "Mileage reminder! ${gear} - ${component}",
         body:
             "<p>" +
             "This is a small reminder that you haven't reset the mileage for the gear / component below.<br /><br />" +
-            "Gear: ${gearName} - ${component},<br />" +
+            "Gear: ${gearName} - ${component}<br />" +
             "Current mileage: ${currentMileage} ${units}<br />" +
-            "Alert mileage: every ${alertMileage} ${units}" +
+            "Alert mileage: ${alertMileage} ${units}" +
             "</p>" +
             "<p>" +
             "To reset the current mileage, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +

@@ -56,27 +56,9 @@ export class Mailer {
                 }
             }
 
-            eventManager.on("Admin.alert", this.onAdminAlert)
-
             logger.info("Mailer.init", smtp.host, smtp.port)
         } catch (ex) {
             logger.error("Mailer.init", ex)
-        }
-    }
-
-    /**
-     * Send an email to the admin when an alert is triggered.
-     */
-    private onAdminAlert = async (message: string, title?: string) => {
-        try {
-            const options: EmailSendingOptions = {
-                to: settings.mailer.adminEmail,
-                subject: title || "Admin alert",
-                body: message
-            }
-            await this.send(options)
-        } catch (ex) {
-            logger.error("Mailer.onAdminAlert", `Failed to send email with admin alert`)
         }
     }
 
