@@ -117,7 +117,7 @@ export class StravaWebhooks {
     cancelWebhook = async (): Promise<void> => {
         try {
             if (!this.current) {
-                logger.warn("Strava.cancelWebhook", "No webhook  registered on Strava, won't cancel")
+                logger.warn("Strava.cancelWebhook", "No webhook registered on Strava, won't cancel")
                 return
             }
 

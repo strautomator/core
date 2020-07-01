@@ -51,7 +51,7 @@ export class StravaActivities {
 
             // Iterate and transform activities from raw strava data to StravaActivity models.
             for (let activity of data) {
-                activities.push(toStravaActivity(activity, user.profile.units))
+                activities.push(toStravaActivity(activity, user.profile))
             }
 
             logger.info("Strava.getActivities", `User ${user.id}`, logQuery, `Got ${activities.length} activities`)
@@ -73,7 +73,7 @@ export class StravaActivities {
         try {
             const tokens = user.stravaTokens
             const data = await api.get(tokens, `activities/${id}?include_all_efforts=false`)
-            const activity = toStravaActivity(data, user.profile.units)
+            const activity = toStravaActivity(data, user.profile)
 
             // Activity's gear was set?
             // First we try fetching gear details from cached database user.

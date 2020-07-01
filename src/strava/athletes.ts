@@ -48,7 +48,7 @@ export class StravaAthletes {
 
         try {
             const data = await api.get(user.stravaTokens, `gear/${id}`)
-            const gear = toStravaGear(data, user.profile.units)
+            const gear = toStravaGear(data, user.profile)
 
             return gear
         } catch (ex) {
