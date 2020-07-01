@@ -327,7 +327,9 @@ export class Database {
             }
         } else {
             for ([key, value] of Object.entries(data)) {
-                if (_.isObject(value) && value._seconds > 0 && value.toDate) {
+                if (_.isArray(value)) {
+                    this.transformData(value)
+                } else if (_.isObject(value) && value._seconds > 0 && value.toDate) {
                     data[key] = data[key].toDate()
                 }
             }
