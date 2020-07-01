@@ -135,13 +135,6 @@ export class PayPalWebhooks {
             if (resource.billing_agreement_id) {
                 subscription = await database.get("subscriptions", resource.billing_agreement_id)
 
-                // Oops... event for a subscription that was not saved on the database?
-                if (!subscription) {
-                    const msg = `Payment of ${resource.amount.total} ${resource.amount.currency} for subscription ${resource.billing_agreement_id}, but subscription was not found on the database.`
-                    eventManager.emit("Admin.alert", msg, `Payment for invalid subscription ${resource.billing_agreement_id}`)
-                    return
-                }
-
                 // User just activated (yay!) or cancelled (oh no!) a subscription?
                 if (data.event_type == "PAYMENT.SALE.COMPLETED") {
                     subscription.status = "ACTIVE"
