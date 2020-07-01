@@ -1,5 +1,6 @@
 // Strautomator Core: Strava types
 
+import _ = require("lodash")
 import moment = require("moment")
 
 /**
@@ -74,7 +75,7 @@ export interface StravaActivity {
  * Helper to transform data from the API to a StravaActivity interface.
  * @param data Input data.
  */
-export function toStravaActivity(data, units: string): StravaActivity {
+export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
     const startDate = moment.utc(data.start_date)
 
     const activity: StravaActivity = {
@@ -116,7 +117,9 @@ export function toStravaActivity(data, units: string): StravaActivity {
 
     // Set activity gear.
     if (data.gear) {
-        activity.gear = toStravaGear(data.gear, units)
+        activity.gear = toStravaGear(data.gear, profile)
+    } else if (data.gear_id) {
+        activity.gear = _.find(profile.bikes, {id: data.gear_id}) || _.find(profile.shoes, {id: data.gear_id})
     }
 
     // Set polyline.
@@ -125,7 +128,7 @@ export function toStravaActivity(data, units: string): StravaActivity {
     }
 
     // Convert values according to the specified units.
-    if (units == "imperial") {
+    if (profile.units == "imperial") {
         const feet = 3.28084
         const miles = 0.621371
 
@@ -221,7 +224,7 @@ export interface StravaGear {
  * Helper to transform data from the API to a StravaGear interface.
  * @param data Input data.
  */
-export function toStravaGear(data, units: string): StravaGear {
+export function toStravaGear(data, profile: StravaProfile): StravaGear {
     const gear = {
         id: data.id,
         name: data.name || data.description,
@@ -230,7 +233,7 @@ export function toStravaGear(data, units: string): StravaGear {
     }
 
     // User using imperial units? Convert to miles.
-    if (units == "imperial" && gear.mileage > 0) {
+    if (profile.units == "imperial" && gear.mileage > 0) {
         const miles = 0.621371
         gear.mileage = gear.mileage * miles
     }
@@ -287,14 +290,14 @@ export function toStravaProfile(data): StravaProfile {
     // Has bikes?
     if (data.bikes && data.bikes.length > 0) {
         for (let bike of data.bikes) {
-            profile.bikes.push(toStravaGear(bike, profile.units))
+            profile.bikes.push(toStravaGear(bike, profile))
         }
     }
 
     // Has shoes?
     if (data.shoes && data.shoes.length > 0) {
         for (let shoe of data.shoes) {
-            profile.shoes.push(toStravaGear(shoe, profile.units))
+            profile.shoes.push(toStravaGear(shoe, profile))
         }
     }
 
