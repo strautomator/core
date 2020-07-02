@@ -1,6 +1,6 @@
 # Strautomator Core
 
-This is the core module of Strautomator, and contains most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web).
+This is the core module of Strautomator containing most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web) and can be linked on other environments as well (Cloud Functions, CLI tools etc...).
 
 ### Settings
 
@@ -25,6 +25,8 @@ By default Strautomator uses Google Cloud Firestore to store its data. But the [
 The following collections are currently used:
 
 - **users** registered user details
+- **app-state** general application state
+- **gearwear** GearWear configurations
 - **activities** summary of processed activities
 - **recipe-stats** automation recipe stats
 - **subscriptions** subscriptions data
@@ -38,6 +40,7 @@ You'll have to register an account and get the necessary credentials for the 3rd
 - Google Cloud Platform
 - Strava API
 - PayPal API
+- Twitter API
 - Weather providers (Dark Sky, ClimaCell etc...)
 
 If you need help getting any of those, or have questions, just open a [new issue](https://github.com/strautomator/core/issues/new) and I'll be glad to help.
