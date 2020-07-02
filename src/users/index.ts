@@ -149,14 +149,14 @@ export class Users {
     }
 
     /**
-     * Get users with expired Strava OAuth tokens.
+     * Get users with Strava OAuth tokens expired for longer than 1 day.
      */
     getExpired = async (): Promise<UserData[]> => {
         try {
-            const now = moment().unix()
-            const result = await database.search("users", ["stravaTokens.expiresAt", "<=", now])
+            const timestamp = moment().subtract(1, "day").unix()
+            const result = await database.search("users", ["stravaTokens.expiresAt", "<=", timestamp])
 
-            logger.info("Users.getExpired", `${result.length} users with expired tokens`)
+            logger.info("Users.getExpired", `${result.length} users with expired tokens (>= 1 day)`)
             return result
         } catch (ex) {
             logger.error("Users.getExpired", ex)
