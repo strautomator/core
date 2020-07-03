@@ -256,6 +256,10 @@ export interface StravaProfile {
     firstName: string
     /** Athlete's last name. */
     lastName: string
+    /** Athlete's city. */
+    city?: string
+    /** Athlete's country. */
+    country?: string
     /** Athlete's creation date (on Strava). */
     dateCreated: Date
     /** Athlete's date of last update (on Strava). */
@@ -280,6 +284,8 @@ export function toStravaProfile(data): StravaProfile {
         username: data.username,
         firstName: data.firstname,
         lastName: data.lastname,
+        city: data.city || null,
+        country: data.country || null,
         dateCreated: moment.utc(data.created_at).toDate(),
         dateUpdated: moment.utc(data.updated_at).toDate(),
         units: data.measurement_preference == "feet" ? "imperial" : "metric",
