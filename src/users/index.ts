@@ -281,7 +281,7 @@ export class Users {
                 logger.info("Users.upsert", userData.id, userData.displayName, `New registration`)
                 eventManager.emit("Users.create", userData)
             } else {
-                logger.info("Users.upsert", userData.id, userData.displayName, `${userData.recipeCount} recipes, ${userData.activityCount} activities`)
+                logger.info("Users.upsert", userData.id, userData.displayName, `${userData.recipeCount} recipes, ${userData.activityCount || "no"} activities`)
             }
 
             return userData
