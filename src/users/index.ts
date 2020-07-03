@@ -370,7 +370,7 @@ export class Users {
             // Make sure email is unique in the database.
             const existing = await database.search("users", ["email", "==", email])
             if (existing.length > 0) {
-                throw new Error("Email already in use by another user")
+                throw new Error(`Email ${email} in use by another user`)
             }
 
             // Save new email address.
