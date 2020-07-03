@@ -194,7 +194,7 @@ export class GearWear {
     delete = async (gearwear: GearWearConfig): Promise<void> => {
         try {
             await database.doc("gearwear", gearwear.id).delete()
-            logger.warn("GearWear.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id} deleted`)
+            logger.warn("GearWear.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id} configuration deleted`)
         } catch (ex) {
             logger.error("Users.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id}`, ex)
             throw ex
