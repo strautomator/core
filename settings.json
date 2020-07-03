@@ -34,8 +34,8 @@
         // By default, when update mileage for gear components, get activities that happened
         // 2 days ago (so users will have some time to set the correct activity gear).
         "previousDays": 2,
-        // Wait at least 2 days weeks before sending a mileage reminder.
-        "reminderDays": 14,
+        // Wait at least 10 days before sending a mileage reminder.
+        "reminderDays": 10,
         // Remind user if mileage was not reset and current mileage has passed 20% of the alert value.
         "reminderThreshold": 1.2
     },
@@ -191,8 +191,8 @@
         "idleDays": 30
     },
     "weather": {
-        // Cache weather results for 20 minutes. Value set in seconds.
-        "cacheDuration": 1200,
+        // Cache weather results for 30 minutes. Value set in seconds.
+        "cacheDuration": 1800,
         "climacell": {
             // Base URL to the ClimaCell weather API.
             "baseUrl": "https://api.climacell.co/v3/weather/",
