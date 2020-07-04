@@ -11,10 +11,6 @@ logger.appName = "Strautomator"
 logger.levelOnConsole = true
 logger.setup("console")
 
-// Log unhandled exceptions and rejections.
-logger.uncaughtExceptions = true
-logger.unhandledRejections = true
-
 // Defaults to gcp-credentials.json on home directory if no credentials were set for gcloud.
 if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     const homedir = require("os").homedir()
