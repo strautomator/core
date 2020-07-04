@@ -182,7 +182,8 @@ export class StravaActivities {
                     // Only proceed if a linkback was not previously added.
                     const alreadyLinked = activity.description ? activity.description.indexOf(appUrl) >= 0 : false
                     if (!alreadyLinked) {
-                        let text = _.sample(settings.plans.free.linksTexts)
+                        const linkTexts = user.isPro ? settings.plans.pro.linksTexts : settings.plans.free.linksTexts
+                        let text = _.sample(linkTexts)
 
                         // If activity has a description, add link on a new line.
                         if (activity.description && activity.description.length > 0) {

@@ -142,7 +142,9 @@
                 "year": 5.99
             },
             // Sponsorship price set on GitHub (USD).
-            "githubPrice": 1.0
+            "githubPrice": 1.0,
+            // PRO users might also want to show links on activity descriptions :-)
+            "linksTexts": ["Powered by", "Automated with", "PRO user of"]
         }
     },
     "recipes": {
@@ -180,11 +182,9 @@
             // your server's maximuim timeout, otherwise the processing
             // might be cut before it hasfinished.
             "maxRetry": 1,
-            // Retry failed jobs after 10 seconds by default (value in milliseconds).
-            "retryInterval": 10000
-        },
-        // Keep details for the user's last 10 activities by default.
-        "activityHistoryCount": 10
+            // Retry failed jobs after 8 seconds by default (value in milliseconds).
+            "retryInterval": 8000
+        }
     },
     "users": {
         // Consider users idle if they had no processed activities for more than 1 month.
