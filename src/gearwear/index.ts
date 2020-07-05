@@ -118,7 +118,7 @@ export class GearWear {
 
     /**
      * Get list of GearWear configurations for the specified user.
-     * @param id The ID of the GearWeat to be fetched.
+     * @param id The ID of the GearWear to be fetched.
      */
     getById = async (id: string): Promise<GearWearConfig> => {
         try {

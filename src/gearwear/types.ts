@@ -1,7 +1,7 @@
 // Strautomator Core: GearWear types
 
 /**
- * GearWeat database state.
+ * GearWear database state.
  */
 export interface GearWearDbState {
     /** How many activities were processed on the last execution of processRecentActivities(). */
