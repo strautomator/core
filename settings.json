@@ -14,7 +14,7 @@
         "crypto": {
             "algorithm": "aes-256-cbc",
             // List of property names that should be saved in encrypted format.
-            "fields": ["accessToken", "refreshToken", "password", "cryptoKey"]
+            "fields": ["accessToken", "previousAccessToken", "refreshToken", "password", "cryptoKey"]
         }
     },
     "gcp": {

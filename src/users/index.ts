@@ -103,6 +103,9 @@ export class Users {
                 return
             }
 
+            // Set previous access token.
+            tokens.previousAccessToken = user.stravaTokens.accessToken
+
             // Updated user info.
             const updatedUser: Partial<UserData> = {
                 id: user.id,
@@ -209,6 +212,14 @@ export class Users {
             if (tokens.accessToken) {
                 encryptedToken = encryptData(tokens.accessToken)
                 users = await database.search("users", ["stravaTokens.accessToken", "==", encryptedToken])
+
+                if (users.length > 0) {
+                    return users[0]
+                }
+
+                // Try finding also on the previous access token.
+                encryptedToken = encryptData(tokens.accessToken)
+                users = await database.search("users", ["stravaTokens.previousAccessToken", "==", encryptedToken])
 
                 if (users.length > 0) {
                     return users[0]

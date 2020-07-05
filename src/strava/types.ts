@@ -326,6 +326,8 @@ export function toStravaProfile(data): StravaProfile {
 export interface StravaTokens {
     /** The OAuth2 access token. */
     accessToken?: string
+    /** Keep also the last valid access token saved. */
+    previousAccessToken?: string
     /** The OAuth2 refresh token. */
     refreshToken?: string
     /** Access token expiry date. */
