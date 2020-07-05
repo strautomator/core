@@ -17,6 +17,10 @@
             "fields": ["accessToken", "previousAccessToken", "refreshToken", "password", "cryptoKey"]
         }
     },
+    "faq": {
+        // Download questions from the database three times a day by default. Value set in seconds.
+        "refreshInterval": 28800
+    },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
         // or via the SMU_gcp_projectId environment variable.
