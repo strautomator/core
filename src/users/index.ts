@@ -331,11 +331,18 @@ export class Users {
      */
     delete = async (user: UserData): Promise<void> => {
         try {
+            if (!user || !user.id || !user.stravaTokens) {
+                throw new Error("Missing required user details")
+            }
+
+            // To make sure we have the most up-to-date tokens, get the user from database before deleting it.
+            user = await this.getById(user.id)
             await database.doc("users", user.id).delete()
+
+            // Delete related contents.
             const countActivities = await database.delete("activities", ["user.id", "==", user.id])
             const countRecipeStats = await database.delete("recipe-stats", ["userId", "==", user.id])
             const countGearWear = await database.delete("gearwear", ["userId", "==", user.id])
-
             logger.warn("Users.delete", user.id, user.displayName, `Removed ${countActivities} activities, ${countRecipeStats} recipe stats, ${countGearWear} gearwear configs`)
 
             // Publish delete event.
