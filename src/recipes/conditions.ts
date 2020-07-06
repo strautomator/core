@@ -70,7 +70,7 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
     // Parse activity date, considering the UTC offset for start date.
     let aDate = moment.utc(activity[prop])
     if (prop == "dateStart" && activity.utcStartOffset) {
-        aDate.utcOffset(activity.utcStartOffset)
+        aDate.add(activity.utcStartOffset, "minutes")
     }
 
     // Parse condition and activity's date.
@@ -80,13 +80,13 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
 
     // Check it time is greater, less, within 2 minutes, or around 30 minutes of the condition's time.
     if (op == RecipeOperator.GreaterThan) {
-        valid = value > aTime
+        valid = aTime > value
     } else if (op == RecipeOperator.LessThan) {
-        valid = value < aTime
+        valid = aTime < value
     } else if (op == RecipeOperator.Equal) {
-        valid = value >= aTime - 120 && value <= aTime + 120
+        valid = aTime >= value - 120 && aTime <= value + 120
     } else if (op == RecipeOperator.Like) {
-        valid = value >= aTime - 1800 && value <= aTime + 1800
+        valid = aTime >= value - 1800 && aTime <= value + 1800
     }
 
     if (!valid) {
@@ -113,7 +113,7 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
     // Parse activity date, considering the UTC offset for start date.
     let aDate = moment.utc(activity["dateStart"])
     if (activity.utcStartOffset) {
-        aDate.utcOffset(activity.utcStartOffset)
+        aDate.add(activity.utcStartOffset, "minutes")
     }
 
     // Parse condition and activity's date.
