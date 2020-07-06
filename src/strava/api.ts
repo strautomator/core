@@ -247,7 +247,7 @@ export class StravaAPI {
             // Send request to Strava.
             const res: any = await this.limiter.schedule({id: options.path}, () => axiosRequest(options))
 
-            if (!res ) {
+            if (!res) {
                 throw new Error("Invalid or empty response")
             }
 

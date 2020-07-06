@@ -192,7 +192,9 @@
     },
     "users": {
         // Consider users idle if they had no processed activities for more than 1 month.
-        "idleDays": 30
+        "idleDays": 30,
+        // Consider users dormant (no recipes, no gearwear, no activites) after 60 days.
+        "dormantDays": 60
     },
     "weather": {
         // Cache weather results for 30 minutes. Value set in seconds.
