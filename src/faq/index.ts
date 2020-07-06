@@ -62,9 +62,9 @@ export class FAQ {
 
     /**
      * Search on the FAQ and return the relevant answers.
-     * @param query The search query.
+     * @param query The search query, if empty will return all questions.
      */
-    search = async (query: string): Promise<FaqQuestion[]> => {
+    search = async (query?: string): Promise<FaqQuestion[]> => {
         try {
             const regex = new RegExp(query, "i")
 
@@ -98,26 +98,33 @@ export class FAQ {
     import = async (questions: FaqQuestion[]): Promise<void> => {
         for (let question of questions) {
             try {
-                let id: string = question.question.toLowerCase()
+                question.answer = question.answer.replace(/\s\s+/g, " ")
 
-                // Normalize and trim the ID.
-                const filteredWords = ["strautomator", "its", "are", "and", "the", "for", "of", "or", "on", "to", "by", "up", "a", "i"]
-                for (let word of filteredWords) {
-                    id = id.replace(" " + word + " ", " ")
+                // Normalize and trim the ID based on the question, if one was not passed.
+                if (!question.id) {
+                    const filteredWords = ["strautomator", "its", "are", "and", "the", "for", "of", "or", "on", "to", "by", "up", "a", "i"]
+                    let id: string = question.question.toLowerCase()
+
+                    for (let word of filteredWords) {
+                        id = id.replace(" " + word + " ", " ")
+                    }
+
+                    id = id.replace(/'/gi, "").replace(/\W/gi, "-").replace(/--/gi, "-")
+                    id = id.substring(0, id.length - 1)
+                    question.id = id
                 }
-                id = id.replace(/'/gi, "").replace(/\W/gi, "-").replace(/--/gi, "-")
-                id = id.substring(0, id.length - 1)
 
-                // Trim the answer.
-                question.answer = question.answer.replace(/  /g, " ").trim()
-
-                // Default score is 5.
+                // Default score is 5, minimum is 1 and max is 10.
                 if (!question.score) {
                     question.score = 5
+                } else if (question.score < 1) {
+                    question.score = 1
+                } else if (question.score > 10) {
+                    question.score = 10
                 }
 
-                await database.set("faq", question, id)
-                logger.info("FAQ.import", id, question.question, `${question.answer.length} char`)
+                await database.set("faq", question, question.id)
+                logger.info("FAQ.import", question.id, question.question, `${question.answer.length} char`)
             } catch (ex) {
                 logger.error("FAQ.import", question.question, ex)
             }

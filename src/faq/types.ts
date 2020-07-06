@@ -4,6 +4,8 @@
  * A single FAQ item (question and answer).
  */
 export interface FaqQuestion {
+    /** Question unique ID. */
+    id?: string
     /** The question. */
     question: string
     /** The answer, including HTML tags and formatting. */
