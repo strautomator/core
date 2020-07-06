@@ -52,6 +52,10 @@ export class Strava {
             } else {
                 this.webhooks.getWebhook()
             }
+
+            if (settings.strava.testMode) {
+                logger.warn("Strava.init", "Will not write to Strava, testMode=true")
+            }
         } catch (ex) {
             logger.error("Strava.init", ex)
         }
