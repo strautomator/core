@@ -105,7 +105,16 @@ export class StravaActivities {
                 activity.gear = null
             }
 
-            logger.info("Strava.getActivity", `User ${user.id}`, `Activity ${id}`, activity.name)
+            // Get start time and timezone to be logged.
+            let timeStart
+            if (activity.dateStart) {
+                const offset = activity.utcStartOffset > 0 ? `+${activity.utcStartOffset}` : activity.utcStartOffset
+                timeStart = `${moment.utc(activity.dateStart).format("LTS")}, offset ${offset}`
+            } else {
+                timeStart = "No dateStart"
+            }
+
+            logger.info("Strava.getActivity", `User ${user.id}`, `Activity ${id}`, activity.name, timeStart)
             return activity
         } catch (ex) {
             logger.error("Strava.getActivity", `User ${user.id}`, `Activity ${id}`, ex)
@@ -234,9 +243,13 @@ export class StravaActivities {
                 }
             }
 
-            await api.put(user.stravaTokens, `activities/${activity.id}`, null, data)
-
-            logger.info("Strava.setActivity", activity.id, logResult.join(", "))
+            // If running on test mode, log the activity instead.
+            if (settings.strava.testMode) {
+                logger.warn("Strava.setActivity", "TEST MODE (do not write to Strava)", activity.id, logResult.join(", "))
+            } else {
+                await api.put(user.stravaTokens, `activities/${activity.id}`, null, data)
+                logger.info("Strava.setActivity", activity.id, logResult.join(", "))
+            }
         } catch (ex) {
             logger.error("Strava.setActivity", activity.id, ex, logResult.join(", "))
             throw ex
