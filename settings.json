@@ -18,8 +18,8 @@
         }
     },
     "faq": {
-        // Download questions from the database three times a day by default. Value set in seconds.
-        "refreshInterval": 28800
+        // Download questions from the database twice a day by default. Value set in seconds.
+        "refreshInterval": 43200
     },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
