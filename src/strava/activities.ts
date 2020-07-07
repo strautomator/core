@@ -171,7 +171,7 @@ export class StravaActivities {
 
         try {
             if (!activity.updatedFields || activity.updatedFields.length == 0) {
-                logger.info("Strava.setActivity", activity.id, "No fields were updated")
+                logger.info("Strava.setActivity", `${activity.id}, from user ${user.id}`, "No fields were updated")
                 return
             }
 
@@ -248,10 +248,10 @@ export class StravaActivities {
                 logger.warn("Strava.setActivity", "TEST MODE (do not write to Strava)", activity.id, logResult.join(", "))
             } else {
                 await api.put(user.stravaTokens, `activities/${activity.id}`, null, data)
-                logger.info("Strava.setActivity", activity.id, logResult.join(", "))
+                logger.info("Strava.setActivity", `${activity.id}, from user ${user.id}`, logResult.join(", "))
             }
         } catch (ex) {
-            logger.error("Strava.setActivity", activity.id, ex, logResult.join(", "))
+            logger.error("Strava.setActivity", `${activity.id}, from user ${user.id}`, logResult.join(", "), ex)
             throw ex
         }
     }
@@ -277,7 +277,7 @@ export class StravaActivities {
                 // If user registered more than X days ago and has no activities processed yet, then delete the account.
                 if (!user.isPro && user.activityCount == 0 && minDate.isBefore(moment(user.dateRegistered))) {
                     try {
-                        logger.info("Strava.processActivity", `User ${user.id} is dormant (no recipes, no processed activites for more than 1 month), will get deleted`)
+                        logger.info("Strava.processActivity", `User ${user.id} is dormant (no recipes, no activites for more than ${settings.users.dormantDays} days), will get deleted`)
                         await users.delete(user)
                     } catch (innerEx) {
                         logger.error("Strava.processActivity", `User ${user.id}`, "There was an error auto deleting dormant user")
