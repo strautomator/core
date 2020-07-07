@@ -293,7 +293,7 @@ export class Database {
         /**
          * Update state.
          * @param id ID of the desired state document.
-         *
+         * @param data Data to be saved.
          */
         set: async (id: string, data: any): Promise<void> => {
             const collection = "app-state"
@@ -303,6 +303,29 @@ export class Database {
 
             // Save state data to the database.
             await doc.set(data, {merge: true})
+        },
+        /**
+         * Increment a counter on an app state document.
+         * @param collection Name of the collection.
+         * @param id Document ID.
+         * @param field Name of the field that should be incremented.
+         * @param value Optional increment valud, default is 1, can also be negative.
+         */
+        increment: async (id: string, field: string, value?: number): Promise<void> => {
+            const collection = "app-state"
+            const colname = `${collection}${settings.database.collectionSuffix}`
+            const table = this.firestore.collection(colname)
+            const doc = table.doc(id)
+
+            // Default increment is 1.
+            if (!value) {
+                value = 1
+            }
+
+            // Increment field.
+            const data: any = {}
+            data[field] = FieldValue.increment(value)
+            await doc.update(data)
         }
     }
 
