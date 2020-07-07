@@ -50,30 +50,30 @@ export const EmailTemplates = {
 
     // Alert sent to user when a gear component has passed the defined mileage.
     GearWearAlert: {
-        subject: "Mileage alert! ${gearName} - ${component}",
+        subject: "GearWear alert! ${gearName} - ${component}",
         body:
             "<p>" +
             "<strong>${gearName} - ${component}</strong><br />" +
-            "Current mileage: ${currentMileage} ${units}<br />" +
-            "Alert mileage: ${alertMileage} ${units}" +
+            "Currently with ${currentMileage} ${units}, ${currentTime} hours<br />" +
+            "Alert on: ${alertDetails}" +
             "</p>" +
             "<p>" +
-            "To reset the current mileage, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +
+            "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +
             "</p>"
     },
 
     // Reminder sent if user hasn't reset the mileage on a gear component after it reaches 120% of the mileage threshold.
     GearWearReminder: {
-        subject: "Mileage reminder! ${gear} - ${component}",
+        subject: "GearWear reminder! ${gear} - ${component}",
         body:
             "<p>" +
             "This is a small reminder that you haven't reset the mileage for the gear / component below.<br /><br />" +
             "<strong>${gearName} - ${component}</strong><br />" +
-            "Current mileage: ${currentMileage} ${units}<br />" +
-            "Alert mileage: ${alertMileage} ${units}" +
+            "Currently with ${currentMileage} ${units}, ${currentTime} hours<br />" +
+            "Alert on: ${alertDetails}" +
             "</p>" +
             "<p>" +
-            "To reset the current mileage, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +
+            "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +
             "</p>"
     }
 }

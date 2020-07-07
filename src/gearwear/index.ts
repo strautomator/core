@@ -85,12 +85,15 @@ export class GearWear {
             }
 
             // Valid component fields.
-            const validCompFields = ["name", "currentMileage", "alertMileage", "dateAlertSent", "history"]
+            const validCompFields = ["name", "currentMileage", "currentTime", "alertMileage", "alertTime", "dateAlertSent", "history"]
 
             // Validate individual components.
             for (let comp of gearwear.components) {
-                if (comp.alertMileage < 100) {
+                if (comp.alertMileage > 0 && comp.alertMileage < 100) {
                     throw new Error("Minimum accepted alert mileage is 100")
+                }
+                if (comp.alertTime > 0 && comp.alertTime < 86400) {
+                    throw new Error("Minimum accepted alert time is 1 day (86400)")
                 }
 
                 // Make sure the history array is present.
@@ -308,8 +311,8 @@ export class GearWear {
 
             // Iterate user's gearwear configurations and process activities for each one of them.
             for (let config of configs) {
-                const gearActivities = _.remove(activities, (activity) => activity.distance && activity.gear && activity.gear.id == config.id)
-                await this.updateMileage(user, config, gearActivities)
+                const gearActivities = _.remove(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
+                await this.updateTracking(user, config, gearActivities)
             }
         } catch (ex) {
             logger.error("GearWear.processUserActivities", `User ${user.id}`, dateString, ex)
@@ -331,15 +334,15 @@ export class GearWear {
     }
 
     /**
-     * Update gear component mileage with the provided Strava activity.
+     * Update gear component mileage / time (hours) with the provided Strava activity.
      * @param user The user owner of the gear and component.
      * @param config The GearWear configuration.
      * @param activity Strava activity that should be used to update mileages.
      */
-    updateMileage = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
+    updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
         try {
             if (!activities || activities.length == 0) {
-                logger.debug("GearWear.updateMileage", `User ${user.id}`, `Gear ${config.id}`, `No activities to process`)
+                logger.debug("GearWear.updateTracking", `User ${user.id}`, `Gear ${config.id}`, `No activities to process`)
                 return
             }
 
@@ -352,42 +355,62 @@ export class GearWear {
             // Iterate user activities to update the gear components mileage.
             for (let activity of activities) {
                 try {
-                    if (activity.distance < 1) continue
+                    const distance = activity.distance
+                    const elapsedTime = activity.movingTime || activity.totalTime
+
+                    // Stop here if activity has no valid distance and time.
+                    if (!distance && !elapsedTime) continue
 
                     // Iterate and update mileage on gear components.
                     for ([id, component] of Object.entries(config.components)) {
                         const minReminderDate = moment.utc().subtract(settings.gearwear.reminderDays, "days")
                         const reminderMileage = component.alertMileage * settings.gearwear.reminderThreshold
+                        const reminderTime = component.alertTime * settings.gearwear.reminderThreshold
 
-                        component.currentMileage += activity.distance
+                        // Increase activity count.
+                        if (!component.activityCount) component.activityCount = 0
+                        component.activityCount++
+
+                        // Increase mileage (distance) and time (hours).
+                        if (distance > 0) component.currentMileage += distance
+                        if (elapsedTime > 0) component.currentTime += elapsedTime
 
                         // Check if component has reached the initial or reminder mileage thresholds to
                         // send an alert to the user.
-                        if (component.currentMileage >= component.alertMileage) {
+                        if (component.alertMileage > 0 && component.currentMileage >= component.alertMileage) {
                             if (!component.dateAlertSent) {
-                                this.triggerMileageAlert(user, component, activity)
+                                this.triggerAlert(user, component, activity)
                             } else if (component.currentMileage >= reminderMileage && moment.utc(component.dateAlertSent).isBefore(minReminderDate)) {
-                                this.triggerMileageAlert(user, component, activity, true)
+                                this.triggerAlert(user, component, activity, true)
+                            }
+                        }
+
+                        // Do the same, but for time tracking.
+                        if (component.alertTime > 0 && component.currentTime >= component.alertTime) {
+                            if (!component.dateAlertSent) {
+                                this.triggerAlert(user, component, activity)
+                            } else if (component.currentTime >= reminderTime && moment.utc(component.dateAlertSent).isBefore(minReminderDate)) {
+                                this.triggerAlert(user, component, activity, true)
                             }
                         }
                     }
                 } catch (innerEx) {
-                    logger.error("GearWear.updateMileage", `User ${user.id}`, `Gear ${config.id}`, `Activity ${activity.id}`, innerEx)
+                    logger.error("GearWear.updateTracking", `User ${user.id}`, `Gear ${config.id}`, `Activity ${activity.id}`, innerEx)
                 }
             }
 
             await database.set("gearwear", config, config.id)
         } catch (ex) {
-            logger.error("GearWear.updateMileage", `User ${user.id}`, `Gear ${config.id}`, ex)
+            logger.error("GearWear.updateTracking", `User ${user.id}`, `Gear ${config.id}`, ex)
         }
     }
 
     /**
-     * Reset the current mileage for the specified gear component.
+     * Reset the current mileage / time tracking for the specified gear component.
      * @param config The GearWear configuration.
      * @param component The component to have its mileage set to 0.
      */
-    resetMileage = async (config: GearWearConfig, componentName: string): Promise<void> => {
+    resetTracking = async (config: GearWearConfig, componentName: string): Promise<void> => {
         try {
             const component: GearWearComponent = _.find(config.components, {name: componentName})
 
@@ -396,10 +419,12 @@ export class GearWear {
             }
 
             const currentMileage = component.currentMileage
+            const currentTime = component.currentTime
+            const hours = Math.round(currentTime / 3600)
 
-            // If current mileage is 0, then do nothing.
-            if (currentMileage == 0) {
-                logger.warn("GearWear.resetMileage", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, "Mileage was already 0")
+            // If current mileage and time are 0, then do nothing.
+            if (currentMileage < 1 && currentTime < 1) {
+                logger.warn("GearWear.resetTracking", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, "Mileage and time are 0, will not reset")
                 return
             }
 
@@ -408,27 +433,29 @@ export class GearWear {
                 component.history = []
             }
 
-            // Update component to mileage 0, and an event to the component history.
+            // Reset the actual mileage / time / activity count.
             component.dateAlertSent = null
             component.currentMileage = 0
-            component.history.push({date: moment.utc().toDate(), mileage: currentMileage})
+            component.currentTime = 0
+            component.activityCount = 0
+            component.history.push({date: moment.utc().toDate(), mileage: currentMileage, time: currentTime})
 
             // Save to the database and log.
             await database.set("gearwear", config, config.id)
-            logger.info("GearWear.resetMileage", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, "Mileage set to 0")
+            logger.info("GearWear.resetTracking", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, `Resetting mileage ${currentMileage} and ${hours} hours`)
         } catch (ex) {
-            logger.error("GearWear.resetMileage", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, ex)
+            logger.error("GearWear.resetTracking", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, ex)
         }
     }
 
     /**
-     * Sends an email to the user when a specific component has reached its mileage alert threshold.
+     * Sends an email to the user when a specific component has reached its mileage / time alert threshold.
      * @param user The user owner of the component.
      * @param component The component that has reached the alert mileage.
      * @param activity The Strava activity that triggered the mileage alert.
      * @param reminder If true it means it's a second alert (reminder) being sent.
      */
-    triggerMileageAlert = async (user: UserData, component: GearWearComponent, activity: StravaActivity, reminder?: boolean): Promise<void> => {
+    triggerAlert = async (user: UserData, component: GearWearComponent, activity: StravaActivity, reminder?: boolean): Promise<void> => {
         const units = user.profile.units == "imperial" ? "mi" : "km"
         const logMileage = `Mileage ${component.alertMileage} / ${component.currentMileage} ${units}`
         const logGear = `Gear ${activity.gear.id} - ${component.name}`
@@ -441,6 +468,11 @@ export class GearWear {
             const shoe = _.find(user.profile.shoes, {id: activity.gear.id})
             const gear: StravaGear = bike || shoe
 
+            // Get alert details (mileage and time).
+            const alertDetails = []
+            if (component.alertMileage > 0) alertDetails.push(`${component.alertMileage} ${units}`)
+            if (component.alertTime > 0) alertDetails.push(`${Math.round(component.alertTime / 3600)} hours`)
+
             // Set correct template and keywords to be replaced.
             const template = reminder ? "GearWearReminder" : "GearWearAlert"
             const data = {
@@ -449,7 +481,8 @@ export class GearWear {
                 gearName: gear.name,
                 component: component.name,
                 currentMileage: component.currentMileage,
-                alertMileage: component.alertMileage
+                currentTime: component.currentTime,
+                alertDetails: alertDetails.join(", ")
             }
 
             // Dispatch email to user.
@@ -459,9 +492,9 @@ export class GearWear {
                 to: user.email
             })
 
-            logger.info("GearWear.triggerMileageAlert", `User ${user.id}`, logGear, `Activity ${activity.id}`, logMileage, reminder ? "Reminder sent" : "Alert sent")
+            logger.info("GearWear.triggerAlert", `User ${user.id}`, logGear, `Activity ${activity.id}`, logMileage, reminder ? "Reminder sent" : "Alert sent")
         } catch (ex) {
-            logger.error("GearWear.triggerMileageAlert", `User ${user.id}`, logGear, `Activity ${activity.id}`, ex)
+            logger.error("GearWear.triggerAlert", `User ${user.id}`, logGear, `Activity ${activity.id}`, ex)
         }
     }
 }
