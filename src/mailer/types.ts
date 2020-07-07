@@ -48,13 +48,13 @@ export const EmailTemplates = {
             "</p>"
     },
 
-    // Alert sent to user when a gear component has passed the defined mileage.
+    // Alert sent to user when a gear component has passed the defined distance.
     GearWearAlert: {
         subject: "GearWear alert! ${gearName} - ${component}",
         body:
             "<p>" +
             "<strong>${gearName} - ${component}</strong><br />" +
-            "Currently with ${currentMileage} ${units}, ${currentTime} hours<br />" +
+            "Currently with ${currentDistance} ${units}, ${currentTime} hours<br />" +
             "Alert on: ${alertDetails}" +
             "</p>" +
             "<p>" +
@@ -62,14 +62,14 @@ export const EmailTemplates = {
             "</p>"
     },
 
-    // Reminder sent if user hasn't reset the mileage on a gear component after it reaches 120% of the mileage threshold.
+    // Reminder sent if user hasn't reset the distance on a gear component after it reaches 120% of the distance threshold.
     GearWearReminder: {
         subject: "GearWear reminder! ${gear} - ${component}",
         body:
             "<p>" +
-            "This is a small reminder that you haven't reset the mileage for the gear / component below.<br /><br />" +
+            "This is a small reminder that you haven't reset the distance for the gear / component below.<br /><br />" +
             "<strong>${gearName} - ${component}</strong><br />" +
-            "Currently with ${currentMileage} ${units}, ${currentTime} hours<br />" +
+            "Currently with ${currentDistance} ${units}, ${currentTime} hours<br />" +
             "Alert on: ${alertDetails}" +
             "</p>" +
             "<p>" +

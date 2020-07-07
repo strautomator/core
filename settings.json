@@ -35,12 +35,12 @@
         }
     },
     "gearwear": {
-        // By default, when update mileage for gear components, get activities that happened
+        // By default, when update distance for gear components, get activities that happened
         // 2 days ago (so users will have some time to set the correct activity gear).
         "previousDays": 2,
-        // Wait at least 10 days before sending a mileage reminder.
+        // Wait at least 10 days before sending a GearWear reminder.
         "reminderDays": 10,
-        // Remind user if mileage was not reset and current mileage has passed 20% of the alert value.
+        // Remind user if tracking was not reset and current tracking has passed 20% of the alert value.
         "reminderThreshold": 1.2
     },
     "mailer": {

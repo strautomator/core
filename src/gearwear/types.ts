@@ -24,7 +24,7 @@ export interface GearWearConfig {
     userId: string
     /** Tracking information. */
     components: GearWearComponent[]
-    /** Flag to set if gear is having its mileage updated right now. */
+    /** Flag to set if gear is having its distance updated right now. */
     updating?: boolean
 }
 
@@ -36,28 +36,28 @@ export interface GearWearComponent {
     name: string
     /** How many acitivites were counted for this component. */
     activityCount: number
-    /** Current mileage of the component. */
-    currentMileage: number
+    /** Current distance of the component. */
+    currentDistance: number
     /** Time tracking for the component (in seconds). Zero means disabled. */
     currentTime: number
-    /** Alert mileage of the component. */
-    alertMileage?: number
+    /** Alert distance of the component. */
+    alertDistance?: number
     /** Alert time (in seconds) of the components. Zero means disabled. */
     alertTime?: number
     /** Date when an alert was last sent to user. */
     dateAlertSent: Date
-    /** Dates and mileages when user has triggered the mileage reset. */
+    /** Dates and distances when user has triggered the distance reset. */
     history: GearWearReset[]
 }
 
 /**
- * Date and mileage when user triggered a mileage reset for a particular component.
+ * Date and distance when user triggered a distance reset for a particular component.
  */
 export interface GearWearReset {
     /** The date of the reset. */
     date: Date
-    /** The mileage the component had at the time of the reset. */
-    mileage: number
+    /** The distance the component had at the time of the reset. */
+    distance: number
     /** The time (seconds) of use the component had at the time of the reset. */
     time: number
 }

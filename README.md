@@ -66,7 +66,7 @@ Some of Strautomator's features depend on scheduled tasks that needs to be setup
 
 #### GearWear: process recent activities
 
-The function `gearwear.processRecentActivities()` needs to be called once a day to fetch recent activies for all users and update the mileage of their GearWear components accordingly.
+The function `gearwear.processRecentActivities()` needs to be called once a day to fetch recent activies for all users and update the distance / hours of their GearWear components accordingly.
 
 #### Strava: refresh tokens
 

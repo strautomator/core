@@ -216,8 +216,8 @@ export interface StravaGear {
     name: string
     /** Is it the primary gear for the user? */
     primary: boolean
-    /** Total mileage (taken from Strava, respecting the user's units). */
-    mileage: number
+    /** Total distance (taken from Strava, respecting the user's units). */
+    distance: number
 }
 
 /**
@@ -229,17 +229,17 @@ export function toStravaGear(data, profile: StravaProfile): StravaGear {
         id: data.id,
         name: data.name || data.description,
         primary: data.primary,
-        mileage: data.distance / 1000
+        distance: data.distance / 1000
     }
 
     // User using imperial units? Convert to miles.
-    if (profile.units == "imperial" && gear.mileage > 0) {
+    if (profile.units == "imperial" && gear.distance > 0) {
         const miles = 0.621371
-        gear.mileage = gear.mileage * miles
+        gear.distance = gear.distance * miles
     }
 
-    // Round mileage.
-    gear.mileage = Math.round(gear.mileage)
+    // Round distance.
+    gear.distance = Math.round(gear.distance)
 
     return gear
 }
