@@ -48,6 +48,8 @@ export interface GearWearComponent {
     dateAlertSent: Date
     /** Dates and distances when user has triggered the distance reset. */
     history: GearWearReset[]
+    /** Is the component currently disabled? */
+    disabled?: boolean
 }
 
 /**

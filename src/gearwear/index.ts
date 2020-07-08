@@ -85,33 +85,38 @@ export class GearWear {
             }
 
             // Valid component fields.
-            const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "dateAlertSent", "history"]
+            const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "dateAlertSent", "history", "disabled"]
 
             // Validate individual components.
             for (let comp of gearwear.components) {
                 if (comp.alertDistance > 0 && comp.alertDistance < 100) {
                     throw new Error("Minimum accepted alert distance is 100")
                 }
-                if (comp.alertTime > 0 && comp.alertTime < 86400) {
-                    throw new Error("Minimum accepted alert time is 1 day (86400)")
+                if (comp.alertTime > 0 && comp.alertTime < 72000) {
+                    throw new Error("Minimum accepted alert time is 20 hours (72000)")
+                }
+                if (!_.isBoolean(comp.disabled)) {
+                    throw new Error("The disabled flag must be true or false")
                 }
 
                 // Make sure the history array is present.
                 if (!comp.history) {
                     comp.history = []
+                } else if (!_.isArray(comp.history)) {
+                    throw new Error("Component history must be an array")
                 }
 
                 // Remove non-relevant fields.
                 const compFields = Object.keys(comp)
                 for (let key of compFields) {
                     if (validCompFields.indexOf(key) < 0) {
-                        logger.error("GearWear.validate", `User ${user.id}`, `Gear ${gearwear.id} - ${comp.name}`, `Removed invalid field: ${key}`)
+                        logger.error("GearWear.validate", `User ${user.id} ${user.displayName}`, `Gear ${gearwear.id} - ${comp.name}`, `Removed invalid field: ${key}`)
                         delete comp[key]
                     }
                 }
             }
         } catch (ex) {
-            logger.error("GearWear.validate", `User ${user.id}`, JSON.stringify(gearwear, null, 0), ex)
+            logger.error("GearWear.validate", `User ${user.id} ${user.displayName}`, JSON.stringify(gearwear, null, 0), ex)
             throw ex
         }
     }
@@ -140,11 +145,11 @@ export class GearWear {
     getForUser = async (user: UserData): Promise<GearWearConfig[]> => {
         try {
             const result: GearWearConfig[] = await database.search("gearwear", ["userId", "==", user.id])
-            logger.info("GearWear.getForUser", `User ${user.id}`, `${result.length} GearWear configurations`)
+            logger.info("GearWear.getForUser", `User ${user.id} ${user.displayName}`, `${result.length} GearWear configurations`)
 
             return result
         } catch (ex) {
-            logger.error("GearWear.getForUser", `User ${user.id}`, ex)
+            logger.error("GearWear.getForUser", `User ${user.id} ${user.displayName}`, ex)
             throw ex
         }
     }
@@ -176,16 +181,16 @@ export class GearWear {
 
             // Set registration date, if user does not exist yet.
             if (!exists) {
-                logger.info("GearWear.upsert", `User ${user.id}`, `New configuration for ${gearwear.id}`)
+                logger.info("GearWear.upsert", `User ${user.id} ${user.displayName}`, `New configuration for ${gearwear.id}`)
             }
 
             // Save user to the database.
             await database.merge("gearwear", gearwear, doc)
-            logger.info("GearWear.upsert", `User ${user.id}`, `Gear ${gearwear.id} - ${gear.name}`, `Components: ${componentNames}`)
+            logger.info("GearWear.upsert", `User ${user.id} ${user.displayName}`, `Gear ${gearwear.id} - ${gear.name}`, `Components: ${componentNames}`)
 
             return gearwear
         } catch (ex) {
-            logger.error("GearWear.upsert", `User ${user.id}`, `Gear ${gearwear.id}`, ex)
+            logger.error("GearWear.upsert", `User ${user.id} ${user.displayName}`, `Gear ${gearwear.id}`, ex)
             throw ex
         }
     }
@@ -303,11 +308,11 @@ export class GearWear {
 
             // No recent activities found? Stop here.
             if (activities.length == 0) {
-                logger.info("GearWear.processUserActivities", `User ${user.id}`, dateString, `No activities to process`)
+                logger.info("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, `No activities to process`)
                 return 0
             }
 
-            logger.info("GearWear.processUserActivities", `User ${user.id}`, dateString, `Processing ${activities.length} activities`)
+            logger.info("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, `Processing ${activities.length} activities`)
 
             // Iterate user's gearwear configurations and process activities for each one of them.
             for (let config of configs) {
@@ -315,7 +320,7 @@ export class GearWear {
                 await this.updateTracking(user, config, gearActivities)
             }
         } catch (ex) {
-            logger.error("GearWear.processUserActivities", `User ${user.id}`, dateString, ex)
+            logger.error("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, ex)
         }
 
         // Iterate all GearWear configurations and remove the updating flag (if it was set).
@@ -326,7 +331,7 @@ export class GearWear {
                     await database.set("gearwear", config, config.id)
                 }
             } catch (ex) {
-                logger.error("GearWear.processUserActivities", `User ${user.id}`, dateString, `Gear ${config.id} updating=false`, ex)
+                logger.error("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, `Gear ${config.id} updating=false`, ex)
             }
         }
 
@@ -342,12 +347,16 @@ export class GearWear {
     updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
         try {
             if (!activities || activities.length == 0) {
-                logger.debug("GearWear.updateTracking", `User ${user.id}`, `Gear ${config.id}`, `No activities to process`)
+                logger.debug("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `No activities to process`)
                 return
             }
 
             let id: string
             let component: GearWearComponent
+
+            // Total distance and hours added to the gear components.
+            let totalDistance: number = 0
+            let totalTime: number = 0
 
             // Set the updating flag to avoid edits by the user while distance is updated.
             config.updating = true
@@ -361,8 +370,17 @@ export class GearWear {
                     // Stop here if activity has no valid distance and time.
                     if (!distance && !elapsedTime) continue
 
+                    // Append totals.
+                    if (distance > 0) totalDistance += distance
+                    if (elapsedTime > 0) totalTime += elapsedTime
+
                     // Iterate and update distance on gear components.
                     for ([id, component] of Object.entries(config.components)) {
+                        if (component.disabled) {
+                            logger.warn("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${component.name} (DISABLED)`, `Activity ${activity.id}`, "Not updated")
+                            continue
+                        }
+
                         const minReminderDate = moment.utc().subtract(settings.gearwear.reminderDays, "days")
                         const reminderDistance = component.alertDistance * settings.gearwear.reminderThreshold
                         const reminderTime = component.alertTime * settings.gearwear.reminderThreshold
@@ -395,13 +413,16 @@ export class GearWear {
                         }
                     }
                 } catch (innerEx) {
-                    logger.error("GearWear.updateTracking", `User ${user.id}`, `Gear ${config.id}`, `Activity ${activity.id}`, innerEx)
+                    logger.error("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Activity ${activity.id}`, innerEx)
                 }
             }
 
             await database.set("gearwear", config, config.id)
+
+            const units = user.profile.units == "imperial" ? "mi" : "km"
+            logger.info("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Added ${totalDistance} ${units}, ${(totalTime / 3600).toFixed(1)} hours`)
         } catch (ex) {
-            logger.error("GearWear.updateTracking", `User ${user.id}`, `Gear ${config.id}`, ex)
+            logger.error("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, ex)
         }
     }
 
@@ -492,9 +513,9 @@ export class GearWear {
                 to: user.email
             })
 
-            logger.info("GearWear.triggerAlert", `User ${user.id}`, logGear, `Activity ${activity.id}`, logDistance, reminder ? "Reminder sent" : "Alert sent")
+            logger.info("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, reminder ? "Reminder sent" : "Alert sent")
         } catch (ex) {
-            logger.error("GearWear.triggerAlert", `User ${user.id}`, logGear, `Activity ${activity.id}`, ex)
+            logger.error("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, ex)
         }
     }
 }
