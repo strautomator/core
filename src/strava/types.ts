@@ -214,6 +214,10 @@ export interface StravaGear {
     id: string
     /** Friendly name set by the user. */
     name: string
+    /** Brand of the gear. */
+    brand?: string
+    /** Model of the gear. */
+    model?: string
     /** Is it the primary gear for the user? */
     primary: boolean
     /** Total distance (taken from Strava, respecting the user's units). */
@@ -225,11 +229,19 @@ export interface StravaGear {
  * @param data Input data.
  */
 export function toStravaGear(data, profile: StravaProfile): StravaGear {
-    const gear = {
+    const gear: StravaGear = {
         id: data.id,
         name: data.name || data.description,
         primary: data.primary,
         distance: data.distance / 1000
+    }
+
+    // Has brand and model?
+    if (data.brand_name) {
+        gear.brand = data.brand_name
+    }
+    if (data.model_name) {
+        gear.model = data.model_name
     }
 
     // User using imperial units? Convert to miles.
