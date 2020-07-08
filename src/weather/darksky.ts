@@ -90,7 +90,7 @@ export class DarkSky implements WeatherProvider {
 
             // Helper to get the API URL.
             const getUrl = (location: number[], date: Date) => {
-                const timestamp = moment(date).unix()
+                const timestamp = moment.utc(date).unix()
                 const endpoint = `${location[0]},${location[1]},${timestamp}?units=${units}&lang=${lang}`
                 return `${settings.weather.darksky.baseUrl}${settings.weather.darksky.secret}/${endpoint}`
             }

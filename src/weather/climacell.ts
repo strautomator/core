@@ -91,14 +91,14 @@ export class ClimaCell implements WeatherProvider {
 
             // Helpers to build the API URL. If date is older than 1 hour, use historical data, otherwise realtime.
             const getUrl = (location: number[], date: Date) => {
-                const mDate = moment(date)
+                const mDate = moment.utc(date)
                 let startTime = mDate.toISOString()
                 let endpoint
 
                 // Get correct endpoint depending on how far back the specified date is.
-                if (mDate.unix() <= moment().subtract(5, "h").unix()) {
+                if (mDate.unix() <= moment.utc().subtract(5, "h").unix()) {
                     endpoint = `historical/station?&fields=${fields}&start_time=${startTime}&end_time=${mDate.add(2, "h").toISOString()}&`
-                } else if (mDate.unix() <= moment().subtract(1, "h").unix()) {
+                } else if (mDate.unix() <= moment.utc().subtract(1, "h").unix()) {
                     endpoint = `historical/climacell?fields=${fields},weather_code&timestep=60&start_time=${startTime}&end_time=now&`
                 } else {
                     endpoint = `realtime?fields=${fields},weather_code&`

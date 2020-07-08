@@ -81,7 +81,7 @@ export class Weatherbit implements WeatherProvider {
             if (!activity.locationEnd) {
                 throw new Error(`Activity ${activity.id} has no location data`)
             }
-            if (moment(activity.dateEnd).unix() < moment().subtract(1, "h").unix()) {
+            if (moment.utc(activity.dateEnd).unix() < moment.utc().subtract(1, "h").unix()) {
                 throw new Error(`Activity ${activity.id} ended more than 1 hour ago, Weatherbit only supports realtime weather`)
             }
 

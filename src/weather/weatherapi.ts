@@ -94,8 +94,8 @@ export class WeatherAPI implements WeatherProvider {
 
             // Helper to get correct weather API URL.
             const getUrl = (location: number[], date: Date) => {
-                const now = moment().unix()
-                const startTime = moment(date).unix()
+                const now = moment.utc().unix()
+                const startTime = moment.utc(date).unix()
 
                 // If more than 1 hour ago use historical data, otherwise use current.
                 if (startTime < now - 3600) {
