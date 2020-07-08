@@ -121,7 +121,7 @@ export class GearWear {
         }
     }
 
-    // GET AND UPDATE
+    // GET
     // --------------------------------------------------------------------------
 
     /**
@@ -151,6 +151,58 @@ export class GearWear {
         } catch (ex) {
             logger.error("GearWear.getForUser", `User ${user.id} ${user.displayName}`, ex)
             throw ex
+        }
+    }
+
+    // UPDATE AND DELETE
+    // --------------------------------------------------------------------------
+
+    /**
+     * Refresh the details for all bikes and shoes for the user.
+     * @param user The user.
+     */
+    refreshGearDetails = async (user: UserData): Promise<void> => {
+        try {
+            const newData: any = {id: user.id, profile: {}}
+            let gearCount = 0
+
+            // If user has bikes, update the details for all of them.
+            if (user.profile.bikes && user.profile.bikes.length > 0) {
+                for (let gear of user.profile.bikes) {
+                    try {
+                        const bike = await strava.athletes.getGear(user, gear.id)
+                        _.assign(gear, bike)
+                        gearCount++
+                    } catch (ex) {
+                        logger.error("Users.refreshGearDetails", user.id, user.displayName, `Could no refresh bike ${gear.id} - ${gear.name}`)
+                    }
+                }
+
+                newData.profile.bikes = user.profile.bikes
+            }
+
+            // And do the same for shoes.
+            if (user.profile.shoes && user.profile.shoes.length > 0) {
+                for (let gear of user.profile.shoes) {
+                    try {
+                        const shoes = await strava.athletes.getGear(user, gear.id)
+                        _.assign(gear, shoes)
+                        gearCount++
+                    } catch (ex) {
+                        logger.error("Users.refreshGearDetails", user.id, user.displayName, `Could no refresh shoes ${gear.id} - ${gear.name}`)
+                    }
+                }
+
+                newData.profile.shoes = user.profile.shoes
+            }
+
+            // Update changes to thethe database.
+            if (gearCount > 0) {
+                await database.merge("users", newData)
+                logger.error("Users.refreshGearDetails", user.id, user.displayName, `Refreshed ${gearCount} details`)
+            }
+        } catch (ex) {
+            logger.error("Users.refreshGearDetails", user.id, user.displayName, ex)
         }
     }
 

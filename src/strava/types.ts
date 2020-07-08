@@ -116,10 +116,11 @@ export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
     }
 
     // Set activity gear.
-    if (data.gear) {
-        activity.gear = toStravaGear(data.gear, profile)
-    } else if (data.gear_id) {
-        activity.gear = _.find(profile.bikes, {id: data.gear_id}) || _.find(profile.shoes, {id: data.gear_id})
+    const gearId = data.gear && data.gear.id ? data.gear.id : data.gear_id
+    if (gearId) {
+        activity.gear = activity.gear = _.find(profile.bikes, {id: gearId}) || _.find(profile.shoes, {id: gearId})
+    } else if (data.gear) {
+        activity.gear = toStravaGear(data.gear.id, profile)
     }
 
     // Set polyline.
