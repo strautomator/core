@@ -241,10 +241,10 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            logger.info("Recipes.checkCondition", `User ${user.id}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`)
+            logger.info("Recipes.checkCondition", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`)
             return true
         } catch (ex) {
-            logger.error("Recipes.checkCondition", `User ${user.id}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`, ex)
+            logger.error("Recipes.checkCondition", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`, ex)
             return false
         }
     }
@@ -348,28 +348,28 @@ export class Recipes {
 
                 // No stats for the specified recipe? Return null.
                 if (!stats) {
-                    logger.info("Recipe.getStats", `User ${user.id}`, `No stats for recipe ${recipe.id}`)
+                    logger.info("Recipe.getStats", `User ${user.id} ${user.displayName}`, `No stats for recipe ${recipe.id}`)
                     return null
                 }
 
                 const lastTrigger = moment(stats.dateLastTrigger).format("lll")
-                logger.info("Recipe.getStats", `User ${user.id}`, `Recipe ${recipe.id}`, `${stats.activities.length} activities`, `Last triggered: ${lastTrigger}`)
+                logger.info("Recipe.getStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `${stats.activities.length} activities`, `Last triggered: ${lastTrigger}`)
                 return stats
             } else {
                 const arrStats: RecipeStats[] = await database.search("recipe-stats", ["userId", "==", user.id])
 
                 // No recipe stats found at all for the user?
                 if (arrStats.length == 0) {
-                    logger.info("Recipe.getStats", `User ${user.id}`, "No recipe stats found")
+                    logger.info("Recipe.getStats", `User ${user.id} ${user.displayName}`, "No recipe stats found")
                     return []
                 }
 
-                logger.info("Recipe.getStats", `User ${user.id}`, `${arrStats.length} recipe stats found`)
+                logger.info("Recipe.getStats", `User ${user.id} ${user.displayName}`, `${arrStats.length} recipe stats found`)
                 return arrStats
             }
         } catch (ex) {
             const recipeLog = recipe ? `Recipe ${recipe.id}` : `All recipes`
-            logger.error("Recipes.getStats", `User ${user.id}`, recipeLog, ex)
+            logger.error("Recipes.getStats", `User ${user.id} ${user.displayName}`, recipeLog, ex)
             throw ex
         }
     }

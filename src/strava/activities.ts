@@ -33,7 +33,7 @@ export class StravaActivities {
      * @param query Query options.
      */
     getActivities = async (user: UserData, query: any): Promise<StravaActivity[]> => {
-        logger.debug("Strava.getActivities", `User ${user.id}`, query)
+        logger.debug("Strava.getActivities", `User ${user.id} ${user.displayName}`, query)
 
         const arrLogQuery = Object.entries(query).map((p) => p[0] + "=" + p[1])
         const logQuery = arrLogQuery.join(", ")
@@ -54,10 +54,10 @@ export class StravaActivities {
                 activities.push(toStravaActivity(activity, user.profile))
             }
 
-            logger.info("Strava.getActivities", `User ${user.id}`, logQuery, `Got ${activities.length} activities`)
+            logger.info("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Got ${activities.length} activities`)
             return activities
         } catch (ex) {
-            logger.error("Strava.getActivities", `User ${user.id}`, logQuery, ex)
+            logger.error("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, ex)
             throw ex
         }
     }
@@ -68,7 +68,7 @@ export class StravaActivities {
      * @param id The activity ID.
      */
     getActivity = async (user: UserData, id: number | string): Promise<StravaActivity> => {
-        logger.debug("Strava.getActivity", `User ${user.id}`, id)
+        logger.debug("Strava.getActivity", `User ${user.id} ${user.displayName}`, id)
 
         try {
             const tokens = user.stravaTokens
@@ -114,10 +114,10 @@ export class StravaActivities {
                 timeStart = "No dateStart"
             }
 
-            logger.info("Strava.getActivity", `User ${user.id}`, `Activity ${id}`, activity.name, timeStart)
+            logger.info("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, activity.name, timeStart)
             return activity
         } catch (ex) {
-            logger.error("Strava.getActivity", `User ${user.id}`, `Activity ${id}`, ex)
+            logger.error("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
             throw ex
         }
     }
@@ -128,7 +128,7 @@ export class StravaActivities {
      * @param id The activity ID.
      */
     getStream = async (user: UserData, id: number | string): Promise<any> => {
-        logger.debug("Strava.getStream", `User ${user.id}`, id)
+        logger.debug("Strava.getStream", `User ${user.id} ${user.displayName}`, id)
 
         try {
             const tokens = user.stravaTokens
@@ -140,10 +140,10 @@ export class StravaActivities {
                 if (stream.data) datapoints += stream.data.length
             }
 
-            logger.info("Strava.getStream", `User ${user.id}`, `Activity ${id}`, `${datapoints} data points`)
+            logger.info("Strava.getStream", `User ${user.id} ${user.displayName}`, `Activity ${id}`, `${datapoints} data points`)
             return data
         } catch (ex) {
-            logger.error("Strava.getStream", `User ${user.id}`, `Activity ${id}`, ex)
+            logger.error("Strava.getStream", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
             throw ex
         }
     }
@@ -280,7 +280,7 @@ export class StravaActivities {
                         logger.info("Strava.processActivity", `User ${user.id} is dormant (no recipes, no activites for more than ${settings.users.dormantDays} days), will get deleted`)
                         await users.delete(user)
                     } catch (innerEx) {
-                        logger.error("Strava.processActivity", `User ${user.id}`, "There was an error auto deleting dormant user")
+                        logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, "There was an error auto deleting dormant user")
                     }
                 } else {
                     logger.info("Strava.processActivity", `User ${user.id} has no recipes, won't process activity ${activityId}`)
@@ -317,13 +317,13 @@ export class StravaActivities {
                         recipeIds.push(recipe.id)
                     }
                 } catch (innerEx) {
-                    logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, innerEx)
+                    logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, innerEx)
                 }
             }
 
             // Activity updated? Save to Strava and increment activity counter.
             if (recipeIds.length > 0) {
-                logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, `Recipes: ${recipeIds.join(", ")}`)
+                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `Recipes: ${recipeIds.join(", ")}`)
 
                 // Remove duplicates from list of updated fields.
                 activity.updatedFields = _.uniq(activity.updatedFields)
@@ -338,9 +338,9 @@ export class StravaActivities {
                         }
 
                         setTimeout(retryJob, settings.strava.api.retryInterval)
-                        logger.warn("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, `Failed, will try again...`)
+                        logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `Failed, will try again...`)
                     } else {
-                        logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, ex)
+                        logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
 
                         // Save failed activity to database. and stop here.
                         await this.saveProcessedActivity(user, activity, recipeIds, ex)
@@ -357,13 +357,13 @@ export class StravaActivities {
 
                     return processedActivity
                 } catch (ex) {
-                    logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, "Can't save to database", ex)
+                    logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "Can't save to database", ex)
                 }
             } else {
-                logger.info("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, `No matching recipes`)
+                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `No matching recipes`)
             }
         } catch (ex) {
-            logger.error("Strava.processActivity", `User ${user.id}`, `Activity ${activityId}`, ex)
+            logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
             throw ex
         }
 
@@ -378,11 +378,11 @@ export class StravaActivities {
     getProcessedActivites = async (user: UserData, limit?: number): Promise<StravaProcessedActivity[]> => {
         try {
             const activities = await database.search("activities", ["user.id", "==", user.id], ["dateProcessed", "desc"], limit)
-            logger.info("Strava.getProcessedActivites", `User ${user.id}`, `Got ${activities.length} processed activities`)
+            logger.info("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, `Got ${activities.length} processed activities`)
 
             return activities
         } catch (ex) {
-            logger.error("Strava.getProcessedActivites", `User ${user.id}`, ex)
+            logger.error("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, ex)
         }
     }
 
@@ -448,7 +448,7 @@ export class StravaActivities {
 
             return data
         } catch (ex) {
-            logger.error("Strava.saveProcessedActivity", `User ${user.id} - ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Strava.saveProcessedActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
             throw ex
         }
     }

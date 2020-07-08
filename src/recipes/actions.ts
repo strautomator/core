@@ -17,7 +17,7 @@ const settings = require("setmeup").settings
  * Helper to log and alert users about failed actions.
  */
 const failedAction = (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction, error: any): void => {
-    logger.error("Recipes.failedAction", `User ${user.id}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, error)
+    logger.error("Recipes.failedAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, error)
 
     // If user has an email set, alert about the issue.
     if (user.email) {
@@ -73,7 +73,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
                     processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
                 }
             } else {
-                logger.warn("Recipes.defaultAction", `User ${user.id}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
+                logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
                 processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
             }
         }
