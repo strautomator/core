@@ -2,7 +2,7 @@
 
 This is the core module of Strautomator containing most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web) and can be linked on other environments as well (Cloud Functions, CLI tools etc...).
 
-## Setting it up
+## Getting started
 
 ### Settings
 
@@ -70,4 +70,4 @@ The function `gearwear.processRecentActivities()` needs to be called once a day 
 
 #### Strava: refresh tokens
 
-Users with expired tokens must have their Strava tokens refreshed regularly. You can use a mix of `users.getExpired()`, iterating these users and calling `strava.refreshToken(user)` accordingly.
+Users with expired tokens must have their Strava tokens refreshed regularly. You can use a mix of `users.getExpired()`, iterating these users and calling `strava.refreshToken(user)` for each one of them.
