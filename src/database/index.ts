@@ -232,33 +232,38 @@ export class Database {
     /**
      * Delete documents from the database, based on the passed search query.
      * @param collection Name of the collection.
-     * @param queryList List of query in the format [property, operator, value].
+     * @param queryOrId Query in the format [property, operator, value].
      */
-    delete = async (collection: string, queryList?: any[]): Promise<number> => {
+    delete = async (collection: string, queryOrId?: any[] | string): Promise<number> => {
         const colname = `${collection}${settings.database.collectionSuffix}`
-        let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
 
-        if (!queryList || queryList.length < 1) {
-            throw new Error("A valid queryList is mandatory")
+        if (!queryOrId || queryOrId.length < 1) {
+            throw new Error("A valid queryList or ID is mandatory")
         }
 
-        // Make sure query list is an array by itself.
-        if (_.isString(queryList[0])) {
-            queryList = [queryList]
+        // Check ir an actual ID was passed, or a query list.
+        if (_.isString(queryOrId)) {
+            const id = queryOrId as string
+            await this.firestore.collection(colname).doc(id).delete()
+
+            logger.info("Database.delete", collection, `ID ${id}`, `Deleted`)
+            return 1
+        } else {
+            let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
+
+            // Iterate and build queries.
+            for (let query of queryOrId) {
+                filteredTable = filteredTable.where(query[0], query[1], query[2])
+            }
+
+            // Delete documents.
+            const snapshot = await filteredTable.get()
+            snapshot.forEach((doc) => doc.ref.delete())
+
+            const logQuery = (queryOrId as string[]).join(", ")
+            logger.info("Database.delete", collection, logQuery, `Deleted ${snapshot.size} documents`)
+            return snapshot.size
         }
-
-        // Iterate and build queries.
-        for (let query of queryList) {
-            filteredTable = filteredTable.where(query[0], query[1], query[2])
-        }
-
-        // Delete documents.
-        const snapshot = await filteredTable.get()
-        snapshot.forEach((doc) => doc.ref.delete())
-
-        logger.info("Database.delete", collection, queryList.join(", "), `Deleted ${snapshot.size} documents`)
-
-        return snapshot.size
     }
 
     // APP STATE METHODS
