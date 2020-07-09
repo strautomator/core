@@ -437,6 +437,40 @@ export class Users {
             logger.error("Users.setActivityCount", user.id, user.displayName, ex)
         }
     }
+
+    /**
+     * Set the recipes ordering.
+     * @param user The user.
+     */
+    setRecipesOrder = async (user: UserData, recipesOrder: {[id: string]: number}): Promise<void> => {
+        try {
+            const data = {id: user.id, recipes: {}}
+            const logOrder = []
+
+            if (!recipesOrder) {
+                throw new Error("Missing recipes ordering object")
+            }
+
+            // Update the order for each recipe passed.
+            for (let [id, order] of Object.entries(recipesOrder)) {
+                if (!user.recipes[id]) {
+                    throw new Error(`Recipe ${id} does not exist`)
+                }
+                if (!_.isNumber(order)) {
+                    throw new Error(`Invalid order number: ${order}`)
+                }
+
+                data.recipes[id] = {order: order}
+                logOrder.push(`${id}=${order}`)
+            }
+
+            await this.update(data)
+            logger.info("Users.setRecipesOrder", user.id, user.displayName, logOrder.join(", "))
+        } catch (ex) {
+            logger.error("Users.setRecipesOrder", user.id, user.displayName, ex)
+            throw ex
+        }
+    }
 }
 
 // Exports...
