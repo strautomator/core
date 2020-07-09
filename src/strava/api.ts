@@ -126,9 +126,10 @@ export class StravaAPI {
      * Refresh OAuth2 tokens from Strava.
      * @param refreshToken The refresh token for the user / client.
      * @param accessToken Previous access token.
+     * @param noEmit Sometimes we might want to avoid emitting the refreshToken event.
      * @event Strava.refreshToken
      */
-    refreshToken = async (refreshToken: string, accessToken?: string): Promise<StravaTokens> => {
+    refreshToken = async (refreshToken: string, accessToken?: string, noEmit?: boolean): Promise<StravaTokens> => {
         try {
             const qs: any = {
                 grant_type: "refresh_token",
@@ -161,8 +162,10 @@ export class StravaAPI {
                 expiresAt: res.expires_at
             }
 
-            // Publish event.
-            eventManager.emit("Strava.refreshToken", refreshToken, tokens)
+            // Publish event only if noEmit is not set.
+            if (!noEmit) {
+                eventManager.emit("Strava.refreshToken", refreshToken, tokens)
+            }
 
             return tokens
         } catch (ex) {
@@ -173,10 +176,11 @@ export class StravaAPI {
 
     /**
      * Revoke the passed access token.
-     * @param accessToken Access token to be deauthorized.
      * @param userId ID of the token's owner.
+     * @param accessToken Access token to be deauthorized.
+     * @param refreshToken Optional refresh token, in case the access token fails.
      */
-    revokeToken = async (accessToken: string, userId: string): Promise<void> => {
+    revokeToken = async (userId: string, accessToken: string, refreshToken?: string): Promise<void> => {
         try {
             const qs: any = {
                 access_token: accessToken
@@ -192,9 +196,16 @@ export class StravaAPI {
             // Post data to Strava.
             await axiosRequest(reqOptions)
 
-            logger.info("Strava.revokeToken", `Token for user ${userId} deauthorized`)
+            logger.info("Strava.revokeToken", `User ${userId}`, `Token deauthorized`)
         } catch (ex) {
-            logger.error("Strava.revokeToken", `User ${userId}`, ex)
+            if (refreshToken) {
+                logger.warn("Strava.revokeToken", `User ${userId}`, ex, "Will retry with refreshed token")
+
+                const tokens = await this.refreshToken(refreshToken, null, true)
+                this.revokeToken(userId, tokens.accessToken)
+            } else {
+                logger.error("Strava.revokeToken", `User ${userId}`, ex)
+            }
         }
     }
 

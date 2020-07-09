@@ -69,7 +69,8 @@ export class Strava {
      */
     private onUserDelete = async (user: UserData): Promise<void> => {
         try {
-            await this.revokeToken(user.stravaTokens.accessToken, user.id)
+            const tokens = user.stravaTokens
+            await this.revokeToken(user.id, tokens.accessToken, tokens.refreshToken)
         } catch (ex) {
             logger.error("Strava.onUsersDelete", `Failed to revoke token for user ${user.id} - ${user.displayName}`)
         }
@@ -111,11 +112,12 @@ export class Strava {
 
     /**
      * Revoke the passed access token.
-     * @param accessToken Access token to be deauthorized.
      * @param userId ID of the token's owner.
+     * @param accessToken Access token to be deauthorized.
+     * @param refreshToken Optional refresh token, in case the access token fails.
      */
-    revokeToken = async (accessToken: string, userId: string): Promise<void> => {
-        return await api.revokeToken(accessToken, userId)
+    revokeToken = async (userId: string, accessToken: string, refreshToken?: string): Promise<void> => {
+        return await api.revokeToken(userId, accessToken, refreshToken)
     }
 }
 
