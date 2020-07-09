@@ -95,8 +95,10 @@ export class GearWear {
                 if (comp.alertTime > 0 && comp.alertTime < 72000) {
                     throw new Error("Minimum accepted alert time is 20 hours (72000)")
                 }
-                if (!_.isBoolean(comp.disabled)) {
-                    throw new Error("The disabled flag must be true or false")
+
+                // The disabled flag must be true or false.
+                if (!_.isNil(comp.disabled)) {
+                    comp.disabled = comp.disabled ? true : false
                 }
 
                 // Make sure the history array is present.
@@ -167,39 +169,49 @@ export class GearWear {
             let gearCount = 0
 
             // If user has bikes, update the details for all of them.
-            if (user.profile.bikes && user.profile.bikes.length > 0) {
+            if (user.profile.bikes.length > 0) {
+                newData.profile.bikes = []
+
                 for (let gear of user.profile.bikes) {
                     try {
                         const bike = await strava.athletes.getGear(user, gear.id)
                         _.assign(gear, bike)
                         gearCount++
+
+                        // TODO! Remove mileage (replaced with distance).
+                        delete gear["mileage"]
                     } catch (ex) {
                         logger.error("Users.refreshGearDetails", user.id, user.displayName, `Could no refresh bike ${gear.id} - ${gear.name}`)
                     }
-                }
 
-                newData.profile.bikes = user.profile.bikes
+                    newData.profile.bikes.push(gear)
+                }
             }
 
             // And do the same for shoes.
-            if (user.profile.shoes && user.profile.shoes.length > 0) {
+            if (user.profile.shoes.length > 0) {
+                newData.profile.shoes = []
+
                 for (let gear of user.profile.shoes) {
                     try {
                         const shoes = await strava.athletes.getGear(user, gear.id)
                         _.assign(gear, shoes)
                         gearCount++
+
+                        // TODO! Remove mileage (replaced with distance).
+                        delete gear["mileage"]
                     } catch (ex) {
                         logger.error("Users.refreshGearDetails", user.id, user.displayName, `Could no refresh shoes ${gear.id} - ${gear.name}`)
                     }
-                }
 
-                newData.profile.shoes = user.profile.shoes
+                    newData.profile.shoes.push(gear)
+                }
             }
 
             // Update changes to thethe database.
             if (gearCount > 0) {
                 await database.merge("users", newData)
-                logger.error("Users.refreshGearDetails", user.id, user.displayName, `Refreshed ${gearCount} details`)
+                logger.info("Users.refreshGearDetails", user.id, user.displayName, `Refreshed ${gearCount} gear details`)
             }
         } catch (ex) {
             logger.error("Users.refreshGearDetails", user.id, user.displayName, ex)

@@ -315,8 +315,8 @@ export function toStravaProfile(data): StravaProfile {
 
     // Has shoes?
     if (data.shoes && data.shoes.length > 0) {
-        for (let shoe of data.shoes) {
-            profile.shoes.push(toStravaGear(shoe, profile))
+        for (let shoes of data.shoes) {
+            profile.shoes.push(toStravaGear(shoes, profile))
         }
     }
 
