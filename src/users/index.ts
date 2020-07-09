@@ -276,11 +276,25 @@ export class Users {
                 userData.recipes = {}
                 userData.recipeCount = 0
                 userData.activityCount = 0
-            } else {
+            }
+            // If user exists, update recipe count and gear details.
+            else {
                 const docData = docSnapshot.data()
+                const existingData = docData as UserData
 
-                if (docData.recipes) {
-                    userData.recipeCount = Object.keys(docData.recipes).length
+                if (existingData.recipes) {
+                    userData.recipeCount = Object.keys(existingData.recipes).length
+                }
+
+                // Do not overwrite all gear details, as they won't have brand and model (coming from the athlete endpoint).
+                // Merge the bikes and shoes instead.
+                for (let bike of userData.profile.bikes) {
+                    const existingBike = _.find(existingData.profile.bikes, {id: bike.id})
+                    if (existingBike) _.defaults(bike, existingBike)
+                }
+                for (let shoes of userData.profile.shoes) {
+                    const existingShoes = _.find(existingData.profile.shoes, {id: shoes.id})
+                    if (existingShoes) _.defaults(shoes, existingShoes)
                 }
             }
 
