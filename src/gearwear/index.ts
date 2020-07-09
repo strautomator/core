@@ -108,6 +108,16 @@ export class GearWear {
                     throw new Error("Component history must be an array")
                 }
 
+                // DEPRECATED! Remove mileage (replaced with distance).
+                if (comp["currentMileage"]) {
+                    comp.currentDistance = comp["currentMileage"]
+                    delete comp["currentMileage"]
+                }
+                if (comp["alertMileage"]) {
+                    comp.alertDistance = comp["alertMileage"]
+                    delete comp["alertMileage"]
+                }
+
                 // Remove non-relevant fields.
                 const compFields = Object.keys(comp)
                 for (let key of compFields) {
@@ -133,6 +143,19 @@ export class GearWear {
     getById = async (id: string): Promise<GearWearConfig> => {
         try {
             const result: GearWearConfig = await database.get("gearwear", id)
+
+            // DEPRECATED! Remove mileage (replaced with distance).
+            for (let comp of result.components) {
+                if (comp["currentMileage"]) {
+                    comp.currentDistance = comp["currentMileage"]
+                    delete comp["currentMileage"]
+                }
+                if (comp["alertMileage"]) {
+                    comp.alertDistance = comp["alertMileage"]
+                    delete comp["alertMileage"]
+                }
+            }
+
             return result
         } catch (ex) {
             logger.error("GearWear.getById", id, ex)
@@ -148,6 +171,20 @@ export class GearWear {
         try {
             const result: GearWearConfig[] = await database.search("gearwear", ["userId", "==", user.id])
             logger.info("GearWear.getForUser", `User ${user.id} ${user.displayName}`, `${result.length} GearWear configurations`)
+
+            // DEPRECATED! Remove mileage (replaced with distance).
+            for (let config of result) {
+                for (let comp of config.components) {
+                    if (comp["currentMileage"]) {
+                        comp.currentDistance = comp["currentMileage"]
+                        delete comp["currentMileage"]
+                    }
+                    if (comp["alertMileage"]) {
+                        comp.alertDistance = comp["alertMileage"]
+                        delete comp["alertMileage"]
+                    }
+                }
+            }
 
             return result
         } catch (ex) {
@@ -178,7 +215,7 @@ export class GearWear {
                         _.assign(gear, bike)
                         gearCount++
 
-                        // TODO! Remove mileage (replaced with distance).
+                        // DEPRECATED! Remove mileage (replaced with distance).
                         delete gear["mileage"]
                     } catch (ex) {
                         logger.error("Users.refreshGearDetails", user.id, user.displayName, `Could no refresh bike ${gear.id} - ${gear.name}`)
@@ -198,7 +235,7 @@ export class GearWear {
                         _.assign(gear, shoes)
                         gearCount++
 
-                        // TODO! Remove mileage (replaced with distance).
+                        // DEPRECATED! Remove mileage (replaced with distance).
                         delete gear["mileage"]
                     } catch (ex) {
                         logger.error("Users.refreshGearDetails", user.id, user.displayName, `Could no refresh shoes ${gear.id} - ${gear.name}`)
