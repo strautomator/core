@@ -271,7 +271,7 @@ export class StravaActivities {
             let recipeIds = []
 
             // If user has no recipes? Stop here.
-            if (Object.keys(user.recipes).length == 0) {
+            if (!user.recipes || Object.keys(user.recipes).length == 0) {
                 const minDate = moment.utc().subtract(settings.users.dormantDays, "days")
 
                 // If user registered more than X days ago and has no activities processed yet, then delete the account.
