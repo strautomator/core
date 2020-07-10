@@ -78,15 +78,25 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             }
         }
 
-        // Change activity name?
+        // Set the activity name?
         if (action.type == RecipeActionType.Name) {
             activity.name = processedValue
             activity.updatedFields.push("name")
         }
-
-        // Change activity description?
+        // Append to the activity name?
+        else if (action.type == RecipeActionType.AppendName) {
+            activity.name += " " + processedValue
+            activity.updatedFields.push("name")
+        }
+        // Set the activity description?
         else if (action.type == RecipeActionType.Description) {
             activity.description = processedValue
+            activity.updatedFields.push("description")
+        }
+        // Append to the activity description?
+        else if (action.type == RecipeActionType.AppendDescription) {
+            if (!activity.description) activity.description = ""
+            activity.description += " " + processedValue
             activity.updatedFields.push("description")
         }
     } catch (ex) {

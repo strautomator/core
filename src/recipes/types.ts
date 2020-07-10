@@ -66,7 +66,9 @@ export interface RecipeStats {
 export enum RecipeActionType {
     Commute = "commute",
     Name = "name",
+    AppendName = "appendName",
     Description = "description",
+    AppendDescription = "appendDescription",
     Gear = "gear",
     Webhook = "webhook"
 }

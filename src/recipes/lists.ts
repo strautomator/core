@@ -82,7 +82,9 @@ export const recipePropertyList = [
 export const recipeActionList = [
     {value: "commute", text: "Mark activity as commute"},
     {value: "name", text: "Set activity name"},
+    {value: "appendName", text: "Append to activity name"},
     {value: "description", text: "Set activity description"},
+    {value: "appendDescription", text: "Append to activity description"},
     {value: "gear", text: "Set activity gear"},
     {value: "webhook", text: "Webhook URL"}
 ]
