@@ -490,6 +490,20 @@ export class GearWear {
                         if (!component.activityCount) component.activityCount = 0
                         component.activityCount++
 
+                        // DEPRECATED! Replace mileage with distance.
+                        if (component["currentMileage"]) {
+                            component.currentDistance = component["currentMileage"]
+                            delete component["currentMileage"]
+                        }
+                        if (component["alertMileage"]) {
+                            component.alertDistance = component["alertMileage"]
+                            delete component["alertMileage"]
+                        }
+
+                        // Make sure current values are at least 0.
+                        if (!component.currentDistance) component.currentDistance = 0
+                        if (!component.currentTime) component.currentTime = 0
+
                         // Increase distance (distance) and time (hours).
                         if (distance > 0) component.currentDistance += distance
                         if (elapsedTime > 0) component.currentTime += elapsedTime
