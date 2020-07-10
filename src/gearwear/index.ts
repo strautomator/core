@@ -362,9 +362,14 @@ export class GearWear {
                     const user = await users.getById(userId)
                     const tsLastActivity = moment.utc(user.dateLastActivity).unix()
 
+                    if (user.suspended) {
+                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName} is suspended, will not process`)
+                        continue
+                    }
+
                     // Do not proceed if user has no email set or if no activities were pushed recently.
                     if (!user.email) {
-                        logger.warn("GearWear.processRecentActivities", `User ${user.id} has no email, will not proceed`)
+                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName} has no email, will not proceed`)
                     } else if (tsLastActivity >= tsAfter) {
                         const userGears = _.remove(gearwearList, {userId: userId})
                         activityCount += await this.processUserActivities(user, userGears, tsAfter, tsBefore)
