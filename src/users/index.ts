@@ -257,7 +257,7 @@ export class Users {
 
             const userData: UserData = {
                 id: profile.id,
-                displayName: profile.username || profile.firstName || profile.lastName || "friend",
+                displayName: profile.username || profile.firstName || profile.lastName || "strava-user",
                 profile: profile,
                 stravaTokens: stravaTokens,
                 dateLogin: now
@@ -355,8 +355,7 @@ export class Users {
                 throw new Error("Missing required user details")
             }
 
-            // To make sure we have the most up-to-date tokens, get the user from database before deleting it.
-            user = await this.getById(user.id)
+            // Delete user from database first.
             await database.delete("users", user.id)
 
             // Delete related contents.
@@ -409,7 +408,7 @@ export class Users {
             // Save new email address.
             const data: Partial<UserData> = {
                 id: user.id,
-                email: email.trim()
+                email: email
             }
             await database.merge("users", data)
 
@@ -426,7 +425,7 @@ export class Users {
     }
 
     /**
-     * Increment a user's activity count.
+     * Increment a user's activity count (how many activities were processed).
      * @param user The user to have activity count incremented.
      */
     setActivityCount = async (user: UserData): Promise<void> => {
