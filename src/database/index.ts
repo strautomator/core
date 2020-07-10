@@ -232,9 +232,9 @@ export class Database {
     /**
      * Delete documents from the database, based on the passed search query.
      * @param collection Name of the collection.
-     * @param queryOrId Query in the format [property, operator, value].
+     * @param queryOrId ID or query in the format [property, operator, value].
      */
-    delete = async (collection: string, queryOrId?: any[] | string): Promise<number> => {
+    delete = async (collection: string, queryOrId: any[] | string): Promise<number> => {
         const colname = `${collection}${settings.database.collectionSuffix}`
 
         if (!queryOrId || queryOrId.length < 1) {
@@ -249,12 +249,7 @@ export class Database {
             logger.info("Database.delete", collection, `ID ${id}`, `Deleted`)
             return 1
         } else {
-            let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
-
-            // Iterate and build queries.
-            for (let query of queryOrId) {
-                filteredTable = filteredTable.where(query[0], query[1], query[2])
-            }
+            let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname).where(queryOrId[0], queryOrId[1], queryOrId[2])
 
             // Delete documents.
             const snapshot = await filteredTable.get()
