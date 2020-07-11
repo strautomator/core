@@ -202,8 +202,9 @@ export class Users {
     /**
      * Get the user for the passed access token.
      * @param tokens The user's Strava access and refrsh token tokens.
+     * @param userId Optional user ID to log in case it fails.
      */
-    getByToken = async (tokens: StravaTokens): Promise<UserData> => {
+    getByToken = async (tokens: StravaTokens, userId?: string): Promise<UserData> => {
         try {
             let users: UserData[]
             let encryptedToken: string
@@ -218,7 +219,6 @@ export class Users {
                 }
 
                 // Try finding also on the previous access token.
-                encryptedToken = encryptData(tokens.accessToken)
                 users = await database.search("users", ["stravaTokens.previousAccessToken", "==", encryptedToken])
 
                 if (users.length > 0) {
@@ -226,7 +226,7 @@ export class Users {
                 }
             }
 
-            // Refresh token was passed?
+            // Refresh token was passed? Try getting user with that refresh token.
             if (tokens.refreshToken) {
                 encryptedToken = encryptData(tokens.refreshToken)
                 users = await database.search("users", ["stravaTokens.refreshToken", "==", encryptedToken])
@@ -235,6 +235,9 @@ export class Users {
                     return users[0]
                 }
             }
+
+            if (!userId) userId = "unknown"
+            logger.warn("Users.getByToken", `User ${userId} not found by token`)
 
             return null
         } catch (ex) {
