@@ -46,6 +46,7 @@ export class Database {
             const logPrefix = suffix ? `Collections suffixd with "${suffix}"` : "No collection suffix"
 
             cache.setup("database", settings.database.cacheDuration)
+
             logger.info("Database.init", logPrefix)
         } catch (ex) {
             logger.error("Database.init", ex)
