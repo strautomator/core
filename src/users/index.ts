@@ -282,6 +282,8 @@ export class Users {
                 const docData = docSnapshot.data()
                 const existingData = docData as UserData
 
+                userData.dateLastActivity = existingData.dateLastActivity
+
                 if (existingData.recipes) {
                     userData.recipeCount = Object.keys(existingData.recipes).length
                 }
