@@ -148,7 +148,7 @@
             // Sponsorship price set on GitHub (USD).
             "githubPrice": 1.0,
             // PRO users might also want to show links on activity descriptions :-)
-            "linksTexts": ["Powered by", "Automated with", "PRO user of"]
+            "linksTexts": ["Powered by", "Automated with"]
         }
     },
     "recipes": {
