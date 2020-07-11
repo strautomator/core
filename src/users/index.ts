@@ -291,6 +291,11 @@ export class Users {
                     userData.recipeCount = Object.keys(existingData.recipes).length
                 }
 
+                // User has changed the access token? Update the previous one.
+                if (stravaTokens.accessToken != existingData.stravaTokens.accessToken) {
+                    userData.stravaTokens = {previousAccessToken: stravaTokens.accessToken}
+                }
+
                 // Do not overwrite all gear details, as they won't have brand and model (coming from the athlete endpoint).
                 // Merge the bikes and shoes instead.
                 for (let bike of userData.profile.bikes) {
