@@ -312,7 +312,8 @@ export class Users {
                 logger.info("Users.upsert", userData.id, userData.displayName, `New registration`)
                 eventManager.emit("Users.create", userData)
             } else {
-                logger.info("Users.upsert", userData.id, userData.displayName, `${userData.recipeCount} recipes, ${userData.activityCount || "no"} activities`)
+                const dateLastActivity = userData.dateLastActivity ? moment(userData.dateLastActivity).format("ll") : "never"
+                logger.info("Users.upsert", userData.id, userData.displayName, `${userData.recipeCount} recipes, last activity: ${dateLastActivity}`)
             }
 
             return userData
