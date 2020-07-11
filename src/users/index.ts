@@ -95,7 +95,12 @@ export class Users {
         const maskedToken = `${refreshToken.substring(0, 3)}***${refreshToken.substring(refreshToken.length - 1)}`
 
         try {
-            const user = await this.getByToken({refreshToken: refreshToken})
+            let user = await this.getByToken({refreshToken: refreshToken})
+
+            // User not found with old refresh token? Try the current one.
+            if (!user && refreshToken != tokens.refreshToken) {
+                user = await this.getByToken({refreshToken: tokens.refreshToken})
+            }
 
             // User not found?
             if (!user) {
