@@ -108,16 +108,6 @@ export class GearWear {
                     throw new Error("Component history must be an array")
                 }
 
-                // DEPRECATED! Remove mileage (replaced with distance).
-                if (comp["currentMileage"]) {
-                    comp.currentDistance = comp["currentMileage"]
-                    delete comp["currentMileage"]
-                }
-                if (comp["alertMileage"]) {
-                    comp.alertDistance = comp["alertMileage"]
-                    delete comp["alertMileage"]
-                }
-
                 // Remove non-relevant fields.
                 const compFields = Object.keys(comp)
                 for (let key of compFields) {
@@ -144,18 +134,6 @@ export class GearWear {
         try {
             const result: GearWearConfig = await database.get("gearwear", id)
 
-            // DEPRECATED! Remove mileage (replaced with distance).
-            for (let comp of result.components) {
-                if (comp["currentMileage"]) {
-                    comp.currentDistance = comp["currentMileage"]
-                    delete comp["currentMileage"]
-                }
-                if (comp["alertMileage"]) {
-                    comp.alertDistance = comp["alertMileage"]
-                    delete comp["alertMileage"]
-                }
-            }
-
             return result
         } catch (ex) {
             logger.error("GearWear.getById", id, ex)
@@ -171,20 +149,6 @@ export class GearWear {
         try {
             const result: GearWearConfig[] = await database.search("gearwear", ["userId", "==", user.id])
             logger.info("GearWear.getForUser", `User ${user.id} ${user.displayName}`, `${result.length} GearWear configurations`)
-
-            // DEPRECATED! Remove mileage (replaced with distance).
-            for (let config of result) {
-                for (let comp of config.components) {
-                    if (comp["currentMileage"]) {
-                        comp.currentDistance = comp["currentMileage"]
-                        delete comp["currentMileage"]
-                    }
-                    if (comp["alertMileage"]) {
-                        comp.alertDistance = comp["alertMileage"]
-                        delete comp["alertMileage"]
-                    }
-                }
-            }
 
             return result
         } catch (ex) {
@@ -494,16 +458,6 @@ export class GearWear {
                         // Increase activity count.
                         if (!component.activityCount) component.activityCount = 0
                         component.activityCount++
-
-                        // DEPRECATED! Replace mileage with distance.
-                        if (component["currentMileage"]) {
-                            component.currentDistance = component["currentMileage"]
-                            delete component["currentMileage"]
-                        }
-                        if (component["alertMileage"]) {
-                            component.alertDistance = component["alertMileage"]
-                            delete component["alertMileage"]
-                        }
 
                         // Make sure current values are at least 0.
                         if (!component.currentDistance) component.currentDistance = 0
