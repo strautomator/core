@@ -25,6 +25,7 @@ const failedAction = (user: UserData, activity: StravaActivity, recipe: RecipeDa
             to: user.email,
             template: "RecipeFailedAction",
             data: {
+                userId: user.id,
                 recipeId: recipe.id,
                 recipeTitle: recipe.title,
                 activityId: activity.id,

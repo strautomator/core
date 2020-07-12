@@ -134,6 +134,13 @@ export class Mailer {
             }
 
             await this.client.sendMail(sendingOptions)
+
+            // User ID was passed on data? Use it on the log.
+            if (options.data && options.data.userId) {
+                logger.info("Mailer.send", `User ${options.data.userId}`, options.to, subject)
+            } else {
+                logger.info("Mailer.send", options.to, subject)
+            }
         } catch (ex) {
             logger.error("Mailer.send", options.to, subject, ex)
         }

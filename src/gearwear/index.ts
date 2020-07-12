@@ -618,6 +618,7 @@ export class GearWear {
             const template = reminder ? "GearWearReminder" : "GearWearAlert"
             const data = {
                 units: units,
+                userId: user.id,
                 gearId: gear.id,
                 gearName: gear.name,
                 component: component.name,
