@@ -467,6 +467,10 @@ export class GearWear {
                         if (distance > 0) component.currentDistance += distance
                         if (elapsedTime > 0) component.currentTime += elapsedTime
 
+                        // Round to 1 decimal case.
+                        component.currentDistance = Math.round(component.currentDistance * 10) / 10
+                        component.currentTime = Math.round(component.currentTime * 10) / 10
+
                         // Check if component has reached the initial or reminder distance thresholds to
                         // send an alert to the user.
                         if (component.alertDistance > 0 && component.currentDistance >= component.alertDistance) {
