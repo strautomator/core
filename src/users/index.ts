@@ -241,8 +241,9 @@ export class Users {
                 }
             }
 
-            if (!userId) userId = "unknown"
-            logger.warn("Users.getByToken", `User ${userId} not found by token`)
+            if (userId) {
+                logger.warn("Users.getByToken", `User ${userId} not found by token`)
+            }
 
             return null
         } catch (ex) {
