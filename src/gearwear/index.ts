@@ -178,9 +178,6 @@ export class GearWear {
                         const bike = await strava.athletes.getGear(user, gear.id)
                         _.assign(gear, bike)
                         gearCount++
-
-                        // DEPRECATED! Remove mileage (replaced with distance).
-                        delete gear["mileage"]
                     } catch (ex) {
                         logger.error("Users.refreshGearDetails", user.id, user.displayName, `Could no refresh bike ${gear.id} - ${gear.name}`)
                     }
@@ -198,9 +195,6 @@ export class GearWear {
                         const shoes = await strava.athletes.getGear(user, gear.id)
                         _.assign(gear, shoes)
                         gearCount++
-
-                        // DEPRECATED! Remove mileage (replaced with distance).
-                        delete gear["mileage"]
                     } catch (ex) {
                         logger.error("Users.refreshGearDetails", user.id, user.displayName, `Could no refresh shoes ${gear.id} - ${gear.name}`)
                     }

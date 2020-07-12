@@ -307,16 +307,10 @@ export class Users {
                 for (let bike of userData.profile.bikes) {
                     const existingBike = _.find(existingData.profile.bikes, {id: bike.id})
                     if (existingBike) _.defaults(bike, existingBike)
-
-                    // DEPRECATED! Remove mileage (replaced with distance).
-                    delete bike["mileage"]
                 }
                 for (let shoes of userData.profile.shoes) {
                     const existingShoes = _.find(existingData.profile.shoes, {id: shoes.id})
                     if (existingShoes) _.defaults(shoes, existingShoes)
-
-                    // DEPRECATED! Remove mileage (replaced with distance).
-                    delete shoes["mileage"]
                 }
             }
 
