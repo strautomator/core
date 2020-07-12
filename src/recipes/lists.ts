@@ -25,8 +25,8 @@ export const recipeOperatorList = {
     ],
     // Location coordinates.
     location: [
-        {value: "like", text: "within 650m of", description: ""},
-        {value: "=", text: "within 60m of", description: ""}
+        {value: "like", text: "within 650m of", description: "Location within 650m (0.4 miles)"},
+        {value: "=", text: "within 60m of", description: "Location within 60m (196 foot)"}
     ],
     // Time.
     time: [
