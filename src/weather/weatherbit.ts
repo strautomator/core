@@ -110,7 +110,7 @@ export class Weatherbit implements WeatherProvider {
     private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("Weatherbit.toWeatherSummary", data)
 
-        const code = data.weather.code.substring(1)
+        const code = data.weather.code.toString().substring(1)
         let iconText, precipType, wind
 
         // Get correct icon text based on the wather code.
