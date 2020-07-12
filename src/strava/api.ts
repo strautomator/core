@@ -115,7 +115,9 @@ export class StravaAPI {
                 expiresAt: res.expires_at
             }
 
-            logger.info("Strava.getToken", `Got token for user ${res.athlete.id}`)
+            if (res.athlete) {
+                logger.info("Strava.getToken", `Got token for user ${res.athlete.id}`)
+            }
 
             return tokens
         } catch (ex) {
