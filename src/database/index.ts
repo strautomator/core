@@ -5,6 +5,7 @@ import {cryptoProcess} from "./crypto"
 import _ = require("lodash")
 import cache = require("bitecache")
 import logger = require("anyhow")
+import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
@@ -353,8 +354,12 @@ export class Database {
             for ([key, value] of Object.entries(data)) {
                 if (_.isArray(value)) {
                     this.transformData(value)
-                } else if (_.isObject(value) && value._seconds > 0 && value.toDate) {
-                    data[key] = data[key].toDate()
+                } else if (_.isObject(value)) {
+                    if (value._seconds > 0 && !_.isNil(value._nanoseconds)) {
+                        data[key] = value.toDate ? data[key].toDate() : moment.unix(value._seconds).toDate()
+                    } else {
+                        this.transformData(value)
+                    }
                 }
             }
         }
