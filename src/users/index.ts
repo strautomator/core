@@ -6,6 +6,7 @@ import {StravaProfile, StravaTokens} from "../strava/types"
 import {encryptData} from "../database/crypto"
 import database from "../database"
 import eventManager from "../eventmanager"
+import mailer from "../mailer"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
@@ -39,6 +40,7 @@ export class Users {
 
         // Strava events.
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
+        eventManager.on("Strava.refreshTokenExpired", this.onStravaRefreshTokenExpired)
     }
 
     /**
@@ -114,12 +116,52 @@ export class Users {
             // Updated user info.
             const updatedUser: Partial<UserData> = {
                 id: user.id,
-                stravaTokens: tokens
+                stravaTokens: tokens,
+                reauth: false
             }
 
             await this.update(updatedUser as UserData)
         } catch (ex) {
             logger.error("Users.onStravaRefreshToken", `Failed to update user tokens for original refresh token ${maskedToken}`)
+        }
+    }
+
+    /**
+     * When a refresh token has expired, check if user has an email address and contact asking to login again.
+     * @param refreshToken The expired or invalid refresh token.
+     */
+    private onStravaRefreshTokenExpired = async (refreshToken: string): Promise<void> => {
+        if (!refreshToken) {
+            logger.error("Users.onStravaRefreshTokenExpired", "Missing refresh token")
+            return
+        }
+
+        // Masked token used on warning logs.
+        const maskedToken = `${refreshToken.substring(0, 3)}***${refreshToken.substring(refreshToken.length - 1)}`
+
+        try {
+            let user = await this.getByToken({refreshToken: refreshToken})
+
+            // User has an email address? Contact asking to connect to Strautomator again.
+            if (user && user.email && !user.reauth) {
+                user.reauth = true
+                await this.update({id: user.id, reauth: true})
+
+                const data = {
+                    userId: user.id,
+                    userName: user.profile.firstName || user.displayName
+                }
+                const options = {
+                    to: user.email,
+                    template: "StravaTokenExpired",
+                    data: data
+                }
+
+                // Send email in async mode (no need to wait).
+                mailer.send(options)
+            }
+        } catch (ex) {
+            logger.error("Users.onStravaRefreshTokenExpired", `Failed to email user for expired token ${maskedToken}`)
         }
     }
 
@@ -269,7 +311,8 @@ export class Users {
                 displayName: profile.username || profile.firstName || profile.lastName || "strava-user",
                 profile: profile,
                 stravaTokens: stravaTokens,
-                dateLogin: now
+                dateLogin: now,
+                reauth: false
             }
 
             logger.debug("Users.upsert", userData.id, userData)
@@ -299,7 +342,7 @@ export class Users {
 
                 // User has changed the access token? Update the previous one.
                 if (stravaTokens.accessToken != existingData.stravaTokens.accessToken) {
-                    userData.stravaTokens = {previousAccessToken: stravaTokens.accessToken}
+                    userData.stravaTokens.previousAccessToken = stravaTokens.accessToken
                 }
 
                 // Do not overwrite all gear details, as they won't have brand and model (coming from the athlete endpoint).

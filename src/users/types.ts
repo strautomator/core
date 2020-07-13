@@ -45,6 +45,8 @@ export interface UserData {
     activityCount?: number
     /** Temporarily disable processing user activities? */
     suspended?: boolean
+    /** User needs to reauthenticate with Strava? */
+    reauth?: boolean
 }
 
 /**
