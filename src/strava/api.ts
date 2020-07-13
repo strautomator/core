@@ -4,6 +4,7 @@ import {StravaTokens} from "./types"
 import {axiosRequest} from "../axios"
 import Bottleneck from "bottleneck"
 import eventManager from "../eventmanager"
+import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
 import querystring = require("querystring")
@@ -121,6 +122,7 @@ export class StravaAPI {
 
             return tokens
         } catch (ex) {
+            this.extractResponseError(ex)
             logger.error("Strava.getToken", ex)
             throw ex
         }
@@ -132,6 +134,7 @@ export class StravaAPI {
      * @param accessToken Previous access token.
      * @param noEmit Sometimes we might want to avoid emitting the refreshToken event.
      * @event Strava.refreshToken
+     * @event Strava.refreshTokenExpired
      */
     refreshToken = async (refreshToken: string, accessToken?: string, noEmit?: boolean): Promise<StravaTokens> => {
         try {
@@ -173,6 +176,12 @@ export class StravaAPI {
 
             return tokens
         } catch (ex) {
+            this.extractResponseError(ex)
+
+            if (ex.friendlyMessage && ex.friendlyMessage.indexOf("RefreshToken") >= 0) {
+                eventManager.emit("Strava.refreshTokenExpired", refreshToken)
+            }
+
             logger.error("Strava.refreshToken", ex)
             throw ex
         }
@@ -202,6 +211,8 @@ export class StravaAPI {
 
             logger.info("Strava.revokeToken", `User ${userId}`, `Token deauthorized`)
         } catch (ex) {
+            this.extractResponseError(ex)
+
             if (refreshToken) {
                 logger.warn("Strava.revokeToken", `User ${userId}`, ex, "Will retry with refreshed token")
 
@@ -236,7 +247,9 @@ export class StravaAPI {
 
             // Renew token if it has expired.
             if (tokens) {
-                if (tokens.expiresAt < moment().unix()) {
+                const now = moment.utc().unix()
+
+                if (tokens.expiresAt && tokens.expiresAt < now) {
                     const newTokens = await this.refreshToken(tokens.refreshToken, tokens.accessToken)
                     token = newTokens.accessToken
                 } else {
@@ -328,6 +341,24 @@ export class StravaAPI {
             return await this.makeRequest(tokens, "DELETE", path, params)
         } catch (ex) {
             throw ex
+        }
+    }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Extract the error details from Strava API responses, and if found,
+     * append to the "friendlyMessage" prop on the error itself.
+     * @param ex Error or exception object.
+     */
+    extractResponseError = (ex: any): void => {
+        try {
+            if (ex.response && ex.response.data && ex.response.data.errors) {
+                ex.friendlyMessage = _.map(ex.response.data.errors, (e) => Object.values(e).join(" - ")).join(" | ")
+            }
+        } catch (ex) {
+            logger.warn("Strava.extractResponseError", "Failed to extract error")
         }
     }
 }
