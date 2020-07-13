@@ -1,6 +1,8 @@
 // Strautomator Core: Maps
 
 import {Client, GeocodeRequest} from "@googlemaps/google-maps-services-js"
+import {Polyline} from "./Polyline"
+import {MapCoordinates} from "./types"
 import cache = require("bitecache")
 import jaul = require("jaul")
 import logger = require("anyhow")
@@ -21,6 +23,11 @@ export class Maps {
      * Google Maps client.
      */
     private client: Client = null
+
+    /**
+     * Polyline processor.
+     */
+    polylines: Polyline = Polyline.Instance
 
     // INIT
     // --------------------------------------------------------------------------
@@ -52,7 +59,7 @@ export class Maps {
      * @param address Address to query the coordinates for.
      * @param region Optional TLD biasing region.
      */
-    getGeocode = async (address: string, region?: string): Promise<Coordinates[]> => {
+    getGeocode = async (address: string, region?: string): Promise<MapCoordinates[]> => {
         logger.debug("Maps.getGeocode", address)
 
         try {
@@ -126,7 +133,7 @@ export class Maps {
      * Download a static PNG image representing a map for the specified coordinates.
      * @param coordinates The coordinates to get an image for.
      */
-    getStaticImage = async (coordinates: Coordinates, options?: any): Promise<Buffer> => {
+    getStaticImage = async (coordinates: MapCoordinates, options?: any): Promise<Buffer> => {
         try {
             if (!options) {
                 options = {}
@@ -173,7 +180,7 @@ export class Maps {
      * @param coordinates The center coordinates.
      * @param radius The circle radius.
      */
-    private getCircleString = (coordinates: Coordinates, radius: number): string => {
+    private getCircleString = (coordinates: MapCoordinates, radius: number): string => {
         const detail = 8
         const r = 6371
         const pi = Math.PI
@@ -195,20 +202,6 @@ export class Maps {
 
         return result
     }
-}
-
-/**
- * Latitude and longitude for a specific address.
- */
-export interface Coordinates {
-    /** Full address details. */
-    address?: string
-    /** Latitude as number */
-    latitude: number
-    /** Longitude as number. */
-    longitude: number
-    /** Place ID on Google Maps. */
-    placeId?: string
 }
 
 // Exports...
