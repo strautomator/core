@@ -70,4 +70,4 @@ The function `gearwear.processRecentActivities()` needs to be called once a day 
 
 #### Strava: refresh tokens
 
-Users with expired tokens must have their Strava tokens refreshed regularly. You can use a mix of `users.getExpired()`, iterating these users and calling `strava.refreshToken(user)` for each one of them.
+Users with expired tokens must have their Strava tokens refreshed regularly. You can use a mix of `users.getExpired()`, iterating these users and calling `strava.refreshToken()` for each one of them.
