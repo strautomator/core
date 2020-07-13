@@ -75,5 +75,19 @@ export const EmailTemplates = {
             "<p>" +
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator." +
             "</p>"
+    },
+
+    // When a Strava refresh token has expired and user needs to reauthenticate.
+    StravaTokenExpired: {
+        subject: "Please reconnect to Strautomator",
+        body:
+            "<p>" +
+            "Hi ${userName}!<br /><br />" +
+            "It looks like the connection between Strautomator and your Strava account has expired.<br />" +
+            "<a href='${appUrl}auth/login'>Click here</a> to reauthorize the access if you wish to keep using Strautomator." +
+            "</p>" +
+            "<p>" +
+            "<small>Technical details: the OAuth2 refresh token that we have is not valid any longer.</small>" +
+            "</p>"
     }
 }
