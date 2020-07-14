@@ -21,7 +21,7 @@ export interface EmailSendingOptions {
 /**
  * The base template used on all sent emails.
  */
-export const EmailBaseTemplate = "<div>${contents}</div><div>-<br /><small>Email automatically sent by ${appTitle} (do not reply)</small></div>"
+export const EmailBaseTemplate = "<div>${contents}</div><div>-<br /><small>Email sent by ${appTitle}</small><br /><a href='${appUrl}'>${appUrl}</a></div>"
 
 /**
  * Email templates.
@@ -84,7 +84,8 @@ export const EmailTemplates = {
             "<p>" +
             "Hi ${userName}!<br /><br />" +
             "It looks like the connection between Strautomator and your Strava account has expired.<br />" +
-            "<a href='${appUrl}auth/login'>Click here</a> to reauthorize the access if you wish to keep using Strautomator." +
+            "If you wish to keep using Strautomator, please reauthenticate at <a href='${appUrl}auth/login'>${appUrl}auth/login</a>" +
+            "" +
             "</p>" +
             "<p>" +
             "<small>Technical details: the OAuth2 refresh token that we have is not valid any longer.</small>" +
