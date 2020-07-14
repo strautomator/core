@@ -128,11 +128,7 @@
             "maxConditions": 3,
             "maxGearWear": 2,
             // Links on 1 out of 5 processed activities on free accounts by default.
-            "linksOn": 5,
-            // Text of links to be added on the percentage above. The app.url will be
-            // appended at the end of the text. String is added on a new line on the
-            // activity description.
-            "linksTexts": ["Powered by", "Updated by", "Automated with", "With a little touch from", "Powered by", "Spiced up with"]
+            "linksOn": 5
         },
         "pro": {
             // Pro accounts are limited to 999 (virtually unlimited) recipes, conditions and gearwear configs.
@@ -146,12 +142,14 @@
                 "year": 5.99
             },
             // Sponsorship price set on GitHub (USD).
-            "githubPrice": 1.0,
-            // PRO users might also want to show links on activity descriptions :-)
-            "linksTexts": ["Powered by", "Automated with"]
+            "githubPrice": 1.0
         }
     },
     "recipes": {
+        // Text of links to be added on the percentage above. The app.url will be
+        // appended at the end of the text. String is added on a new line on the
+        // activity description.
+        "linksTexts": ["Powered by", "Updated by", "Automated with", "Tagged with", "Powered by"],
         // Max length for specific properties.
         "maxLength": {
             "title": 40,
