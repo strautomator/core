@@ -82,6 +82,8 @@
         }
     },
     "oauth": {
+        // Alert users after 2 failed refresh tokens.
+        "reauthFailedAlert": 2,
         // Token exchange requests times out in 12 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).
         "tokenTimeout": 10000
