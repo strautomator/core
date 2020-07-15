@@ -117,7 +117,7 @@ export class Users {
             const updatedUser: Partial<UserData> = {
                 id: user.id,
                 stravaTokens: tokens,
-                reauth: false
+                reauth: 0
             }
 
             await this.update(updatedUser as UserData)
@@ -141,12 +141,14 @@ export class Users {
 
         try {
             let user = await this.getByToken({refreshToken: refreshToken})
+            if (!user) return
+
+            // Increment the reauth counter.
+            if (!user.reauth) user.reauth = 0
+            user.reauth++
 
             // User has an email address? Contact asking to connect to Strautomator again.
-            if (user && user.email && !user.reauth) {
-                user.reauth = true
-                await this.update({id: user.id, reauth: true})
-
+            if (user.email && user.reauth == settings.oauth.reauthFailedAlert) {
                 const data = {
                     userId: user.id,
                     userName: user.profile.firstName || user.displayName
@@ -160,6 +162,8 @@ export class Users {
                 // Send email in async mode (no need to wait).
                 mailer.send(options)
             }
+
+            await this.update({id: user.id, reauth: user.reauth})
         } catch (ex) {
             logger.error("Users.onStravaRefreshTokenExpired", `Failed to email user for expired token ${maskedToken}`)
         }
@@ -312,7 +316,7 @@ export class Users {
                 profile: profile,
                 stravaTokens: stravaTokens,
                 dateLogin: now,
-                reauth: false
+                reauth: 0
             }
 
             logger.debug("Users.upsert", userData.id, userData)
