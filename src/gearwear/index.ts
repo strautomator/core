@@ -325,10 +325,8 @@ export class GearWear {
                         continue
                     }
 
-                    // Do not proceed if user has no email set or if no activities were pushed recently.
-                    if (!user.email) {
-                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName} has no email, will not proceed`)
-                    } else if (tsLastActivity >= tsAfter) {
+                    // Recent activities for the user? Proceed.
+                    if (tsLastActivity >= tsAfter) {
                         const userGears = _.remove(gearwearList, {userId: userId})
                         activityCount += await this.processUserActivities(user, userGears, tsAfter, tsBefore)
                         userCount++
@@ -552,6 +550,12 @@ export class GearWear {
         const units = user.profile.units == "imperial" ? "mi" : "km"
         const logDistance = `Distance ${component.alertDistance} / ${component.currentDistance} ${units}`
         const logGear = `Gear ${activity.gear.id} - ${component.name}`
+
+        // Do not proceed if user has no email.
+        if (!user.email) {
+            logger.warn("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, "User has no email so can't alert")
+            return
+        }
 
         try {
             component.dateAlertSent = moment.utc().toDate()
