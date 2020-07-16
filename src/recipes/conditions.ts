@@ -250,7 +250,7 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition):
         valid = false
     } else if (op == RecipeOperator.Like && aText.indexOf(value) < 0) {
         valid = false
-    } else {
+    } else if (op == RecipeOperator.GreaterThan || op == RecipeOperator.LessThan) {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
