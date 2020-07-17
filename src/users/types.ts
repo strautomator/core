@@ -39,6 +39,8 @@ export interface UserData {
     dateRegistered?: Date
     /** Date of last received activity from Strava. */
     dateLastActivity?: Date
+    /** Date of last activity updated by a recipe. */
+    dateLastProcessedActivity?: Date
     /** Recipes counter. */
     recipeCount?: number
     /** Processed activities counter. */
