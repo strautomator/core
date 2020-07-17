@@ -553,7 +553,7 @@ export class GearWear {
 
         // Do not proceed if user has no email.
         if (!user.email) {
-            logger.warn("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, "User has no email so can't alert")
+            logger.warn("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, "User has no email, will not alert")
             return
         }
 
