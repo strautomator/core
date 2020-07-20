@@ -393,7 +393,7 @@ export class GearWear {
                     await database.set("gearwear", config, config.id)
                 }
             } catch (ex) {
-                logger.error("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, `Gear ${config.id} updating=false`, ex)
+                logger.error("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, `Gear ${config.id}`, ex)
             }
         }
 
