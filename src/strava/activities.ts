@@ -272,21 +272,7 @@ export class StravaActivities {
 
             // If user has no recipes? Stop here.
             if (!user.recipes || Object.keys(user.recipes).length == 0) {
-                const minDate = moment.utc().subtract(settings.users.dormantDays, "days")
-
-                // If user registered more than X days ago and has no activities processed yet, then delete the account.
-                if (!user.isPro && user.activityCount == 0 && minDate.isBefore(moment(user.dateRegistered))) {
-                    try {
-                        logger.info("Strava.processActivity", `User ${user.id} ${user.displayName} is dormant (no recipes, no activites for more than ${settings.users.dormantDays} days), will get deleted`)
-                        user.suspended = true
-                        await users.delete(user)
-                    } catch (innerEx) {
-                        logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, "There was an error auto deleting dormant user")
-                    }
-                } else {
-                    logger.info("Strava.processActivity", `User ${user.id} ${user.displayName} has no recipes, won't process activity ${activityId}`)
-                }
-
+                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName} has no recipes, won't process activity ${activityId}`)
                 return null
             }
 
