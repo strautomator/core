@@ -43,12 +43,19 @@ export class Database {
             this.firestore = new Firestore(options)
             this.firestore.settings({ignoreUndefinedProperties: true})
 
-            const suffix = settings.database.collectionSuffix
-            const logPrefix = suffix ? `Collections suffixd with "${suffix}"` : "No collection suffix"
-
+            // Setup bitecache.
             cache.setup("database", settings.database.cacheDuration)
 
-            logger.info("Database.init", logPrefix)
+            const suffix = settings.database.collectionSuffix
+            const logSuffix = suffix ? `Collections suffixd with "${suffix}"` : "No collection suffix"
+            logger.info("Database.init", logSuffix)
+
+            // Read from production?
+            if (settings.database.readProductionSuffix !== null && settings.database.readProductionSuffix !== false) {
+                logger.warn("Database.init", "readProductionSuffix is set, data will be read from production")
+            } else {
+                settings.database.readProductionSuffix = null
+            }
         } catch (ex) {
             logger.error("Database.init", ex)
             throw ex
@@ -122,7 +129,10 @@ export class Database {
      * @param skipCache If set to true, will not lookup on in-memory cache.
      */
     get = async (collection: string, id: string, skipCache?: boolean): Promise<any> => {
-        const colname = `${collection}${settings.database.collectionSuffix}`
+        let colname = `${collection}${settings.database.collectionSuffix}`
+        if (settings.database.readProductionSuffix !== null) {
+            colname = `${collection}${settings.database.readProductionSuffix}`
+        }
 
         // First check if document is cached.
         if (!skipCache && settings.database.cacheDuration) {
@@ -163,7 +173,11 @@ export class Database {
      * @param limit Limit results, optional.
      */
     search = async (collection: string, queryList?: any[], orderBy?: string | [string, OrderByDirection], limit?: number): Promise<any[]> => {
-        const colname = `${collection}${settings.database.collectionSuffix}`
+        let colname = `${collection}${settings.database.collectionSuffix}`
+        if (settings.database.readProductionSuffix !== null) {
+            colname = `${collection}${settings.database.readProductionSuffix}`
+        }
+
         let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
 
         // Make sure query list is an array by itself.

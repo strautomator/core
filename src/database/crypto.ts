@@ -81,6 +81,10 @@ export function decryptData(value: string): string {
 
         return decrypted.toString()
     } catch (ex) {
-        logger.error("Database.decrypt", value, ex)
+        if (settings.database.readProductionSuffix !== null) {
+            logger.error("Database.decrypt", value, ex)
+        } else {
+            logger.error("Database.decrypt", `Likely due to readProductionSuffix set`, ex)
+        }
     }
 }
