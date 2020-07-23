@@ -15,7 +15,13 @@
             "algorithm": "aes-256-cbc",
             // List of property names that should be saved in encrypted format.
             "fields": ["accessToken", "previousAccessToken", "refreshToken", "password", "cryptoKey"]
-        }
+        },
+        // You can use this settings to read data from production by allowing a user
+        // to login with credentials stored on dev, but using recipes / activities / gearwear
+        // data from production, by setting the collection suffix used in production.
+        // This is for READ ONLY! No data will be ever written to production while on test.
+        // Leave as null to disable.
+        "readProductionSuffix": null
     },
     "faq": {
         // Download questions from the database twice a day by default. Value set in seconds.

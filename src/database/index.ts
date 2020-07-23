@@ -51,7 +51,7 @@ export class Database {
             logger.info("Database.init", logSuffix)
 
             // Read from production?
-            if (settings.database.readProductionSuffix !== null && settings.database.readProductionSuffix !== false) {
+            if (process.env.NODE_ENV != "production" && settings.database.readProductionSuffix !== null && settings.database.readProductionSuffix !== false) {
                 logger.warn("Database.init", "readProductionSuffix is set, data will be read from production")
             } else {
                 settings.database.readProductionSuffix = null
