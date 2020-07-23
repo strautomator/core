@@ -592,7 +592,7 @@ export class GearWear {
                 gearName: gear.name,
                 component: component.name,
                 currentDistance: component.currentDistance,
-                currentTime: component.currentTime,
+                currentTime: Math.round(component.currentTime * 10) / 10,
                 alertDetails: alertDetails.join(", ")
             }
 
