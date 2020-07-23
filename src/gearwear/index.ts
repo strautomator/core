@@ -417,6 +417,7 @@ export class GearWear {
             let component: GearWearComponent
 
             // Total distance and hours added to the gear components.
+            let activityIds: number[] = []
             let totalDistance: number = 0
             let totalTime: number = 0
 
@@ -431,6 +432,8 @@ export class GearWear {
 
                     // Stop here if activity has no valid distance and time.
                     if (!distance && !elapsedTime) continue
+
+                    activityIds.push(activity.id)
 
                     // Append totals.
                     if (distance > 0) totalDistance += distance
@@ -487,6 +490,16 @@ export class GearWear {
                 }
             }
 
+            // Set lastUpdate details on the GearWear config.
+            config.updating = false
+            config.lastUpdate = {
+                date: moment.utc().toDate(),
+                activities: activityIds,
+                distance: totalDistance,
+                time: totalTime
+            }
+
+            // Save config to the database.
             await database.set("gearwear", config, config.id)
 
             const units = user.profile.units == "imperial" ? "mi" : "km"
