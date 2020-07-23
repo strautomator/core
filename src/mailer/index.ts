@@ -116,8 +116,8 @@ export class Mailer {
 
             // Replace default keywords (from app).
             const defaultTags = {
-                appUrl: settings.app.url,
-                appTitle: settings.app.title
+                appUrl: settings.app.url || "https://strautomator.com/",
+                appTitle: settings.app.title || "Strautomator"
             }
 
             // Append body to the base HTML template.
