@@ -574,6 +574,7 @@ export class GearWear {
             component.dateAlertSent = moment.utc().toDate()
 
             // Get bike or shoe details.
+            const hours = component.currentTime / 3600
             const bike = _.find(user.profile.bikes, {id: activity.gear.id})
             const shoe = _.find(user.profile.shoes, {id: activity.gear.id})
             const gear: StravaGear = bike || shoe
@@ -592,7 +593,7 @@ export class GearWear {
                 gearName: gear.name,
                 component: component.name,
                 currentDistance: component.currentDistance,
-                currentTime: Math.round(component.currentTime * 10) / 10,
+                currentTime: Math.round(hours * 10) / 10,
                 alertDetails: alertDetails.join(", ")
             }
 
