@@ -64,7 +64,7 @@ export const EmailTemplates = {
 
     // Reminder sent if user hasn't reset the distance on a gear component after it reaches 120% of the distance threshold.
     GearWearReminder: {
-        subject: "GearWear reminder! ${gear} - ${component}",
+        subject: "GearWear reminder! ${gearName} - ${component}",
         body:
             "<p>" +
             "This is a small reminder that you haven't reset the distance for the gear / component below.<br /><br />" +
