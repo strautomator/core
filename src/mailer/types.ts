@@ -68,7 +68,7 @@ export const EmailTemplates = {
         subject: "${gearName} - ${component} (GearWear reminder)",
         body:
             "<p>" +
-            "This is a small reminder that you haven't reset the distance for the gear / component below, yet :-)<br /><br />" +
+            "This is a small reminder that you haven't reset the distance for the component below, yet :-)<br /><br />" +
             "<strong>${gearName} - ${component}</strong><br />" +
             "Currently with ${currentDistance} ${units}, ${currentTime} hours<br />" +
             "Alert on: ${alertDetails}" +
