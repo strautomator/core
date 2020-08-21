@@ -53,10 +53,10 @@ export const EmailTemplates = {
         subject: "${gearName} - ${component} (GearWear alert)",
         body:
             "<p>" +
-            "It's about time to replace the component below :-)<br /><br />" +
+            "It's about time to replace this component :-)<br />-<br />" +
             "<strong>${gearName} - ${component}</strong><br />" +
             "Currently with ${currentDistance} ${units}, ${currentTime} hours<br />" +
-            "Alert on: ${alertDetails}" +
+            "Alert on: ${alertDetails}<br />-" +
             "</p>" +
             "<p>" +
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component." +
@@ -68,10 +68,10 @@ export const EmailTemplates = {
         subject: "${gearName} - ${component} (GearWear reminder)",
         body:
             "<p>" +
-            "This is a small reminder that you haven't reset the distance for the component below, yet :-)<br /><br />" +
+            "This is a small reminder that you haven't reset the distance for the component below, yet :-)<br />-<br />" +
             "<strong>${gearName} - ${component}</strong><br />" +
             "Currently with ${currentDistance} ${units}, ${currentTime} hours<br />" +
-            "Alert on: ${alertDetails}" +
+            "Alert on: ${alertDetails}<br />-" +
             "</p>" +
             "<p>" +
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component." +
