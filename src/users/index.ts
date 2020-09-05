@@ -111,7 +111,9 @@ export class Users {
             }
 
             // Set previous access token.
-            tokens.previousAccessToken = user.stravaTokens.accessToken
+            if (user.stravaTokens.accessToken != tokens.accessToken) {
+                tokens.previousAccessToken = user.stravaTokens.accessToken
+            }
 
             // Updated user info.
             const updatedUser: Partial<UserData> = {
