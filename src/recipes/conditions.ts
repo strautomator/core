@@ -97,6 +97,39 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
 }
 
 /**
+ * Check if the passed activity is of a type for a sport defined on the condition.
+ * @param activity The Strava activity to be checked.
+ * @param condition The sport type recipe condition.
+ */
+export const checkSportType = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+    const prop = condition.property
+    const op = condition.operator
+
+    // Activity type not set? Stop here.
+    if (!activity.type) {
+        return false
+    }
+
+    // Parse condition and activity's date.
+    const value = condition.value as string
+    const sportType = activity.type.toString()
+    let valid: boolean
+
+    // Check if activity sport type matches any set on the condition.
+    if (op == RecipeOperator.Equal) {
+        valid = value == sportType || value.split(",").indexOf(sportType) >= 0
+    } else {
+        throw new Error(`Invalid operator ${op} for ${prop}`)
+    }
+
+    if (!valid) {
+        logger.debug("Recipes.checkSportType", `Activity ${activity.id}`, condition, `Failed`)
+    }
+
+    return valid
+}
+
+/**
  * Check if the passed date is on the specified week day (0 = Sunday, 6 = Satiurday).
  * @param activity The Strava activity to be checked.
  * @param condition The weekday based recipe condition.

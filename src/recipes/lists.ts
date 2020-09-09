@@ -42,14 +42,15 @@ export const recipeOperatorList = {
         {value: "<", text: "is less than", description: "Elapsed time is less than"},
         {value: ">", text: "is more than", description: "Elapsed time is more than"}
     ],
-    // Day of week.
-    day: [{value: "=", text: "is", description: ""}]
+    // Only "is" as operator.
+    is: [{value: "=", text: "is", description: ""}]
 }
 
 /**
  * List of possible recipe properties, with descriptions and operators.
  */
 export const recipePropertyList = [
+    {value: "sportType", text: "Sport type", type: "sportType", operators: recipeOperatorList.is},
     {value: "distance", text: "Distance", type: "number", operators: recipeOperatorList.number, suffix: "km", impSuffix: "mi"},
     {value: "speedAvg", text: "Average speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
     {value: "speedMax", text: "Max speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
@@ -59,7 +60,7 @@ export const recipePropertyList = [
     {value: "dateEnd", text: "End time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
     {value: "movingTime", text: "Moving time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "h"},
     {value: "totalTime", text: "Total elapsed time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "h"},
-    {value: "weekday", text: "Week day", type: "day", operators: recipeOperatorList.day},
+    {value: "weekday", text: "Week day", type: "day", operators: recipeOperatorList.is},
     {value: "locationStart", text: "Starting location", type: "location", operators: recipeOperatorList.location},
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
     {value: "polyline", text: "Passes on location", type: "location", operators: recipeOperatorList.location},

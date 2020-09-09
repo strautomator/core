@@ -2,7 +2,7 @@
 
 import {recipePropertyList, recipeActionList} from "./lists"
 import {defaultAction, commuteAction, gearAction, webhookAction} from "./actions"
-import {checkText, checkLocation, checkWeekday, checkTimestamp, checkWeather, checkNumber} from "./conditions"
+import {checkText, checkLocation, checkSportType, checkWeekday, checkTimestamp, checkWeather, checkNumber} from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator, RecipeStats} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
@@ -215,6 +215,12 @@ export class Recipes {
             // Location condition.
             else if (prop.indexOf("location") == 0 || prop == "polyline") {
                 const valid = checkLocation(activity, condition)
+                if (!valid) return false
+            }
+
+            // Sport type condition.
+            else if (prop == "sportType") {
+                const valid = checkSportType(activity, condition)
                 if (!valid) return false
             }
 
