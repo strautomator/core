@@ -117,13 +117,13 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
     }
 
     // Parse condition and activity's date.
-    const value = parseInt(condition.value as string)
-    const weekday = aDate.day()
+    const value = condition.value as string
+    const weekday = aDate.day().toString()
     let valid: boolean
 
-    // Check it time is greater, less or around 15min of the condition's time.
+    // Check if current week day is selected on the condition.
     if (op == RecipeOperator.Equal) {
-        valid = value == weekday
+        valid = value == weekday || value.split(",").indexOf(weekday) >= 0
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
