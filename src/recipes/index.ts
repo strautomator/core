@@ -204,7 +204,7 @@ export class Recipes {
      */
     checkCondition = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
         try {
-            const prop = condition.property.toLowerCase()
+            const prop = condition.property
 
             // Weather conditions.
             if (prop.indexOf("weather") >= 0) {
