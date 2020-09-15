@@ -111,7 +111,7 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
     }
 
     // Parse condition and activity's date.
-    const value = condition.value as string
+    const value = condition.value.toString()
     const sportType = activity.type.toString()
     let valid: boolean
 
@@ -150,7 +150,7 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
     }
 
     // Parse condition and activity's date.
-    const value = condition.value as string
+    const value = condition.value.toString()
     const weekday = aDate.day().toString()
     let valid: boolean
 
