@@ -85,7 +85,7 @@ export class GearWear {
             }
 
             // Valid component fields.
-            const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "dateAlertSent", "history", "disabled"]
+            const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "dateAlertSent", "activityCount", "history", "disabled"]
 
             // Validate individual components.
             for (let comp of gearwear.components) {
