@@ -87,6 +87,10 @@
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
         }
     },
+    "messages": {
+        // Delete read user messages after 7 days.
+        "readDeleteAfterDays": 7
+    },
     "oauth": {
         // Alert users after 2 failed refresh tokens.
         "reauthFailedAlert": 2,
