@@ -33,7 +33,7 @@ export class Maps {
     // --------------------------------------------------------------------------
 
     /**
-     * Init the database wrapper.
+     * Init the Google Maps wrapper.
      */
     init = async (): Promise<void> => {
         try {
