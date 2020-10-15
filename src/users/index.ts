@@ -67,6 +67,8 @@ export class Users {
             // User activated a PRO account?
             if (subscription.status == "ACTIVE") {
                 data.isPro = true
+            } else if (subscription.status == "CANCELLED") {
+                data.isPro = false
             }
 
             // Email passed?

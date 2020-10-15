@@ -149,7 +149,8 @@ export class PayPalAPI {
         } catch (ex) {
             const err = parseResponseError(ex)
             logger.error("PayPal.makeRequest", reqOptions.method, reqOptions.url, err)
-            throw err
+            ex.message = err
+            throw ex
         }
     }
 }

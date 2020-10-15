@@ -227,7 +227,8 @@ export class PayPalSubscriptions {
 
             // No data returned from PayPal? Stop here.
             if (!res.id) {
-                throw new Error(`No data returned from PayPal`)
+                logger.warn("PayPal.getSubscription", `Response for subscription ${id} has an invalid payload`)
+                return null
             }
 
             // Create subscription object with the fetched details.
@@ -271,6 +272,11 @@ export class PayPalSubscriptions {
 
             return subscription
         } catch (ex) {
+            if (ex.response && ex.response.status == 404) {
+                logger.warn("PayPal.getSubscription", `Subscription ${id} not found`)
+                return null
+            }
+
             logger.error("PayPal.getSubscription", `Could not fetch details for subscription ${id}`)
             throw ex
         }
@@ -337,8 +343,9 @@ export class PayPalSubscriptions {
      * @param subscription The subscription to be cancelled.
      */
     cancelSubscription = async (subscription: PayPalSubscription, reason?: string): Promise<void> => {
+        const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: moment.utc().toDate()}
+
         try {
-            const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: moment.utc().toDate()}
             const options = {
                 url: `billing/subscriptions/${subscription.id}/cancel`,
                 method: "POST",
@@ -347,11 +354,26 @@ export class PayPalSubscriptions {
                 }
             }
 
-            // Cancel subscription and updated the database.
+            // Cancel subscription on PayPal.
             await api.makeRequest(options)
-            await database.merge("subscriptions", data)
 
-            logger.info("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Cancelled")
+            // Update subscription reference.
+            subscription.status = data.status
+            subscription.dateUpdated = data.dateUpdated
+        } catch (ex) {
+            if (ex.message && ex.message.indexOf("SUBSCRIPTION_STATUS_INVALID") > 0) {
+                logger.warn("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Subscription not active, can't cancel`)
+            } else {
+                logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Could not cancel`)
+                throw ex
+            }
+        }
+
+        // Merge new subscription status on the database.
+        try {
+            await database.merge("subscriptions", data)
+            logger.info("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Status: ${subscription.status}`)
+            eventManager.emit("PayPal.subscriptionUpdated", subscription)
         } catch (ex) {
             logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Could not cancel`)
             throw ex
