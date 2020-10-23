@@ -19,7 +19,7 @@
         "crypto": {
             "algorithm": "aes-256-cbc",
             // List of property names that should be saved in encrypted format.
-            "fields": ["accessToken", "previousAccessToken", "refreshToken", "password", "cryptoKey"]
+            "fields": ["accessToken", "previousAccessToken", "refreshToken", "urlToken", "password", "cryptoKey"]
         },
         // You can use this settings to read data from production by allowing a user
         // to login with credentials stored on dev, but using recipes / activities / gearwear
