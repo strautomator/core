@@ -6,6 +6,7 @@ import strava from "../strava"
 import ical = require("ical-generator")
 import logger = require("anyhow")
 import moment = require("moment")
+import url = require("url")
 const settings = require("setmeup").settings
 
 /**
@@ -42,19 +43,26 @@ export class Calendar {
      * @param options Calendar generation options.
      */
     generate = async (user: UserData, options: CalendarOptions): Promise<string> => {
+        let optionsLog: string
+
         try {
             if (!options.sportTypes || options.sportTypes.length == 0) {
                 options.sportTypes = null
             }
 
-            const dateFrom = options.dateFrom ? options.dateFrom : moment().utc().subtract(settings.calendar.defaultDays, "days").toDate()
+            const maxDays = user.isPro ? settings.plans.pro.maxCalendarDays : settings.plans.free.maxCalendarDays
+            const minDate = moment().utc().hours(0).minutes(0).subtract(maxDays, "days")
+            const dateFrom = options.dateFrom ? options.dateFrom : minDate
             const tsAfter = dateFrom.valueOf() / 1000
             const tsBefore = new Date().valueOf() / 1000
 
+            optionsLog = `Since ${moment(dateFrom).format("ll")}, `
+            optionsLog += options.sportTypes ? options.sportTypes.join(", ") : "all sports"
+            if (options.excludeCommutes) optionsLog += ", exclude commutes"
+
             // Validation checks.
-            const minDate = moment().utc().subtract(settings.calendar.maxDays, "days")
             if (minDate.isAfter(dateFrom)) {
-                throw new Error(`Minimum accepted "date from" for the calendar is ${minDate.format("L")} (${settings.calendar.maxDays} days)`)
+                throw new Error(`Minimum accepted "date from" for the calendar is ${minDate.format("L")} (${maxDays} days)`)
             }
 
             // Set calendar name based on passed filters.
@@ -62,42 +70,50 @@ export class Calendar {
             if (options.sportTypes) calName += ` (${options.sportTypes.join(", ")})`
 
             // Prepare calendar details.
-            const domain = settings.app.url.replace("http://", "").replace("https://", "").replace("/", "")
+            const domain = url.parse(settings.app.url).hostname
             const prodId = {company: "Devv", product: "Strautomator", language: "EN"}
             const calUrl = `${settings.app.url}calendar/${user.urlToken}`
-            const cal = ical({domain: domain, name: calName, prodId: prodId, url: calUrl})
+
+            // Create ical container.
+            const icalOptions: ical.CalendarData = {
+                name: calName,
+                domain: domain,
+                prodId: prodId,
+                url: calUrl,
+                ttl: settings.calendar.ttl
+            }
+            const cal = ical(icalOptions)
 
             // Get activities from Strava.
             const activities = await strava.activities.getActivities(user, {before: tsBefore, after: tsAfter})
-            let counter = 0
 
-            // Iterate activities from Strava.
-            // If a sport type filter was passed, check it before proceeding.
+            // Iterate activities from Strava, checking filters before proceeding.
             for (let a of activities) {
-                const eventUrl = `https://www.strava.com/activities/${a.id}`
-
-                // Check for sport types and commute filters.
                 if (options.sportTypes && options.sportTypes.indexOf(a.type) < 0) continue
                 if (options.excludeCommutes && a.commute) continue
 
                 // Add activity to the calendar as an event.
-                cal.createEvent({
+                const event = cal.createEvent({
                     uid: a.id,
                     start: a.dateStart,
                     end: a.dateEnd,
                     summary: a.name,
-                    description: a.description,
-                    url: eventUrl
+                    description: a.commute ? `(Commute) ${a.description}` : a.description,
+                    location: a.locationEnd ? a.locationEnd.join(",") : "",
+                    url: `https://www.strava.com/activities/${a.id}`
                 })
 
-                counter++
+                // Geo location available?
+                if (a.locationEnd) {
+                    event.geo({lat: a.locationEnd[0], lon: a.locationEnd[1]})
+                }
             }
 
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `Got ${counter} activities`)
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events.length} activities`)
 
             return cal.toString()
         } catch (ex) {
-            logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `From ${options.dateFrom}`, ex)
+            logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
             throw ex
         }
     }
