@@ -377,7 +377,7 @@ export class Users {
             // TODO! Remove auto urlToken generation sometime in 2021.
             if (!userData.urlToken) {
                 try {
-                    userData.urlToken = require("crypto").randomBytes(16).toString("hex")
+                    userData.urlToken = require("crypto").randomBytes(12).toString("hex")
                 } catch (ex) {
                     logger.error("Users.upsert", profile.id, "Error generating urlToken", ex)
                 }
