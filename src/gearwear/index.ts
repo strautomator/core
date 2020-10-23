@@ -306,8 +306,8 @@ export class GearWear {
 
             // Get correct date and timestamps to fetch activities on Strava.
             const days = settings.gearwear.previousDays
-            const tsAfter = moment.utc().subtract(days, "day").hour(0).minute(0).second(0).unix()
-            const tsBefore = moment.utc().subtract(days, "day").hour(23).minute(59).second(59).unix()
+            const tsAfter = Math.round(moment.utc().subtract(days, "day").hour(0).minute(0).second(0).unix())
+            const tsBefore = Math.round(moment.utc().subtract(days, "day").hour(23).minute(59).second(59).unix())
 
             // Get all GearWear configurations from the database,
             // and generate an array with all the user IDs.
