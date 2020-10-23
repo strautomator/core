@@ -374,6 +374,15 @@ export class Users {
                 }
             }
 
+            // TODO! Remove auto urlToken generation sometime in 2021.
+            if (!userData.urlToken) {
+                try {
+                    userData.urlToken = require("crypto").randomBytes(16).toString("hex")
+                } catch (ex) {
+                    logger.error("Users.upsert", profile.id, "Error generating urlToken", ex)
+                }
+            }
+
             // Save user to the database.
             await database.merge("users", userData, doc)
 
