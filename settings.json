@@ -7,9 +7,9 @@
         "hashtag": "#strautomator.com"
     },
     "calendar": {
-        "defaultDays": 185,
-        "maxDays": 730,
-        "name": "Strava activities"
+        "name": "Strava activities",
+        // Default refresh interval is once every 12 hours.
+        "ttl": 43200
     },
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
@@ -144,6 +144,8 @@
             "maxRecipes": 3,
             "maxConditions": 3,
             "maxGearWear": 2,
+            // Free accounts limited to 1 week of calendar events.
+            "maxCalendarDays": 7,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5
         },
@@ -152,6 +154,8 @@
             "maxRecipes": 999,
             "maxConditions": 999,
             "maxGearWear": 999,
+            // Pro accounts limited to 1 full year of calendar events.
+            "maxCalendarDays": 365,
             // No links on Pro accounts processed activities.
             "linksOn": false,
             // Subscription prices on PayPal to get a PRO account.
