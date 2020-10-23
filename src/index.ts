@@ -63,6 +63,8 @@ import {Recipes} from "./recipes"
 export const recipes: Recipes = Recipes.Instance
 import {GearWear} from "./gearwear"
 export const gearwear: GearWear = GearWear.Instance
+import {Calendar} from "./calendar"
+export const calendar: Calendar = Calendar.Instance
 import {FAQ} from "./faq"
 export const faq: FAQ = FAQ.Instance
 
@@ -75,6 +77,7 @@ export * from "./gearwear/types"
 export * from "./recipes/types"
 export * from "./strava/types"
 export * from "./users/types"
+export * from "./calendar/types"
 
 // Flag if the server is shutting down.
 let terminating = false
@@ -131,7 +134,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, gearwear, faq]) {
+    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, gearwear, calendar, faq]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 

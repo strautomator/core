@@ -6,6 +6,11 @@
         // Hashtag used on social media.
         "hashtag": "#strautomator.com"
     },
+    "calendar": {
+        "defaultDays": 185,
+        "maxDays": 730,
+        "name": "Strava activities"
+    },
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.

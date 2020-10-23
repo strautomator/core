@@ -33,6 +33,8 @@ export interface UserData {
     preferences?: UserPreferences
     /** Subscription details (for PRO accounts). */
     subscription?: UserSubscription
+    /** Custom URL token used to get the calendar. */
+    urlToken?: string
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */
