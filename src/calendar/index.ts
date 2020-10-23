@@ -47,9 +47,15 @@ export class Calendar {
                 options.sportTypes = null
             }
 
-            const dateFrom = options.dateFrom ? options.dateFrom : moment().utc().subtract(settings.calendar.defaultDays).toDate()
+            const dateFrom = options.dateFrom ? options.dateFrom : moment().utc().subtract(settings.calendar.defaultDays, "days").toDate()
             const tsAfter = dateFrom.valueOf() / 1000
             const tsBefore = new Date().valueOf() / 1000
+
+            // Validation checks.
+            const minDate = moment().utc().subtract(settings.calendar.maxDays, "days")
+            if (minDate.isAfter(dateFrom)) {
+                throw new Error(`Minimum accepted "date from" for the calendar is ${minDate.format("L")} (${settings.calendar.maxDays} days)`)
+            }
 
             // Set calendar name based on passed filters.
             let calName = settings.calendar.name
