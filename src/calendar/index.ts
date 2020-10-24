@@ -1,7 +1,9 @@
 // Strautomator Core: Calendar
 
-import {CalendarOptions} from "./types"
+import {CachedCalendar, CalendarOptions} from "./types"
 import {UserData} from "../users/types"
+import crypto = require("crypto")
+import database from "../database"
 import strava from "../strava"
 import ical = require("ical-generator")
 import logger = require("anyhow")
@@ -42,11 +44,18 @@ export class Calendar {
      * @param user The user requesting the calendar.
      * @param options Calendar generation options.
      */
-    generate = async (user: UserData, options: CalendarOptions): Promise<string> => {
+    generate = async (user: UserData, options?: CalendarOptions): Promise<string> => {
         let optionsLog: string
+        let cachedCalendar: CachedCalendar
 
         try {
-            if (!options.sportTypes || options.sportTypes.length == 0) {
+            let isDefault = false
+
+            // Check and set default options.
+            if (!options) {
+                isDefault = true
+                options = {}
+            } else if (!options.sportTypes || options.sportTypes.length == 0) {
                 options.sportTypes = null
             }
 
@@ -63,6 +72,17 @@ export class Calendar {
             // Validation checks.
             if (minDate.isAfter(dateFrom)) {
                 throw new Error(`Minimum accepted "date from" for the calendar is ${minDate.format("L")} (${maxDays} days)`)
+            }
+
+            // USe "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
+            const hash = isDefault ? "default" : crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex")
+            const cacheId = `${user.id}-${hash}`
+            cachedCalendar = await database.get("calendar", cacheId)
+
+            // See if cached version of the calendar is still valid.
+            if (cachedCalendar && moment().utc().subtract(settings.calendar.ttl, "seconds").isBefore(cachedCalendar.dateUpdated)) {
+                logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "From cache")
+                return cachedCalendar.data
             }
 
             // Set calendar name based on passed filters.
@@ -109,9 +129,17 @@ export class Calendar {
                 }
             }
 
+            // Send calendar output to the database.
+            cachedCalendar = {
+                id: cacheId,
+                data: cal.toString(),
+                dateUpdated: moment().utc().toDate()
+            }
+            await database.set("calendar", cachedCalendar, cacheId)
+
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events.length} activities`)
 
-            return cal.toString()
+            return cachedCalendar.data
         } catch (ex) {
             logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
             throw ex

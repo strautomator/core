@@ -1,6 +1,18 @@
 // Strautomator Core: Calendar types
 
 /**
+ * Cached calendar stored on the database.
+ */
+export interface CachedCalendar {
+    /** Cached calendar ID. */
+    id: string
+    /** The calendar data (as .ics string). */
+    data: string
+    /** Date when calendar was last updated. */
+    dateUpdated: Date
+}
+
+/**
  * Options used to generate activity calendars.
  */
 export interface CalendarOptions {
