@@ -8,8 +8,10 @@
     },
     "calendar": {
         "name": "Strava activities",
-        // Default refresh interval is once every 6 hours.
-        "ttl": 21600
+        // Calendars are cached for up to 4 hours.
+        "cacheDuration": 14400,
+        // Default refresh interval is once every 8 hours.
+        "ttl": 28800
     },
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
