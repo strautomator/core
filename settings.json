@@ -144,8 +144,8 @@
             "maxRecipes": 3,
             "maxConditions": 3,
             "maxGearWear": 2,
-            // Free accounts limited to 1 week of calendar events.
-            "maxCalendarDays": 7,
+            // Free accounts limited to 2 weeks of calendar events.
+            "maxCalendarDays": 14,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5
         },
