@@ -53,10 +53,13 @@ export class Calendar {
 
             // Check and set default options.
             if (!options) {
-                isDefault = true
                 options = {}
             } else if (!options.sportTypes || options.sportTypes.length == 0) {
                 options.sportTypes = null
+            }
+
+            if (!options.excludeCommutes && !options.sportTypes) {
+                isDefault = true
             }
 
             const maxDays = user.isPro ? settings.plans.pro.maxCalendarDays : settings.plans.free.maxCalendarDays
@@ -65,13 +68,13 @@ export class Calendar {
             const tsAfter = dateFrom.valueOf() / 1000
             const tsBefore = new Date().valueOf() / 1000
 
-            optionsLog = `Since ${moment(dateFrom).format("ll")}, `
+            optionsLog = `Since ${moment(dateFrom).format("YYYY-MM-DD")}, `
             optionsLog += options.sportTypes ? options.sportTypes.join(", ") : "all sports"
             if (options.excludeCommutes) optionsLog += ", exclude commutes"
 
             // Validation checks.
             if (minDate.isAfter(dateFrom)) {
-                throw new Error(`Minimum accepted "date from" for the calendar is ${minDate.format("L")} (${maxDays} days)`)
+                throw new Error(`Minimum accepted "date from" for the calendar is ${minDate.format("l")} (${maxDays} days)`)
             }
 
             // USe "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
@@ -79,8 +82,10 @@ export class Calendar {
             const cacheId = `${user.id}-${hash}`
             cachedCalendar = await database.get("calendar", cacheId)
 
-            // See if cached version of the calendar is still valid.
-            if (cachedCalendar && moment().utc().subtract(settings.calendar.ttl, "seconds").isBefore(cachedCalendar.dateUpdated)) {
+            const expiryDate = moment().utc().subtract(settings.calendar.ttl, "seconds")
+
+            // See if cached version of the calendar is still valid. The expiry date here is reversed / backwards.
+            if (cachedCalendar && expiryDate.isBefore(cachedCalendar.dateUpdated)) {
                 logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "From cache")
                 return cachedCalendar.data
             }
@@ -137,7 +142,7 @@ export class Calendar {
             }
             await database.set("calendar", cachedCalendar, cacheId)
 
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events.length} activities`)
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`)
 
             return cachedCalendar.data
         } catch (ex) {
