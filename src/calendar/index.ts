@@ -86,12 +86,14 @@ export class Calendar {
             const cacheId = `${user.id}-${hash}`
             cachedCalendar = await database.get("calendar", cacheId)
 
-            const expiryDate = moment().utc().subtract(settings.calendar.ttl, "seconds")
+            const expiryDate = moment().utc().subtract(settings.calendar.ttl, "seconds").toDate()
 
             // See if cached version of the calendar is still valid. The expiry date here is reversed / backwards.
-            if (cachedCalendar && expiryDate.isBefore(cachedCalendar.dateUpdated)) {
-                logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "From cache")
-                return cachedCalendar.data
+            if (cachedCalendar) {
+                if (expiryDate < cachedCalendar.dateUpdated || user.dateLastActivity < cachedCalendar.dateUpdated) {
+                    logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "From cache")
+                    return cachedCalendar.data
+                }
             }
 
             // Set calendar name based on passed filters.
