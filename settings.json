@@ -10,7 +10,7 @@
         "name": "Strava activities",
         // Calendars are cached for up to 4 hours.
         "cacheDuration": 14400,
-        // Default refresh interval is once every 8 hours.
+        // Default TTL (refresh interval) is once every 8 hours.
         "ttl": 28800
     },
     "database": {
@@ -212,10 +212,10 @@
         }
     },
     "users": {
-        // Consider users idle if they had no processed activities for more than 1 month.
-        "idleDays": 30,
-        // Consider users dormant (no recipes, no gearwear, no activites) after 60 days.
-        "dormantDays": 60
+        // Consider users idle if they had no processed activities for more than 2 months.
+        "idleDays": 60,
+        // Consider users dormant (no recipes, no gearwear, no activites) after 90 days.
+        "dormantDays": 90
     },
     "weather": {
         // Cache weather results for 30 minutes. Value set in seconds.

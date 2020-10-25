@@ -29,7 +29,11 @@ export class Calendar {
      */
     init = async (): Promise<void> => {
         try {
-            logger.info("Calendar.init")
+            if (!settings.calendar.cacheDuration) {
+                logger.warn("Calendar.init", "No cacheDuration set, calendars output will NOT be cached")
+            } else {
+                logger.info("Calendar.init", `Cache calendars for ${settings.calendar.cacheDuration}s`)
+            }
         } catch (ex) {
             logger.error("Calendar.init", ex)
             throw ex
@@ -140,7 +144,11 @@ export class Calendar {
                 data: cal.toString(),
                 dateUpdated: moment().utc().toDate()
             }
-            await database.set("calendar", cachedCalendar, cacheId)
+
+            // Only save to database if a cacheDUration is set.
+            if (settings.calendar.cacheDuration) {
+                await database.set("calendar", cachedCalendar, cacheId)
+            }
 
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`)
 
