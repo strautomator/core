@@ -4,6 +4,10 @@
     "app": {
         "title": "Strautomator"
     },
+    "calendar": {
+        // Calendars are cached for up to 4 hours.
+        "cacheDuration": 14400
+    },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
         // you might add a default suffix to Firestore collection names.
