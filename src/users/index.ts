@@ -345,6 +345,7 @@ export class Users {
                 userData.recipes = {}
                 userData.recipeCount = 0
                 userData.activityCount = 0
+                userData.urlToken = require("crypto").randomBytes(12).toString("hex")
             }
             // If user exists, update recipe count and gear details.
             else {
@@ -371,15 +372,6 @@ export class Users {
                 for (let shoes of userData.profile.shoes) {
                     const existingShoes = _.find(existingData.profile.shoes, {id: shoes.id})
                     if (existingShoes) _.defaults(shoes, existingShoes)
-                }
-            }
-
-            // TODO! Remove auto urlToken generation sometime in 2021.
-            if (!userData.urlToken) {
-                try {
-                    userData.urlToken = require("crypto").randomBytes(12).toString("hex")
-                } catch (ex) {
-                    logger.error("Users.upsert", profile.id, "Error generating urlToken", ex)
                 }
             }
 
