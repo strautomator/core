@@ -8,8 +8,6 @@
     },
     "calendar": {
         "name": "Strava activities",
-        // Calendars are cached for up to 4 hours.
-        "cacheDuration": 14400,
         // Default TTL (refresh interval) is once every 8 hours.
         "ttl": 28800
     },
@@ -76,8 +74,8 @@
         }
     },
     "maps": {
-        // Cache geolocation results for 20 minutes. Value set in seconds.
-        "cacheDuration": 1200,
+        // Cache geolocation results for 30 minutes. Value set in seconds.
+        "cacheDuration": 1800,
         // Circle color, will also be used as a fill color with half opacity.
         "circleColor": "0x0066CC",
         // Default marker style and color.
@@ -101,9 +99,9 @@
     "oauth": {
         // Alert users after 2 failed refresh tokens.
         "reauthFailedAlert": 2,
-        // Token exchange requests times out in 12 seconds. This applies to all
+        // Token exchange requests times out in 11 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).
-        "tokenTimeout": 10000
+        "tokenTimeout": 11000
     },
     "paypal": {
         "api": {
@@ -207,8 +205,8 @@
             // your server's maximuim timeout, otherwise the processing
             // might be cut before it hasfinished.
             "maxRetry": 1,
-            // Retry failed jobs after 8 seconds by default (value in milliseconds).
-            "retryInterval": 8000
+            // Retry failed jobs after 7 seconds by default (value in milliseconds).
+            "retryInterval": 7000
         }
     },
     "users": {
