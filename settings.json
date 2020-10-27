@@ -8,6 +8,8 @@
     },
     "calendar": {
         "name": "Strava activities",
+        // Calendars are cached for a maximum of 7 days.
+        "maxCacheDuration": 604800,
         // Default TTL (refresh interval) is once every 8 hours.
         "ttl": 28800
     },

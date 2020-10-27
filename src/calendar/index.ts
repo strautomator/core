@@ -32,7 +32,8 @@ export class Calendar {
             if (!settings.calendar.cacheDuration) {
                 logger.warn("Calendar.init", "No cacheDuration set, calendars output will NOT be cached")
             } else {
-                logger.info("Calendar.init", `Cache calendars for ${settings.calendar.cacheDuration}s`)
+                const duration = moment.duration(settings.calendar.cacheDuration, "seconds").humanize()
+                logger.info("Calendar.init", `Cache calendars for ${duration}`)
             }
         } catch (ex) {
             logger.error("Calendar.init", ex)
@@ -81,16 +82,21 @@ export class Calendar {
                 throw new Error(`Minimum accepted "date from" for the calendar is ${minDate.format("l")} (${maxDays} days)`)
             }
 
-            // USe "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
+            // Use "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
             const hash = isDefault ? "default" : crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex")
             const cacheId = `${user.id}-${hash}`
             cachedCalendar = await database.get("calendar", cacheId)
 
-            const expiryDate = moment().utc().subtract(settings.calendar.ttl, "seconds").toDate()
+            // Check cached calendar expiry date (reversed / backwards) and if user has new activity since the last generated output.
+            const expiryDate = moment().utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
+            const maxExpiryDate = moment().utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
+            const updatedTs = cachedCalendar.dateUpdated.valueOf()
+            const notExpired = expiryDate.valueOf() < updatedTs
+            const notChanged = user.dateLastActivity.valueOf() < updatedTs && maxExpiryDate.valueOf() < updatedTs
 
-            // See if cached version of the calendar is still valid. The expiry date here is reversed / backwards.
+            // See if cached version of the calendar is still valid.
             if (cachedCalendar) {
-                if (expiryDate < cachedCalendar.dateUpdated || user.dateLastActivity < cachedCalendar.dateUpdated) {
+                if (notExpired || notChanged) {
                     logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "From cache")
                     return cachedCalendar.data
                 }
