@@ -3,6 +3,7 @@
 import {UserMessage} from "./types"
 import {UserData} from "../users/types"
 import database from "../database"
+import eventManager from "../eventmanager"
 import logger = require("anyhow")
 import moment = require("moment")
 const settings = require("setmeup").settings
@@ -30,6 +31,24 @@ export class Messages {
             logger.error("Messages.init", ex)
             throw ex
         }
+
+        eventManager.on("Users.delete", this.onUserDelete)
+    }
+
+    /**
+     * Delete user messages after it gets deleted from the database.
+     * @param user User that was deleted from the database.
+     */
+    private onUserDelete = async (user: UserData): Promise<void> => {
+        try {
+            const counter = await database.delete("messages", ["userId", "==", user.id])
+
+            if (counter > 0) {
+                logger.info("Messages.onUsersDelete", `User ${user.id} - ${user.displayName}`, `Deleted ${counter} messages`)
+            }
+        } catch (ex) {
+            logger.error("Messages.onUsersDelete", `User ${user.id} - ${user.displayName}`, ex)
+        }
     }
 
     // USER MESSAGES
@@ -41,7 +60,7 @@ export class Messages {
      * @param title Title of the message.
      * @param body Message body.
      */
-    createUserMessage = async (user: UserData, title: string, body: string): Promise<UserMessage> => {
+    createUserMessage = async (user: UserData, title: string, body: string, dateExpiry?: Date): Promise<UserMessage> => {
         try {
             const now = moment.utc().toDate()
             const timestamp = now.valueOf().toString(16)
@@ -54,6 +73,11 @@ export class Messages {
                 title: title,
                 body: body,
                 dateCreated: now
+            }
+
+            // Expiry date was set?
+            if (dateExpiry) {
+                result.dateExpiry = dateExpiry
             }
 
             await database.set("messages", result, id)
@@ -87,12 +111,17 @@ export class Messages {
     // --------------------------------------------------------------------------
 
     /**
-     * Remove old and read messages.
+     * Remove old and expired messages.
      */
     cleanup = async (): Promise<void> => {
         try {
-            const minReadDate = moment().utc().subtract(settings.messages.readDeleteAfterDays, "d")
-            await database.delete("messages", ["dateRead", "<", minReadDate])
+            const minDate = moment().utc().subtract(settings.messages.readDeleteAfterDays, "d")
+            let counter = 0
+
+            counter += await database.delete("messages", ["dateRead", "<", minDate])
+            counter += await database.delete("messages", ["dateExpiry", "<", minDate])
+
+            logger.info("Messages.cleanup", `Deleted ${counter} messages`)
         } catch (ex) {
             logger.error("Messages.cleanup", ex)
         }

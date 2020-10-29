@@ -4,6 +4,7 @@ import {CachedCalendar, CalendarOptions} from "./types"
 import {UserData} from "../users/types"
 import crypto = require("crypto")
 import database from "../database"
+import eventManager from "../eventmanager"
 import strava from "../strava"
 import ical = require("ical-generator")
 import logger = require("anyhow")
@@ -39,13 +40,31 @@ export class Calendar {
             logger.error("Calendar.init", ex)
             throw ex
         }
+
+        eventManager.on("Users.delete", this.onUserDelete)
+    }
+
+    /**
+     * Delete user calendars after it gets deleted from the database.
+     * @param user User that was deleted from the database.
+     */
+    private onUserDelete = async (user: UserData): Promise<void> => {
+        try {
+            const counter = await database.delete("calendar", ["userId", "==", user.id])
+
+            if (counter > 0) {
+                logger.info("Calendar.onUsersDelete", `User ${user.id} - ${user.displayName}`, `Deleted ${counter} calendars`)
+            }
+        } catch (ex) {
+            logger.error("Calendar.onUsersDelete", `User ${user.id} - ${user.displayName}`, ex)
+        }
     }
 
     // CALENDAR METHODS
     // --------------------------------------------------------------------------
 
     /**
-     * Generate the activities calendar and return its iCal string representation.
+     * Generate the Strautomator calendar and return its iCal string representation.
      * @param user The user requesting the calendar.
      * @param options Calendar generation options.
      */
@@ -149,6 +168,7 @@ export class Calendar {
             // Send calendar output to the database.
             cachedCalendar = {
                 id: cacheId,
+                userId: user.id,
                 data: cal.toString(),
                 dateUpdated: moment().utc().toDate()
             }

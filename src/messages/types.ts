@@ -16,4 +16,6 @@ export interface UserMessage {
     dateCreated: Date
     /** Date message was read by the user. */
     dateRead?: Date
+    /** Expiry date (message won't show after that date). */
+    dateExpiry?: Date
 }

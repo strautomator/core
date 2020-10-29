@@ -6,6 +6,8 @@
 export interface CachedCalendar {
     /** Cached calendar ID. */
     id: string
+    /** User ID. */
+    userId: string
     /** The calendar data (as .ics string). */
     data: string
     /** Date when calendar was last updated. */
