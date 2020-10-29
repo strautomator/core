@@ -148,12 +148,14 @@ export class Calendar {
                 if (options.sportTypes && options.sportTypes.indexOf(a.type) < 0) continue
                 if (options.excludeCommutes && a.commute) continue
 
+                const icon = strava.getActivityIcon(a)
+
                 // Add activity to the calendar as an event.
                 const event = cal.createEvent({
                     uid: a.id,
                     start: a.dateStart,
                     end: a.dateEnd,
-                    summary: a.name,
+                    summary: `${icon} ${a.name}`,
                     description: a.commute ? `(Commute) ${a.description}` : a.description,
                     location: a.locationEnd ? a.locationEnd.join(",") : "",
                     url: `https://www.strava.com/activities/${a.id}`

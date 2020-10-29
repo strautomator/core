@@ -1,6 +1,6 @@
 // Strautomator Core: Strava
 
-import {StravaTokens} from "./types"
+import {StravaActivity, StravaTokens} from "./types"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
@@ -118,6 +118,57 @@ export class Strava {
      */
     revokeToken = async (userId: string, accessToken: string, refreshToken?: string): Promise<void> => {
         return await api.revokeToken(userId, accessToken, refreshToken)
+    }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Return activity icon (emoji) based on its type.
+     * @param activity The relevant Strava activity.
+     */
+    getActivityIcon = (activity: StravaActivity): string => {
+        switch (activity.type) {
+            case "Run":
+            case "VirtualRun":
+                return "🏃"
+            case "Walk":
+                return "🚶"
+            case "Ride":
+            case "EBikeRide":
+            case "VirtualRide":
+                return "🚲"
+            case "Swim":
+                return "🏊"
+            case "AlpineSki":
+            case "BackcountrySki":
+            case "NordicSki":
+                return "⛷"
+            case "Snowboard":
+                return "🏂"
+            case "IceSkate":
+            case "Snowshoe":
+                return "⛸"
+            case "Surfing":
+            case "Windsurf":
+                return "🏄"
+            case "Canoeing":
+                return "🛶"
+            case "Golf":
+                return "🏌"
+            case "Soccer":
+                return "⚽"
+            case "Crossfit":
+            case "Elliptical":
+            case "WeightTraining":
+                return "🏋"
+            case "Yoga":
+                return "🧘"
+            case "Wheelchair":
+                return "🧑‍🦽"
+            default:
+                return "👤"
+        }
     }
 }
 
