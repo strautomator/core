@@ -149,6 +149,7 @@ export class Calendar {
                 if (options.excludeCommutes && a.commute) continue
 
                 const icon = strava.getActivityIcon(a)
+                const description = a.commute ? `(Commute) ${a.description}` : a.description
 
                 // Add activity to the calendar as an event.
                 const event = cal.createEvent({
@@ -156,13 +157,14 @@ export class Calendar {
                     start: a.dateStart,
                     end: a.dateEnd,
                     summary: `${icon} ${a.name}`,
-                    description: a.commute ? `(Commute) ${a.description}` : a.description,
-                    location: a.locationEnd ? a.locationEnd.join(",") : "",
+                    description: description,
+                    htmlDescription: description,
                     url: `https://www.strava.com/activities/${a.id}`
                 })
 
                 // Geo location available?
                 if (a.locationEnd) {
+                    event.location(a.locationEnd.join(", "))
                     event.geo({lat: a.locationEnd[0], lon: a.locationEnd[1]})
                 }
             }
