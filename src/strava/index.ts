@@ -149,11 +149,19 @@ export class Strava {
             case "IceSkate":
             case "Snowshoe":
                 return "⛸"
+            case "Skateboard":
+                return "🛹"
+            case "RockClimbing":
+                return "🧗"
             case "Surfing":
             case "Windsurf":
                 return "🏄"
             case "Canoeing":
                 return "🛶"
+            case "Rowing":
+                return "🚣"
+            case "Sail":
+                return "⛵"
             case "Golf":
                 return "🏌"
             case "Soccer":
