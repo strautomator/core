@@ -65,6 +65,8 @@ export interface StravaActivity {
     temperature?: number
     /** Device name. */
     device?: string
+    /** Was the activity created manually? */
+    manual?: boolean
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
     /** Was a link to Strautomator added to the activity (internal use only)? */
@@ -102,6 +104,7 @@ export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
         calories: data.calories,
         temperature: data.average_temp,
         device: data.device_name,
+        manual: data.manual,
         updatedFields: []
     }
 
