@@ -246,7 +246,8 @@ export class Database {
     }
 
     /**
-     * Delete documents from the database, based on the passed search query.
+     * Delete documents from the database, based on the passed search query,
+     * and returns number of deleted documents.
      * @param collection Name of the collection.
      * @param queryOrId ID or query in the format [property, operator, value].
      */
