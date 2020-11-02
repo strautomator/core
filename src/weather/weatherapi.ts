@@ -115,7 +115,7 @@ export class WeatherAPI implements WeatherProvider {
                     const startData = this.filterData(startResult, activity.dateStart)
                     weather.start = this.toWeatherSummary(startData, activity.dateStart, preferences)
                 } catch (ex) {
-                    logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
+                    logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}, weather at start`, ex.message || ex)
                 }
             }
 
@@ -126,7 +126,7 @@ export class WeatherAPI implements WeatherProvider {
                     const endData = this.filterData(endResult, activity.dateStart)
                     weather.end = this.toWeatherSummary(endData, activity.dateEnd, preferences)
                 } catch (ex) {
-                    logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)
+                    logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}, weather at end`, ex.message || ex)
                 }
             }
 

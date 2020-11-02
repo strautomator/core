@@ -99,7 +99,12 @@ export class DarkSky implements WeatherProvider {
             if (activity.dateStart && activity.locationStart) {
                 try {
                     const startResult: any = await axiosRequest({url: getUrl(activity.locationStart, activity.dateStart)})
-                    weather.start = this.toWeatherSummary(startResult, activity.dateStart, preferences)
+
+                    if (startResult && startResult.currently) {
+                        weather.start = this.toWeatherSummary(startResult, activity.dateStart, preferences)
+                    } else {
+                        logger.warn("DarkSky.getActivityWeather", `Activity ${activity.id}`, `No weather data for start location ${activity.locationStart.join(", ")}`)
+                    }
                 } catch (ex) {
                     logger.error("DarkSky.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
                 }
@@ -109,7 +114,12 @@ export class DarkSky implements WeatherProvider {
             if (activity.dateEnd && activity.locationEnd) {
                 try {
                     const endResult: any = await axiosRequest({url: getUrl(activity.locationEnd, activity.dateEnd)})
-                    weather.end = this.toWeatherSummary(endResult, activity.dateEnd, preferences)
+
+                    if (endResult && endResult.currently) {
+                        weather.end = this.toWeatherSummary(endResult, activity.dateEnd, preferences)
+                    } else {
+                        logger.warn("DarkSky.getActivityWeather", `Activity ${activity.id}`, `No weather data for end location ${activity.locationEnd.join(", ")}`)
+                    }
                 } catch (ex) {
                     logger.error("DarkSky.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)
                 }
@@ -131,14 +141,18 @@ export class DarkSky implements WeatherProvider {
 
         const tempUnit = preferences.weatherUnit ? preferences.weatherUnit.toUpperCase() : "C"
         const windUnit = preferences.weatherUnit == "f" ? " mph" : " m/s"
+        const temperature = data.currently.temperature ? data.currently.temperature.toFixed(0) + "°" + tempUnit : null
+        const humidity = data.currently ? (data.currently.humidity * 100).toFixed(0) + "%" : null
+        const pressure = data.currently.pressure ? data.currently.pressure.toFixed(0) + " hPa" : null
+        const windSpeed = data.currently.windSpeed ? data.currently.windSpeed.toFixed(1) + windUnit : null
 
         const result: WeatherSummary = {
             summary: data.currently.summary,
             iconText: data.currently.icon,
-            temperature: data.currently.temperature.toFixed(0) + "°" + tempUnit,
-            humidity: (data.currently.humidity * 100).toFixed(0) + "%",
-            pressure: data.currently.pressure.toFixed(0) + " hPa",
-            windSpeed: data.currently.windSpeed.toFixed(1) + windUnit,
+            temperature: temperature,
+            humidity: humidity,
+            pressure: pressure,
+            windSpeed: windSpeed,
             windBearing: data.currently.windBearing,
             precipType: data.currently.precipType || null
         }

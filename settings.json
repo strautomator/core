@@ -220,6 +220,8 @@
     "weather": {
         // Cache weather results for 30 minutes. Value set in seconds.
         "cacheDuration": 1800,
+        // Weather history can only go as far back as 90 days by default.
+        "maxAgeDays": 90,
         "climacell": {
             // Base URL to the ClimaCell weather API.
             "baseUrl": "https://api.climacell.co/v3/weather/",

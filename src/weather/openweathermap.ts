@@ -81,8 +81,11 @@ export class OpenWeatherMap implements WeatherProvider {
             if (!activity.locationEnd) {
                 throw new Error(`Activity ${activity.id} has no location data`)
             }
-            if (moment.utc(activity.dateEnd).unix() < moment().subtract(1, "h").unix()) {
-                throw new Error(`Activity ${activity.id} ended more than 1 hour ago, OpenWeatherMap only supports realtime weather`)
+
+            const endDate = moment.utc(activity.dateEnd)
+
+            if (endDate.unix() < moment().subtract(1, "h").unix()) {
+                throw new Error(`Activity ${activity.id} ended more than 1 hour ago - ${endDate.format("lll")}, OpenWeatherMap only supports realtime weather`)
             }
 
             const weather: ActivityWeather = {provider: this.name}

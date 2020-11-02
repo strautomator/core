@@ -11,6 +11,7 @@ import weatherbit from "./weatherbit"
 import _ = require("lodash")
 import cache = require("bitecache")
 import logger = require("anyhow")
+import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
@@ -97,8 +98,14 @@ export class Weather {
             if (!activity.locationEnd && !activity.locationEnd) {
                 throw new Error(`No location data for activity ${activity.id}`)
             }
-            if (!preferences) preferences = {}
 
+            // We can only go back as far as 3 months.
+            if (activity.dateEnd && moment.utc(activity.dateEnd).unix() < moment().subtract(settings.weather.maxAgeDays, "days").unix()) {
+                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Older than ${settings.weather.maxAgeDays} days, will not fetch weather`)
+                return null
+            }
+
+            if (!preferences) preferences = {}
             let weather: ActivityWeather
 
             // Default provider is darksky.
