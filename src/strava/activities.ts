@@ -291,7 +291,12 @@ export class StravaActivities {
             try {
                 activity = await this.getActivity(user, activityId)
             } catch (ex) {
-                throw new Error(`Activity ${activityId} not found`)
+                if (ex.response && ex.response.status == 404) {
+                    logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} not found`)
+                    return null
+                }
+
+                throw ex
             }
 
             // Get recipes, having the defaults first and then sorted by order.
