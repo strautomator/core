@@ -135,6 +135,7 @@ export class Calendar {
             const domain = url.parse(settings.app.url).hostname
             const prodId = {company: "Devv", product: "Strautomator", language: "EN"}
             const calUrl = `${settings.app.url}calendar/${user.urlToken}`
+            const ttl = settings.calendar.ttl
 
             // Create ical container.
             const icalOptions: ical.CalendarData = {
@@ -142,7 +143,7 @@ export class Calendar {
                 domain: domain,
                 prodId: prodId,
                 url: calUrl,
-                ttl: settings.calendar.ttl
+                ttl: user.isPro ? ttl : ttl * 2
             }
             const cal = ical(icalOptions)
 
