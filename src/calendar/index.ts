@@ -1,7 +1,9 @@
 // Strautomator Core: Calendar
 
 import {CachedCalendar, CalendarOptions} from "./types"
+import {recipePropertyList} from "../recipes/lists"
 import {UserData} from "../users/types"
+import _ = require("lodash")
 import crypto = require("crypto")
 import database from "../database"
 import eventManager from "../eventmanager"
@@ -75,13 +77,17 @@ export class Calendar {
         try {
             let isDefault = false
 
-            // Check and set default options.
             if (!options) {
                 options = {}
-            } else if (!options.sportTypes || options.sportTypes.length == 0) {
-                options.sportTypes = null
             }
 
+            // Check and set default options.
+            if (!options.activityFields || options.activityFields.length == 0) {
+                options.activityFields = settings.calendar.activityFields
+            }
+            if (!options.sportTypes || options.sportTypes.length == 0) {
+                options.sportTypes = null
+            }
             if (!options.excludeCommutes && !options.sportTypes) {
                 isDefault = true
             }
@@ -106,15 +112,15 @@ export class Calendar {
             const cacheId = `${user.id}-${hash}`
             cachedCalendar = await database.get("calendar", cacheId)
 
-            // Check cached calendar expiry date (reversed / backwards) and if user has new activity since the last generated output.
-            const expiryDate = moment().utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
-            const maxExpiryDate = moment().utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
-            const updatedTs = cachedCalendar.dateUpdated.valueOf()
-            const notExpired = expiryDate.valueOf() < updatedTs
-            const notChanged = user.dateLastActivity.valueOf() < updatedTs && maxExpiryDate.valueOf() < updatedTs
-
             // See if cached version of the calendar is still valid.
+            // Check cached calendar expiry date (reversed / backwards) and if user has new activity since the last generated output.
             if (cachedCalendar) {
+                const expiryDate = moment().utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
+                const maxExpiryDate = moment().utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
+                const updatedTs = cachedCalendar.dateUpdated.valueOf()
+                const notExpired = expiryDate.valueOf() < updatedTs
+                const notChanged = user.dateLastActivity.valueOf() < updatedTs && maxExpiryDate.valueOf() < updatedTs
+
                 if (notExpired || notChanged) {
                     logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "From cache")
                     return cachedCalendar.data
@@ -149,7 +155,33 @@ export class Calendar {
                 if (options.excludeCommutes && a.commute) continue
 
                 const icon = strava.getActivityIcon(a)
-                const description = a.commute ? `(Commute) ${a.description}` : a.description
+                const details = []
+
+                if (a.commute) {
+                    details.push("Commute")
+                }
+
+                for (let field of options.activityFields) {
+                    if (a[field]) {
+                        const fieldInfo = _.find(recipePropertyList, {value: field})
+                        const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
+                        let suffix
+
+                        // Get suffix for field values.
+                        if (fieldInfo) {
+                            if (user.profile.units == "imperial" && fieldInfo.impSuffix) {
+                                suffix = fieldInfo.impSuffix
+                            } else if (user.profile.units == "metric" && fieldInfo.suffix) {
+                                suffix = fieldInfo.suffix
+                            }
+                        }
+
+                        // Suffix defaults to empty string.
+                        if (!suffix) suffix = ""
+
+                        details.push(`${fieldName}: ${a[field]}${suffix}`)
+                    }
+                }
 
                 // Add activity to the calendar as an event.
                 const event = cal.createEvent({
@@ -157,8 +189,8 @@ export class Calendar {
                     start: a.dateStart,
                     end: a.dateEnd,
                     summary: `${icon} ${a.name}`,
-                    description: description,
-                    htmlDescription: description,
+                    description: details.join("\n"),
+                    htmlDescription: details.join("<br>"),
                     url: `https://www.strava.com/activities/${a.id}`
                 })
 

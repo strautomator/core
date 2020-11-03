@@ -22,6 +22,8 @@ export interface CalendarOptions {
     dateFrom?: Date
     /** Exclude commutes? Default is false. */
     excludeCommutes?: boolean
+    /** Which activity fields should be added to the events? */
+    activityFields?: string[]
     /** Filter only specific sport types. Default is all. */
     sportTypes?: string[]
 }

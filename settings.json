@@ -7,6 +7,9 @@
         "hashtag": "#strautomator.com"
     },
     "calendar": {
+        // Default activity fields to be added to events.
+        "activityFields": ["distance", "elevationGain", "speedAvg", "movingTime", "hrAvg", "wattsAvg", "calories", "description"],
+        // Calendar name.
         "name": "Strava activities",
         // Calendars are cached for a maximum of 7 days.
         "maxCacheDuration": 604800,
