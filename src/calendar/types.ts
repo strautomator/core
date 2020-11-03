@@ -20,7 +20,7 @@ export interface CachedCalendar {
 export interface CalendarOptions {
     /** Which activity fields should be added to the events? */
     activityFields?: string[]
-    /** Starting date, defaults to 1 year on PRO, 2 weeks on free accounts. */
+    /** Starting date, defaults to the maxCalendarDays on PRO / free accounts. */
     dateFrom?: Date
     /** Exclude commutes? Default is false. */
     excludeCommutes?: boolean
