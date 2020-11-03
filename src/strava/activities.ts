@@ -39,19 +39,37 @@ export class StravaActivities {
         const logQuery = arrLogQuery.join(", ")
 
         try {
-            // Default query options.
-            if (!query.per_page) {
-                query.per_page = 200
-            }
-
-            // Fetch user activities from Strava.
             const tokens = user.stravaTokens
-            const data = await api.get(tokens, "athlete/activities", query)
             const activities: StravaActivity[] = []
 
-            // Iterate and transform activities from raw strava data to StravaActivity models.
-            for (let activity of data) {
-                activities.push(toStravaActivity(activity, user.profile))
+            // Default query options.
+            if (!query.per_page) query.per_page = 200
+            if (!query.page) query.page = 1
+
+            // Fetch activities from Strava, repescting the pagination.
+            while (query.page) {
+                logger.debug("Strava.getActivities", `User ${user.id} ${user.displayName}`, JSON.stringify(query, null, 0))
+
+                const data = await api.get(tokens, "athlete/activities", query)
+
+                // No data returned? Stop here.
+                if (!data || data.length == 0) {
+                    query.page = false
+                    break
+                }
+
+                // Iterate and transform activities from raw strava data to StravaActivity models.
+                for (let activity of data) {
+                    activities.push(toStravaActivity(activity, user.profile))
+                }
+
+                // If count is the same as the page size, consider it might have more and increment the page.
+                if (data.length >= query.per_page) {
+                    query.page++
+                } else {
+                    query.page = false
+                    break
+                }
             }
 
             logger.info("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Got ${activities.length} activities`)
