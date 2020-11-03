@@ -62,9 +62,10 @@ export class Messages {
      */
     createUserMessage = async (user: UserData, title: string, body: string, dateExpiry?: Date): Promise<UserMessage> => {
         try {
-            const now = moment.utc().toDate()
+            const now = moment().toDate()
             const timestamp = now.valueOf().toString(16)
-            const id = `${user.id}-${timestamp}`
+            const random = Math.floor(Math.random() * Math.floor(9))
+            const id = `${user.id}-${timestamp}${random}`
 
             // Create message object to be saved on the database.
             const result: UserMessage = {
@@ -72,17 +73,24 @@ export class Messages {
                 userId: user.id,
                 title: title,
                 body: body,
+                read: false,
                 dateCreated: now
             }
+
+            let expiryLog
 
             // Expiry date was set?
             if (dateExpiry) {
                 result.dateExpiry = dateExpiry
+                expiryLog = `Expires on ${moment(dateExpiry).utc().format("lll")}`
+            } else {
+                result.dateExpiry = moment().utc().add(settings.messages.defaultExpireDays, "days").toDate()
+                expiryLog = `Expires in ${settings.messages.defaultExpireDays} days`
             }
 
             await database.set("messages", result, id)
 
-            logger.info("Messages.createUserMessage", `User ${user.id} ${user.displayName}`, title)
+            logger.info("Messages.createUserMessage", `User ${user.id} ${user.displayName}`, title, expiryLog)
             return result
         } catch (ex) {
             logger.error("Messages.createUserMessage", `User ${user.id} ${user.displayName}`, title, ex)
@@ -92,13 +100,21 @@ export class Messages {
     /**
      * Get list of messages for the specified user.
      * @param user The user to get messages for.
-     * @param all If true, will get also read messages, default is false.
+     * @param all If true, will get also read and expired messages, default is false.
      */
     getUserMessages = async (user: UserData, all?: boolean): Promise<UserMessage[]> => {
         try {
-            if (!all) all = false
+            const now = new Date()
+            const queries: any[] = [["userId", "==", user.id]]
 
-            const result = await database.search("messages", ["userId", "==", user.id])
+            // Not all? Filter unread and non-expired messages.
+            if (!all) {
+                queries.push(["read", "==", false])
+                queries.push(["dateExpiry", ">", now])
+            }
+
+            // Fetch messages from the database.
+            const result = await database.search("messages", queries)
 
             logger.info("Messages.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, `Got ${result.length} messages`)
             return result
@@ -115,7 +131,7 @@ export class Messages {
      */
     cleanup = async (): Promise<void> => {
         try {
-            const minDate = moment().utc().subtract(settings.messages.readDeleteAfterDays, "d")
+            const minDate = moment().utc().subtract(settings.messages.readDeleteAfterDays, "days")
             let counter = 0
 
             counter += await database.delete("messages", ["dateRead", "<", minDate])

@@ -12,6 +12,8 @@ export interface UserMessage {
     title: string
     /** Body of the message. */
     body: string
+    /** Was the message read? */
+    read: boolean
     /** Date message was created. */
     dateCreated: Date
     /** Date message was read by the user. */

@@ -98,8 +98,10 @@
         }
     },
     "messages": {
-        // Delete read user messages after 7 days.
-        "readDeleteAfterDays": 7
+        // Messages will auto expire after 1 year.
+        "defaultExpireDays": 365,
+        // Delete read user messages after 30 days.
+        "readDeleteAfterDays": 30
     },
     "oauth": {
         // Alert users after 2 failed refresh tokens.
