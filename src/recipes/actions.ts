@@ -1,11 +1,12 @@
 // Strautomator Core: Recipe Action methods
 
-import {recipePropertyList} from "./lists"
+import {recipePropertyList, recipeActionList} from "./lists"
 import {RecipeAction, RecipeActionType, RecipeData} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import mailer from "../mailer"
+import messages from "../messages"
 import weather from "../weather"
 import _ = require("lodash")
 import jaul = require("jaul")
@@ -19,6 +20,14 @@ const settings = require("setmeup").settings
 const failedAction = (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction, error: any): void => {
     logger.error("Recipes.failedAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, error)
 
+    const errorMessage = error.message || error.description || error
+    const actionType = _.find(recipeActionList, {value: action.type}).text
+    const actionValue = action.friendlyValue || action.value
+    const body = `There was an issue processing the activity ID ${activity.id}. Action: ${actionType} - ${actionValue}. ${errorMessage.toString()}`
+
+    // Create a message to the user statin the failed action.
+    messages.createUserMessage(user, `Failed automation: ${recipe.title}`, body)
+
     // If user has an email set, alert about the issue.
     if (user.email) {
         const options = {
@@ -31,7 +40,7 @@ const failedAction = (user: UserData, activity: StravaActivity, recipe: RecipeDa
                 activityId: activity.id,
                 activityDate: moment(activity.dateStart).format("ll"),
                 action: action.friendlyValue,
-                errorMessage: error.message ? error.message : error.toString()
+                errorMessage: errorMessage.toString()
             }
         }
 
