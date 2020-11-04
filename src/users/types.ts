@@ -32,7 +32,7 @@ export interface UserData {
     /** User preferences. */
     preferences?: UserPreferences
     /** Subscription details (for PRO accounts). */
-    subscription?: UserSubscription
+    subscription?: UserSubscriptionRef
     /** Custom URL token used to get the calendar. */
     urlToken?: string
     /** Last login date (UTC). */
@@ -72,9 +72,9 @@ export interface UserPreferences {
 }
 
 /**
- * User subscription (PRO) summary.
+ * User subscription (PRO) reference.
  */
-export interface UserSubscription {
+export interface UserSubscriptionRef {
     /** Subscription ID. */
     id: string
     /** Subscription source. */

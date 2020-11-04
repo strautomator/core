@@ -80,6 +80,7 @@ export * from "./recipes/types"
 export * from "./strava/types"
 export * from "./users/types"
 export * from "./calendar/types"
+export * from "./paypal/types"
 
 // Flag if the server is shutting down.
 let terminating = false

@@ -4,6 +4,7 @@ import {UserData} from "./types"
 import {PayPalSubscription} from "../paypal/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 import {encryptData} from "../database/crypto"
+import userSubscriptions from "./subscriptions"
 import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
@@ -21,6 +22,11 @@ export class Users {
     static get Instance() {
         return this._instance || (this._instance = new this())
     }
+
+    /**
+     * User subscriptions.
+     */
+    subscriptions = userSubscriptions
 
     // INIT
     // --------------------------------------------------------------------------
