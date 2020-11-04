@@ -55,6 +55,45 @@ export class Messages {
     // --------------------------------------------------------------------------
 
     /**
+     * Get a message by its ID.
+     * @param id The message ID.
+     */
+    getById = async (id: string): Promise<UserMessage> => {
+        try {
+            return await database.get("messages", id)
+        } catch (ex) {
+            logger.error("Messages.getById", id, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get list of messages for the specified user.
+     * @param user The user to get messages for.
+     * @param all If true, will get also read and expired messages, default is false.
+     */
+    getUserMessages = async (user: UserData, all?: boolean): Promise<UserMessage[]> => {
+        try {
+            const now = new Date()
+            const queries: any[] = [["userId", "==", user.id]]
+
+            // Not all? Filter unread and non-expired messages.
+            if (!all) {
+                queries.push(["read", "==", false])
+                queries.push(["dateExpiry", ">", now])
+            }
+
+            // Fetch messages from the database.
+            const result = await database.search("messages", queries)
+
+            logger.info("Messages.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, `Got ${result.length} messages`)
+            return result
+        } catch (ex) {
+            logger.error("Messages.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, ex)
+        }
+    }
+
+    /**
      * Create a message to the speicified user.
      * @param user The user to get messages for.
      * @param title Title of the message.
@@ -98,28 +137,31 @@ export class Messages {
     }
 
     /**
-     * Get list of messages for the specified user.
-     * @param user The user to get messages for.
-     * @param all If true, will get also read and expired messages, default is false.
+     * Mark a message as read. Will return false if message was already read.
+     * @param id The message ID.
      */
-    getUserMessages = async (user: UserData, all?: boolean): Promise<UserMessage[]> => {
+    markAsRead = async (id: string): Promise<boolean> => {
         try {
-            const now = new Date()
-            const queries: any[] = [["userId", "==", user.id]]
+            const msg: UserMessage = await database.get("messages", id)
 
-            // Not all? Filter unread and non-expired messages.
-            if (!all) {
-                queries.push(["read", "==", false])
-                queries.push(["dateExpiry", ">", now])
+            if (!msg) {
+                throw new Error(`Message not found`)
             }
 
-            // Fetch messages from the database.
-            const result = await database.search("messages", queries)
+            // Message was already marked as read? Return false.
+            if (msg.read) {
+                return false
+            }
 
-            logger.info("Messages.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, `Got ${result.length} messages`)
-            return result
+            msg.dateRead = new Date()
+            msg.read = true
+
+            // Mark as read on the database.
+            await database.merge("messages", {id: msg.id, dateRead: msg.dateRead, read: msg.read})
+            return true
         } catch (ex) {
-            logger.error("Messages.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, ex)
+            logger.error("Messages.markAsRead", id, ex)
+            throw ex
         }
     }
 
