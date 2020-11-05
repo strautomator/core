@@ -220,7 +220,9 @@
         // Consider users idle if they had no processed activities for more than 2 months.
         "idleDays": 60,
         // Consider users dormant (no recipes, no gearwear, no activites) after 90 days.
-        "dormantDays": 90
+        "dormantDays": 90,
+        // Consider user subscriptions dangling (pending approval) after 5 days.
+        "danglingDays": 5
     },
     "weather": {
         // Cache weather results for 30 minutes. Value set in seconds.
