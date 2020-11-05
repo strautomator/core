@@ -72,7 +72,7 @@ export class Messages {
      * @param user The user to get messages for.
      * @param all If true, will get also read and expired messages, default is false.
      */
-    getUserMessages = async (user: UserData, all?: boolean): Promise<UserMessage[]> => {
+    getForUser = async (user: UserData, all?: boolean): Promise<UserMessage[]> => {
         try {
             const now = new Date()
             const queries: any[] = [["userId", "==", user.id]]
@@ -90,6 +90,7 @@ export class Messages {
             return result
         } catch (ex) {
             logger.error("Messages.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, ex)
+            throw ex
         }
     }
 
@@ -133,6 +134,7 @@ export class Messages {
             return result
         } catch (ex) {
             logger.error("Messages.createUserMessage", `User ${user.id} ${user.displayName}`, title, ex)
+            throw ex
         }
     }
 
