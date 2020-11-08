@@ -98,6 +98,8 @@
         }
     },
     "notifications": {
+        // Cache notification results for up to 10 seconds.
+        "cacheDuration": 10,
         // Messages will auto expire after 6 months.
         "defaultExpireDays": 180,
         // Delete read user messages after 30 days.

@@ -4,6 +4,7 @@ import {BaseNotification, FailedRecipeNotification, GearWearNotification} from "
 import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
+import cache = require("bitecache")
 import logger = require("anyhow")
 import moment = require("moment")
 const settings = require("setmeup").settings
@@ -26,6 +27,7 @@ export class Notifications {
      */
     init = async (): Promise<void> => {
         try {
+            cache.setup("notifications", settings.notifications.cacheDuration)
             logger.info("Notifications.init")
         } catch (ex) {
             logger.error("Notifications.init", ex)
@@ -76,6 +78,7 @@ export class Notifications {
         try {
             const now = new Date()
             const queries: any[] = [["userId", "==", user.id]]
+            const cacheId = all ? "all" : "unread"
 
             // Not all? Filter unread and non-expired notifications.
             if (!all) {
@@ -83,8 +86,13 @@ export class Notifications {
                 queries.push(["dateExpiry", ">", now])
             }
 
+            // Notifications stored on cache?
+            const cached = cache.get("notifications", `${user.id}-${cacheId}`)
+            if (cached) return cached
+
             // Fetch notifications from the database.
             const result = await database.search("notifications", queries)
+            cache.set("notifications", `${user.id}-${all}`, result)
 
             logger.info("Notifications.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, `Got ${result.length} notification(s)`)
             return result
