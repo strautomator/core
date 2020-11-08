@@ -64,7 +64,7 @@ export const recipes: Recipes = Recipes.Instance
 import {GearWear} from "./gearwear"
 export const gearwear: GearWear = GearWear.Instance
 import {Notifications} from "./notifications"
-export const messages: Notifications = Notifications.Instance
+export const notifications: Notifications = Notifications.Instance
 import {Calendar} from "./calendar"
 export const calendar: Calendar = Calendar.Instance
 import {FAQ} from "./faq"
@@ -138,7 +138,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, gearwear, messages, calendar, faq]) {
+    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, gearwear, notifications, calendar, faq]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 
