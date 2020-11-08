@@ -204,16 +204,7 @@
             // as load balancing is not done on a perfect 50/50 level.
             "maxPerMinute": 30,
             // Default page size 150, max is 200.
-            "pageSize": 150,
-            // How many times should Strautomator retry failed jobs, for instance
-            // when updating user activities on Strava? After last fail, it will
-            // save the job details to the database for post processing.
-            // Please note that the retryInterval must be a bit less than
-            // your server's maximuim timeout, otherwise the processing
-            // might be cut before it hasfinished.
-            "maxRetry": 1,
-            // Retry failed jobs after 7 seconds by default (value in milliseconds).
-            "retryInterval": 7000
+            "pageSize": 150
         }
     },
     "users": {
