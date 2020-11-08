@@ -97,9 +97,9 @@
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
         }
     },
-    "messages": {
-        // Messages will auto expire after 1 year.
-        "defaultExpireDays": 365,
+    "notifications": {
+        // Messages will auto expire after 6 months.
+        "defaultExpireDays": 180,
         // Delete read user messages after 30 days.
         "readDeleteAfterDays": 30
     },
