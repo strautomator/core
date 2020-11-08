@@ -72,6 +72,12 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             }
         }
 
+        // Empty value? Stop here.
+        if (processedValue === null || processedValue.toString().trim() === "") {
+            logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Processed action value is empty")
+            return
+        }
+
         // Set the activity name?
         if (action.type == RecipeActionType.Name) {
             activity.name = processedValue
@@ -140,13 +146,15 @@ export const commuteAction = async (user: UserData, activity: StravaActivity, re
  */
 export const gearAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
     try {
-        let gear: StravaGear
-
-        if (activity.type == "Ride" || activity.type == "VirtualRide" || activity.type == "EBikeRide") {
-            gear = _.find(user.profile.bikes, {id: action.value})
-        } else {
-            gear = _.find(user.profile.shoes, {id: action.value})
+        const getGear = (): StravaGear => {
+            if (activity.type == "Ride" || activity.type == "VirtualRide" || activity.type == "EBikeRide") {
+                return _.find(user.profile.bikes, {id: action.value})
+            } else {
+                return _.find(user.profile.shoes, {id: action.value})
+            }
         }
+
+        let gear: StravaGear = getGear()
 
         if (!gear) {
             throw new Error(`Gear ID ${action.value} not found`)

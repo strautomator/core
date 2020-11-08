@@ -114,9 +114,10 @@ export class Notifications {
             notification.id = `${user.id}-${timestamp}${random}`
             notification.userId = user.id
             notification.dateCreated = now
+            notification.read = false
 
             // Expiry date not set? Use the default based on settings.
-            if (notification.dateExpiry) {
+            if (!notification.dateExpiry) {
                 notification.dateExpiry = moment().utc().add(settings.notifications.defaultExpireDays, "days").toDate()
             } else {
                 logDetails.push(`Expires ${moment(notification.dateExpiry).utc().format("lll")}`)
@@ -136,29 +137,35 @@ export class Notifications {
 
     /**
      * Mark a notification as read. Will return false if notification was already read.
+     * @param user The user (owner) of the notification.
      * @param id The notification ID.
      */
-    markAsRead = async (id: string): Promise<boolean> => {
+    markAsRead = async (user: UserData, id: string): Promise<boolean> => {
         try {
-            const msg: BaseNotification = await database.get("notifications", id)
+            const notification: BaseNotification = await database.get("notifications", id)
 
-            if (!msg) {
-                throw new Error(`Message not found`)
+            if (!notification) {
+                throw new Error("Message not found")
+            }
+
+            // Make sure notification is from the same user.
+            if (user.id != notification.userId) {
+                throw new Error("Access denied")
             }
 
             // Message was already marked as read? Return false.
-            if (msg.read) {
-                const dateRead = moment(msg.dateRead).utc().format("lll")
+            if (notification.read) {
+                const dateRead = moment(notification.dateRead).utc().format("lll")
                 logger.warn("Notifications.markAsRead", id, `Already read at ${dateRead}`)
                 return false
             }
 
-            msg.dateRead = new Date()
-            msg.read = true
+            notification.dateRead = new Date()
+            notification.read = true
 
             // Mark as read on the database.
-            await database.merge("notifications", {id: msg.id, dateRead: msg.dateRead, read: msg.read})
-            logger.warn("Notifications.markAsRead", id, msg.title)
+            await database.merge("notifications", {id: notification.id, dateRead: notification.dateRead, read: notification.read})
+            logger.warn("Notifications.markAsRead", id, notification.title)
 
             return true
         } catch (ex) {

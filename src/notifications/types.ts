@@ -12,6 +12,8 @@ export interface BaseNotification {
     title: string
     /** Body of the notification. */
     body: string
+    /** Link associated with the notification. */
+    href?: string
     /** Was the notification read? */
     read: boolean
     /** Date notification was created. */

@@ -7,6 +7,7 @@ import {UserData} from "../users/types"
 import stravaAthletes from "./athletes"
 import api from "./api"
 import database from "../database"
+import notifications from "../notifications"
 import recipes from "../recipes"
 import users from "../users"
 import _ = require("lodash")
@@ -280,11 +281,13 @@ export class StravaActivities {
      * @param activityId The activity's unique ID.
      * @param retryCount How many times it tried to process the activity.
      */
-    processActivity = async (user: UserData, activityId: number, retryCount?: number): Promise<StravaProcessedActivity> => {
-        logger.debug("Strava.processActivity", user.id, activityId, retryCount)
+    processActivity = async (user: UserData, activityId: number): Promise<StravaProcessedActivity> => {
+        logger.debug("Strava.processActivity", user.id, activityId)
+
+        let saveError
+        let activity: StravaActivity
 
         try {
-            let activity: StravaActivity
             let recipe: RecipeData
             let recipeIds = []
 
@@ -296,13 +299,8 @@ export class StravaActivities {
 
             // User suspended? Stop here.
             if (user.suspended) {
-                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
+                logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
                 return null
-            }
-
-            // Retry count defaults to 0.
-            if (!retryCount) {
-                retryCount = 0
             }
 
             // Get activity details from Strava.
@@ -342,26 +340,29 @@ export class StravaActivities {
                 try {
                     await this.setActivity(user, activity)
                 } catch (ex) {
-                    if (retryCount < settings.strava.api.maxRetry) {
-                        const retryJob = async () => {
-                            await this.processActivity(user, activityId, retryCount + 1)
+                    logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
+                    saveError = ex.friendlyMessage || ex.message || ex
+
+                    // Create notification for user in case the activity exists but could not be processed.
+                    if (activity.dateEnd) {
+                        try {
+                            const aDate = moment(activity.dateEnd)
+                            if (activity.utcStartOffset) aDate.add(activity.utcStartOffset, "minutes")
+
+                            const title = `Failed to process activity ${activity.id}`
+                            const body = `There was an error processing your ${activity.type} "${activity.name}", on ${aDate.format("lll")}. Strava returned an error message.`
+
+                            await notifications.createNotification(user, {title: title, body: body, activityId: activity.id})
+                        } catch (innerEx) {
+                            logger.warn("Strava.processActivity", `Failed creating notification for activity ${activityId}, from user ${user.id}`)
                         }
-
-                        setTimeout(retryJob, settings.strava.api.retryInterval)
-                        logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `Failed, will try again...`)
-                    } else {
-                        logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
-
-                        // Save failed activity to database. and stop here.
-                        await this.saveProcessedActivity(user, activity, recipeIds, ex)
-                        return null
                     }
                 }
 
                 // Save activity to the database and update count on user data.
                 // If failed, log error but this is not essential so won't throw.
                 try {
-                    const processedActivity = await this.saveProcessedActivity(user, activity, recipeIds)
+                    const processedActivity = await this.saveProcessedActivity(user, activity, recipeIds, saveError)
                     await users.setActivityCount(user)
                     user.activityCount++
 
