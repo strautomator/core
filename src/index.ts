@@ -63,8 +63,8 @@ import {Recipes} from "./recipes"
 export const recipes: Recipes = Recipes.Instance
 import {GearWear} from "./gearwear"
 export const gearwear: GearWear = GearWear.Instance
-import {Messages} from "./messages"
-export const messages: Messages = Messages.Instance
+import {Notifications} from "./notifications"
+export const messages: Notifications = Notifications.Instance
 import {Calendar} from "./calendar"
 export const calendar: Calendar = Calendar.Instance
 import {FAQ} from "./faq"
@@ -80,6 +80,7 @@ export * from "./recipes/types"
 export * from "./strava/types"
 export * from "./users/types"
 export * from "./calendar/types"
+export * from "./notifications/types"
 export * from "./paypal/types"
 
 // Flag if the server is shutting down.

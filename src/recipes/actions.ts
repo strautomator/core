@@ -5,47 +5,31 @@ import {RecipeAction, RecipeActionType, RecipeData} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
-import mailer from "../mailer"
-import messages from "../messages"
+import messages from "../notifications"
 import weather from "../weather"
 import _ = require("lodash")
 import jaul = require("jaul")
 import logger = require("anyhow")
-import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
  * Helper to log and alert users about failed actions.
  */
-const failedAction = (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction, error: any): void => {
+const failedAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction, error: any): Promise<void> => {
     logger.error("Recipes.failedAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, error)
 
-    const errorMessage = error.message || error.description || error
-    const actionType = _.find(recipeActionList, {value: action.type}).text
-    const actionValue = action.friendlyValue || action.value
-    const body = `There was an issue processing the activity ID ${activity.id}. Action: ${actionType} - ${actionValue}. ${errorMessage.toString()}`
+    try {
+        const errorMessage = error.message || error.description || error
+        const actionType = _.find(recipeActionList, {value: action.type}).text
+        const actionValue = action.friendlyValue || action.value
+        const body = `There was an issue processing the activity ID ${activity.id}. Action: ${actionType} - ${actionValue}. ${errorMessage.toString()}`
+        const title = `Failed automation: ${recipe.title}`
 
-    // Create a message to the user statin the failed action.
-    messages.createUserMessage(user, `Failed automation: ${recipe.title}`, body)
-
-    // If user has an email set, alert about the issue.
-    if (user.email) {
-        const options = {
-            to: user.email,
-            template: "RecipeFailedAction",
-            data: {
-                userId: user.id,
-                recipeId: recipe.id,
-                recipeTitle: recipe.title,
-                activityId: activity.id,
-                activityDate: moment(activity.dateStart).format("ll"),
-                action: action.friendlyValue,
-                errorMessage: errorMessage.toString()
-            }
-        }
-
-        // Send email notification to user (do not wait, as this is not considered critical).
-        mailer.send(options)
+        // Create a notification to the user statin the failed action.
+        const notification = {userId: user.id, title: title, body: body, recipeId: recipe.id, activityId: activity.id}
+        await messages.createNotification(user, notification)
+    } catch (ex) {
+        logger.error("Recipes.failedAction.exception", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, ex)
     }
 }
 
