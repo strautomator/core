@@ -165,7 +165,7 @@ export class Notifications {
 
             // Mark as read on the database.
             await database.merge("notifications", {id: notification.id, dateRead: notification.dateRead, read: notification.read})
-            logger.warn("Notifications.markAsRead", id, notification.title)
+            logger.info("Notifications.markAsRead", id, notification.title)
 
             return true
         } catch (ex) {
