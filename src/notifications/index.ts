@@ -103,7 +103,8 @@ export class Notifications {
     }
 
     /**
-     * Create a notification to the speicified user.
+     * Create a notification to the speicified user. It will NOT create a new notification
+     * if the contents are the same as the last notification created for the user.
      * @param user The user to get notifications for.
      * @param notification Notification options and data.
      */
@@ -112,6 +113,19 @@ export class Notifications {
             if (!user.id) throw new Error("Invalid user")
             if (!notification.title) throw new Error("Missing notification title")
             if (!notification.body) throw new Error("Missing notification body")
+
+            let lastNotifications: BaseNotification[] = await database.search("notifications", ["userId", "==", user.id], ["dateCreated", "desc"], 1)
+
+            // Check if a similar notification was already created for the user.
+            // If so, do not create a new one.
+            if (lastNotifications && lastNotifications.length > 0) {
+                const last = lastNotifications[0]
+
+                if (!last.read && last.dateExpiry > new Date() && last.title == notification.title && last.body == notification.body) {
+                    logger.warn("Notifications.createNotification", `User ${user.id} ${user.displayName}`, `Duplicate of ${last.id}`, notification.title, "Will not create")
+                    return
+                }
+            }
 
             let logDetails = []
             const now = moment().toDate()
@@ -137,9 +151,9 @@ export class Notifications {
 
             // Save to database and log.
             await database.set("notifications", notification, notification.id)
-            logger.info("Notifications.createUserMessage", `User ${user.id} ${user.displayName}`, `Message ID ${notification.id}`, notification.title, logDetails.join(","))
+            logger.info("Notifications.createNotification", `User ${user.id} ${user.displayName}`, `Message ID ${notification.id}`, notification.title, logDetails.join(","))
         } catch (ex) {
-            logger.error("Notifications.createUserMessage", `User ${user.id} ${user.displayName}`, notification.title, ex)
+            logger.error("Notifications.createNotification", `User ${user.id} ${user.displayName}`, notification.title, ex)
         }
     }
 
