@@ -219,8 +219,13 @@ export class Calendar {
 
             return cachedCalendar.data
         } catch (ex) {
-            logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
-            throw ex
+            if (cachedCalendar && cachedCalendar.data) {
+                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex, "Fallback to cached calendar")
+                return cachedCalendar.data
+            } else {
+                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
+                throw ex
+            }
         }
     }
 }
