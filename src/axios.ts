@@ -22,7 +22,7 @@ export const axiosRequest = async (options: any): Promise<any> => {
     } catch (ex) {
         const message = ex.toString().toUpperCase()
         const isTimeout = message.indexOf("ECONNABORTED") >= 0 || message.indexOf("ETIMEDOUT") >= 0 || message.indexOf("TIMEOUT") >= 0
-        const isRetryable = ex.response && (ex.response.status == 429 || ex.response.status == 500)
+        const isRetryable = ex.response && (ex.response.status == 429 || ex.response.status == 500 || ex.response.status == 502)
 
         // Retry the request if it failed due to timeout, rate limiting or server errors.
         if (isTimeout || isRetryable) {
