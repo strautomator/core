@@ -63,13 +63,13 @@
         // The default "from" on sent emails should be set on settings.secret.json file
         // or via the SMU_mailer_from environment variable.
         "from": "noreply@strautomator.com",
-        // Default SMTP settings are valid for SendGrid. You can overwrite these on
+        // Default SMTP settings are valid for Amazon SES. You can overwrite these on
         // on your secret settings or via environment variables.
         "smtp": {
             "pool": true,
-            "secure": false,
-            "host": "smtp.sendgrid.net",
-            "port": 2525,
+            "secure": true,
+            "host": "email-smtp.us-east-1.amazonaws.com",
+            "port": 465,
             "auth": {
                 // User and password must be set via the settings.secret.json file
                 // or using environment variables.
