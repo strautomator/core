@@ -1,6 +1,7 @@
 // Strautomator Core: Token request
 
 import logger = require("anyhow")
+import url = require("url")
 const axios = require("axios").default
 const settings = require("setmeup").settings
 const packageVersion = require("../package.json").version
@@ -20,13 +21,14 @@ export const axiosRequest = async (options: any): Promise<any> => {
         const res = await axios(options)
         return res.status == 204 && !res.data ? true : res.data
     } catch (ex) {
-        const message = ex.toString().toUpperCase()
+        const message = `${ex.code} ${ex.message}`.toUpperCase()
         const isTimeout = message.indexOf("ECONNABORTED") >= 0 || message.indexOf("ETIMEDOUT") >= 0 || message.indexOf("TIMEOUT") >= 0
         const isRetryable = ex.response && (ex.response.status == 429 || ex.response.status == 500 || ex.response.status == 502)
 
         // Retry the request if it failed due to timeout, rate limiting or server errors.
         if (isTimeout || isRetryable) {
-            logger.warn("Axios.axiosRequest", options.method, options.url, ex, "Failed, will retry once")
+            const urlInfo = url.parse(options.url)
+            logger.warn("Axios.axiosRequest", options.method, `${urlInfo.hostname}${urlInfo.pathname}`, ex, "Failed, will retry once")
 
             try {
                 const res = await axios(options)
