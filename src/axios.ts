@@ -28,12 +28,14 @@ export const axiosRequest = async (options: any): Promise<any> => {
         // Retry the request if it failed due to timeout, rate limiting or server errors.
         if (isTimeout || isRetryable) {
             const urlInfo = url.parse(options.url)
-            logger.warn("Axios.axiosRequest", options.method, `${urlInfo.hostname}${urlInfo.pathname}`, ex, "Failed, will retry once")
 
             try {
                 const res = await axios(options)
+
+                logger.warn("Axios.axiosRequest", options.method, `${urlInfo.hostname}${urlInfo.pathname}`, ex, "Failed once, retrying worked")
                 return res.status == 204 && !res.data ? true : res.data
             } catch (innerEx) {
+                logger.warn("Axios.axiosRequest", options.method, `${urlInfo.hostname}${urlInfo.pathname}`, ex, "Failed twice, will not retry")
                 throw innerEx
             }
         }
