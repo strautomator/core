@@ -19,7 +19,7 @@
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.
-        "cacheDuration": 5,
+        "cacheDuration": 4,
         // Encryption options.
         "crypto": {
             "algorithm": "aes-256-cbc",
@@ -98,8 +98,8 @@
         }
     },
     "notifications": {
-        // Cache notification results for up to 10 seconds.
-        "cacheDuration": 10,
+        // Cache notification results for up to 4 seconds.
+        "cacheDuration": 4,
         // Messages will auto expire after 6 months.
         "defaultExpireDays": 180,
         // Delete read user messages after 30 days.
@@ -218,8 +218,8 @@
         "danglingDays": 5
     },
     "weather": {
-        // Cache weather results for 30 minutes. Value set in seconds.
-        "cacheDuration": 1800,
+        // Cache weather results for 20 minutes. Value set in seconds.
+        "cacheDuration": 1200,
         // Weather history can only go as far back as 90 days by default.
         "maxAgeDays": 90,
         "climacell": {
