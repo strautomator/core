@@ -119,7 +119,7 @@ export class Calendar {
                 const maxExpiryDate = moment().utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
                 const updatedTs = cachedCalendar.dateUpdated.valueOf()
                 const notExpired = expiryDate.valueOf() < updatedTs
-                const notChanged = user.dateLastActivity.valueOf() < updatedTs && maxExpiryDate.valueOf() < updatedTs
+                const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() < updatedTs && maxExpiryDate.valueOf() < updatedTs
 
                 if (notExpired || notChanged) {
                     logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "From cache")
