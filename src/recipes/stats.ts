@@ -89,7 +89,7 @@ export class RecipeStats {
                     counter: 1
                 }
 
-                logger.info("RecipeStats.updateStats", id, "Created")
+                logger.info("RecipeStats.updateStats", id, "Created new recipe stats")
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
 
@@ -111,6 +111,45 @@ export class RecipeStats {
             logger.info("RecipeStats.updateStats", id, `Added activity ${activity.id}`)
         } catch (ex) {
             logger.error("RecipeStats.updateStats", id, `Activity ${activity.id}`, ex)
+        }
+    }
+
+    /**
+     * Manually set the recipe stats counter.
+     * @param user The user to have activity count incremented.
+     * @param recipe The recipe to be updated.
+     * @param counter The desired numeric counter.
+     */
+    setCounter = async (user: UserData, recipe: RecipeData, counter: number): Promise<void> => {
+        const id = `${user.id}-${recipe.id}`
+
+        try {
+            const doc = database.doc("recipe-stats", id)
+            const docSnapshot = await doc.get()
+            const exists = docSnapshot.exists
+            let stats: RecipeStatsData
+
+            // If not existing, create a new stats object, otherwise simply update the counter.
+            if (!exists) {
+                stats = {
+                    id: id,
+                    userId: user.id,
+                    activities: [],
+                    dateLastTrigger: null,
+                    counter: counter
+                }
+
+                logger.info("RecipeStats.setCounter", id, `Created new recipe stats`)
+            } else {
+                stats = docSnapshot.data() as RecipeStatsData
+                stats.counter = counter
+            }
+
+            // Update the counter on the database.
+            await database.merge("recipe-stats", stats, doc)
+            logger.info("RecipeStats.setCounter", id, `Counter ${counter}`)
+        } catch (ex) {
+            logger.error("RecipeStats.setCounter", id, `Counter ${counter}`, ex)
         }
     }
 }
