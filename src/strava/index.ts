@@ -1,6 +1,6 @@
 // Strautomator Core: Strava
 
-import {StravaActivity, StravaTokens} from "./types"
+import {StravaTokens} from "./types"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
