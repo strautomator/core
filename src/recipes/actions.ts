@@ -1,10 +1,11 @@
 // Strautomator Core: Recipe Action methods
 
 import {recipePropertyList, recipeActionList} from "./lists"
-import {RecipeAction, RecipeActionType, RecipeData} from "./types"
+import {RecipeAction, RecipeActionType, RecipeData, RecipeStatsData} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
+import recipeStats from "./stats"
 import messages from "../notifications"
 import weather from "../weather"
 import _ = require("lodash")
@@ -45,11 +46,17 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         let processedValue = action.value
 
         // Append suffixes to values before processing.
-        const activityWithSuffix: StravaActivity = _.cloneDeep(activity)
+        const activityWithSuffix: any = _.cloneDeep(activity)
         for (let prop of recipePropertyList) {
             if (prop.suffix && activityWithSuffix[prop.value]) {
                 activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${prop.suffix}`
             }
+        }
+
+        // Value has a counter tag? Get recipe stats to increment the counter.
+        if (processedValue.indexOf("${counter}") >= 0) {
+            const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
+            activityWithSuffix.counter = stats && stats.counter ? stats.counter + 1 : 1
         }
 
         // Iterate activity properties and replace keywords set on the action value.

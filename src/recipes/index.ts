@@ -3,10 +3,10 @@
 import {recipePropertyList, recipeActionList} from "./lists"
 import {defaultAction, commuteAction, gearAction, webhookAction} from "./actions"
 import {checkText, checkLocation, checkSportType, checkWeekday, checkTimestamp, checkWeather, checkNumber} from "./conditions"
-import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator, RecipeStats} from "./types"
+import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
-import database from "../database"
+import recipeStats from "./stats"
 import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
@@ -21,6 +21,11 @@ export class Recipes {
     static get Instance() {
         return this._instance || (this._instance = new this())
     }
+
+    /**
+     * Recipe stats.
+     */
+    stats = recipeStats
 
     /**
      * List of possible property names for conditions.
@@ -192,7 +197,7 @@ export class Recipes {
         }
 
         // Update recipe stats and return OK.
-        await this.updateStats(user, recipe, activity)
+        await recipeStats.updateStats(user, recipe, activity)
         return true
     }
 
@@ -337,94 +342,6 @@ export class Recipes {
         }
 
         return `${fieldText} ${operatorText} ${valueText}`
-    }
-
-    // STATS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Get stats for the specified recipe, or all recipes if no recipe is passed.
-     * @param user The user owner of the recipe(s).
-     * @param recipe Optional recipe to be fetched.
-     */
-    getStats = async (user: UserData, recipe?: RecipeData): Promise<RecipeStats | RecipeStats[]> => {
-        try {
-            if (recipe) {
-                const id = `${user.id}-${recipe.id}`
-                const stats: RecipeStats = await database.get("recipe-stats", id)
-
-                // No stats for the specified recipe? Return null.
-                if (!stats) {
-                    logger.info("Recipe.getStats", `User ${user.id} ${user.displayName}`, `No stats for recipe ${recipe.id}`)
-                    return null
-                }
-
-                const lastTrigger = moment(stats.dateLastTrigger).format("lll")
-                logger.info("Recipe.getStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `${stats.activities.length} activities`, `Last triggered: ${lastTrigger}`)
-                return stats
-            } else {
-                const arrStats: RecipeStats[] = await database.search("recipe-stats", ["userId", "==", user.id])
-
-                // No recipe stats found at all for the user?
-                if (arrStats.length == 0) {
-                    logger.info("Recipe.getStats", `User ${user.id} ${user.displayName}`, "No recipe stats found")
-                    return []
-                }
-
-                logger.info("Recipe.getStats", `User ${user.id} ${user.displayName}`, `${arrStats.length} recipe stats found`)
-                return arrStats
-            }
-        } catch (ex) {
-            const recipeLog = recipe ? `Recipe ${recipe.id}` : `All recipes`
-            logger.error("Recipes.getStats", `User ${user.id} ${user.displayName}`, recipeLog, ex)
-            throw ex
-        }
-    }
-
-    /**
-     * Increment a recipe's trigger count.
-     * @param user The user to have activity count incremented.
-     * @param recipe The recipe to be updated.
-     * @param activity The activity that triggered the recipe.
-     */
-    updateStats = async (user: UserData, recipe: RecipeData, activity: StravaActivity): Promise<void> => {
-        const id = `${user.id}-${recipe.id}`
-
-        try {
-            const now = moment.utc().toDate()
-
-            // Check if a stats document already exists.
-            const doc = database.doc("recipe-stats", id)
-            const docSnapshot = await doc.get()
-            const exists = docSnapshot.exists
-            let stats: RecipeStats
-
-            // If not existing, create a new stats object.
-            if (!exists) {
-                stats = {
-                    id: id,
-                    userId: user.id,
-                    activities: [activity.id],
-                    dateLastTrigger: now
-                }
-
-                logger.info("Recipe.updateStats", id, "Created")
-            } else {
-                stats = docSnapshot.data() as RecipeStats
-
-                if (stats.activities.indexOf(activity.id) < 0) {
-                    stats.activities.push(activity.id)
-                }
-
-                stats.dateLastTrigger = now
-            }
-
-            // Save stats to the database.
-            await database.merge("recipe-stats", stats, doc)
-            logger.info("Recipe.updateStats", id, `Added activity ${activity.id}`)
-        } catch (ex) {
-            logger.error("Recipes.updateStats", id, `Activity ${activity.id}`, ex)
-        }
     }
 }
 
