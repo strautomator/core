@@ -119,65 +119,6 @@ export class Strava {
     revokeToken = async (userId: string, accessToken: string, refreshToken?: string): Promise<void> => {
         return await api.revokeToken(userId, accessToken, refreshToken)
     }
-
-    // HELPERS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Return activity icon (emoji) based on its type.
-     * @param activity The relevant Strava activity.
-     */
-    getActivityIcon = (activity: StravaActivity): string => {
-        switch (activity.type) {
-            case "Run":
-            case "VirtualRun":
-                return "🏃"
-            case "Walk":
-                return "🚶"
-            case "Ride":
-            case "EBikeRide":
-            case "VirtualRide":
-                return "🚲"
-            case "Swim":
-                return "🏊"
-            case "AlpineSki":
-            case "BackcountrySki":
-            case "NordicSki":
-                return "⛷"
-            case "Snowboard":
-                return "🏂"
-            case "IceSkate":
-            case "Snowshoe":
-                return "⛸"
-            case "Skateboard":
-                return "🛹"
-            case "RockClimbing":
-                return "🧗"
-            case "Surfing":
-            case "Windsurf":
-                return "🏄"
-            case "Canoeing":
-                return "🛶"
-            case "Rowing":
-                return "🚣"
-            case "Sail":
-                return "⛵"
-            case "Golf":
-                return "🏌"
-            case "Soccer":
-                return "⚽"
-            case "Crossfit":
-            case "Elliptical":
-            case "WeightTraining":
-                return "🏋"
-            case "Yoga":
-                return "🧘"
-            case "Wheelchair":
-                return "🧑‍🦽"
-            default:
-                return "👤"
-        }
-    }
 }
 
 // Exports...

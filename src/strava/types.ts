@@ -67,6 +67,8 @@ export interface StravaActivity {
     device?: string
     /** Was the activity created manually? */
     manual?: boolean
+    /** Activity icon (emoticon). */
+    icon?: string
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
     /** Was a link to Strautomator added to the activity (internal use only)? */
@@ -163,7 +165,66 @@ export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
         }
     }
 
+    // Get activity emoticon.
+    activity.icon = getActivityIcon(activity)
+
     return activity
+}
+
+/**
+ * Return activity icon (emoji) based on its type.
+ * @param activity The relevant Strava activity.
+ */
+export function getActivityIcon(activity: StravaActivity): string {
+    switch (activity.type) {
+        case "Run":
+        case "VirtualRun":
+            return "🏃"
+        case "Walk":
+            return "🚶"
+        case "Ride":
+        case "EBikeRide":
+        case "VirtualRide":
+            return "🚲"
+        case "Swim":
+            return "🏊"
+        case "AlpineSki":
+        case "BackcountrySki":
+        case "NordicSki":
+            return "⛷"
+        case "Snowboard":
+            return "🏂"
+        case "IceSkate":
+        case "Snowshoe":
+            return "⛸"
+        case "Skateboard":
+            return "🛹"
+        case "RockClimbing":
+            return "🧗"
+        case "Surfing":
+        case "Windsurf":
+            return "🏄"
+        case "Canoeing":
+            return "🛶"
+        case "Rowing":
+            return "🚣"
+        case "Sail":
+            return "⛵"
+        case "Golf":
+            return "🏌"
+        case "Soccer":
+            return "⚽"
+        case "Crossfit":
+        case "Elliptical":
+        case "WeightTraining":
+            return "🏋"
+        case "Yoga":
+            return "🧘"
+        case "Wheelchair":
+            return "🧑‍🦽"
+        default:
+            return "👤"
+    }
 }
 
 /**
