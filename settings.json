@@ -153,8 +153,8 @@
             "maxRecipes": 3,
             "maxConditions": 3,
             "maxGearWear": 2,
-            // Free accounts limited to 1 month of calendar events.
-            "maxCalendarDays": 30,
+            // Free accounts limited to 3 months of calendar events.
+            "maxCalendarDays": 90,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5
         },
@@ -164,7 +164,7 @@
             "maxConditions": 999,
             "maxGearWear": 999,
             // Pro accounts limited to 2 full years of calendar events.
-            "maxCalendarDays": 731,
+            "maxCalendarDays": 730,
             // No links on Pro accounts processed activities.
             "linksOn": false,
             // Subscription prices on PayPal to get a PRO account.
