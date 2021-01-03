@@ -31,6 +31,8 @@ export interface UserData {
     recipes?: UserRecipeMap
     /** User preferences. */
     preferences?: UserPreferences
+    /** Calendar template. */
+    calendarTemplate?: UserCalendarTemplate
     /** Subscription details (for PRO accounts). */
     subscription?: UserSubscriptionRef
     /** Custom URL token used to get the calendar. */
@@ -69,6 +71,16 @@ export interface UserPreferences {
     weatherProvider?: "climacell" | "darksky" | "openweathermap" | "weatherbit" | "weatherapi"
     /** Weather temperature unit. */
     weatherUnit?: "c" | "f"
+}
+
+/**
+ * User calendar template for event summary and details.
+ */
+export interface UserCalendarTemplate {
+    /** Custom event summary. */
+    eventSummary: string
+    /** Custom event details. */
+    eventDetails: string
 }
 
 /**
