@@ -164,31 +164,42 @@ export class Calendar {
                         arrDetails.push("Commute")
                     }
 
-                    for (let field of options.activityFields) {
-                        if (a[field]) {
-                            const fieldInfo = _.find(recipePropertyList, {value: field})
-                            const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
-                            let suffix
+                    // Iterate default fields to be added to the event details.
+                    for (let f of options.activityFields) {
+                        const subDetails = []
+                        const arrFields = f.split(",")
 
-                            // Get suffix for field values.
-                            if (fieldInfo) {
-                                if (user.profile.units == "imperial" && fieldInfo.impSuffix) {
-                                    suffix = fieldInfo.impSuffix
-                                } else if (user.profile.units == "metric" && fieldInfo.suffix) {
-                                    suffix = fieldInfo.suffix
+                        for (let field of arrFields) {
+                            field = field.trim()
+
+                            if (a[field]) {
+                                const fieldInfo = _.find(recipePropertyList, {value: field})
+                                const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
+                                let suffix
+
+                                // Get suffix for field values.
+                                if (fieldInfo) {
+                                    if (user.profile.units == "imperial" && fieldInfo.impSuffix) {
+                                        suffix = fieldInfo.impSuffix
+                                    } else if (user.profile.units == "metric" && fieldInfo.suffix) {
+                                        suffix = fieldInfo.suffix
+                                    }
                                 }
+
+                                // Suffix defaults to empty string.
+                                if (!suffix) suffix = ""
+
+                                subDetails.push(`${fieldName}: ${a[field]}${suffix}`)
                             }
 
-                            // Suffix defaults to empty string.
-                            if (!suffix) suffix = ""
-
-                            arrDetails.push(`${fieldName}: ${a[field]}${suffix}`)
+                            arrDetails.push(subDetails.join(" - "))
                         }
                     }
                 }
 
                 // Get summary and details from options or from defaults.
-                const summary = options.eventSummary ? jaul.data.replaceTags(options.eventSummary, a) : `${a.icon} ${a.name}`
+                const summaryTemplate = options.eventSummary ? options.eventSummary : settings.calendar.eventSummary
+                const summary = jaul.data.replaceTags(summaryTemplate, a)
                 const details = options.eventDetails ? jaul.data.replaceTags(options.eventDetails, a) : arrDetails.join("\n")
 
                 // Add activity to the calendar as an event.
