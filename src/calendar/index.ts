@@ -9,6 +9,7 @@ import database from "../database"
 import eventManager from "../eventmanager"
 import strava from "../strava"
 import ical = require("ical-generator")
+import jaul = require("jaul")
 import logger = require("anyhow")
 import moment = require("moment")
 import url = require("url")
@@ -155,43 +156,49 @@ export class Calendar {
                 if (options.sportTypes && options.sportTypes.indexOf(a.type) < 0) continue
                 if (options.excludeCommutes && a.commute) continue
 
-                const icon = strava.getActivityIcon(a)
-                const details = []
+                const arrDetails = []
 
-                if (a.commute) {
-                    details.push("Commute")
-                }
+                // If no event details template was set, push default values to the details array.
+                if (!options.eventDetails) {
+                    if (a.commute) {
+                        arrDetails.push("Commute")
+                    }
 
-                for (let field of options.activityFields) {
-                    if (a[field]) {
-                        const fieldInfo = _.find(recipePropertyList, {value: field})
-                        const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
-                        let suffix
+                    for (let field of options.activityFields) {
+                        if (a[field]) {
+                            const fieldInfo = _.find(recipePropertyList, {value: field})
+                            const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
+                            let suffix
 
-                        // Get suffix for field values.
-                        if (fieldInfo) {
-                            if (user.profile.units == "imperial" && fieldInfo.impSuffix) {
-                                suffix = fieldInfo.impSuffix
-                            } else if (user.profile.units == "metric" && fieldInfo.suffix) {
-                                suffix = fieldInfo.suffix
+                            // Get suffix for field values.
+                            if (fieldInfo) {
+                                if (user.profile.units == "imperial" && fieldInfo.impSuffix) {
+                                    suffix = fieldInfo.impSuffix
+                                } else if (user.profile.units == "metric" && fieldInfo.suffix) {
+                                    suffix = fieldInfo.suffix
+                                }
                             }
+
+                            // Suffix defaults to empty string.
+                            if (!suffix) suffix = ""
+
+                            arrDetails.push(`${fieldName}: ${a[field]}${suffix}`)
                         }
-
-                        // Suffix defaults to empty string.
-                        if (!suffix) suffix = ""
-
-                        details.push(`${fieldName}: ${a[field]}${suffix}`)
                     }
                 }
+
+                // Get summary and details from options or from defaults.
+                const summary = options.eventSummary ? jaul.data.replaceTags(options.eventSummary, a) : `${a.icon} ${a.name}`
+                const details = options.eventDetails ? jaul.data.replaceTags(options.eventDetails, a) : arrDetails.join("\n")
 
                 // Add activity to the calendar as an event.
                 const event = cal.createEvent({
                     uid: a.id,
                     start: a.dateStart,
                     end: a.dateEnd,
-                    summary: `${icon} ${a.name}`,
-                    description: details.join("\n"),
-                    htmlDescription: details.join("<br>"),
+                    summary: summary,
+                    description: details,
+                    htmlDescription: details.replace(/\n/, "<br />"),
                     url: `https://www.strava.com/activities/${a.id}`
                 })
 

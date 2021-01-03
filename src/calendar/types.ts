@@ -26,4 +26,8 @@ export interface CalendarOptions {
     excludeCommutes?: boolean
     /** Filter only specific sport types. Default is all. */
     sportTypes?: string[]
+    /** Customized calendar event summary. */
+    eventSummary?: string
+    /** Customized calendar event details. */
+    eventDetails?: string
 }
