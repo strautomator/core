@@ -11,7 +11,7 @@
         // can be added to same line separated by comma.
         "activityFields": ["distance,elevationGain", "speedAvg", "calories", "hrAvg,wattsAvg", "description"],
         // Default template for the event summary.
-        "eventSummary": "${a.name} ${a.icon}",
+        "eventSummary": "${name} ${icon}",
         // Calendar name.
         "name": "Strava activities",
         // Calendars are cached for a maximum of 7 days.
