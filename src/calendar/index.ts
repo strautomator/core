@@ -157,6 +157,15 @@ export class Calendar {
                 if (options.sportTypes && options.sportTypes.indexOf(a.type) < 0) continue
                 if (options.excludeCommutes && a.commute) continue
 
+                // Append suffix to activity values.
+                for (let prop of recipePropertyList) {
+                    const suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
+
+                    if (suffix && a[prop.value]) {
+                        a[prop.value] = `${a[prop.value]}${prop.suffix}`
+                    }
+                }
+
                 const arrDetails = []
 
                 // If no event details template was set, push default values to the details array.
@@ -176,21 +185,7 @@ export class Calendar {
                             if (a[field]) {
                                 const fieldInfo = _.find(recipePropertyList, {value: field})
                                 const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
-                                let suffix
-
-                                // Get suffix for field values.
-                                if (fieldInfo) {
-                                    if (user.profile.units == "imperial" && fieldInfo.impSuffix) {
-                                        suffix = fieldInfo.impSuffix
-                                    } else if (user.profile.units == "metric" && fieldInfo.suffix) {
-                                        suffix = fieldInfo.suffix
-                                    }
-                                }
-
-                                // Suffix defaults to empty string.
-                                if (!suffix) suffix = ""
-
-                                subDetails.push(`${fieldName}: ${a[field]}${suffix}`)
+                                subDetails.push(`${fieldName}: ${a[field]}`)
                             }
 
                             arrDetails.push(subDetails.join(" - "))
