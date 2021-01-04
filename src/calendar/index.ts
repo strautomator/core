@@ -2,7 +2,7 @@
 
 import {CachedCalendar, CalendarOptions} from "./types"
 import {recipePropertyList} from "../recipes/lists"
-import {UserData} from "../users/types"
+import {UserCalendarTemplate, UserData} from "../users/types"
 import _ = require("lodash")
 import crypto = require("crypto")
 import database from "../database"
@@ -89,13 +89,11 @@ export class Calendar {
             if (!options.excludeCommutes && !options.sportTypes) {
                 isDefault = true
             }
-            if (!options.eventSummary || options.eventSummary == "") {
-                options.eventSummary = null
-            }
-            if (!options.eventDetails || options.eventDetails == "") {
-                options.eventDetails = null
-            }
 
+            // Get calendar template from user.
+            const calendarTemplate: UserCalendarTemplate = user.calendarTemplate || {}
+
+            // Days and timestamp calculations.
             const maxDays = user.isPro ? settings.plans.pro.maxCalendarDays : settings.plans.free.maxCalendarDays
             const minDate = moment().utc().hours(0).minutes(0).subtract(maxDays, "days")
             const dateFrom = options.dateFrom ? options.dateFrom : minDate
@@ -162,7 +160,7 @@ export class Calendar {
                 const arrDetails = []
 
                 // If no event details template was set, push default values to the details array.
-                if (!options.eventDetails) {
+                if (!calendarTemplate.eventDetails) {
                     if (a.commute) {
                         arrDetails.push("Commute")
                     }
@@ -202,9 +200,9 @@ export class Calendar {
 
                 // Get summary and details from options or from defaults.
                 try {
-                    const summaryTemplate = options.eventSummary ? options.eventSummary : settings.calendar.eventSummary
+                    const summaryTemplate = calendarTemplate.eventSummary ? calendarTemplate.eventSummary : settings.calendar.eventSummary
                     const summary = jaul.data.replaceTags(summaryTemplate, a)
-                    const details = options.eventDetails ? jaul.data.replaceTags(options.eventDetails, a) : arrDetails.join("\n")
+                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, a) : arrDetails.join("\n")
 
                     // Add activity to the calendar as an event.
                     const event = cal.createEvent({

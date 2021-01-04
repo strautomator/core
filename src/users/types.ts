@@ -78,9 +78,9 @@ export interface UserPreferences {
  */
 export interface UserCalendarTemplate {
     /** Custom event summary. */
-    eventSummary: string
+    eventSummary?: string
     /** Custom event details. */
-    eventDetails: string
+    eventDetails?: string
 }
 
 /**
