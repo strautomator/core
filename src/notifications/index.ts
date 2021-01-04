@@ -75,6 +75,8 @@ export class Notifications {
      * @param all If true, will get also read and expired notifications, default is false.
      */
     getForUser = async (user: UserData, all?: boolean): Promise<BaseNotification[]> => {
+        const whichLog = all ? "All" : "Unread only"
+
         try {
             const now = new Date()
             const queries: any[] = [["userId", "==", user.id]]
@@ -94,10 +96,10 @@ export class Notifications {
             const result = await database.search("notifications", queries)
             cache.set("notifications", `${user.id}-${all}`, result)
 
-            logger.info("Notifications.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, `Got ${result.length} notification(s)`)
+            logger.info("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, `Got ${result.length} notification(s)`)
             return result
         } catch (ex) {
-            logger.error("Notifications.getForUser", `User ${user.id} ${user.displayName}`, `All ${all}`, ex)
+            logger.error("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, ex)
             throw ex
         }
     }
