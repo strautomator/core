@@ -92,6 +92,12 @@ export class Calendar {
             if (!options.excludeCommutes && !options.sportTypes) {
                 isDefault = true
             }
+            if (options.eventSummary) {
+                options.eventSummary = options.eventSummary.trim()
+            }
+            if (options.eventDetails) {
+                options.eventDetails = options.eventDetails.trim()
+            }
 
             const maxDays = user.isPro ? settings.plans.pro.maxCalendarDays : settings.plans.free.maxCalendarDays
             const minDate = moment().utc().hours(0).minutes(0).subtract(maxDays, "days")
