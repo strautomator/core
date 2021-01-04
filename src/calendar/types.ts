@@ -18,8 +18,6 @@ export interface CachedCalendar {
  * Options used to generate activity calendars.
  */
 export interface CalendarOptions {
-    /** Which activity fields should be added to the events? */
-    activityFields?: string[]
     /** Starting date, defaults to the maxCalendarDays on PRO / free accounts. */
     dateFrom?: Date
     /** Exclude commutes? Default is false. */

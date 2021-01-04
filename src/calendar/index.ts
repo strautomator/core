@@ -83,20 +83,17 @@ export class Calendar {
             }
 
             // Check and set default options.
-            if (!options.activityFields || options.activityFields.length == 0) {
-                options.activityFields = settings.calendar.activityFields
-            }
             if (!options.sportTypes || options.sportTypes.length == 0) {
                 options.sportTypes = null
             }
             if (!options.excludeCommutes && !options.sportTypes) {
                 isDefault = true
             }
-            if (options.eventSummary) {
-                options.eventSummary = options.eventSummary.trim()
+            if (!options.eventSummary || options.eventSummary == "") {
+                options.eventSummary = null
             }
-            if (options.eventDetails) {
-                options.eventDetails = options.eventDetails.trim()
+            if (!options.eventDetails || options.eventDetails == "") {
+                options.eventDetails = null
             }
 
             const maxDays = user.isPro ? settings.plans.pro.maxCalendarDays : settings.plans.free.maxCalendarDays
@@ -171,7 +168,7 @@ export class Calendar {
                     }
 
                     // Iterate default fields to be added to the event details.
-                    for (let f of options.activityFields) {
+                    for (let f of settings.calendar.activityFields) {
                         const subDetails = []
                         const arrFields = f.split(",")
 
@@ -204,25 +201,29 @@ export class Calendar {
                 }
 
                 // Get summary and details from options or from defaults.
-                const summaryTemplate = options.eventSummary ? options.eventSummary : settings.calendar.eventSummary
-                const summary = jaul.data.replaceTags(summaryTemplate, a)
-                const details = options.eventDetails ? jaul.data.replaceTags(options.eventDetails, a) : arrDetails.join("\n")
+                try {
+                    const summaryTemplate = options.eventSummary ? options.eventSummary : settings.calendar.eventSummary
+                    const summary = jaul.data.replaceTags(summaryTemplate, a)
+                    const details = options.eventDetails ? jaul.data.replaceTags(options.eventDetails, a) : arrDetails.join("\n")
 
-                // Add activity to the calendar as an event.
-                const event = cal.createEvent({
-                    uid: a.id,
-                    start: a.dateStart,
-                    end: a.dateEnd,
-                    summary: summary,
-                    description: details,
-                    htmlDescription: details.replace(/\n/, "<br />"),
-                    url: `https://www.strava.com/activities/${a.id}`
-                })
+                    // Add activity to the calendar as an event.
+                    const event = cal.createEvent({
+                        uid: a.id,
+                        start: a.dateStart,
+                        end: a.dateEnd,
+                        summary: summary,
+                        description: details,
+                        htmlDescription: details.replace(/\n/, "<br />"),
+                        url: `https://www.strava.com/activities/${a.id}`
+                    })
 
-                // Geo location available?
-                if (a.locationEnd) {
-                    event.location(a.locationEnd.join(", "))
-                    event.geo({lat: a.locationEnd[0], lon: a.locationEnd[1]})
+                    // Geo location available?
+                    if (a.locationEnd) {
+                        event.location(a.locationEnd.join(", "))
+                        event.geo({lat: a.locationEnd[0], lon: a.locationEnd[1]})
+                    }
+                } catch (innerEx) {
+                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${a.id}`, innerEx)
                 }
             }
 
