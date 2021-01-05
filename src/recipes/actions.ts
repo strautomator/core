@@ -50,8 +50,8 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         for (let prop of recipePropertyList) {
             const suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
 
-            if (suffix && activityWithSuffix[prop.value]) {
-                activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${prop.suffix}`
+            if (suffix && activityWithSuffix[prop.value] && !_.isDate(activityWithSuffix[prop.value])) {
+                activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${suffix}`
             }
         }
 

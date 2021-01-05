@@ -153,16 +153,23 @@ export class Calendar {
             const activities = await strava.activities.getActivities(user, {before: tsBefore, after: tsAfter})
 
             // Iterate activities from Strava, checking filters before proceeding.
-            for (let a of activities) {
-                if (options.sportTypes && options.sportTypes.indexOf(a.type) < 0) continue
-                if (options.excludeCommutes && a.commute) continue
+            for (let activity of activities) {
+                if (options.sportTypes && options.sportTypes.indexOf(activity.type) < 0) continue
+                if (options.excludeCommutes && activity.commute) continue
+
+                // For whatever reason Strava sometimes returned no dates on activities, so adding this extra check here
+                // that should go away once the root cause is identified.
+                if (!activity.dateStart || !activity.dateEnd) {
+                    logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id} has no start or end date`)
+                    continue
+                }
 
                 // Append suffix to activity values.
                 for (let prop of recipePropertyList) {
                     const suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
 
-                    if (suffix && a[prop.value]) {
-                        a[prop.value] = `${a[prop.value]}${prop.suffix}`
+                    if (suffix && activity[prop.value] && !_.isDate(activity[prop.value])) {
+                        activity[prop.value] = `${activity[prop.value]}${suffix}`
                     }
                 }
 
@@ -170,7 +177,7 @@ export class Calendar {
 
                 // If no event details template was set, push default values to the details array.
                 if (!calendarTemplate.eventDetails) {
-                    if (a.commute) {
+                    if (activity.commute) {
                         arrDetails.push("Commute")
                     }
 
@@ -182,10 +189,10 @@ export class Calendar {
                         for (let field of arrFields) {
                             field = field.trim()
 
-                            if (a[field]) {
+                            if (activity[field]) {
                                 const fieldInfo = _.find(recipePropertyList, {value: field})
                                 const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
-                                subDetails.push(`${fieldName}: ${a[field]}`)
+                                subDetails.push(`${fieldName}: ${activity[field]}`)
                             }
 
                             arrDetails.push(subDetails.join(" - "))
@@ -196,27 +203,27 @@ export class Calendar {
                 // Get summary and details from options or from defaults.
                 try {
                     const summaryTemplate = calendarTemplate.eventSummary ? calendarTemplate.eventSummary : settings.calendar.eventSummary
-                    const summary = jaul.data.replaceTags(summaryTemplate, a)
-                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, a) : arrDetails.join("\n")
+                    const summary = jaul.data.replaceTags(summaryTemplate, activity)
+                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join("\n")
 
                     // Add activity to the calendar as an event.
                     const event = cal.createEvent({
-                        uid: a.id,
-                        start: a.dateStart,
-                        end: a.dateEnd,
+                        uid: activity.id,
+                        start: activity.dateStart,
+                        end: activity.dateEnd,
                         summary: summary,
                         description: details,
                         htmlDescription: details.replace(/\n/, "<br />"),
-                        url: `https://www.strava.com/activities/${a.id}`
+                        url: `https://www.strava.com/activities/${activity.id}`
                     })
 
                     // Geo location available?
-                    if (a.locationEnd) {
-                        event.location(a.locationEnd.join(", "))
-                        event.geo({lat: a.locationEnd[0], lon: a.locationEnd[1]})
+                    if (activity.locationEnd) {
+                        event.location(activity.locationEnd.join(", "))
+                        event.geo({lat: activity.locationEnd[0], lon: activity.locationEnd[1]})
                     }
                 } catch (innerEx) {
-                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${a.id}`, innerEx)
+                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
                 }
             }
 
