@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "21.11.12327",
+    "version": "21.12.11106",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -40,7 +40,7 @@
         "mocha": "^8.2.1",
         "mocha-lcov-reporter": "^1.3.0",
         "nyc": "^15.1.0",
-        "typedoc": "^0.20.11"
+        "typedoc": "^0.20.12"
     },
     "peerDependencies": {
         "anyhow": "^2.0.6",
