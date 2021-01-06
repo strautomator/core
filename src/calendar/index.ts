@@ -129,6 +129,9 @@ export class Calendar {
                 }
             }
 
+            const startTime = moment().unix()
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `Will generate a new calendar`)
+
             // Set calendar name based on passed filters.
             let calName = settings.calendar.name
             if (options.sportTypes) calName += ` (${options.sportTypes.join(", ")})`
@@ -200,6 +203,17 @@ export class Calendar {
                     }
                 }
 
+                // Replace gear object with the gear name.
+                if (activity.gear && activity.gear.name) {
+                    activity.gear = activity.gear.name as any
+                }
+
+                // Replace boolean tags with yes or no.
+                for (let field of Object.keys(activity)) {
+                    if (activity[field] === true) activity[field] = "yes"
+                    else if (activity[field] === false) activity[field] = "no"
+                }
+
                 // Get summary and details from options or from defaults.
                 try {
                     const summaryTemplate = calendarTemplate.eventSummary ? calendarTemplate.eventSummary : settings.calendar.eventSummary
@@ -240,7 +254,8 @@ export class Calendar {
                 await database.set("calendar", cachedCalendar, cacheId)
             }
 
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`)
+            const duration = Math.round(moment().unix() - startTime / 1000)
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `Generated in ${duration} seconds`)
 
             return cachedCalendar.data
         } catch (ex) {
