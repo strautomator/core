@@ -29,6 +29,8 @@ export interface StravaActivity {
     elevationGain?: number
     /** Maximum elevation. */
     elevationMax?: number
+    /** Distance / climbing ratio: 19m per kilometer or 100ft per mile */
+    climbingRatio?: number
     /** Total elapsed time in seconds. */
     totalTime: number
     /** Elapsed moving time in seconds. */
@@ -52,7 +54,7 @@ export interface StravaActivity {
     /** Max watts. */
     wattsMax?: number
     /** Watts comes from a power meter? */
-    hasPowerMeter?: boolean
+    hasPower?: boolean
     /** Average heart rate. */
     hrAvg?: number
     /** Maximum heart rate. */
@@ -96,7 +98,7 @@ export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
         movingTime: data.moving_time,
         locationStart: data.start_latlng,
         locationEnd: data.end_latlng,
-        hasPowerMeter: data.device_watts,
+        hasPower: data.device_watts,
         wattsAvg: data.average_watts ? Math.round(data.average_watts) : null,
         wattsWeighted: data.weighted_average_watts ? Math.round(data.weighted_average_watts) : null,
         wattsMax: data.max_watts ? Math.round(data.max_watts) : null,
@@ -133,10 +135,16 @@ export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
         activity.polyline = data.map.polyline
     }
 
+    // Default climbing ratio multiplier in metric is 19m / 1km.
+    let cRatioMultiplier = 19
+
     // Convert values according to the specified units.
     if (profile.units == "imperial") {
         const feet = 3.28084
         const miles = 0.621371
+
+        // Imperial climbing ration multiplier is 100ft / 1mi
+        cRatioMultiplier = 100
 
         if (data.total_elevation_gain) {
             activity.elevationGain = Math.round(data.total_elevation_gain * feet)
@@ -163,6 +171,12 @@ export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
         if (data.max_speed) {
             activity.speedMax = parseFloat((data.max_speed * 3.6).toFixed(1))
         }
+    }
+
+    // Calculate climbing ratio with 2 decimal places.
+    if (activity.distance && activity.elevationGain) {
+        const climbingRatio = activity.elevationGain / (activity.distance * cRatioMultiplier)
+        activity.climbingRatio = Math.round(climbingRatio * 100) / 100
     }
 
     // Get activity emoticon.
