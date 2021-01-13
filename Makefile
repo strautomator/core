@@ -2,6 +2,7 @@ MOCHA:= ./node_modules/.bin/mocha
 ISTANBUL:= ./node_modules/.bin/nyc
 TYPEDOC:= ./node_modules/.bin/typedoc
 TSC:= ./node_modules/.bin/tsc
+SETMEUP:= ./node_modules/.bin/setmeup
 
 # Clean compiled resources and dependencies
 clean:
@@ -37,5 +38,13 @@ dry-run:
 test:
 	$(TSC)
 	@NODE_ENV=test $(MOCHA) --trace-warnings --exit -u tdd -R spec
+
+# Encrypt settings.
+encrypt:
+	$(SETMEUP) encrypt ./settings.secret.json
+
+# Decrypt settings.
+decrypt:
+	$(SETMEUP) decrypt ./settings.secret.json
 
 .PHONY: docs test
