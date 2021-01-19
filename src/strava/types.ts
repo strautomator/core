@@ -1,5 +1,6 @@
 // Strautomator Core: Strava types
 
+import {UserData} from "../users/types"
 import _ = require("lodash")
 import moment = require("moment")
 
@@ -81,7 +82,8 @@ export interface StravaActivity {
  * Helper to transform data from the API to a StravaActivity interface.
  * @param data Input data.
  */
-export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
+export function toStravaActivity(data, user: UserData): StravaActivity {
+    const profile = user.profile
     const startDate = moment.utc(data.start_date)
 
     const activity: StravaActivity = {
@@ -106,7 +108,6 @@ export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
         hrMax: data.max_heartrate ? Math.round(data.max_heartrate) : null,
         cadenceAvg: data.average_cadence,
         calories: data.calories,
-        temperature: data.average_temp,
         device: data.device_name,
         manual: data.manual,
         updatedFields: []
@@ -170,6 +171,15 @@ export function toStravaActivity(data, profile: StravaProfile): StravaActivity {
         }
         if (data.max_speed) {
             activity.speedMax = parseFloat((data.max_speed * 3.6).toFixed(1))
+        }
+    }
+
+    // Get device temperature if available, using the correct weather unit.
+    if (_.isNumber(data.average_temp)) {
+        if (user.preferences && user.preferences.weatherUnit == "f") {
+            activity.temperature = (data.average_temp / 5) * 9 + 32
+        } else {
+            activity.temperature = data.average_temp
         }
     }
 
