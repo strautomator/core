@@ -171,7 +171,7 @@ export class Calendar {
                 for (let prop of recipePropertyList) {
                     const suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
 
-                    if (suffix && activity[prop.value] && !_.isDate(activity[prop.value])) {
+                    if (suffix && !_.isNil(activity[prop.value]) && !_.isDate(activity[prop.value])) {
                         activity[prop.value] = `${activity[prop.value]}${suffix}`
                     }
                 }
