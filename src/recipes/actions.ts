@@ -48,9 +48,10 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         // Append suffixes to values before processing.
         const activityWithSuffix: any = _.cloneDeep(activity)
         for (let prop of recipePropertyList) {
-            const suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
+            let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
+            if (prop.fSuffix && user.preferences && user.preferences.weatherUnit == "f") suffix = prop.fSuffix
 
-            if (suffix && activityWithSuffix[prop.value] && !_.isDate(activityWithSuffix[prop.value])) {
+            if (suffix && !_.isNil(activityWithSuffix[prop.value]) && !_.isDate(activityWithSuffix[prop.value])) {
                 activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${suffix}`
             }
         }

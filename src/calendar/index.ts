@@ -169,7 +169,8 @@ export class Calendar {
 
                 // Append suffix to activity values.
                 for (let prop of recipePropertyList) {
-                    const suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
+                    let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
+                    if (prop.fSuffix && user.preferences && user.preferences.weatherUnit == "f") suffix = prop.fSuffix
 
                     if (suffix && !_.isNil(activity[prop.value]) && !_.isDate(activity[prop.value])) {
                         activity[prop.value] = `${activity[prop.value]}${suffix}`
