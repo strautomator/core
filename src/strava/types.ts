@@ -177,9 +177,9 @@ export function toStravaActivity(data, user: UserData): StravaActivity {
     // Get device temperature if available, using the correct weather unit.
     if (_.isNumber(data.average_temp)) {
         if (user.preferences && user.preferences.weatherUnit == "f") {
-            activity.temperature = (data.average_temp / 5) * 9 + 32
+            activity.temperature = Math.round((data.average_temp / 5) * 9 + 32)
         } else {
-            activity.temperature = data.average_temp
+            activity.temperature = Math.round(data.average_temp)
         }
     }
 
