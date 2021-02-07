@@ -28,6 +28,7 @@ The following collections are currently used:
 
 - **activities** summary of processed activities
 - **app-state** general application state
+- **calendar** cached calendar data
 - **faq** help questions and answers
 - **gearwear** GearWear configurations
 - **recipe-stats** automation recipe stats
