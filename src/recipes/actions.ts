@@ -62,25 +62,32 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             activityWithSuffix.counter = stats && stats.counter ? stats.counter + 1 : 1
         }
 
-        // Iterate activity properties and replace keywords set on the action value.
-        processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
-
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
         if (processedValue.indexOf("${weather.") >= 0) {
-            if (activity.locationStart && activity.locationStart.length > 0) {
+            const hasStart = activity.locationStart && activity.locationStart.length > 0
+            const hasEnd = activity.locationEnd && activity.locationEnd.length > 0
+
+            if (hasStart || hasEnd) {
                 const weatherSummary = await weather.getActivityWeather(activity, user.preferences)
 
                 if (weatherSummary) {
-                    const weatherDetails = weatherSummary.end || weatherSummary.start
+                    const weatherDetails = weatherSummary.end && weatherSummary.end.icon ? weatherSummary.end : weatherSummary.start
                     processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
                 } else {
                     processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
                 }
+
+                if (processedValue == "") {
+                    logger.warn("Recipes.defaultAction.weather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "Got no valid activity weather")
+                }
             } else {
-                logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Weather tags on recipe, but no location data on activity")
+                logger.warn("Recipes.defaultAction.weather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "No location data on activity")
                 processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
             }
         }
+
+        // Iterate activity properties and replace keywords set on the action value.
+        processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
 
         // Empty value? Stop here.
         if (processedValue === null || processedValue.toString().trim() === "") {
