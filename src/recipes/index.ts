@@ -173,7 +173,7 @@ export class Recipes {
         // Otherwise iterate conditions and evaluate each one.
         else {
             for (let condition of recipe.conditions) {
-                const valid = await this.checkCondition(user, activity, condition)
+                const valid = await this.checkCondition(user, activity, recipe, condition)
 
                 // Recipe not valid for this activity? Log what failed.
                 // Polyline contents won't be logged.
@@ -182,7 +182,7 @@ export class Recipes {
                     if (_.isDate(conditionProp)) conditionProp = moment(conditionProp).format("lll")
 
                     let logValue = conditionProp ? `Not a match: ${conditionProp}` : "No match"
-                    logger.info("Recipes.evaluate", `User ${user.id}, activity ${activity.id}, recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
+                    logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
                     return false
                 }
             }
@@ -205,9 +205,10 @@ export class Recipes {
      * Check if the passed condition is valid for the activity.
      * @param user The recipe's owner.
      * @param activity Strava activity to be evaluated.
+     * @param recipe Recipe being evaluated.
      * @param condition The recipe condition.
      */
-    checkCondition = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+    checkCondition = async (user: UserData, activity: StravaActivity, recipe: RecipeData, condition: RecipeCondition): Promise<boolean> => {
         try {
             const prop = condition.property
 
@@ -253,10 +254,10 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            logger.info("Recipes.checkCondition", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`)
+            logger.debug("Recipes.checkCondition", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`)
             return true
         } catch (ex) {
-            logger.error("Recipes.checkCondition", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${condition.property} ${condition.operator} ${condition.value}`, ex)
+            logger.error("Recipes.checkCondition", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, ex)
             return false
         }
     }
