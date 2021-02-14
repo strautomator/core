@@ -60,6 +60,9 @@ export const EmailTemplates = {
             "</p>" +
             "<p>" +
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component." +
+            "</p>" +
+            "<p>" +
+            'Need to buy new components? Check the latest <a href="https://links.devv.com/l/bikes">deals on Amazon</a>!' +
             "</p>"
     },
 
@@ -75,6 +78,9 @@ export const EmailTemplates = {
             "</p>" +
             "<p>" +
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component." +
+            "</p>" +
+            "<p>" +
+            'Need to buy new components? Check the latest <a href="https://links.devv.com/l/bikes">deals on Amazon</a>!' +
             "</p>"
     },
 
