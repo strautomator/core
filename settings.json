@@ -57,10 +57,10 @@
         // By default, when update distance for gear components, get activities that happened
         // 2 days ago (so users will have some time to set the correct activity gear).
         "previousDays": 2,
-        // Wait at least 10 days before sending a GearWear reminder.
-        "reminderDays": 10,
-        // Remind user if tracking was not reset and current tracking has passed 20% of the alert value.
-        "reminderThreshold": 1.2
+        // Wait at least 7 days before sending a GearWear reminder.
+        "reminderDays": 7,
+        // Remind user if tracking was not reset and current usage has passed 15% of the alert value.
+        "reminderThreshold": 1.15
     },
     "mailer": {
         // The default "from" on sent emails should be set on settings.secret.json file
