@@ -16,7 +16,15 @@ export class Mailer {
         return this._instance || (this._instance = new this())
     }
 
+    /**
+     * The main SMTP transporter.
+     */
     private client = null
+
+    /**
+     * The fallback SMTP client.
+     */
+    private clientFallback = null
 
     // INIT
     // --------------------------------------------------------------------------
@@ -55,7 +63,16 @@ export class Mailer {
                 }
             }
 
-            logger.info("Mailer.init", smtp.host, smtp.port)
+            logger.info("Mailer.init", `SMTP: ${smtp.host}:${smtp.port}`)
+
+            // Fallback defined? Instantiate it.
+            const fallbackSettings = settings.mailer.smtpFallback
+            if (fallbackSettings && fallbackSettings.auth && fallbackSettings.auth.user && fallbackSettings.auth.pass) {
+                const smtpFallback = settings.mailer.smtpFallback
+                this.clientFallback = nodemailer.createTransport(smtpFallback)
+
+                logger.info("Mailer.init", `Fallback SMTP: ${smtpFallback.host}:${smtpFallback.port}`)
+            }
         } catch (ex) {
             logger.error("Mailer.init", ex)
         }
@@ -76,6 +93,7 @@ export class Mailer {
 
         let body: string = options.body
         let subject: string = options.subject
+        let sendingOptions: any
 
         try {
             if (options.template) {
@@ -126,7 +144,7 @@ export class Mailer {
             subject = jaul.data.replaceTags(subject, defaultTags)
 
             // Send options.
-            const sendingOptions = {
+            sendingOptions = {
                 from: `"${settings.app.title}" <${options.from || settings.mailer.from}>`,
                 to: options.to,
                 subject: subject,
@@ -142,7 +160,18 @@ export class Mailer {
                 logger.info("Mailer.send", options.to, subject)
             }
         } catch (ex) {
-            logger.error("Mailer.send", options.to, subject, ex)
+            if (this.clientFallback && sendingOptions.html) {
+                logger.error("Mailer.send", options.to, subject, ex, "Will try the fallback SMTP")
+
+                // Try again using the fallback SMTP client.
+                try {
+                    await this.clientFallback.sendMail(sendingOptions)
+                } catch (fallbackEx) {
+                    logger.error("Mailer.send.fallback", options.to, subject, fallbackEx)
+                }
+            } else {
+                logger.error("Mailer.send", options.to, subject, ex)
+            }
         }
     }
 }
