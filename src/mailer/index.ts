@@ -166,6 +166,7 @@ export class Mailer {
                 // Try again using the fallback SMTP client.
                 try {
                     await this.clientFallback.sendMail(sendingOptions)
+                    logger.info("Mailer.send.fallback", options.to, subject)
                 } catch (fallbackEx) {
                     logger.error("Mailer.send.fallback", options.to, subject, fallbackEx)
                 }
