@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "21.62.12140",
+    "version": "21.81.12157",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -14,37 +14,37 @@
         "postinstall": "tsc"
     },
     "dependencies": {
-        "@google-cloud/firestore": "^4.9.3",
-        "@google-cloud/storage": "^5.7.4",
+        "@google-cloud/firestore": "^4.9.4",
+        "@google-cloud/storage": "^5.8.0",
         "@googlemaps/google-maps-services-js": "^3.1.16",
         "@mapbox/polyline": "^1.1.1",
-        "anyhow": "^2.0.6",
+        "anyhow": "^2.1.0",
         "axios": "^0.21.1",
-        "bitecache": "^1.1.5",
+        "bitecache": "^1.1.6",
         "bottleneck": "^2.19.5",
         "flatbush": "^3.3.0",
         "ical-generator": "^1.15.4",
-        "jaul": "^1.3.8",
-        "lodash": "^4.17.20",
+        "jaul": "^1.3.9",
+        "lodash": "^4.17.21",
         "moment": "2.29.1",
-        "nodemailer": "^6.4.17",
+        "nodemailer": "^6.4.18",
         "paypal-rest-sdk": "^1.8.1",
-        "setmeup": "^1.6.3",
+        "setmeup": "^1.6.4",
         "twitter-lite": "^1.1.0",
-        "typescript": "^4.1.4"
+        "typescript": "^4.1.5"
     },
     "devDependencies": {
-        "@types/node": "^14.14.25",
+        "@types/node": "^14.14.31",
         "chai": "^4.3.0",
         "chalk": "^4.1.0",
-        "mocha": "^8.2.1",
+        "mocha": "^8.3.0",
         "mocha-lcov-reporter": "^1.3.0",
         "nyc": "^15.1.0",
-        "typedoc": "^0.20.23"
+        "typedoc": "^0.20.27"
     },
     "peerDependencies": {
-        "anyhow": "^2.0.6",
-        "setmeup": "^1.6.3"
+        "anyhow": "^2.1.0",
+        "setmeup": "^1.6.4"
     },
     "prettier": {
         "trailingComma": "none",
