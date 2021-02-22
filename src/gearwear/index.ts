@@ -607,7 +607,7 @@ export class GearWear {
             }
 
             // Dispatch email to user.
-            mailer.send({
+            await mailer.send({
                 template: template,
                 data: data,
                 to: user.email
