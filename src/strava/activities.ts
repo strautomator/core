@@ -463,6 +463,73 @@ export class StravaActivities {
             throw ex
         }
     }
+
+    // ACTIVITY DATA CALCULATIONS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Estimate the user's FTP based on activities from the last few weeks (16 by default).
+     * @param user The user to fetch the FTP for.
+     */
+    ftpFromActivities = async (user: UserData, weeks?: number): Promise<number> => {
+        logger.debug("Strava.ftpFromActivities", user.id, `Weeks ${weeks}`)
+        if (!weeks) weeks = settings.strava.ftpWeeks
+
+        try {
+            let maxWatts = 0
+
+            // Timestamps for the activities date filter.
+            const dateAfter = moment().utc().subtract(weeks, "weeks")
+            const tsAfter = dateAfter.valueOf() / 1000
+            const tsBefore = new Date().valueOf() / 1000
+
+            // Get activities for the last 16 weeks.
+            const activities = await this.getActivities(user, {before: tsBefore, after: tsAfter})
+
+            // Iterate activities to get the highest FTP possible.
+            for (let a of activities) {
+                const totalTime = a.movingTime || a.totalTime
+
+                // Ignore activities with no power meter or that lasted less than 20 minutes.
+                if (!a.hasPower) continue
+                if (totalTime < 60 * 20) continue
+
+                let power: number
+
+                // Less than 30 minutes? FTP = 95%
+                if (totalTime <= 60 * 30) power = a.wattsWeighted * 0.95
+                // Between 30 and 39 minutes? FTP = 96%
+                else if (totalTime <= 60 * 39) power = a.wattsWeighted * 0.96
+                // Between 40 and 49 minutes? FTP = 97%
+                else if (totalTime <= 60 * 49) power = a.wattsWeighted * 0.97
+                // Between 50 and 59 minutes? FTP = 98%
+                else if (totalTime <= 60 * 59) power = a.wattsWeighted * 0.98
+                // Between 60 and 89 minutes? FTP = 100%
+                else if (totalTime <= 60 * 89) power = a.wattsWeighted
+                // Between 90 and 119 minutes? FTP = 101%
+                else if (totalTime <= 60 * 119) power = a.wattsWeighted * 1.01
+                // More than 2 hours? Increase the FTP by 2% for each hour.
+                else power = a.wattsWeighted * Math.pow(1.02, (totalTime - 3600) / 3600)
+
+                // New best power?
+                if (power > maxWatts) {
+                    maxWatts = power
+                }
+            }
+
+            // Got a valid power?
+            if (maxWatts > 0) {
+                maxWatts = Math.round(maxWatts)
+                logger.info("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, `${weeks} weeks`, `FTP ${maxWatts}`)
+                return maxWatts
+            } else {
+                logger.info("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, `${weeks} weeks`, `Not enough data to calculate FTP`)
+                return null
+            }
+        } catch (ex) {
+            logger.error("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, ex)
+        }
+    }
 }
 
 // Exports...
