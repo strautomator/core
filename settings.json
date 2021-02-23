@@ -221,7 +221,9 @@
             "maxPerMinute": 30,
             // Default page size 150, max is 200.
             "pageSize": 150
-        }
+        },
+        // User's FTP will be estimated based on the last 16 weeks.
+        "ftpWeeks": 16
     },
     "users": {
         // Consider users idle if they had no processed activities for more than 2 months.
