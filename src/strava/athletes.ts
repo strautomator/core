@@ -56,6 +56,29 @@ export class StravaAthletes {
             throw ex
         }
     }
+
+    // SET ATHLETE DATA
+    // --------------------------------------------------------------------------
+
+    /**
+     * Update the user's FTP.
+     * @param user User data.
+     * @param ftp The FTP (as number).
+     */
+    setAthleteFTP = async (user: UserData, ftp: number): Promise<void> => {
+        logger.debug("Strava.setAthleteFTP", user.id, ftp)
+
+        try {
+            if (ftp <= 0) {
+                throw new Error("Invalid FTP, must be higher than 0")
+            }
+
+            await api.put(user.stravaTokens, `athlete`, {ftp: ftp})
+            logger.info("Strava.setAthleteFTP", `User ${user.profile.id} - ${user.profile.username}`, `FTP ${ftp}`)
+        } catch (ex) {
+            logger.error("Strava.setAthleteFTP", ex)
+        }
+    }
 }
 
 // Exports...
