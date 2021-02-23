@@ -212,7 +212,7 @@
             "authUrl": "https://www.strava.com/oauth/authorize",
             "deauthUrl": "https://www.strava.com/oauth/deauthorize",
             "tokenUrl": "https://www.strava.com/oauth/token",
-            "scopes": "read,profile:read_all,activity:read_all,activity:write",
+            "scopes": "read,profile:read_all,profile:write,activity:read_all,activity:write",
             // Maximum concurrent requests per instance.
             "maxConcurrent": 4,
             // Maximum requests per minute per instance. Default maximum on Strava
