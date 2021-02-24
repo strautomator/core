@@ -47,29 +47,32 @@ export class StravaActivities {
             if (!query.per_page) query.per_page = 200
             if (!query.page) query.page = 1
 
-            // Fetch activities from Strava, repescting the pagination.
+            // Fetch activities from Strava, respecting the pagination.
             while (query.page) {
-                logger.debug("Strava.getActivities", `User ${user.id} ${user.displayName}`, JSON.stringify(query, null, 0))
+                try {
+                    const data = await api.get(tokens, "athlete/activities", query)
 
-                const data = await api.get(tokens, "athlete/activities", query)
+                    // No data returned? Stop here.
+                    if (!data || data.length == 0) {
+                        query.page = false
+                        break
+                    }
 
-                // No data returned? Stop here.
-                if (!data || data.length == 0) {
+                    // Iterate and transform activities from raw strava data to StravaActivity models.
+                    for (let activity of data) {
+                        activities.push(toStravaActivity(activity, user))
+                    }
+
+                    // If count is more than half the page size, consider it might have more and increment the page.
+                    if (data.length >= query.per_page / 2) {
+                        query.page++
+                    } else {
+                        query.page = false
+                        break
+                    }
+                } catch (innerEx) {
+                    logger.error("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Page ${query.page}`, innerEx)
                     query.page = false
-                    break
-                }
-
-                // Iterate and transform activities from raw strava data to StravaActivity models.
-                for (let activity of data) {
-                    activities.push(toStravaActivity(activity, user))
-                }
-
-                // If count is the same as the page size, consider it might have more and increment the page.
-                if (data.length >= query.per_page) {
-                    query.page++
-                } else {
-                    query.page = false
-                    break
                 }
             }
 
