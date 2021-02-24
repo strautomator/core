@@ -386,11 +386,10 @@ export class Users {
 
             // If a new user, publish the user creation event.
             if (!exists) {
-                logger.info("Users.upsert", userData.id, userData.displayName, `New registration`)
+                logger.info("Users.upsert", `${userData.id} - ${userData.displayName}`, `New registration`)
                 eventManager.emit("Users.create", userData)
             } else {
-                const dateLastActivity = userData.dateLastActivity ? moment(userData.dateLastActivity).format("ll") : "never"
-                logger.info("Users.upsert", userData.id, userData.displayName, `${userData.recipeCount} recipes, last activity: ${dateLastActivity}`)
+                logger.info("Users.upsert", `${userData.id} - ${userData.displayName}`, "Updated")
             }
 
             return userData
@@ -407,14 +406,40 @@ export class Users {
      */
     update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
         try {
+            const logs = []
+
             if (!replace) {
                 await database.merge("users", user)
+
+                if (user.dateLastActivity) {
+                    logs.push(moment(user.dateLastActivity).format("lll"))
+                }
+
+                if (user.profile) {
+                    if (user.profile.bikes && user.profile.bikes.length > 0) {
+                        logs.push("Updated bikes")
+                    }
+                    if (user.profile.shoes && user.profile.shoes.length > 0) {
+                        logs.push("Updated shoes")
+                    }
+                }
+
+                if (user.calendarTemplate) {
+                    logs.push("Updated calendar template")
+                }
+
+                if (user.preferences) {
+                    logs.push(_.toPairs(user.preferences).join(" | ").replace(/\,/gi, "="))
+                }
             } else {
                 await database.set("users", user, user.id)
+                logs.push("Replaced entire user data")
             }
+
+            logger.info("Users.update", user.id, logs.join(" | "))
         } catch (ex) {
             if (user.profile) {
-                logger.error("Users.update", user.id, user.displayName, ex)
+                logger.error("Users.update", `${user.id} - ${user.displayName}`, ex)
             } else {
                 logger.error("Users.update", user.id, ex)
             }

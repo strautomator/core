@@ -96,7 +96,12 @@ export class Notifications {
             const result = await database.search("notifications", queries)
             cache.set("notifications", `${user.id}-${all}`, result)
 
-            logger.info("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, `Got ${result.length} notification(s)`)
+            if (result.length > 0) {
+                logger.info("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, `Got ${result.length} notification(s)`)
+            } else {
+                logger.debug("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, `Got no notification(s)`)
+            }
+
             return result
         } catch (ex) {
             logger.error("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, ex)

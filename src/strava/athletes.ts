@@ -75,10 +75,10 @@ export class StravaAthletes {
 
             // If FTP hasn't changed, do nothing.
             if (ftp == user.profile.ftp) {
-                logger.info("Strava.setAthleteFTP", `User ${user.profile.id} - ${user.profile.username}`, `Unchanged FTP: ${ftp}`)
+                logger.info("Strava.setAthleteFTP", `User ${user.id} - ${user.displayName}`, `Unchanged FTP: ${ftp}`)
             } else {
                 await api.put(user.stravaTokens, `athlete`, {ftp: ftp})
-                logger.info("Strava.setAthleteFTP", `User ${user.profile.id} - ${user.profile.username}`, `FTP ${ftp}`)
+                logger.info("Strava.setAthleteFTP", `User ${user.id} - ${user.displayName}`, `FTP ${ftp}`)
             }
         } catch (ex) {
             logger.error("Strava.setAthleteFTP", ex)
