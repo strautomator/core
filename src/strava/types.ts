@@ -373,6 +373,8 @@ export interface StravaProfile {
     urlAvatar?: string
     /** Measurement preference. */
     units?: "metric" | "imperial"
+    /** User's cycling FTP. */
+    ftp?: number
 }
 
 /**
@@ -390,6 +392,7 @@ export function toStravaProfile(data): StravaProfile {
         dateCreated: moment.utc(data.created_at).toDate(),
         dateUpdated: moment.utc(data.updated_at).toDate(),
         units: data.measurement_preference == "feet" ? "imperial" : "metric",
+        ftp: data.ftp || null,
         bikes: [],
         shoes: []
     }
@@ -445,6 +448,22 @@ export interface StravaWebhook {
     callbackUrl: string
     /** Last updated. */
     dateUpdated: Date
+}
+
+/**
+ * FTP estimate for a batch of Strava activities.
+ */
+export interface StravaActivitiesFTP {
+    /** Calculated FTP based on current and activities values. */
+    ftpWatts: number
+    /** Max estimated FTP from the user's activities. . */
+    maxWatts: number
+    /** Date of the activity that has the max estimated FTP. */
+    maxDate: Date
+    /** How many activities with power? */
+    activityCount: number
+    /** Average watts for all activities with power. */
+    activityWattsAvg: number
 }
 
 /**

@@ -59,6 +59,8 @@ export interface UserData {
  * User preferences.
  */
 export interface UserPreferences {
+    /** Auto update cycling FTP based on activities from the last few weeks? */
+    ftpAutoUpdate?: boolean
     /** Custom "linksOn" value for linkbacks (default is set on settings). */
     linksOn?: number
     /** Add a #strautomator.com hashtag on name of processed activities? */
