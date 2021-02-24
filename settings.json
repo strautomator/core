@@ -223,7 +223,9 @@
             "pageSize": 150
         },
         // User's FTP will be estimated based on the last 16 weeks.
-        "ftpWeeks": 16
+        "ftpWeeks": 16,
+        // Maximum allowed number of weeks when calculating FTP.
+        "ftpMaxWeeks": 52
     },
     "users": {
         // Consider users idle if they had no processed activities for more than 2 months.
