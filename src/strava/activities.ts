@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaGear, StravaProcessedActivity} from "./types"
+import {StravaActivity, StravaGear, StravaProcessedActivity, StravaActivitiesFTP, StravaSport} from "./types"
 import {toStravaActivity} from "./types"
 import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
@@ -471,12 +471,21 @@ export class StravaActivities {
      * Estimate the user's FTP based on activities from the last few weeks (16 by default).
      * @param user The user to fetch the FTP for.
      */
-    ftpFromActivities = async (user: UserData, weeks?: number): Promise<number> => {
+    ftpFromActivities = async (user: UserData, weeks?: number): Promise<StravaActivitiesFTP> => {
         logger.debug("Strava.ftpFromActivities", user.id, `Weeks ${weeks}`)
-        if (!weeks) weeks = settings.strava.ftpWeeks
 
         try {
-            let maxWatts = 0
+            let listWatts: number[] = []
+            let maxWatts: number = 0
+            let avgWatts: number = 0
+            let ftpDate: Date
+
+            // Validate weeks parameter.
+            if (!weeks || weeks < 1) weeks = settings.strava.ftpWeeks
+            if (weeks > settings.strava.ftpMaxWeeks) {
+                logger.warn("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, `Weeks reduced from ${weeks} to ${settings.strava.ftpMaxWeeks}`)
+                weeks = settings.strava.ftpMaxWeeks
+            }
 
             // Timestamps for the activities date filter.
             const dateAfter = moment().utc().subtract(weeks, "weeks")
@@ -490,9 +499,10 @@ export class StravaActivities {
             for (let a of activities) {
                 const totalTime = a.movingTime || a.totalTime
 
-                // Ignore activities with no power meter or that lasted less than 20 minutes.
-                if (!a.hasPower) continue
+                // Ignore cycling activities with no power meter or that lasted less than 20 minutes.
+                if (a.type != StravaSport.Ride && a.type != StravaSport.VirtualRide) continue
                 if (totalTime < 60 * 20) continue
+                if (!a.hasPower) continue
 
                 let power: number
 
@@ -514,20 +524,38 @@ export class StravaActivities {
                 // New best power?
                 if (power > maxWatts) {
                     maxWatts = power
+                    ftpDate = a.dateStart
                 }
+
+                listWatts.push(power)
             }
 
-            // Got a valid power?
-            if (maxWatts > 0) {
-                maxWatts = Math.round(maxWatts)
-                logger.info("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, `${weeks} weeks`, `FTP ${maxWatts}`)
-                return maxWatts
-            } else {
+            // No activities with power? Stop here.
+            if (listWatts.length == 0) {
                 logger.info("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, `${weeks} weeks`, `Not enough data to calculate FTP`)
                 return null
             }
+
+            // Round and calculate the weighted FTP, giving 20% more weight to the current value.
+            maxWatts = Math.round(maxWatts)
+            avgWatts = Math.round(_.mean(listWatts))
+            const ftpCurrent = user.profile.ftp || maxWatts
+            const ftpWeighted = Math.round((maxWatts + ftpCurrent * 1.2) / 2)
+
+            // If highest activity FTP is higher than current FTP, set it as the new value.
+            // Otherwise get the weighted or current value itself, whatever is the lowest.
+            const ftpWatts = maxWatts >= ftpCurrent || maxWatts >= ftpWeighted ? maxWatts : ftpWeighted > ftpCurrent ? ftpCurrent : ftpWeighted
+            logger.info("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, `${weeks} weeks`, `FTP ${ftpWatts} watts`, `Average ${avgWatts}, highest ${maxWatts} watts for ${listWatts.length} activities`)
+
+            return {
+                ftpWatts: ftpWatts,
+                maxWatts: maxWatts,
+                maxDate: ftpDate,
+                activityCount: listWatts.length,
+                activityWattsAvg: avgWatts
+            }
         } catch (ex) {
-            logger.error("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, ex)
+            logger.error("Strava.ftpFromActivities", `User ${user.profile.id} - ${user.profile.username}`, `${weeks} weeks`, ex)
         }
     }
 }

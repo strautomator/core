@@ -73,8 +73,13 @@ export class StravaAthletes {
                 throw new Error("Invalid FTP, must be higher than 0")
             }
 
-            await api.put(user.stravaTokens, `athlete`, {ftp: ftp})
-            logger.info("Strava.setAthleteFTP", `User ${user.profile.id} - ${user.profile.username}`, `FTP ${ftp}`)
+            // If FTP hasn't changed, do nothing.
+            if (ftp == user.profile.ftp) {
+                logger.info("Strava.setAthleteFTP", `User ${user.profile.id} - ${user.profile.username}`, `Unchanged FTP: ${ftp}`)
+            } else {
+                await api.put(user.stravaTokens, `athlete`, {ftp: ftp})
+                logger.info("Strava.setAthleteFTP", `User ${user.profile.id} - ${user.profile.username}`, `FTP ${ftp}`)
+            }
         } catch (ex) {
             logger.error("Strava.setAthleteFTP", ex)
         }
