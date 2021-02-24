@@ -536,11 +536,11 @@ export class StravaActivities {
                 return null
             }
 
-            // Round and calculate the weighted FTP, giving 20% more weight to the current value.
+            // Round and calculate the weighted FTP.
             maxWatts = Math.round(maxWatts)
             avgWatts = Math.round(_.mean(listWatts))
             const ftpCurrent = user.profile.ftp || maxWatts
-            const ftpWeighted = Math.round((maxWatts + ftpCurrent * 1.2) / 2)
+            const ftpWeighted = Math.round((maxWatts + ftpCurrent * 1.1) / 2)
 
             // If highest activity FTP is higher than current FTP, set it as the new value.
             // Otherwise get the weighted or current value itself, whatever is the lowest.
