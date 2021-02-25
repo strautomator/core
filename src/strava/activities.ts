@@ -479,8 +479,9 @@ export class StravaActivities {
 
         try {
             let listWatts: number[] = []
-            let maxWatts: number = 0
             let avgWatts: number = 0
+            let maxWatts: number = 0
+            let currentWatts: number = 0
             let ftpDate: Date
 
             // Validate weeks parameter.
@@ -539,16 +540,33 @@ export class StravaActivities {
                 return null
             }
 
-            // Round and calculate the weighted FTP.
-            maxWatts = Math.round(maxWatts)
             avgWatts = Math.round(_.mean(listWatts))
-            const ftpCurrent = user.profile.ftp || maxWatts
-            const ftpWeighted = Math.round((maxWatts + ftpCurrent * 1.1) / 2)
+            maxWatts = Math.round(maxWatts)
+
+            // Make sure we have the very latest athlete data.
+            try {
+                const athlete = await stravaAthletes.getAthlete(user.stravaTokens)
+                if (athlete && athlete.ftp) currentWatts = athlete.ftp
+            } catch (athleteEx) {
+                logger.warn("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, "Could not get latest athlete data, will use the current one")
+            }
+
+            // Fallback to max found watts in case user has never entered the FTP on the Strava account.
+            if (!currentWatts) {
+                currentWatts = user.profile.ftp || maxWatts
+            }
+
+            // Calculate weighted average (towards the current FTP).
+            const maxWattsWeight = [maxWatts, 1]
+            const currentWattsWeight = [currentWatts, 1.2]
+            const ftpWeights = [maxWattsWeight, currentWattsWeight]
+            const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
+            const ftpWeighted = Math.round(ftpTotalSum / ftpWeightSum)
 
             // If highest activity FTP is higher than current FTP, set it as the new value.
             // Otherwise get the weighted or current value itself, whatever is the lowest.
-            const ftpWatts = maxWatts >= ftpCurrent || maxWatts >= ftpWeighted ? maxWatts : ftpWeighted > ftpCurrent ? ftpCurrent : ftpWeighted
-            logger.info("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `${weeks} weeks`, `FTP ${ftpWatts} watts`, `Average ${avgWatts}, highest ${maxWatts} watts, ${listWatts.length} activities`)
+            const ftpWatts = maxWatts >= currentWatts || maxWatts >= ftpWeighted ? maxWatts : ftpWeighted
+            logger.info("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `${weeks} weeks`, `Estimated ${ftpWatts}w, current ${currentWatts}w, highest ${maxWatts}w from ${listWatts.length} activities`)
 
             return {
                 ftpWatts: ftpWatts,
