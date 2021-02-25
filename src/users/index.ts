@@ -462,11 +462,11 @@ export class Users {
             await database.delete("users", user.id)
 
             // Delete related contents.
-            const countActivities = await database.delete("activities", ["user.id", "==", user.id])
-            const countCalendar = await database.delete("calendar", ["userId", "==", user.id])
-            const countRecipeStats = await database.delete("recipe-stats", ["userId", "==", user.id])
-            const countGearWear = await database.delete("gearwear", ["userId", "==", user.id])
-            logger.warn("Users.delete", user.id, user.displayName, `Removed ${countActivities} activities, ${countCalendar} calendars, ${countRecipeStats} recipe stats, ${countGearWear} gearwear configs`)
+            await database.delete("activities", ["user.id", "==", user.id])
+            await database.delete("calendar", ["userId", "==", user.id])
+            await database.delete("recipe-stats", ["userId", "==", user.id])
+            await database.delete("gearwear", ["userId", "==", user.id])
+            logger.warn("Users.delete", `User ${user.id} - ${user.displayName}`, "Deleted")
 
             // Publish deleted event.
             eventManager.emit("Users.deleted", user)
