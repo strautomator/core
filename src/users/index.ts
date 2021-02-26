@@ -405,6 +405,8 @@ export class Users {
      * @param merge Set to true to fully replace data instead of merging, default is false.
      */
     update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
+        const username = user.displayName ? `${user.id} - ${user.displayName}` : user.id
+
         try {
             const logs = []
 
@@ -417,15 +419,19 @@ export class Users {
 
                 if (user.profile) {
                     if (user.profile.bikes && user.profile.bikes.length > 0) {
-                        logs.push("Updated bikes")
+                        logs.push("Bikes")
                     }
                     if (user.profile.shoes && user.profile.shoes.length > 0) {
-                        logs.push("Updated shoes")
+                        logs.push("Shoes")
                     }
                 }
 
+                if (user.dateLastFtpUpdate) {
+                    logs.push("FTP")
+                }
+
                 if (user.calendarTemplate) {
-                    logs.push("Updated calendar template")
+                    logs.push("Calendar template")
                 }
 
                 if (user.preferences) {
@@ -436,14 +442,9 @@ export class Users {
                 logs.push("Replaced entire user data")
             }
 
-            logger.info("Users.update", user.id, logs.join(" | "))
+            logger.info("Users.update", username, logs.join(" | "))
         } catch (ex) {
-            if (user.profile) {
-                logger.error("Users.update", `${user.id} - ${user.displayName}`, ex)
-            } else {
-                logger.error("Users.update", user.id, ex)
-            }
-
+            logger.error("Users.update", username, ex)
             throw ex
         }
     }
