@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaGear, StravaProcessedActivity, StravaActivitiesFTP, StravaSport} from "./types"
+import {StravaActivity, StravaGear, StravaProcessedActivity, StravaEstimatedFtp, StravaSport} from "./types"
 import {toStravaActivity} from "./types"
 import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
@@ -471,24 +471,26 @@ export class StravaActivities {
     // --------------------------------------------------------------------------
 
     /**
-     * Estimate the user's FTP based on activities from the last few weeks (16 by default).
+     * Estimate the user's FTP based on activities from the last few weeks (default 14).
      * @param user The user to fetch the FTP for.
      */
-    ftpFromActivities = async (user: UserData, weeks?: number): Promise<StravaActivitiesFTP> => {
+    ftpFromActivities = async (user: UserData, weeks?: number): Promise<StravaEstimatedFtp> => {
         logger.debug("Strava.ftpFromActivities", user.id, `Weeks ${weeks}`)
 
         try {
+            let recentlyUpdated: boolean = false
             let listWatts: number[] = []
+            let ftpWatts: number
+            let currentWatts: number = 0
             let avgWatts: number = 0
             let maxWatts: number = 0
-            let currentWatts: number = 0
-            let ftpDate: Date
+            let bestActivity: StravaActivity
 
             // Validate weeks parameter.
-            if (!weeks || weeks < 1) weeks = settings.strava.ftpWeeks
-            if (weeks > settings.strava.ftpMaxWeeks) {
-                logger.warn("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `Weeks reduced from ${weeks} to ${settings.strava.ftpMaxWeeks}`)
-                weeks = settings.strava.ftpMaxWeeks
+            if (!weeks || weeks < 1) weeks = settings.strava.ftp.weeks
+            if (weeks > settings.strava.ftp.maxWeeks) {
+                logger.warn("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `Weeks reduced from ${weeks} to ${settings.strava.ftp.maxWeeks}`)
+                weeks = settings.strava.ftp.maxWeeks
             }
 
             // Timestamps for the activities date filter.
@@ -496,7 +498,7 @@ export class StravaActivities {
             const tsAfter = dateAfter.valueOf() / 1000
             const tsBefore = new Date().valueOf() / 1000
 
-            // Get activities for the last 16 weeks.
+            // Get activities for the passed number of weeks.
             const activities = await this.getActivities(user, {before: tsBefore, after: tsAfter})
 
             // Iterate activities to get the highest FTP possible.
@@ -511,7 +513,7 @@ export class StravaActivities {
                 let power: number
 
                 // Less than 30 minutes? FTP = 95%
-                if (totalTime <= 60 * 30) power = a.wattsWeighted * 0.95
+                if (totalTime <= 60 * 29) power = a.wattsWeighted * 0.95
                 // Between 30 and 39 minutes? FTP = 96%
                 else if (totalTime <= 60 * 39) power = a.wattsWeighted * 0.96
                 // Between 40 and 49 minutes? FTP = 97%
@@ -522,13 +524,13 @@ export class StravaActivities {
                 else if (totalTime <= 60 * 89) power = a.wattsWeighted
                 // Between 90 and 119 minutes? FTP = 101%
                 else if (totalTime <= 60 * 119) power = a.wattsWeighted * 1.01
-                // More than 2 hours? Increase the FTP by 2% for each hour.
+                // More than 2 hours? Increase the power by 2% for each hour.
                 else power = a.wattsWeighted * Math.pow(1.02, (totalTime - 3600) / 3600)
 
                 // New best power?
                 if (power > maxWatts) {
                     maxWatts = power
-                    ftpDate = a.dateStart
+                    bestActivity = a
                 }
 
                 listWatts.push(power)
@@ -546,34 +548,43 @@ export class StravaActivities {
             // Make sure we have the very latest athlete data.
             try {
                 const athlete = await stravaAthletes.getAthlete(user.stravaTokens)
-                if (athlete && athlete.ftp) currentWatts = athlete.ftp
+                user.profile.ftp = athlete.ftp
             } catch (athleteEx) {
                 logger.warn("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, "Could not get latest athlete data, will use the current one")
             }
 
-            // Fallback to max found watts in case user has never entered the FTP on the Strava account.
-            if (!currentWatts) {
-                currentWatts = user.profile.ftp || maxWatts
-            }
+            currentWatts = user.profile.ftp
 
             // Calculate weighted average (towards the current FTP).
-            const maxWattsWeight = [maxWatts, 1]
-            const currentWattsWeight = [currentWatts, 1.2]
-            const ftpWeights = [maxWattsWeight, currentWattsWeight]
-            const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
-            const ftpWeighted = Math.round(ftpTotalSum / ftpWeightSum)
-
             // If highest activity FTP is higher than current FTP, set it as the new value.
             // Otherwise get the weighted or current value itself, whatever is the lowest.
-            const ftpWatts = maxWatts >= currentWatts || maxWatts >= ftpWeighted ? maxWatts : ftpWeighted
+            if (currentWatts && currentWatts > maxWatts) {
+                const maxWattsWeight = [maxWatts, 1]
+                const currentWattsWeight = [currentWatts, 1.2]
+                const ftpWeights = [maxWattsWeight, currentWattsWeight]
+                const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
+                ftpWatts = Math.round(ftpTotalSum / ftpWeightSum)
+            } else {
+                ftpWatts = maxWatts
+            }
+
             logger.info("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `${weeks} weeks`, `Estimated ${ftpWatts}w, current ${currentWatts}w, highest ${maxWatts}w from ${listWatts.length} activities`)
+
+            // Check if the FTP was recently updated for that user.
+            if (user.dateLastFtpUpdate) {
+                const now = moment().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
+                const lastUpdate = moment(user.dateLastFtpUpdate).unix()
+                recentlyUpdated = lastUpdate >= now
+            }
 
             return {
                 ftpWatts: ftpWatts,
-                maxWatts: maxWatts,
-                maxDate: ftpDate,
+                ftpCurrentWatts: currentWatts,
+                bestWatts: maxWatts,
+                bestActivity: bestActivity,
                 activityCount: listWatts.length,
-                activityWattsAvg: avgWatts
+                activityWattsAvg: avgWatts,
+                recentlyUpdated: recentlyUpdated
             }
         } catch (ex) {
             logger.error("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `${weeks} weeks`, ex)
