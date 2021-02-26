@@ -453,17 +453,21 @@ export interface StravaWebhook {
 /**
  * FTP estimate for a batch of Strava activities.
  */
-export interface StravaActivitiesFTP {
-    /** Calculated FTP based on current and activities values. */
+export interface StravaEstimatedFtp {
+    /** Estimated FTP based on current and maximum calculated FTP values. */
     ftpWatts: number
-    /** Max estimated FTP from the user's activities. . */
-    maxWatts: number
-    /** Date of the activity that has the max estimated FTP. */
-    maxDate: Date
+    /** Current FTP taken from Strava. */
+    ftpCurrentWatts: number
+    /** Calculated FTP for the best activity. */
+    bestWatts: number
+    /** The activity that has the max calculated FTP. */
+    bestActivity: StravaActivity
     /** How many activities with power? */
     activityCount: number
     /** Average watts for all activities with power. */
     activityWattsAvg: number
+    /** Was the user's FTP recently updated? Use this to avoid back-to-back updates. */
+    recentlyUpdated: boolean
 }
 
 /**

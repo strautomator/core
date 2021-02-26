@@ -45,6 +45,8 @@ export interface UserData {
     dateLastActivity?: Date
     /** Date of last activity updated by a recipe. */
     dateLastProcessedActivity?: Date
+    /** Date when the user FTP was last updated. */
+    dateLastFtpUpdate?: Date
     /** Recipes counter. */
     recipeCount?: number
     /** Processed activities counter. */
