@@ -222,10 +222,14 @@
             // Default page size 150, max is 200.
             "pageSize": 150
         },
-        // User's FTP will be estimated based on the last 14 weeks.
-        "ftpWeeks": 14,
-        // Maximum allowed number of weeks when calculating FTP.
-        "ftpMaxWeeks": 52
+        "ftp": {
+            // User's FTP will be estimated based on the last 14 weeks.
+            "weeks": 14,
+            // Maximum allowed number of weeks when calculating FTP.
+            "maxWeeks": 52,
+            // FTP can be updated only once every 24 hours.
+            "sinceLastHours": 24
+        }
     },
     "users": {
         // Consider users idle if they had no processed activities for more than 2 months.
