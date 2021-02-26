@@ -222,8 +222,8 @@
             // Default page size 150, max is 200.
             "pageSize": 150
         },
-        // User's FTP will be estimated based on the last 16 weeks.
-        "ftpWeeks": 16,
+        // User's FTP will be estimated based on the last 14 weeks.
+        "ftpWeeks": 14,
         // Maximum allowed number of weeks when calculating FTP.
         "ftpMaxWeeks": 52
     },
