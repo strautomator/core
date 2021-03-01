@@ -1,6 +1,24 @@
 // Strautomator Core: Notification types
 
 /**
+ * Global announcements (new features, changes etc).
+ */
+export interface Announcement {
+    /** Announcement indexed by ID, prefixed with "ann". */
+    id: string
+    /** Title of the announcement. */
+    title: string
+    /** Body of the announcement. */
+    body: string
+    /** Link associated with the announcement. */
+    href?: string
+    /** Date when it should start appearing. */
+    dateStart: Date
+    /** Date when it should expire (end). */
+    dateExpiry: Date
+}
+
+/**
  * Base notification data from Strautomator to a user.
  */
 export interface BaseNotification {
