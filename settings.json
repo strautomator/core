@@ -6,6 +6,10 @@
         // Hashtag used on social media.
         "hashtag": "#strautomator.com"
     },
+    "announcements": {
+        // Active announcements should be cached for up to 1 hour.
+        "cacheDuration": 3600
+    },
     "calendar": {
         // Default activity fields to be added to event details. Each item is a line, and multiple fields
         // can be added to same line separated by comma.
