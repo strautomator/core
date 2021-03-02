@@ -37,7 +37,7 @@ export class Announcements {
         try {
             const result = await database.search("announcements")
 
-            logger.info("Announcements.getAll", `Got ${result.length} announcements`)
+            logger.info("Announcements.getAll", `${result.length} announcements`)
             return result
         } catch (ex) {
             logger.error("Announcements.getAll", ex)
@@ -63,8 +63,8 @@ export class Announcements {
             const all = await database.search("announcements", [["dateStart", "<=", now]])
             const result = all.filter((a) => a.dateExpiry >= now)
             cache.set("announcements", "active", result)
+            logger.info("Announcements.getActive", `${result.length || "No"} active announcements`)
 
-            logger.info("Announcements.getActive", `Got ${result.length} active announcements`)
             return result
         } catch (ex) {
             logger.error("Announcements.getActive", ex)
@@ -92,7 +92,7 @@ export class Announcements {
             const logFromTill = `${moment(announcement.dateStart).format("lll")} till ${moment(announcement.dateExpiry).format("lll")}`
 
             // Keep existing read count when updating.
-            announcement.readCount = exists ? docSnapshot.data().readCount() : 0
+            announcement.readCount = exists ? docSnapshot.data().readCount : 0
 
             // Save and log.
             await database.set("announcements", announcement, announcement.id)
