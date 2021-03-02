@@ -1,6 +1,6 @@
 // Strautomator Core: Notifications
 
-import {Announcement, BaseNotification, FailedRecipeNotification, GearWearNotification} from "./types"
+import {BaseNotification, FailedRecipeNotification, GearWearNotification} from "./types"
 import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
@@ -26,13 +26,9 @@ export class Notifications {
      * Init the Notifications manager.
      */
     init = async (): Promise<void> => {
-        try {
-            cache.setup("notifications", settings.notifications.cacheDuration)
-            logger.info("Notifications.init")
-        } catch (ex) {
-            logger.error("Notifications.init", ex)
-            throw ex
-        }
+        const duration = moment.duration(settings.notifications.cacheDuration, "seconds").humanize()
+        cache.setup("notifications", settings.notifications.cacheDuration)
+        logger.info("Notifications.init", `Cache notifications for up to ${duration}`)
 
         eventManager.on("Users.delete", this.onUserDelete)
     }
@@ -203,77 +199,20 @@ export class Notifications {
         }
     }
 
-    // ANNOUNCEMENTS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Get active announcements.
-     * @param includeExpired Optional, if true will return expired announcements as well.
-     */
-    getAnnouncements = async (includeExpired?: boolean): Promise<Announcement[]> => {
-        try {
-            const now = new Date()
-            const result = await database.search("announcements", [["dateStart", "<=", now]])
-
-            // Remove announcements that have already expired.
-            return includeExpired ? result : result.filter((a) => a.dateExpiry >= now)
-        } catch (ex) {
-            logger.error("Notifications.getAnnouncements", ex)
-            throw ex
-        }
-    }
-
-    /**
-     * Create a new global announcement. If an announcement with the same ID exists
-     * then it will be overwritten.
-     * @param announcement Announcement details.
-     */
-    setAnnouncement = async (announcement: Announcement): Promise<void> => {
-        try {
-            if (!announcement.id) throw new Error("Invalid ID")
-            if (!announcement.title) throw new Error("Missing announcement title")
-            if (!announcement.body) throw new Error("Missing announcement body")
-            if (!announcement.dateStart) throw new Error("Missing start date")
-            if (!announcement.dateExpiry) throw new Error("Missing expiry date")
-
-            // Make sure announcement ID starts with "ann-".
-            if (announcement.id.substring(0, 4) != "ann-") announcement.id = `ann-${announcement.id}`
-
-            // Log start and end date.
-            const fromTo = `${moment(announcement.dateStart).format("lll")} till ${moment(announcement.dateExpiry).format("lll")}`
-
-            // Save to database and log.
-            await database.set("announcements", announcement, announcement.id)
-            logger.info("Notifications.setAnnouncement", `Announcement ID ${announcement.id}`, announcement.title, fromTo)
-        } catch (ex) {
-            logger.error("Notifications.setAnnouncement", announcement.title, ex)
-        }
-    }
-
     // MAINTENANCE
     // --------------------------------------------------------------------------
 
     /**
-     * Remove old and expired notifications and announcements.
+     * Remove old / read and expired notifications.
      */
     cleanup = async (): Promise<void> => {
         try {
-            const notDate = moment().utc().subtract(settings.notifications.readDeleteAfterDays, "days")
+            const date = moment().utc().subtract(settings.notifications.readDeleteAfterDays, "days")
+            let counter = 0
+            counter += await database.delete("notifications", ["dateRead", "<", date])
+            counter += await database.delete("notifications", ["dateExpiry", "<", date])
 
-            // Delete and count notifications.
-            let notCounter = 0
-            notCounter += await database.delete("notifications", ["dateRead", "<", notDate])
-            notCounter += await database.delete("notifications", ["dateExpiry", "<", notDate])
-
-            // Delete and count announcements.
-            let annCounter = await database.delete("announcements", ["dateExpiry", "<", notDate])
-
-            // Log.
-            if (annCounter > 0) {
-                logger.info("Notifications.cleanup", `Deleted ${notCounter} notifications and ${annCounter} announcements`)
-            } else {
-                logger.info("Notifications.cleanup", `Deleted ${notCounter} notifications`)
-            }
+            logger.info("Notifications.cleanup", `Deleted ${counter} notifications`)
         } catch (ex) {
             logger.error("Notifications.cleanup", ex)
         }

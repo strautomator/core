@@ -65,6 +65,8 @@ import {GearWear} from "./gearwear"
 export const gearwear: GearWear = GearWear.Instance
 import {Notifications} from "./notifications"
 export const notifications: Notifications = Notifications.Instance
+import {Announcements} from "./announcements"
+export const announcements: Announcements = Announcements.Instance
 import {Calendar} from "./calendar"
 export const calendar: Calendar = Calendar.Instance
 import {FAQ} from "./faq"
@@ -81,6 +83,7 @@ export * from "./strava/types"
 export * from "./users/types"
 export * from "./calendar/types"
 export * from "./notifications/types"
+export * from "./announcements/types"
 export * from "./paypal/types"
 
 // Flag if the server is shutting down.
@@ -138,7 +141,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, gearwear, notifications, calendar, faq]) {
+    for (let coreModule of [database, mailer, maps, paypal, strava, users, twitter, weather, gearwear, notifications, announcements, calendar, faq]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 
