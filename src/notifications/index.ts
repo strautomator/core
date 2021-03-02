@@ -4,6 +4,9 @@ import {BaseNotification, FailedRecipeNotification, GearWearNotification} from "
 import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
+import mailer from "../mailer"
+import users from "../users"
+import _ = require("lodash")
 import cache = require("bitecache")
 import logger = require("anyhow")
 import moment = require("moment")
@@ -196,6 +199,62 @@ export class Notifications {
         } catch (ex) {
             logger.error("Notifications.markAsRead", id, ex)
             throw ex
+        }
+    }
+
+    // ALERTING
+    // --------------------------------------------------------------------------
+
+    /**
+     * Send an email reminder with notifications to users that reach
+     * the unread threshold (default is 10, via settings).
+     */
+    sendEmailReminder = async (): Promise<void> => {
+        try {
+            const now = new Date()
+            const queries: any[] = [
+                ["read", "==", false],
+                ["dateExpiry", ">", now]
+            ]
+
+            // Fetch unread notifications and group by users.
+            const result = await database.search("notifications", queries)
+            const userNotifications = _.groupBy(result, "userId")
+
+            let userId: string
+            let list: any
+
+            // Iterate users with unread notifications.
+            for ([userId, list] of Object.entries(userNotifications)) {
+                try {
+                    if (list.length > 0 && list.length % settings.notifications.emailReminderCount == 0) {
+                        const user = await users.getById(userId)
+
+                        // Send the email reminder only if user has set an email.
+                        if (user.email) {
+                            const data = {
+                                userId: user.id,
+                                userName: user.profile.firstName || user.displayName,
+                                notifications: list.map((n) => n.body).join("<br>-<br>"),
+                                count: list.length
+                            }
+                            const options = {
+                                to: user.email,
+                                template: "UnreadNotifications",
+                                data: data
+                            }
+
+                            await mailer.send(options)
+                        } else {
+                            logger.info("Notifications.sendEmailReminder", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, but no email set`)
+                        }
+                    }
+                } catch (innerEx) {
+                    logger.error("Notifications.sendEmailReminder", `User ${userId}`, innerEx)
+                }
+            }
+        } catch (ex) {
+            logger.error("Notifications.sendEmailReminder", ex)
         }
     }
 

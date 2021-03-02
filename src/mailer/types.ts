@@ -97,5 +97,17 @@ export const EmailTemplates = {
             "<p>" +
             "<small>Technical details: the OAuth2 refresh token that we have is not valid any longer.</small>" +
             "</p>"
+    },
+
+    UnreadNotifications: {
+        subject: "You have ${count} unread notifications",
+        body:
+            "<p>" +
+            "Hi ${userName}!<br /><br />" +
+            "It might have been a while since you last checked your account on Strautomator... and there are some unread notifications for you:<br><br>-" +
+            "${notifications}</p>" +
+            "<p>" +
+            'Please go to <a href="${appUrl}account/notifications">My Notifications</a> for more details.' +
+            "</p>"
     }
 }
