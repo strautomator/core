@@ -6,7 +6,7 @@ import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import recipeStats from "./stats"
-import messages from "../notifications"
+import notifications from "../notifications"
 import weather from "../weather"
 import _ = require("lodash")
 import jaul = require("jaul")
@@ -28,7 +28,7 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
 
         // Create a notification to the user statin the failed action.
         const notification = {userId: user.id, title: title, body: body, recipeId: recipe.id, activityId: activity.id}
-        await messages.createNotification(user, notification)
+        await notifications.createNotification(user, notification)
     } catch (ex) {
         logger.error("Recipes.failedAction.exception", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, ex)
     }

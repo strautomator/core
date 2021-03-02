@@ -245,8 +245,9 @@ export class Notifications {
                             }
 
                             await mailer.send(options)
+                            logger.info("Notifications.sendEmailReminder", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, email sent`)
                         } else {
-                            logger.info("Notifications.sendEmailReminder", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, but no email set`)
+                            logger.info("Notifications.sendEmailReminder", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, but no user email set`)
                         }
                     }
                 } catch (innerEx) {
