@@ -1,10 +1,11 @@
 // Strautomator Core: Strava Athletes
 
-import {StravaGear, StravaProfile, StravaTokens} from "./types"
+import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProfile, StravaSport, StravaTokens} from "./types"
 import {toStravaGear, toStravaProfile} from "./types"
 import {UserData} from "../users/types"
 import users from "../users"
 import api from "./api"
+import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
 const settings = require("setmeup").settings
@@ -104,6 +105,117 @@ export class StravaAthletes {
             return true
         } catch (ex) {
             logger.error("Strava.setAthleteFtp", ex)
+        }
+    }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Estimate the user's FTP based on the passed activities.
+     * @param user The user to estimate the FTP for.
+     * @param activities List of activities to be used for the estimation.
+     */
+    estimateFtp = async (user: UserData, activities: StravaActivity[]): Promise<StravaEstimatedFtp> => {
+        try {
+            if (!activities || activities.length == 0) {
+                logger.warn("Strava.estimateFtp", `User ${user.id} - ${user.displayName}`, "No activities passed, can't estimate FTP")
+                return null
+            }
+
+            let listWatts: number[] = []
+            let avgWatts: number = 0
+            let maxWatts: number = 0
+            let ftpWatts: number = 0
+            let currentWatts: number = 0
+            let bestActivity: StravaActivity
+
+            // Iterate activities to get the highest FTP possible.
+            for (let a of activities) {
+                const totalTime = a.movingTime || a.totalTime
+
+                // Ignore cycling activities with no power meter or that lasted less than 20 minutes.
+                if (a.type != StravaSport.Ride && a.type != StravaSport.VirtualRide) continue
+                if (totalTime < 60 * 20) continue
+                if (!a.hasPower) continue
+
+                let power: number
+
+                // FTP ranges from 95% to 100% from 20 minutes to 1 hour, and then
+                // 102% for each extra hour of activity time.
+                if (totalTime <= 3600) {
+                    const perc = ((3600 - totalTime) / 60 / 8) * 0.01
+                    power = Math.round(a.wattsWeighted * (1 - perc))
+                } else {
+                    const extraHours = Math.floor(totalTime / 3600) - 1
+                    const fraction = 1 + 0.02 * ((totalTime % 3600) / 60 / 60)
+                    const factor = 1.02 ** extraHours * fraction
+                    power = a.wattsWeighted * factor
+                }
+
+                console.warn(a.movingTime / 60, power)
+
+                // New best power?
+                if (power > maxWatts) {
+                    maxWatts = power
+                    bestActivity = a
+                }
+
+                listWatts.push(power)
+            }
+
+            // No activities with power? Stop here.
+            if (listWatts.length == 0) {
+                return null
+            }
+
+            // Make sure we have the very latest athlete data.
+            try {
+                const athlete = await this.getAthlete(user.stravaTokens)
+                user.profile.ftp = athlete.ftp
+            } catch (athleteEx) {
+                logger.warn("Strava.estimateFtp", `User ${user.id} - ${user.displayName}`, "Could not get latest athlete data, will use the current one")
+            }
+
+            avgWatts = Math.round(_.mean(listWatts))
+            maxWatts = Math.round(maxWatts)
+            currentWatts = user.profile.ftp || 0
+
+            // Calculate weighted average (towards the current FTP).
+            // If highest activity FTP is higher than current FTP, set it as the new value.
+            // Otherwise get the weighted or current value itself, whatever is the lowest.
+            if (currentWatts && currentWatts > maxWatts) {
+                const maxWattsWeight = [maxWatts, 1]
+                const currentWattsWeight = [currentWatts, 1.2]
+                const ftpWeights = [maxWattsWeight, currentWattsWeight]
+                const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
+                ftpWatts = Math.round(ftpTotalSum / ftpWeightSum)
+            } else {
+                ftpWatts = maxWatts
+            }
+
+            // Check if the FTP was recently updated for that user.
+            let recentlyUpdated: boolean = false
+            if (user.dateLastFtpUpdate) {
+                const now = moment().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
+                const lastUpdate = moment(user.dateLastFtpUpdate).unix()
+                recentlyUpdated = lastUpdate >= now
+            }
+
+            logger.info("Strava.estimateFtp", `User ${user.id} - ${user.displayName}`, `Estimated FTP ${ftpWatts}w, current ${currentWatts}w, highest effort ${maxWatts}w`)
+
+            return {
+                ftpWatts: ftpWatts,
+                ftpCurrentWatts: currentWatts,
+                bestWatts: maxWatts,
+                bestActivity: bestActivity,
+                activityCount: listWatts.length,
+                activityWattsAvg: avgWatts,
+                recentlyUpdated: recentlyUpdated
+            }
+        } catch (ex) {
+            logger.error("Strava.estimateFtp", `User ${user.id} - ${user.displayName}`, ex)
+            throw ex
         }
     }
 }
