@@ -206,10 +206,10 @@ export class Notifications {
     // --------------------------------------------------------------------------
 
     /**
-     * Send an email reminder with notifications to users that reach
+     * Send an email reminders with notifications to users that reach
      * the unread threshold (default is 10, via settings).
      */
-    sendEmailReminder = async (): Promise<void> => {
+    sendEmailReminders = async (): Promise<void> => {
         try {
             const now = new Date()
             const queries: any[] = [
@@ -245,17 +245,17 @@ export class Notifications {
                             }
 
                             await mailer.send(options)
-                            logger.info("Notifications.sendEmailReminder", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, email sent`)
+                            logger.info("Notifications.sendEmailReminders", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, email sent`)
                         } else {
-                            logger.info("Notifications.sendEmailReminder", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, but no user email set`)
+                            logger.info("Notifications.sendEmailReminders", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, but no user email set`)
                         }
                     }
                 } catch (innerEx) {
-                    logger.error("Notifications.sendEmailReminder", `User ${userId}`, innerEx)
+                    logger.error("Notifications.sendEmailReminders", `User ${userId}`, innerEx)
                 }
             }
         } catch (ex) {
-            logger.error("Notifications.sendEmailReminder", ex)
+            logger.error("Notifications.sendEmailReminders", ex)
         }
     }
 
