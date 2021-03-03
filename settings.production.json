@@ -4,6 +4,10 @@
     "app": {
         "title": "Strautomator"
     },
+    "announcements": {
+        // Active announcements should be cached for up to 1 hour.
+        "cacheDuration": 3600
+    },
     "calendar": {
         // Calendars are cached for up to 4 hours.
         "cacheDuration": 14400

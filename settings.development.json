@@ -4,9 +4,13 @@
     "app": {
         "title": "Strautomator (Dev)"
     },
+    "announcements": {
+        // Active announcements should be cached for only 1 minute on dev.
+        "cacheDuration": 60
+    },
     "calendar": {
-        // Calendars are cached only for 2 minutes on dev.
-        "cacheDuration": 120
+        // Calendars are cached only for only 1 minute on dev.
+        "cacheDuration": 60
     },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
