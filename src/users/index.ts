@@ -277,7 +277,7 @@ export class Users {
 
                 if (users.length > 0) {
                     const maskedToken = `${tokens.accessToken.substring(0, 2)}***${tokens.accessToken.substring(tokens.accessToken.length - 2)}`
-                    logger.info("Users.getByToken", `Found ${users[0].id} - ${users[0].displayName} by current token ${maskedToken}`)
+                    logger.debug("Users.getByToken", `Found ${users[0].id} - ${users[0].displayName} by current token ${maskedToken}`)
 
                     return users[0]
                 }
@@ -287,7 +287,7 @@ export class Users {
 
                 if (users.length > 0) {
                     const maskedToken = `${tokens.accessToken.substring(0, 2)}***${tokens.accessToken.substring(tokens.accessToken.length - 2)}`
-                    logger.info("Users.getByToken", `Found ${users[0].id} - ${users[0].displayName} by previous token ${maskedToken}`)
+                    logger.debug("Users.getByToken", `Found ${users[0].id} - ${users[0].displayName} by previous token ${maskedToken}`)
 
                     return users[0]
                 }
