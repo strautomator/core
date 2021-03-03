@@ -18,4 +18,6 @@ export interface Announcement {
     dateExpiry: Date
     /** How many times it was read (closed by the user). */
     readCount?: number
+    /** Is it about a new feature? */
+    newFeature?: boolean
 }
