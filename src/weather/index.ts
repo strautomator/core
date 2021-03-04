@@ -4,7 +4,6 @@ import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
 import climacell from "./climacell"
-import darksky from "./darksky"
 import openweathermap from "./openweathermap"
 import weatherapi from "./weatherapi"
 import weatherbit from "./weatherbit"
@@ -57,10 +56,6 @@ export class Weather {
      */
     init = async (): Promise<void> => {
         try {
-            if (!settings.weather.darksky.disabled) {
-                await darksky.init()
-                this.providers.push(darksky)
-            }
             if (!settings.weather.climacell.disabled) {
                 await climacell.init()
                 this.providers.push(climacell)
@@ -91,7 +86,7 @@ export class Weather {
     /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
-     * @param provider The prefered weather provider, use DarkSky by default.
+     * @param provider The prefered weather provider, use ClimaCell by default.
      */
     getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
         try {
@@ -108,8 +103,8 @@ export class Weather {
             if (!preferences) preferences = {}
             let weather: ActivityWeather
 
-            // Default provider is darksky.
-            let provider: string = preferences.weatherProvider ? preferences.weatherProvider : "darksky"
+            // Default provider is climacell.
+            let provider: string = preferences.weatherProvider ? preferences.weatherProvider : "climacell"
 
             // Look on cache first.
             const cached: ActivityWeather = cache.get(`weather`, activity.id.toString())
