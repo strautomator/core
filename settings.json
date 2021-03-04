@@ -114,8 +114,8 @@
     "notifications": {
         // Cache notification results for up to 4 seconds.
         "cacheDuration": 4,
-        // Messages will auto expire after 6 months.
-        "defaultExpireDays": 180,
+        // Messages will auto expire after 3 months.
+        "defaultExpireDays": 90,
         // Send notifications via email if it hits a certain counter.
         "emailReminderCount": 10,
         // Delete read user messages after 30 days.
