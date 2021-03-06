@@ -242,8 +242,6 @@
     "weather": {
         // Cache weather results for 20 minutes. Value set in seconds.
         "cacheDuration": 1200,
-        // Weather history can only go as far back as 90 days by default.
-        "maxAgeDays": 90,
         // Set the default weather provider.
         "defaultProvider": "stormglass",
         // ClimaCell API settings.

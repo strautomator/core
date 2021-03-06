@@ -107,12 +107,6 @@ export class Weather {
                 throw new Error(`No location data for activity ${activity.id}`)
             }
 
-            // We can only go back as far as 3 months.
-            if (activity.dateEnd && moment.utc(activity.dateEnd).unix() < moment().subtract(settings.weather.maxAgeDays, "days").unix()) {
-                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Older than ${settings.weather.maxAgeDays} days, will not fetch weather`)
-                return null
-            }
-
             // Fetch weather for the start and end locations of the activity.
             let weather: ActivityWeather = {}
             try {
