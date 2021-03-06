@@ -78,7 +78,10 @@ export class Weather {
                     continue
                 }
 
+                // Set the API rate limiting object and stats.
                 provider.apiRequest = apiRateLimiter(provider, pSettings.rateLimit)
+                provider.stats = {requestCount: 0, errorCount: 0, lastRequest: null}
+
                 this.providers.push(provider)
             }
 
@@ -148,9 +151,9 @@ export class Weather {
         let result: WeatherSummary
         let providerModule: WeatherProvider
 
-        // Default provider is Storm Glass.
+        // Get provider from parameter, then preferences, finally the default from settings.
         if (!provider) {
-            provider = preferences && preferences.weatherProvider ? preferences.weatherProvider : "stormglass"
+            provider = preferences && preferences.weatherProvider ? preferences.weatherProvider : settings.weather.defaultProvider
         }
 
         // Look on cache first.
@@ -163,7 +166,10 @@ export class Weather {
 
         // Get providers that accept the given date and are under the daily usage quota.
         const hours = moment.utc().diff(date, "hours")
-        const availableProviders = this.providers.filter((p) => p.maxHours <= hours && p.stats.count < settings.weather[p.name].rateLimit.perDay)
+        const availableProviders = this.providers.filter((p) => p.maxHours <= hours && p.stats.requestCount < settings.weather[p.name].rateLimit.perDay)
+
+        const isoDate = date.toISOString()
+        const latlon = coordinates.join(", ")
 
         // First try using the preferred or user's default provider.
         try {
@@ -173,22 +179,22 @@ export class Weather {
             result = await providerModule.getWeather(coordinates, date, preferences)
         } catch (ex) {
             const failedProviderName = providerModule.name
-            providerModule = availableProviders.shift()
+            providerModule = _.sample(availableProviders)
 
-            logger.warn("Weather.getLocationWeather", coordinates.join(", "), date, `${failedProviderName} failed, will try ${providerModule.name}`)
+            logger.warn("Weather.getLocationWeather", latlon, isoDate, `${failedProviderName} failed, will try ${providerModule.name}`)
 
             // Try again using another provider. If also failed, log both exceptions.
             try {
                 result = await providerModule.getWeather(coordinates, date, preferences)
             } catch (retryEx) {
-                logger.error("Weather.getLocationWeather", coordinates.join(", "), date, failedProviderName, ex)
-                logger.error("Weather.getLocationWeather", coordinates.join(", "), date, providerModule.name, retryEx)
+                logger.error("Weather.getLocationWeather", latlon, isoDate, failedProviderName, ex)
+                logger.error("Weather.getLocationWeather", latlon, isoDate, providerModule.name, retryEx)
                 return null
             }
         }
 
         cache.set(`weather`, cacheId, result)
-        logger.debug("Weather.getLocationWeather", coordinates.join(", "), date, result.summary)
+        logger.debug("Weather.getLocationWeather", latlon, isoDate, result.summary)
         return result
     }
 }

@@ -18,12 +18,10 @@ export class StormGlass implements WeatherProvider {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
+    stats = null
 
-    /** Weather provider name for Storm Glass. */
     name: string = "stormglass"
-    /** Storm Glass provider. */
     title: string = "Storm Glass"
-    /** ClimaCell can go back in time up to 2 days. */
     maxHours: number = 48
 
     // METHODS
@@ -37,9 +35,11 @@ export class StormGlass implements WeatherProvider {
      */
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+        const isoDate = date.toISOString()
 
         try {
             if (!preferences) preferences = {}
+            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.stormglass.baseUrl
             const secret = settings.weather.stormglass.secret
@@ -66,7 +66,7 @@ export class StormGlass implements WeatherProvider {
 
             return result
         } catch (ex) {
-            logger.error("StormGlass.getWeather", coordinates, date, unit, ex)
+            logger.error("StormGlass.getWeather", coordinates, isoDate, unit, ex)
             throw ex
         }
     }

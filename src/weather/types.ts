@@ -47,10 +47,6 @@ export interface WeatherSummary {
     provider?: string
     /** Short weather description. */
     summary?: string
-    /** Weather unicode icon. */
-    icon?: string
-    /** Weather icon text. */
-    iconText?: string
     /** Actual temperature (celsius). */
     temperature: string | number
     /** Humidity percentage. */
@@ -67,16 +63,20 @@ export interface WeatherSummary {
     cloudCover: string | number
     /** Moon phase (as string). */
     moon?: MoonPhase
+    /** Weather unicode icon. */
+    icon?: string
+    /** Weather icon text. This flag will be removed after the weather summary has processed. */
+    iconText?: string
 }
 
 /**
  * Weather API daily statistics.
  */
 export interface WeatherApiStats {
+    /** Request count. */
+    requestCount: number
+    /** How many errors. */
+    errorCount: number
     /** Date of last request. */
     lastRequest: Date
-    /** Request count. */
-    count: number
-    /** How many errors. */
-    errors: number
 }

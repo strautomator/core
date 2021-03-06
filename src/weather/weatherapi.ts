@@ -19,12 +19,10 @@ export class WeatherAPI implements WeatherProvider {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
+    stats = null
 
-    /** Weather provider name for WeatherAPI. */
     name: string = "weatherapi"
-    /** WeatherAPI provider. */
     title: string = "WeatherAPI.com"
-    /** ClimaCell can go back in time up to 2 days. */
     maxHours: number = 48
 
     // METHODS
@@ -37,9 +35,11 @@ export class WeatherAPI implements WeatherProvider {
      */
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+        const isoDate = date.toISOString()
 
         try {
             if (!preferences) preferences = {}
+            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.weatherapi.baseUrl
             const secret = settings.weather.weatherapi.secret
@@ -66,7 +66,7 @@ export class WeatherAPI implements WeatherProvider {
 
             return result
         } catch (ex) {
-            logger.error("WeatherAPI.getWeather", coordinates, date, unit, ex)
+            logger.error("WeatherAPI.getWeather", coordinates, isoDate, unit, ex)
             throw ex
         }
     }

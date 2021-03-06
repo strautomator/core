@@ -1,11 +1,16 @@
 // Strautomator Core: Weather Utils
 
 import {MoonPhase, WeatherProvider, WeatherSummary} from "./types"
+import {UserPreferences} from "../users/types"
 import Bottleneck from "bottleneck"
 import logger = require("anyhow")
 import moment = require("moment")
-import {UserPreferences} from "src/users/types"
 
+/**
+ * Helper to get an API rate limiter (bottleneck) for the specified provider.
+ * @param provider Weather provider object.
+ * @param options Options (taken from settings).
+ */
 export function apiRateLimiter(provider: WeatherProvider, options: any): Bottleneck {
     const limiter = new Bottleneck({
         maxConcurrent: options.maxConcurrent,
@@ -15,7 +20,14 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
     })
 
     // Catch errors.
+    limiter.on("queued", () => {
+        provider.stats.requestCount++
+        provider.stats.lastRequest = new Date()
+    })
+
+    // Catch errors.
     limiter.on("error", (err) => {
+        provider.stats.errorCount++
         logger.error(`Weather.${provider.name}.limiter`, err)
     })
 
@@ -38,7 +50,14 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         let hour = date.getHours()
         let unicode: string = "2601"
 
-        // Set missing icon text.
+        // No precipitation? Set to none, otherwise make sure it's lowercased.
+        if (!summary.precipType) {
+            summary.precipType = "none"
+        } else {
+            summary.precipType = summary.precipType.toLowerCase()
+        }
+
+        // Set missing icon text, otherwise make sure it's lowercased and with dashes.
         if (!summary.iconText) {
             let iconText = "clear"
             if (summary.precipType == "snow") iconText = "snow"
@@ -117,11 +136,6 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             summary.icon = String.fromCodePoint(parseInt(unicode, 16))
         }
 
-        // No precipitation?
-        if (!summary.precipType) {
-            summary.precipType = "none"
-        }
-
         // Temperature summary.
         let tempSummary = "cool"
         if (summary.temperature > 40) tempSummary = "Extremely warm"
@@ -136,11 +150,16 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         if (preferences.weatherUnit == "f") {
             summary.temperature = celsiusToFahrenheit(summary.temperature as number)
         }
-        summary.temperature = `${Math.round(summary.temperature as number)}° ${tempUnit}`
+        summary.temperature = `${Math.round(summary.temperature as number)}°${tempUnit}`
 
         // Humidity.
         if (summary.humidity !== null) {
             summary.humidity = `${Math.round(summary.humidity as number)}%`
+        }
+
+        // Pressure.
+        if (summary.pressure !== null) {
+            summary.pressure = `${Math.round(summary.pressure as number)} hPa`
         }
 
         // Wind summary.
@@ -174,8 +193,11 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
 
         // Set moon phase.
         summary.moon = getMoonPhase(date)
+
+        // The iconText is not needed anymore.
+        delete summary.iconText
     } catch (ex) {
-        logger.error("Weather.processWeatherSummary", Object.values(summary).join(", "), ex)
+        logger.error("Weather.processWeatherSummary", date.toISOString(), Object.values(summary).join(", "), ex)
     }
 }
 

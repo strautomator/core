@@ -18,12 +18,10 @@ export class VisualCrossing implements WeatherProvider {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
+    stats = null
 
-    /** Weather provider name for Visual Crossing. */
     name: string = "visualcrossing"
-    /** Visual Crossing provider. */
     title: string = "Visual Crossing"
-    /** ClimaCell can go back in time up to 2 days. */
     maxHours: number = 48
 
     // METHODS
@@ -37,9 +35,11 @@ export class VisualCrossing implements WeatherProvider {
      */
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+        const isoDate = date.toISOString()
 
         try {
             if (!preferences) preferences = {}
+            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.visualcrossing.baseUrl
             const secret = settings.weather.visualcrossing.secret
@@ -63,7 +63,7 @@ export class VisualCrossing implements WeatherProvider {
 
             return result
         } catch (ex) {
-            logger.error("VisualCrossing.getWeather", coordinates, date, unit, ex)
+            logger.error("VisualCrossing.getWeather", coordinates, isoDate, unit, ex)
             throw ex
         }
     }
@@ -74,8 +74,6 @@ export class VisualCrossing implements WeatherProvider {
      */
     private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("VisualCrossing.toWeatherSummary", data, date, preferences.weatherUnit)
-
-        console.dir(data.days)
 
         // Locate correct hour report from the response.
         if (data.days && data.days.length > 0) {

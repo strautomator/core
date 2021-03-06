@@ -18,12 +18,10 @@ export class ClimaCell implements WeatherProvider {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
+    stats = null
 
-    /** Weather provider name for ClimaCell. */
     name: string = "climacell"
-    /** ClimaCell provider. */
     title: string = "ClimaCell"
-    /** ClimaCell can go back in time up to 6 hours. */
     maxHours: number = 6
 
     // METHODS
@@ -36,9 +34,11 @@ export class ClimaCell implements WeatherProvider {
      */
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+        const isoDate = date.toISOString()
 
         try {
             if (!preferences) preferences = {}
+            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.climacell.baseUrl
             const secret = settings.weather.climacell.secret
@@ -62,7 +62,7 @@ export class ClimaCell implements WeatherProvider {
 
             return this.toWeatherSummary(result, date, preferences)
         } catch (ex) {
-            logger.error("ClimaCell.getWeather", coordinates, date, unit, ex)
+            logger.error("ClimaCell.getWeather", coordinates, isoDate, unit, ex)
             throw ex
         }
     }
@@ -82,15 +82,16 @@ export class ClimaCell implements WeatherProvider {
         const precipType = hasPrecip ? this.fieldDescriptors.precipitationType[data.precipitationType] : null
 
         // Get correct icon text based on the weatherCode.
-        let iconText = data.weatherCode ? this.fieldDescriptors.weatherCode[data.weatherCode] : null
+        let summary = data.weatherCode ? this.fieldDescriptors.weatherCode[data.weatherCode] : null
+        let iconText = summary ? summary.toLowerCase() : null
 
         // Replace spaces with dashes on weather code.
-        if (data.iconText) {
-            data.iconText = data.iconText.replace(/ /gi, "-").toLowerCase()
+        if (iconText) {
+            iconText = iconText.replace(/ /gi, "-").toLowerCase()
         }
 
         const result: WeatherSummary = {
-            summary: data.weatherCode,
+            summary: summary,
             iconText: iconText,
             temperature: data.temperature,
             humidity: data.humidity,
@@ -124,7 +125,7 @@ export class ClimaCell implements WeatherProvider {
             "7": "Waning Crescent"
         },
         precipitationType: {
-            "0": "N/A",
+            "0": "None",
             "1": "Rain",
             "2": "Snow",
             "3": "Freezing Rain",

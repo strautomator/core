@@ -5,6 +5,7 @@ import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
+import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
@@ -17,12 +18,10 @@ export class OpenWeatherMap implements WeatherProvider {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
+    stats = null
 
-    /** Weather provider name for OpenWeatherMap. */
     name: string = "openweathermap"
-    /** OpenWeatherMap provider. */
     title: string = "OpenWeatherMap"
-    /** OpenWeatherMap does not support historical data on the basic plans. */
     maxHours: number = 1
 
     // METHODS
@@ -35,9 +34,11 @@ export class OpenWeatherMap implements WeatherProvider {
      */
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+        const isoDate = date.toISOString()
 
         try {
             if (!preferences) preferences = {}
+            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.openweathermap.baseUrl
             const secret = settings.weather.openweathermap.secret
@@ -56,7 +57,7 @@ export class OpenWeatherMap implements WeatherProvider {
 
             return result
         } catch (ex) {
-            logger.error("OpenWeatherMap.getWeather", coordinates, date, unit, ex)
+            logger.error("OpenWeatherMap.getWeather", coordinates, isoDate, unit, ex)
             throw ex
         }
     }
