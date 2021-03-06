@@ -45,10 +45,13 @@ export class RecipeStats {
             } else {
                 const arrStats: RecipeStatsData[] = await database.search("recipe-stats", ["userId", "==", user.id])
 
-                // No recipe stats found at all for the user?
+                // No recipe stats found at all for the user? Stop here.
+                // Otherwise set the activity count for each recipe stats.
                 if (arrStats.length == 0) {
                     logger.info("RecipeStats.getStats", `User ${user.id} ${user.displayName}`, "No recipe stats found")
                     return []
+                } else {
+                    arrStats.forEach((s) => (s.activityCount = s.activities ? s.activities.length : 0))
                 }
 
                 logger.info("RecipeStats.getStats", `User ${user.id} ${user.displayName}`, `${arrStats.length} recipe stats found`)
