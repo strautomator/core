@@ -60,7 +60,7 @@ export class ClimaCell implements WeatherProvider {
                 logger.info("ClimaCell.getWeather", weatherSummaryString(coordinates, date, result))
             }
 
-            return this.toWeatherSummary(result, date, preferences)
+            return result
         } catch (ex) {
             logger.error("ClimaCell.getWeather", coordinates, isoDate, unit, ex)
             throw ex
