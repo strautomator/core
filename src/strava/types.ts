@@ -3,7 +3,6 @@
 import {UserData} from "../users/types"
 import _ = require("lodash")
 import moment = require("moment")
-import activities from "./activities"
 
 /**
  * An activity on Strava.
