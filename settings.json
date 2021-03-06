@@ -246,8 +246,10 @@
         "cacheDuration": 1200,
         // Weather history can only go as far back as 90 days by default.
         "maxAgeDays": 90,
+        // Set the default weather provider.
+        "defaultProvider": "stormglass",
+        // ClimaCell API settings.
         "climacell": {
-            // Base URL to the ClimaCell weather API.
             "baseUrl": "https://data.climacell.co/v4/",
             // ClimaCell API rate limits.
             "rateLimit": {
@@ -259,8 +261,8 @@
             // via the SMU_climacell_api_secret environment variable.
             "secret": null
         },
+        // OpenWeatherMap API settings.
         "openweathermap": {
-            // Base URL to the OpenWeatherMap API.
             "baseUrl": "https://api.openweathermap.org/data/2.5/weather",
             // OpenWeatherMap API rate limits.
             "rateLimit": {
@@ -272,8 +274,8 @@
             // via the SMU_weather_openweathermap_secret environment variable.
             "secret": null
         },
+        // Storm Glass API settings.
         "stormglass": {
-            // Base URL to the Storm Glass API.
             "baseUrl": "https://api.stormglass.io/v2/",
             /// Storm Glass API rate limits.
             "rateLimit": {
@@ -285,8 +287,8 @@
             // via the SMU_weather_stormglass_secret environment variable.
             "secret": null
         },
+        // Visual Crossing API settings.
         "visualcrossing": {
-            // Base URL to the Visual Crossing API.
             "baseUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/",
             /// Visual Crossing API rate limits.
             "rateLimit": {
@@ -298,8 +300,8 @@
             // via the SMU_weather_visualcrossing_secret environment variable.
             "secret": null
         },
+        // WeatherAPI.com settings.
         "weatherapi": {
-            // Base URL to the WeatherAPI.com.
             "baseUrl": "https://api.weatherapi.com/v1/",
             // OpenWeathWeatherbiterMap API rate limits.
             "rateLimit": {
@@ -311,8 +313,8 @@
             // via the SMU_weather_weatherapi_secret environment variable.
             "secret": null
         },
+        // Weatherbit API settings.
         "weatherbit": {
-            // Base URL to the Weatherbit API.
             "baseUrl": "https://api.weatherbit.io/v2.0/current",
             // OpenWeathWeatherbiterMap API rate limits.
             "rateLimit": {
