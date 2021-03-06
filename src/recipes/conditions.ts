@@ -200,7 +200,8 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
                 continue
             }
 
-            const weatherPropValue = summary[weatherProp].replace(/[^\d.-]/g, "")
+            let weatherPropValue = summary[weatherProp].replace(/[^\d.-]/g, "")
+            if (!isNaN(weatherPropValue)) weatherPropValue = parseFloat(weatherPropValue)
 
             if (op == RecipeOperator.Equal) {
                 valid = valid || weatherPropValue == value
