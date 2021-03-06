@@ -1,6 +1,6 @@
 // Strautomator Core: Weather - ClimaCell
 
-import {WeatherProvider, WeatherSummary} from "./types"
+import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
 import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
@@ -18,7 +18,7 @@ export class ClimaCell implements WeatherProvider {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
-    stats = null
+    stats: WeatherApiStats = null
 
     name: string = "climacell"
     title: string = "ClimaCell"
@@ -63,6 +63,7 @@ export class ClimaCell implements WeatherProvider {
             return result
         } catch (ex) {
             logger.error("ClimaCell.getWeather", coordinates, isoDate, unit, ex)
+            this.stats.errorCount++
             throw ex
         }
     }

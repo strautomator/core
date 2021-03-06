@@ -19,10 +19,19 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
         reservoirRefreshInterval: 1000 * 60 * 60
     })
 
-    // Catch errors.
+    // Set API request stats.
     limiter.on("queued", () => {
-        provider.stats.requestCount++
-        provider.stats.lastRequest = new Date()
+        const stats = provider.stats
+        const newDay = stats.lastRequest && stats.lastRequest.getDate() < new Date().getDate()
+
+        if (newDay) {
+            logger.debug(`Weather.${provider.name}.limiter`, `Daily stats reset`)
+            stats.errorCount = 0
+            stats.requestCount = 0
+        }
+
+        stats.requestCount++
+        stats.lastRequest = new Date()
     })
 
     // Catch errors.

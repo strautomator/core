@@ -1,6 +1,6 @@
 // Strautomator Core: Weather - Weatherbit
 
-import {WeatherProvider, WeatherSummary} from "./types"
+import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
 import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
@@ -18,7 +18,7 @@ export class Weatherbit implements WeatherProvider {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
-    stats = null
+    stats: WeatherApiStats = null
 
     name: string = "weatherbit"
     title: string = "Weatherbit"
@@ -58,6 +58,7 @@ export class Weatherbit implements WeatherProvider {
             return result
         } catch (ex) {
             logger.error("Weatherbit.getWeather", coordinates, isoDate, unit, ex)
+            this.stats.errorCount++
             throw ex
         }
     }

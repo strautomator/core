@@ -1,6 +1,6 @@
 // Strautomator Core: Weather - Visual Crossing
 
-import {WeatherProvider, WeatherSummary} from "./types"
+import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
 import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
@@ -18,7 +18,7 @@ export class VisualCrossing implements WeatherProvider {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
-    stats = null
+    stats: WeatherApiStats = null
 
     name: string = "visualcrossing"
     title: string = "Visual Crossing"
