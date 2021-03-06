@@ -34,13 +34,16 @@ export class RecipeStats {
                     return null
                 }
 
-                // Make sure counter is set.
+                // Set activity count.
+                stats.activityCount = stats.activities ? stats.activities.length : 0
+
+                // Make sure custom counter is set.
                 if (!stats.counter) {
                     stats.counter = 0
                 }
 
                 const lastTrigger = moment(stats.dateLastTrigger).format("lll")
-                logger.debug("RecipeStats.getStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `${stats.activities.length} activities`, `Last triggered: ${lastTrigger}`)
+                logger.debug("RecipeStats.getStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `${stats.activityCount} activities`, `Last triggered: ${lastTrigger}`)
                 return stats
             } else {
                 const arrStats: RecipeStatsData[] = await database.search("recipe-stats", ["userId", "==", user.id])
