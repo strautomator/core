@@ -94,6 +94,7 @@ export class StormGlass implements WeatherProvider {
         let precipType = snowDepth > 0 && precipitation > 0 ? "snow" : precipitation > 0 ? "rain" : null
 
         const result: WeatherSummary = {
+            summary: null,
             iconText: null,
             temperature: this.getDataProperty(timeData.airTemperature),
             humidity: this.getDataProperty(timeData.humidity),
