@@ -1,12 +1,10 @@
 // Strautomator Core: Weather - OpenWeatherMap
 
-import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
-import {processWeatherSummary} from "./utils"
-import {StravaActivity} from "../strava/types"
+import {WeatherProvider, WeatherSummary} from "./types"
+import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
-import moment = require("moment")
 const settings = require("setmeup").settings
 
 /**
@@ -18,27 +16,14 @@ export class OpenWeatherMap implements WeatherProvider {
     static get Instance(): OpenWeatherMap {
         return this._instance || (this._instance = new this())
     }
+    apiRequest = null
 
     /** Weather provider name for OpenWeatherMap. */
     name: string = "openweathermap"
     /** OpenWeatherMap provider. */
     title: string = "OpenWeatherMap"
-
-    // INIT
-    // --------------------------------------------------------------------------
-
-    /**
-     * Init the OpenWeatherMap wrapper.
-     */
-    init = async (): Promise<void> => {
-        try {
-            if (!settings.weather.openweathermap.secret) {
-                throw new Error("Missing the mandatory weather.openweathermap.secret setting")
-            }
-        } catch (ex) {
-            logger.error("OpenWeatherMap.init", ex)
-        }
-    }
+    /** OpenWeatherMap does not support historical data on the basic plans. */
+    maxHours: number = 1
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -48,59 +33,30 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param coordinates Array with latitude and longitude.
      * @param preferences User preferences to get proper weather units.
      */
-    getCurrentWeather = async (coordinates: [number, number], preferences: UserPreferences): Promise<WeatherSummary> => {
+    getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
+        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+
         try {
             if (!preferences) preferences = {}
 
+            const baseUrl = settings.weather.openweathermap.baseUrl
+            const secret = settings.weather.openweathermap.secret
             const lang = preferences.language || "en"
-            const units = preferences.weatherUnit == "f" ? "imperial" : "metric"
-            const baseUrl = `${settings.weather.openweathermap.baseUrl}?appid=${settings.weather.openweathermap.secret}`
-            const query = `&units=${units}&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}`
-            const weatherUrl = baseUrl + query
+            const weatherUrl = `${baseUrl}?appid=${secret}&units=metric&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}`
 
-            const res = await axiosRequest({url: weatherUrl})
-            const result = this.toWeatherSummary(res, new Date(), preferences)
+            // Fetch weather data.
+            logger.debug("OpenWeatherMap.getWeather", weatherUrl)
+            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
+            // Parse result.
+            const result = this.toWeatherSummary(res, date, preferences)
             if (result) {
-                logger.info("OpenWeatherMap.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+                logger.info("OpenWeatherMap.getWeather", weatherSummaryString(coordinates, date, result))
             }
 
             return result
         } catch (ex) {
-            logger.error("OpenWeatherMap.getCurrentWeather", coordinates, ex)
-        }
-    }
-
-    /**
-     * Return the weather for the specified activity. Only works for the current weather.
-     * @param activity The Strava activity.
-     * @param preferences User preferences to correctly set weathre units.
-     */
-    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
-        try {
-            if (!activity.locationEnd) {
-                throw new Error(`Activity ${activity.id} has no location data`)
-            }
-
-            const endDate = moment.utc(activity.dateEnd)
-
-            if (endDate.unix() < moment().subtract(1, "h").unix()) {
-                throw new Error(`Activity ${activity.id} ended more than 1 hour ago - ${endDate.format("lll")}, OpenWeatherMap only supports realtime weather`)
-            }
-
-            const weather: ActivityWeather = {provider: this.name}
-
-            // Get current weather report.
-            const lang = preferences.language || "en"
-            const units = preferences.weatherUnit == "f" ? "imperial" : "metric"
-            const baseUrl = `${settings.weather.openweathermap.baseUrl}?appid=${settings.weather.openweathermap.secret}`
-            const query = `&units=${units}&lang=${lang}&lat=${activity.locationEnd[0]}&lon=${activity.locationEnd[1]}`
-            const result: any = await axiosRequest({url: baseUrl + query})
-            weather.end = this.toWeatherSummary(result, new Date(), preferences)
-
-            return weather
-        } catch (ex) {
-            logger.error("OpenWeatherMap.getActivityWeather", `Activity ${activity.id}`, ex)
+            logger.error("OpenWeatherMap.getWeather", coordinates, date, unit, ex)
             throw ex
         }
     }
@@ -111,11 +67,16 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("OpenWeatherMap.toWeatherSummary", data)
+        logger.debug("OpenWeatherMap.toWeatherSummary", data, date, preferences.weatherUnit)
 
-        const code = data.weather[0].icon.substring(1)
-        let iconText, precipType, wind
+        // Check if received data is valid.
+        if (!data) return
 
+        const weatherData = data.weather[0]
+        const code = weatherData.icon.substring(1)
+
+        // Get correct icon text based on the weather code.
+        let iconText = "clear"
         switch (code) {
             case "2":
                 iconText = "thunderstorm"
@@ -125,13 +86,13 @@ export class OpenWeatherMap implements WeatherProvider {
                 iconText = "rain"
                 break
             case "6":
-                iconText = ["610", "611"].indexOf(data.weather.code) < 0 ? "snow" : "sleet"
+                iconText = ["610", "611"].indexOf(weatherData.id) < 0 ? "snow" : "sleet"
                 break
             case "7":
                 iconText = "fog"
                 break
             case "8":
-                iconText = ["800", "801"].indexOf(data.weather.code) < 0 ? "cloudy" : "clear-day"
+                iconText = ["800", "801"].indexOf(weatherData.id) < 0 ? "cloudy" : "clear-day"
                 break
             case "9":
                 iconText = "rain"
@@ -140,39 +101,24 @@ export class OpenWeatherMap implements WeatherProvider {
                 iconText = "cloudy"
         }
 
-        // Get correct precipitation type.
-        if (data.snow) {
-            precipType = "snow"
-        } else if (data.rain) {
-            precipType = "rain"
-        }
-
-        // Get correct wind speed.
-        if (preferences.weatherUnit == "f") {
-            wind = data.wind.speed.toFixed(0) + " mph"
-        } else {
-            wind = data.wind.speed.toFixed(1) + " m/s"
-        }
-
-        const tempUnit = preferences.weatherUnit ? preferences.weatherUnit.toUpperCase() : "C"
-
         // Capitalize the summary.
-        let summary = data.weather[0].description
+        let summary = weatherData.description
         summary = summary.charAt(0).toUpperCase() + summary.slice(1)
 
         const result: WeatherSummary = {
             summary: summary,
             iconText: iconText,
-            temperature: data.main.temp.toFixed(0) + "°" + tempUnit,
-            humidity: data.main.humidity.toFixed(0) + "%",
-            pressure: data.main.pressure.toFixed(0) + " hPa",
-            windSpeed: wind,
-            windBearing: data.wind.deg,
-            precipType: precipType || null
+            temperature: data.main.temp,
+            humidity: data.main.humidity,
+            pressure: data.main.pressure,
+            windSpeed: data.wind.speed,
+            windDirection: data.wind.deg,
+            precipType: data.snow ? "snow" : data.rain ? "rain" : null,
+            cloudCover: data.clouds ? data.clouds.all : null
         }
 
         // Process and return weather summary.
-        processWeatherSummary(result, date)
+        processWeatherSummary(result, date, preferences)
         return result
     }
 }

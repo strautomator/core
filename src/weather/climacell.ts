@@ -1,11 +1,9 @@
 // Strautomator Core: Weather - ClimaCell
 
-import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
-import {processWeatherSummary} from "./utils"
-import {StravaActivity} from "../strava/types"
+import {WeatherProvider, WeatherSummary} from "./types"
+import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
-import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
 const settings = require("setmeup").settings
@@ -19,27 +17,14 @@ export class ClimaCell implements WeatherProvider {
     static get Instance(): ClimaCell {
         return this._instance || (this._instance = new this())
     }
+    apiRequest = null
 
     /** Weather provider name for ClimaCell. */
     name: string = "climacell"
     /** ClimaCell provider. */
     title: string = "ClimaCell"
-
-    // INIT
-    // --------------------------------------------------------------------------
-
-    /**
-     * Init the ClimaCell wrapper.
-     */
-    init = async (): Promise<void> => {
-        try {
-            if (!settings.weather.climacell.secret) {
-                throw new Error("Missing the mandatory weather.climacell.secret setting")
-            }
-        } catch (ex) {
-            logger.error("ClimaCell.init", ex)
-        }
-    }
+    /** ClimaCell can go back in time up to 6 hours. */
+    maxHours: number = 6
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -49,87 +34,35 @@ export class ClimaCell implements WeatherProvider {
      * @param coordinates Array with latitude and longitude.
      * @param preferences User preferences to get proper weather units.
      */
-    getCurrentWeather = async (coordinates: [number, number], preferences: UserPreferences): Promise<WeatherSummary> => {
+    getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
+        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+
         try {
             if (!preferences) preferences = {}
 
-            const units = preferences.weatherUnit == "f" ? "us" : "si"
-            const fields = "temp,humidity,wind_speed,wind_direction,baro_pressure,precipitation,precipitation_type,cloud_cover"
-            const baseQuery = `unit_system=${units}&apikey=${settings.weather.climacell.secret}&`
-            const weatherUrl = `${settings.weather.climacell.baseUrl}${`realtime?fields=${fields},weather_code&`}${baseQuery}lat=${coordinates[0]}&lon=${coordinates[1]}`
+            const baseUrl = settings.weather.climacell.baseUrl
+            const secret = settings.weather.climacell.secret
+            const dateFormat = "YYYY-MM-DDTHH:mm:ss"
+            const mDate = moment.utc(date)
+            const startTime = mDate.format(dateFormat) + "Z"
+            const endTime = mDate.add(1, "h").format(dateFormat) + "Z"
+            const fields = `weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover`
+            const latlon = coordinates.join(",")
+            const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h}&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
 
-            const res = await axiosRequest({url: weatherUrl})
-            const result = this.toWeatherSummary(res, new Date())
+            // Fetch weather data.
+            logger.debug("ClimaCell.getWeather", weatherUrl)
+            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
+            // Parse result.
+            const result = this.toWeatherSummary(res, date, preferences)
             if (result) {
-                logger.info("ClimaCell.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+                logger.info("ClimaCell.getWeather", weatherSummaryString(coordinates, date, result))
             }
 
-            return result
+            return this.toWeatherSummary(result, date, preferences)
         } catch (ex) {
-            logger.error("ClimaCell.getCurrentWeather", coordinates, ex)
-        }
-    }
-
-    /**
-     * Return the weather for the specified activity.
-     * @param activity The Strava activity.
-     * @param preferences User preferences to correctly set weathre units.
-     */
-    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
-        try {
-            if (!activity.locationStart && !activity.locationEnd) {
-                throw new Error(`Activity ${activity.id} has no location data`)
-            }
-
-            const weather: ActivityWeather = {provider: this.name}
-
-            // Base query parameters.
-            const units = preferences.weatherUnit == "f" ? "us" : "si"
-            const fields = "temp,humidity,wind_speed,wind_direction,baro_pressure,precipitation,precipitation_type,cloud_cover"
-            const baseQuery = `unit_system=${units}&apikey=${settings.weather.climacell.secret}&`
-
-            // Helpers to build the API URL. If date is older than 1 hour, use historical data, otherwise realtime.
-            const getUrl = (location: number[], date: Date) => {
-                const mDate = moment.utc(date)
-                let startTime = mDate.toISOString()
-                let endpoint
-
-                // Get correct endpoint depending on how far back the specified date is.
-                if (mDate.unix() <= moment.utc().subtract(5, "h").unix()) {
-                    endpoint = `historical/station?&fields=${fields}&start_time=${startTime}&end_time=${mDate.add(2, "h").toISOString()}&`
-                } else if (mDate.unix() <= moment.utc().subtract(1, "h").unix()) {
-                    endpoint = `historical/climacell?fields=${fields},weather_code&timestep=60&start_time=${startTime}&end_time=now&`
-                } else {
-                    endpoint = `realtime?fields=${fields},weather_code&`
-                }
-
-                return `${settings.weather.climacell.baseUrl}${endpoint}${baseQuery}lat=${location[0]}&lon=${location[1]}`
-            }
-
-            // Get weather report for start location.
-            if (activity.dateStart && activity.locationStart) {
-                try {
-                    const startResult: any = await axiosRequest({url: getUrl(activity.locationStart, activity.dateStart)})
-                    weather.start = this.toWeatherSummary(startResult, activity.dateStart)
-                } catch (ex) {
-                    logger.error("ClimaCell.getActivityWeather", `Activity ${activity.id}, weather at start`, ex)
-                }
-            }
-
-            // Get weather report for end location.
-            if (activity.dateEnd && activity.locationEnd) {
-                try {
-                    const endResult: any = await axiosRequest({url: getUrl(activity.locationEnd, activity.dateEnd)})
-                    weather.end = this.toWeatherSummary(endResult, activity.dateEnd)
-                } catch (ex) {
-                    logger.error("ClimaCell.getActivityWeather", `Activity ${activity.id}, weather at end`, ex)
-                }
-            }
-
-            return weather
-        } catch (ex) {
-            logger.error("ClimaCell.getActivityWeather", `Activity ${activity.id}`, ex)
+            logger.error("ClimaCell.getWeather", coordinates, date, unit, ex)
             throw ex
         }
     }
@@ -138,59 +71,94 @@ export class ClimaCell implements WeatherProvider {
      * Transform data from the ClimaCell API to a WeatherSummary.
      * @param data Data from ClimaCell.
      */
-    private toWeatherSummary = (data: any, date: Date): WeatherSummary => {
-        logger.debug("ClimaCell.toWeatherSummary", data)
+    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
+        logger.debug("ClimaCell.toWeatherSummary", data, date, preferences.weatherUnit)
 
-        // If data is collection of results, use the first one only.
-        if (_.isArray(data)) data = data[0]
+        // Check if received data is valid.
+        data = data.data && data.data.timelines ? data.data.timelines[0].intervals[0].values : null
+        if (!data) return
 
-        const hour = date.getHours()
-        const isDaylight = hour > 6 && hour < 19
-        const cloudCover = data.cloud_cover.value
+        const hasPrecip = data.precipitationType && data.precipitationType > 0
+        const precipType = hasPrecip ? this.fieldDescriptors.precipitationType[data.precipitationType] : null
 
-        let precipType = data.precipitation_type ? data.precipitation_type.value : null
-        let iconText: string
+        // Get correct icon text based on the weatherCode.
+        let iconText = data.weatherCode ? this.fieldDescriptors.weatherCode[data.weatherCode] : null
 
-        // Make sure weather data was returned correctly.
-        if (data.temp.value === null && data.humidity.value === null) {
-            return null
-        }
-
-        // No precipitation? Set it to null.
-        if (precipType == "none") {
-            precipType = null
-        }
-
-        if (data.weather_code && data.weather_code.value) {
-            iconText = data.weather_code.value
-        } else if (cloudCover < 10) {
-            iconText = isDaylight ? "clear-day" : "clear-night"
-        } else if (cloudCover < 50) {
-            iconText = isDaylight ? "partly-cloudy-day" : "partly-cloudy-night"
-        } else if (precipType) {
-            iconText = precipType
-        } else {
-            iconText = "cloudy"
-        }
-
-        // Replace underscore with dashes on weather code.
+        // Replace spaces with dashes on weather code.
         if (data.iconText) {
-            data.iconText = data.iconText.replace(/_/g, "-")
+            data.iconText = data.iconText.replace(/ /gi, "-").toLowerCase()
         }
 
         const result: WeatherSummary = {
+            summary: data.weatherCode,
             iconText: iconText,
-            temperature: data.temp.value.toFixed(0) + "°" + data.temp.units,
-            humidity: data.humidity.value ? data.humidity.value.toFixed(0) + data.humidity.units : null,
-            pressure: data.baro_pressure.value.toFixed(0) + " " + data.baro_pressure.units,
-            windSpeed: data.wind_speed.value.toFixed(1) + " " + data.wind_speed.units,
-            windBearing: data.wind_direction.value,
-            precipType: precipType || null
+            temperature: data.temperature,
+            humidity: data.humidity,
+            pressure: data.pressureSurfaceLevel,
+            windSpeed: data.windSpeed,
+            windDirection: data.windDirection,
+            precipType: precipType,
+            cloudCover: data.cloudCover
         }
 
         // Process and return weather summary.
-        processWeatherSummary(result, date)
+        processWeatherSummary(result, date, preferences)
         return result
+    }
+
+    // INTERNAL HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Field descriptors from ClimaCell.
+     */
+    private fieldDescriptors = {
+        moonPhase: {
+            "0": "New",
+            "1": "Waxing Crescent",
+            "2": "First Quarter",
+            "3": "Waxing Gibbous",
+            "4": "Full",
+            "5": "Waning Gibbous",
+            "6": "Third Quarter",
+            "7": "Waning Crescent"
+        },
+        precipitationType: {
+            "0": "N/A",
+            "1": "Rain",
+            "2": "Snow",
+            "3": "Freezing Rain",
+            "4": "Ice Pellets"
+        },
+        weatherCode: {
+            "0": "Unknown",
+            "1000": "Clear",
+            "1001": "Cloudy",
+            "1100": "Mostly Clear",
+            "1101": "Partly Cloudy",
+            "1102": "Mostly Cloudy",
+            "2000": "Fog",
+            "2100": "Light Fog",
+            "3000": "Light Wind",
+            "3001": "Wind",
+            "3002": "Strong Wind",
+            "4000": "Drizzle",
+            "4001": "Rain",
+            "4200": "Light Rain",
+            "4201": "Heavy Rain",
+            "5000": "Snow",
+            "5001": "Flurries",
+            "5100": "Light Snow",
+            "5101": "Heavy Snow",
+            "6000": "Freezing Drizzle",
+            "6001": "Freezing Rain",
+            "6200": "Light Freezing Rain",
+            "6201": "Heavy Freezing Rain",
+            "7000": "Ice Pellets",
+            "7101": "Heavy Ice Pellets",
+            "7102": "Light Ice Pellets",
+            "8000": "Thunderstorm"
+        }
     }
 }
 

@@ -1,8 +1,7 @@
 // Strautomator Core: WeatherAPI.com (NOT WORKING YET)
 
-import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
-import {processWeatherSummary} from "./utils"
-import {StravaActivity} from "../strava/types"
+import {WeatherProvider, WeatherSummary} from "./types"
+import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import _ = require("lodash")
@@ -19,27 +18,14 @@ export class WeatherAPI implements WeatherProvider {
     static get Instance(): WeatherAPI {
         return this._instance || (this._instance = new this())
     }
+    apiRequest = null
 
     /** Weather provider name for WeatherAPI. */
     name: string = "weatherapi"
     /** WeatherAPI provider. */
     title: string = "WeatherAPI.com"
-
-    // INIT
-    // --------------------------------------------------------------------------
-
-    /**
-     * Init the WeatherAPI.com wrapper.
-     */
-    init = async (): Promise<void> => {
-        try {
-            if (!settings.weather.weatherapi.secret) {
-                throw new Error("Missing the mandatory weather.weatherapi.secret setting")
-            }
-        } catch (ex) {
-            logger.error("WeatherAPI.init", ex)
-        }
-    }
+    /** ClimaCell can go back in time up to 2 days. */
+    maxHours: number = 48
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -49,90 +35,38 @@ export class WeatherAPI implements WeatherProvider {
      * @param coordinates Array with latitude and longitude.
      * @param preferences User preferences to get proper weather units.
      */
-    getCurrentWeather = async (coordinates: [number, number], preferences: UserPreferences): Promise<WeatherSummary> => {
+    getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
+        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+
         try {
             if (!preferences) preferences = {}
 
-            const lang = preferences.language || "en"
             const baseUrl = settings.weather.weatherapi.baseUrl
-            const baseQuery = `key=${settings.weather.weatherapi.secret}&lang=${lang}&q=`
-            const currentQuery = `${baseQuery}${coordinates[0]},${coordinates[1]}`
-            const weatherUrl = `${baseUrl}current.json?${currentQuery}`
-            const now = new Date()
+            const secret = settings.weather.weatherapi.secret
+            const now = moment.utc().unix()
+            const startTime = moment.utc(date).unix()
+            const endTime = now < startTime + 7200 ? now : startTime + 7200
+            const isHistory = startTime < now - 3600
+            const apiPath = isHistory ? "history.json" : "current.json"
+            const lang = preferences.language || "en"
 
-            const res = await axiosRequest({url: weatherUrl})
-            const data = this.filterData(res, now)
-            const result = this.toWeatherSummary(data, now, preferences)
+            // If using the history endpoint, pass start and end times.
+            let weatherUrl = `${baseUrl}${apiPath}?key=${secret}&lang=${lang}&q=${coordinates.join(",")}`
+            if (isHistory) weatherUrl += `&unixdt=${startTime}&unixend_dt=${endTime}`
 
+            // Fetch weather data.
+            logger.debug("WeatherAPI.getWeather", weatherUrl)
+            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
+
+            // Parse result.
+            const result = this.toWeatherSummary(res, date, preferences)
             if (result) {
-                logger.info("WeatherAPI.getCurrentWeather", coordinates, `Temp ${result.temperature}, humidity ${result.humidity}, precipitation ${result.precipType}`)
+                logger.info("WeatherAPI.getWeather", weatherSummaryString(coordinates, date, result))
             }
 
             return result
         } catch (ex) {
-            logger.error("WeatherAPI.getCurrentWeather", coordinates, ex)
-        }
-    }
-
-    /**
-     * Return the weather for the specified activity.
-     * @param activity The Strava activity.
-     * @param preferences User preferences to correctly set weathre units.
-     */
-    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
-        try {
-            if (!activity.locationStart && !activity.locationEnd) {
-                throw new Error(`Activity ${activity.id} has no location data`)
-            }
-
-            const weather: ActivityWeather = {provider: this.name}
-
-            // Base query parameters.
-            const lang = preferences.language || "en"
-            const baseUrl = settings.weather.weatherapi.baseUrl
-            const baseQuery = `key=${settings.weather.weatherapi.secret}&lang=${lang}&q=`
-
-            // Helper to get correct weather API URL.
-            const getUrl = (location: number[], date: Date) => {
-                const now = moment.utc().unix()
-                const startTime = moment.utc(date).unix()
-
-                // If more than 1 hour ago use historical data, otherwise use current.
-                if (startTime < now - 3600) {
-                    const endTime = now < startTime + 7200 ? now : startTime + 7200
-                    const historyQuery = `${baseQuery}${location[0]},${location[1]}&unixdt=${startTime}&unixend_dt=${endTime}`
-                    return `${baseUrl}history.json?${historyQuery}`
-                } else {
-                    const currentQuery = `${baseQuery}${location[0]},${location[1]}`
-                    return `${baseUrl}current.json?${currentQuery}`
-                }
-            }
-
-            // Get weather report for start location.
-            if (activity.dateStart && activity.locationStart) {
-                try {
-                    const startResult: any = await axiosRequest({url: getUrl(activity.locationStart, activity.dateStart)})
-                    const startData = this.filterData(startResult, activity.dateStart)
-                    weather.start = this.toWeatherSummary(startData, activity.dateStart, preferences)
-                } catch (ex) {
-                    logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}, weather at start`, ex.message || ex)
-                }
-            }
-
-            // Get weather report for end location.
-            if (activity.dateEnd && activity.locationEnd) {
-                try {
-                    const endResult: any = await axiosRequest({url: getUrl(activity.locationStart, activity.dateEnd)})
-                    const endData = this.filterData(endResult, activity.dateStart)
-                    weather.end = this.toWeatherSummary(endData, activity.dateEnd, preferences)
-                } catch (ex) {
-                    logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}, weather at end`, ex.message || ex)
-                }
-            }
-
-            return weather
-        } catch (ex) {
-            logger.error("WeatherAPI.getActivityWeather", `Activity ${activity.id}`, ex)
+            logger.error("WeatherAPI.getWeather", coordinates, date, unit, ex)
             throw ex
         }
     }
@@ -144,29 +78,16 @@ export class WeatherAPI implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("WeatherAPI.toWeatherSummary", data)
+        logger.debug("WeatherAPI.toWeatherSummary", data, date, preferences.weatherUnit)
 
-        const hour = date.getHours()
-        const isDaylight = hour > 6 && hour < 19
-        const cloudCover = data.cloud
-        const humidity = data.humidity || data.avghumidity || null
-        const pressure = data.pressure_mb || null
-        let temperature, wind, precipType, iconText
+        data = this.filterData(data, date)
+        if (!data) return
 
+        let precipType = null
         if (data.precip_mm > 0) {
             if (data.temp_c < 0) precipType = "snow"
             else if (data.temp_c < 3) precipType = "sleet"
             else precipType = "rain"
-        }
-
-        if (cloudCover < 10) {
-            iconText = isDaylight ? "clear-day" : "clear-night"
-        } else if (cloudCover < 50) {
-            iconText = isDaylight ? "partly-cloudy-day" : "partly-cloudy-night"
-        } else if (precipType) {
-            iconText = precipType
-        } else {
-            iconText = "cloudy"
         }
 
         // Replace spaces with dashes on weather code.
@@ -174,40 +95,22 @@ export class WeatherAPI implements WeatherProvider {
             data.iconText = data.iconText.replace(/ /g, "-")
         }
 
-        // Get correct temperature based on weather units.
-        if (preferences.weatherUnit == "f") {
-            temperature = data.temp_f || data.avgtemp_f
-            if (temperature) {
-                temperature = temperature.toFixed(0) + "°F"
-            }
-            wind = data.wind_mph || data.maxwind_mph || null
-            if (!isNaN(wind)) {
-                wind = parseFloat(wind).toFixed(0) + " mph"
-            }
-        } else {
-            temperature = data.temp_c || data.avgtemp_c
-            if (temperature) {
-                temperature = temperature.toFixed(0) + "°C"
-            }
-            wind = data.wind_kph || data.maxwind_kph || null
-            if (!isNaN(wind)) {
-                wind = (parseFloat(wind) / 3.6).toFixed(1) + " m/s"
-            }
-        }
+        // Set wind speed.
+        const wind = data.wind_kph || data.maxwind_kph || null
 
         const result: WeatherSummary = {
             summary: data.condition ? data.condition.text : null,
-            iconText: iconText,
-            temperature: temperature,
-            humidity: humidity ? parseInt(humidity).toFixed(0) + "%" : null,
-            pressure: pressure ? parseInt(pressure) + "hPa" : null,
-            windSpeed: wind,
-            windBearing: data.wind_degree ? data.wind_degree : null,
-            precipType: precipType || null
+            temperature: data.temp_c || data.avgtemp_c,
+            humidity: data.humidity || data.avghumidity || null,
+            pressure: data.pressure_mb || null,
+            windSpeed: wind ? parseFloat(wind) / 3.6 : null,
+            windDirection: data.wind_degree ? data.wind_degree : null,
+            precipType: precipType || null,
+            cloudCover: data.cloud
         }
 
         // Process and return weather summary.
-        processWeatherSummary(result, date)
+        processWeatherSummary(result, date, preferences)
         return result
     }
 

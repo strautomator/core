@@ -248,28 +248,65 @@
         "maxAgeDays": 90,
         "climacell": {
             // Base URL to the ClimaCell weather API.
-            "baseUrl": "https://api.climacell.co/v3/weather/",
+            "baseUrl": "https://data.climacell.co/v4/",
+            // ClimaCell API rate limits.
+            "rateLimit": {
+                "maxConcurrent": 1,
+                "perHour": 25,
+                "perDay": 500
+            },
             // The ClimaCell API secret MUST be set via secret settings or
             // via the SMU_climacell_api_secret environment variable.
-            "secret": null
-        },
-        "darksky": {
-            // Base URL to the Dark Sky weather API.
-            "baseUrl": "https://api.darksky.net/forecast/",
-            // The Dark Sky API secret MUST be set via secret settings or
-            // via the SMU_darksky_api_secret environment variable.
             "secret": null
         },
         "openweathermap": {
             // Base URL to the OpenWeatherMap API.
             "baseUrl": "https://api.openweathermap.org/data/2.5/weather",
+            // OpenWeatherMap API rate limits.
+            "rateLimit": {
+                "maxConcurrent": 3,
+                "perHour": 100,
+                "perDay": 500
+            },
             // The OpenWeatherMap API secret MUST be set via secret settings or
             // via the SMU_weather_openweathermap_secret environment variable.
+            "secret": null
+        },
+        "stormglass": {
+            // Base URL to the Storm Glass API.
+            "baseUrl": "https://api.stormglass.io/v2/",
+            /// Storm Glass API rate limits.
+            "rateLimit": {
+                "maxConcurrent": 3,
+                "perHour": 10,
+                "perDay": 50
+            },
+            // The Storm Glass API secret MUST be set via secret settings or
+            // via the SMU_weather_stormglass_secret environment variable.
+            "secret": null
+        },
+        "visualcrossing": {
+            // Base URL to the Visual Crossing API.
+            "baseUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/",
+            /// Visual Crossing API rate limits.
+            "rateLimit": {
+                "maxConcurrent": 3,
+                "perHour": 100,
+                "perDay": 500
+            },
+            // The Visual Crossing API secret MUST be set via secret settings or
+            // via the SMU_weather_visualcrossing_secret environment variable.
             "secret": null
         },
         "weatherapi": {
             // Base URL to the WeatherAPI.com.
             "baseUrl": "https://api.weatherapi.com/v1/",
+            // OpenWeathWeatherbiterMap API rate limits.
+            "rateLimit": {
+                "maxConcurrent": 3,
+                "perHour": 100,
+                "perDay": 500
+            },
             // The WeatherAPI.com secret MUST be set via secret settings or
             // via the SMU_weather_weatherapi_secret environment variable.
             "secret": null
@@ -277,6 +314,12 @@
         "weatherbit": {
             // Base URL to the Weatherbit API.
             "baseUrl": "https://api.weatherbit.io/v2.0/current",
+            // OpenWeathWeatherbiterMap API rate limits.
+            "rateLimit": {
+                "maxConcurrent": 3,
+                "perHour": 100,
+                "perDay": 500
+            },
             // The Weatherbit API secret MUST be set via secret settings or
             // via the SMU_weather_weatherbit_secret environment variable.
             "secret": null

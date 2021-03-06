@@ -1,10 +1,13 @@
 // Strautomator Core: Weather
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
+import {apiRateLimiter} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
 import climacell from "./climacell"
 import openweathermap from "./openweathermap"
+import stormglass from "./stormglass"
+import visualcrossing from "./visualcrossing"
 import weatherapi from "./weatherapi"
 import weatherbit from "./weatherbit"
 import _ = require("lodash")
@@ -40,8 +43,9 @@ export class Weather {
             humidity: "",
             pressure: "",
             windSpeed: "",
-            windBearing: "" as any,
+            windDirection: "" as any,
             precipType: "",
+            cloudCover: "",
             moon: "" as any
         }
 
@@ -56,21 +60,26 @@ export class Weather {
      */
     init = async (): Promise<void> => {
         try {
-            if (!settings.weather.climacell.disabled) {
-                await climacell.init()
-                this.providers.push(climacell)
-            }
-            if (!settings.weather.weatherbit.disabled) {
-                await weatherbit.init()
-                this.providers.push(weatherbit)
-            }
-            if (!settings.weather.openweathermap.disabled) {
-                await openweathermap.init()
-                this.providers.push(openweathermap)
-            }
-            if (!settings.weather.weatherapi.disabled) {
-                await weatherapi.init()
-                this.providers.push(weatherapi)
+            const all: WeatherProvider[] = [climacell, stormglass, openweathermap, visualcrossing, weatherapi, weatherbit]
+
+            // Iterate and init the weather providers.
+            for (let provider of all) {
+                const pSettings = settings.weather[provider.name]
+
+                // Disable via settings? Go to next.
+                if (pSettings.disabled) {
+                    logger.warn("Weather.init", `Provider ${provider.name} disabled on settings`)
+                    continue
+                }
+
+                // Check if the API secret was set.
+                if (!pSettings.secret) {
+                    logger.error("Weather.init", `Missing the weather.${provider.name}.secret on settings`)
+                    continue
+                }
+
+                provider.apiRequest = apiRateLimiter(provider, pSettings.rateLimit)
+                this.providers.push(provider)
             }
 
             cache.setup("weather", settings.weather.cacheDuration)
@@ -86,9 +95,10 @@ export class Weather {
     /**
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
-     * @param provider The prefered weather provider, use ClimaCell by default.
+     * @param user The user requesting a weather report.
+     * @param provider Optional, the preferred weather provider.
      */
-    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
+    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences, provider?: string): Promise<ActivityWeather> => {
         try {
             if (!activity.locationEnd && !activity.locationEnd) {
                 throw new Error(`No location data for activity ${activity.id}`)
@@ -100,58 +110,86 @@ export class Weather {
                 return null
             }
 
-            if (!preferences) preferences = {}
-            let weather: ActivityWeather
-
-            // Default provider is climacell.
-            let provider: string = preferences.weatherProvider ? preferences.weatherProvider : "climacell"
-
-            // Look on cache first.
-            const cached: ActivityWeather = cache.get(`weather`, activity.id.toString())
-            if (cached && cached.provider == provider) {
-                logger.info("Weather.getActivityWeather", `Activity ${activity.id}`, "From cache")
-                return cached
-            }
-
-            // Get correct provider module.
-            let providerModule: WeatherProvider = _.find(this.providers, {name: provider})
-
-            // Try fetching weather data from the preferred provider.
+            // Fetch weather for the start and end locations of the activity.
+            let weather: ActivityWeather = {}
             try {
-                weather = await providerModule.getActivityWeather(activity, preferences)
-
-                if (!weather.start && !weather.end) {
-                    throw new Error("No weather returned for start and end")
-                }
+                weather.start = await this.getLocationWeather(activity.locationStart, activity.dateStart, preferences)
+                weather.end = await this.getLocationWeather(activity.locationEnd, activity.dateEnd, preferences)
             } catch (ex) {
                 logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider ${provider} failed, will try another`)
-
-                // Try again with a different provider if first failed.
-                try {
-                    providerModule = _.sample(_.reject(this.providers, {name: provider}))
-                    provider = providerModule.name
-                    weather = await providerModule.getActivityWeather(activity, preferences)
-                } catch (ex) {
-                    logger.debug("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider ${provider} also failed, won't try again`)
-                    throw ex
-                }
             }
 
             // Make sure weather result is valid.
-            if (!weather) {
-                throw new Error(`Could not get weather data for activity ${activity.id}`)
+            if (!weather.start && !weather.end) {
+                throw new Error(`Can't get weather for activity ${activity.id}`)
             }
 
             const startSummary = weather.start ? `Start: ${weather.start.summary}` : "No weather for start location"
             const endSummary = weather.end ? `End: ${weather.end.summary}` : "No weather for end location"
-            logger.info("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider: ${provider}`, startSummary, endSummary)
+            logger.info("Weather.getActivityWeather", `Activity ${activity.id}`, startSummary, endSummary)
 
-            cache.set(`weather`, activity.id.toString(), weather)
             return weather
         } catch (ex) {
             logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, ex)
             return null
         }
+    }
+
+    /**
+     * Gets the weather for a given location and date.
+     * @param coordinates Array with lat / long coordinates.
+     * @param date The weather date.
+     * @param user THe user requesting the weather.
+     * @param provider Optional preferred weather provider.
+     */
+    getLocationWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences, provider?: string): Promise<WeatherSummary> => {
+        if (!coordinates || !date) return null
+
+        let result: WeatherSummary
+        let providerModule: WeatherProvider
+
+        // Default provider is Storm Glass.
+        if (!provider) {
+            provider = preferences && preferences.weatherProvider ? preferences.weatherProvider : "stormglass"
+        }
+
+        // Look on cache first.
+        const cacheId = `${coordinates.join("-")}-${date.valueOf() / 1000}`
+        const cached: WeatherSummary = cache.get(`weather`, cacheId)
+        if (cached && cached.provider == provider) {
+            logger.info("Weather.getLocationWeather", coordinates.join(", "), date, `From cache: ${cached.provider}`)
+            return cached
+        }
+
+        // Get providers that accept the given date and are under the daily usage quota.
+        const hours = moment.utc().diff(date, "hours")
+        const availableProviders = this.providers.filter((p) => p.maxHours <= hours && p.stats.count < settings.weather[p.name].rateLimit.perDay)
+
+        // First try using the preferred or user's default provider.
+        try {
+            providerModule = _.find(availableProviders, {name: provider})
+            if (!providerModule) providerModule = availableProviders.shift()
+
+            result = await providerModule.getWeather(coordinates, date, preferences)
+        } catch (ex) {
+            const failedProviderName = providerModule.name
+            providerModule = availableProviders.shift()
+
+            logger.warn("Weather.getLocationWeather", coordinates.join(", "), date, `${failedProviderName} failed, will try ${providerModule.name}`)
+
+            // Try again using another provider. If also failed, log both exceptions.
+            try {
+                result = await providerModule.getWeather(coordinates, date, preferences)
+            } catch (retryEx) {
+                logger.error("Weather.getLocationWeather", coordinates.join(", "), date, failedProviderName, ex)
+                logger.error("Weather.getLocationWeather", coordinates.join(", "), date, providerModule.name, retryEx)
+                return null
+            }
+        }
+
+        cache.set(`weather`, cacheId, result)
+        logger.debug("Weather.getLocationWeather", coordinates.join(", "), date, result.summary)
+        return result
     }
 }
 

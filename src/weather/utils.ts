@@ -1,23 +1,53 @@
 // Strautomator Core: Weather Utils
 
-import {MoonPhase, WeatherSummary} from "./types"
+import {MoonPhase, WeatherProvider, WeatherSummary} from "./types"
+import Bottleneck from "bottleneck"
 import logger = require("anyhow")
+import moment = require("moment")
+import {UserPreferences} from "src/users/types"
+
+export function apiRateLimiter(provider: WeatherProvider, options: any): Bottleneck {
+    const limiter = new Bottleneck({
+        maxConcurrent: options.maxConcurrent,
+        reservoir: options.perHour,
+        reservoirRefreshAmount: options.perHour,
+        reservoirRefreshInterval: 1000 * 60 * 60
+    })
+
+    // Catch errors.
+    limiter.on("error", (err) => {
+        logger.error(`Weather.${provider.name}.limiter`, err)
+    })
+
+    // Rate limiting warnings
+    limiter.on("depleted", () => {
+        logger.warn(`Weather.${provider.name}.limiter`, "Rate limited")
+    })
+
+    return limiter
+}
 
 /**
  * Process the passed weather summary to transformand add missing fields.
+ * Numeric data passed as string will be untouched, while actual numbers
+ * will be processed (converting to proper units and adding the suffixes).
  * @param summary The weather summary to be processed.
  */
-export function processWeatherSummary(summary: WeatherSummary, date: Date): void {
+export function processWeatherSummary(summary: WeatherSummary, date: Date, preferences: UserPreferences): void {
     try {
         let hour = date.getHours()
         let unicode: string = "2601"
 
-        // Set moon phase.
-        summary.moon = getMoonPhase(date)
+        // Set missing icon text.
+        if (!summary.iconText) {
+            let iconText = "clear"
+            if (summary.precipType == "snow") iconText = "snow"
+            else if (summary.precipType == "rain") iconText = "rain"
+            else if (summary.cloudCover > 50) iconText = "cloudy"
+            else if (summary.cloudCover > 20) iconText = "partly-cloudy"
+            else if (summary.cloudCover > 10) iconText = "mostly-clear"
 
-        // Set defaults.
-        if (!summary.precipType) {
-            summary.precipType = null
+            summary.iconText = iconText
         }
 
         // Set correct day / night icons.
@@ -89,23 +119,75 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date): void
 
         // No precipitation?
         if (!summary.precipType) {
-            summary.precipType = null
+            summary.precipType = "none"
+        }
+
+        // Temperature summary.
+        let tempSummary = "cool"
+        if (summary.temperature > 40) tempSummary = "Extremely warm"
+        else if (summary.temperature > 30) tempSummary = "Very warm"
+        else if (summary.temperature > 22) tempSummary = "Warm"
+        else if (summary.temperature < -10) tempSummary = "Extremely cold"
+        else if (summary.temperature < 2) tempSummary = "Very cold"
+        else if (summary.temperature < 12) tempSummary = "Cold"
+
+        // Temperature.
+        const tempUnit = preferences.weatherUnit == "f" ? "F" : "C"
+        if (preferences.weatherUnit == "f") {
+            summary.temperature = celsiusToFahrenheit(summary.temperature as number)
+        }
+        summary.temperature = `${Math.round(summary.temperature as number)}° ${tempUnit}`
+
+        // Humidity.
+        if (summary.humidity !== null) {
+            summary.humidity = `${Math.round(summary.humidity as number)}%`
+        }
+
+        // Wind summary.
+        const isWindy = summary.windSpeed && summary.windSpeed > 20
+
+        // Wind speed.
+        if (summary.windSpeed !== null) {
+            const windUnit = preferences.weatherUnit == "f" ? "mph" : "kph"
+            const windSpeed = windUnit == "mph" ? msToMph(summary.windSpeed as number) : msToKph(summary.windSpeed as number)
+            summary.windSpeed = `${Math.round(windSpeed)} ${windUnit}`
+        }
+
+        // Wind direction.
+        if (summary.windDirection !== null) {
+            summary.windDirection = degToDirection(summary.windDirection as number)
+        }
+
+        // Cloud coverage.
+        if (summary.cloudCover !== null) {
+            summary.cloudCover = `${(summary.cloudCover as number).toFixed(0)}%`
         }
 
         // No summary yet? Set one now.
         if (!summary.summary) {
             const arr = summary.iconText.split("-")
+            const baseSummary = arr.length > 1 ? `${arr[0]} ${arr[1]}` : arr[0]
+            summary.summary = `${tempSummary}, ${baseSummary}`
 
-            let text = arr[0]
-            if (arr.length > 1) {
-                text += " " + arr[1]
-            }
-
-            summary.summary = text
+            if (isWindy) summary.summary += ", windy"
         }
+
+        // Set moon phase.
+        summary.moon = getMoonPhase(date)
     } catch (ex) {
-        logger.error("Weather.processWeatherSummary", ex)
+        logger.error("Weather.processWeatherSummary", Object.values(summary).join(", "), ex)
     }
+}
+
+/**
+ * Helper to get a single liner with the summary of a weather summary.
+ * @param coordinates Coordinates.
+ * @param date The date.
+ * @param summary The parsed weather summary.
+ */
+export function weatherSummaryString(coordinates: [number, number], date: Date, summary: WeatherSummary): string {
+    const dateFormat = moment(date).format("YYYY-MM-DD HH:mm")
+    return `${coordinates.join(", ")} - ${dateFormat} - ${summary.summary} - temp: ${summary.temperature}, humidity: ${summary.humidity}, precipitation: ${summary.precipType}`
 }
 
 /**
@@ -143,4 +225,38 @@ export function getMoonPhase(date: Date): MoonPhase {
     if (phase == 0) return MoonPhase.New
     if (phase == 4) return MoonPhase.Full
     return MoonPhase.Quarter
+}
+
+/**
+ * Convert Celsius to Fahrenheit.
+ * @param celsius Temperature in celsius.
+ */
+export function celsiusToFahrenheit(celsius: number): number {
+    return Math.round((celsius * 9) / 5 + 32)
+}
+
+/**
+ * Convert meters / second to kph.
+ * @param ms Meters per second.
+ */
+export function msToKph(ms: number): number {
+    return Math.round(ms * 3.6)
+}
+
+/**
+ * Convert meters / second to kph.
+ * @param ms Meters per second.
+ */
+export function msToMph(ms: number): number {
+    return Math.round(ms * 2.24)
+}
+
+/**
+ * Converts bearing (degrees) to a text direction.
+ * @param deg Bearing value from 0 to 359.
+ */
+export function degToDirection(deg: number): string {
+    const value = Math.floor(deg / 22.5 + 0.5)
+    const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+    return directions[value % 16]
 }

@@ -72,7 +72,7 @@ export interface UserPreferences {
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
     /** Prefered weather provider. */
-    weatherProvider?: "climacell" | "openweathermap" | "weatherbit" | "weatherapi"
+    weatherProvider?: "climacell" | "openweathermap" | "stormglass" | "visualcrossing" | "weatherbit" | "weatherapi"
     /** Weather temperature unit. */
     weatherUnit?: "c" | "f"
 }
