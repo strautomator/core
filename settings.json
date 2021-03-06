@@ -165,9 +165,8 @@
     },
     "plans": {
         "free": {
-            // Free accounts are limited to 3 recipes and conditions, and 2 gearwear configuration.
+            // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
-            "maxConditions": 3,
             "maxGearWear": 2,
             // Free accounts limited to 3 months of calendar events.
             "maxCalendarDays": 90,
@@ -175,9 +174,8 @@
             "linksOn": 5
         },
         "pro": {
-            // Pro accounts are limited to 999 (virtually unlimited) recipes, conditions and gearwear configs.
+            // Pro accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
-            "maxConditions": 999,
             "maxGearWear": 999,
             // Pro accounts limited to 2 full years of calendar events.
             "maxCalendarDays": 730,
