@@ -3,6 +3,7 @@
 import {UserData} from "../users/types"
 import _ = require("lodash")
 import moment = require("moment")
+import activities from "./activities"
 
 /**
  * An activity on Strava.
@@ -106,8 +107,8 @@ export function toStravaActivity(data, user: UserData): StravaActivity {
         wattsMax: data.max_watts ? Math.round(data.max_watts) : null,
         hrAvg: data.average_heartrate ? Math.round(data.average_heartrate) : null,
         hrMax: data.max_heartrate ? Math.round(data.max_heartrate) : null,
-        cadenceAvg: data.average_cadence,
-        calories: data.calories,
+        cadenceAvg: data.average_cadence || null,
+        calories: data.calories || data.kilojoules || null,
         device: data.device_name,
         manual: data.manual,
         updatedFields: []
