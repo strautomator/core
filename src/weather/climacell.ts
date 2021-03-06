@@ -48,7 +48,7 @@ export class ClimaCell implements WeatherProvider {
             const endTime = mDate.add(1, "h").format(dateFormat) + "Z"
             const fields = `weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover`
             const latlon = coordinates.join(",")
-            const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h}&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
+            const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
 
             // Fetch weather data.
             logger.debug("ClimaCell.getWeather", weatherUrl)
