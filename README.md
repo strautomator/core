@@ -63,12 +63,20 @@ Please have a look on the provided Makefile for all available commands.
 
 ## Scheduled Tasks
 
-Some of Strautomator's features depend on scheduled tasks that needs to be setup manually. They are:
+Some of Strautomator's features depend on scheduled tasks that needs to be setup manually.
 
 #### GearWear: process recent activities
 
 The function `gearwear.processRecentActivities()` needs to be called once a day to fetch recent activies for all users and update the distance / hours of their GearWear components accordingly.
 
+#### Notifications: send email reminders
+
+Users with too many unread notifications should be notified about them via email, using the `notifications.sendEmailReminders()` helper. Only users that have actually entered an email address will get these.
+
 #### Strava: refresh tokens
 
 Users with expired tokens must have their Strava tokens refreshed regularly. You can use a mix of `users.getExpired()`, iterating these users and calling `strava.refreshToken()` for each one of them.
+
+#### Users: FTP auto update
+
+The `strava.activities.ftpFromActivities()` should be triggered once a week for all users that have enabled the feature.
