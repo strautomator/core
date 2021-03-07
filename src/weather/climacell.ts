@@ -80,27 +80,26 @@ export class ClimaCell implements WeatherProvider {
         if (!data) return
 
         const hasPrecip = data.precipitationType && data.precipitationType > 0
-        const precipType = hasPrecip ? this.fieldDescriptors.precipitationType[data.precipitationType] : null
+        const precipitation = hasPrecip ? this.fieldDescriptors.precipitationType[data.precipitationType] : null
 
         // Get correct icon text based on the weatherCode.
-        let summary = data.weatherCode ? this.fieldDescriptors.weatherCode[data.weatherCode] : null
-        let iconText = summary ? summary.toLowerCase() : null
-
-        // Replace spaces with dashes on weather code.
-        if (iconText) {
-            iconText = iconText.replace(/ /gi, "-").toLowerCase()
-        }
+        const summary = data.weatherCode ? this.fieldDescriptors.weatherCode[data.weatherCode] : null
+        const iconText = summary ? summary.replace(/ /gi, "-").toLowerCase() : null
 
         const result: WeatherSummary = {
             summary: summary,
-            iconText: iconText,
             temperature: data.temperature,
             humidity: data.humidity,
             pressure: data.pressureSurfaceLevel,
             windSpeed: data.windSpeed,
             windDirection: data.windDirection,
-            precipType: precipType,
-            cloudCover: data.cloudCover
+            precipitation: precipitation,
+            cloudCover: data.cloudCover,
+            extraData: {
+                iconText: iconText,
+                mmPrecipitation: data.precipitationIntensity,
+                visibility: data.visibility
+            }
         }
 
         // Process and return weather summary.
@@ -115,22 +114,12 @@ export class ClimaCell implements WeatherProvider {
      * Field descriptors from ClimaCell.
      */
     private fieldDescriptors = {
-        moonPhase: {
-            "0": "New",
-            "1": "Waxing Crescent",
-            "2": "First Quarter",
-            "3": "Waxing Gibbous",
-            "4": "Full",
-            "5": "Waning Gibbous",
-            "6": "Third Quarter",
-            "7": "Waning Crescent"
-        },
         precipitationType: {
-            "0": "None",
-            "1": "Rain",
-            "2": "Snow",
-            "3": "Freezing Rain",
-            "4": "Ice Pellets"
+            "0": "dry",
+            "1": "rain",
+            "2": "snow",
+            "3": "freezing rain",
+            "4": "ice pellets"
         },
         weatherCode: {
             "0": "Unknown",

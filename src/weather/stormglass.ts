@@ -90,20 +90,23 @@ export class StormGlass implements WeatherProvider {
         if (!timeData) return
 
         const cloudCover = this.getDataProperty(timeData.cloudCover)
-        const precipitation = this.getDataProperty(timeData.precipitation)
+        const precipLevel = this.getDataProperty(timeData.precipitation)
         const snowDepth = this.getDataProperty(timeData.snowDepth)
-        let precipType = snowDepth > 0 && precipitation > 0 ? "snow" : precipitation > 0 ? "rain" : null
+        const precipitation = snowDepth > 0 && precipLevel > 0 ? "snow" : null
 
         const result: WeatherSummary = {
             summary: null,
-            iconText: null,
             temperature: this.getDataProperty(timeData.airTemperature),
             humidity: this.getDataProperty(timeData.humidity),
             pressure: this.getDataProperty(timeData.pressure),
             windSpeed: this.getDataProperty(timeData.windSpeed),
             windDirection: this.getDataProperty(timeData.windDirection),
-            precipType: precipType,
-            cloudCover: cloudCover
+            precipitation: precipitation,
+            cloudCover: cloudCover,
+            extraData: {
+                mmPrecipitation: precipLevel,
+                visibility: timeData.visibility
+            }
         }
 
         // Process and return weather summary.

@@ -59,32 +59,50 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         let hour = date.getHours()
         let unicode: string = "2601"
 
-        // No precipitation? Set to none, otherwise make sure it's lowercased.
-        if (!summary.precipType) {
-            summary.precipType = "none"
+        const extraData = summary.extraData || {}
+
+        // No precipitation? Try calculating it based on the precipitation mm (if passed).
+        // If no precipitation, then set it to "dry".
+        if (!summary.precipitation) {
+            const mm = extraData.mmPrecipitation || 0
+
+            if (mm > 0) {
+                if (summary.temperature < 1) summary.precipitation = "snow"
+                else if (summary.temperature < 4) summary.precipitation = "sleet"
+                else if (mm < 1) summary.precipitation = "drizzle"
+                else summary.precipitation = "rain"
+
+                // Heavy precipitation? Append prefix.
+                if (mm > 20) {
+                    summary.precipitation = `heavy ${summary.precipitation}`
+                }
+            } else {
+                summary.precipitation = "dry"
+            }
         } else {
-            summary.precipType = summary.precipType.toLowerCase()
+            summary.precipitation = summary.precipitation.toLowerCase()
         }
 
-        // Set missing icon text, otherwise make sure it's lowercased and with dashes.
-        if (!summary.iconText) {
+        // Set missing icon text. Please note that icon texts shoul come as strings
+        // separated with dashes here.
+        if (!extraData.iconText) {
             let iconText = "clear"
-            if (summary.precipType == "snow") iconText = "snow"
-            else if (summary.precipType == "rain") iconText = "rain"
+            if (summary.precipitation == "snow") iconText = "snow"
+            else if (summary.precipitation == "rain") iconText = "rain"
             else if (summary.cloudCover > 50) iconText = "cloudy"
             else if (summary.cloudCover > 20) iconText = "partly-cloudy"
             else if (summary.cloudCover > 10) iconText = "mostly-clear"
 
-            summary.iconText = iconText
+            extraData.iconText = iconText
         }
 
         // Set correct day / night icons.
-        if (summary.iconText == "clear") {
-            summary.iconText = hour > 5 && hour < 20 ? "clear-day" : "clear-night"
+        if (extraData.iconText == "clear") {
+            extraData.iconText = hour > 5 && hour < 20 ? "clear-day" : "clear-night"
         }
 
         // Property select correct weather icon.
-        switch (summary.iconText) {
+        switch (extraData.iconText) {
             case "clear-day":
                 unicode = "2600"
                 break
@@ -193,18 +211,21 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
 
         // No summary yet? Set one now.
         if (!summary.summary) {
-            const arr = summary.iconText.split("-")
+            const arr = extraData.iconText.split("-")
             const baseSummary = arr.length > 1 ? `${arr[0]} ${arr[1]}` : arr[0]
             summary.summary = `${tempSummary}, ${baseSummary}`
 
             if (isWindy) summary.summary += ", windy"
         }
 
+        // Final summary should be always Capital cased.
+        summary.summary = summary.summary.charAt(0).toUpperCase() + summary.summary.slice(1)
+
         // Set moon phase.
         summary.moon = getMoonPhase(date)
 
-        // The iconText is not needed anymore.
-        delete summary.iconText
+        // Extra data not needed any longer.
+        delete summary.extraData
     } catch (ex) {
         logger.error("Weather.processWeatherSummary", date.toISOString(), Object.values(summary).join(", "), ex)
     }
@@ -218,7 +239,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
  */
 export function weatherSummaryString(coordinates: [number, number], date: Date, summary: WeatherSummary): string {
     const dateFormat = moment(date).format("YYYY-MM-DD HH:mm")
-    return `${coordinates.join(", ")} - ${dateFormat} - ${summary.summary} - temp: ${summary.temperature}, humidity: ${summary.humidity}, precipitation: ${summary.precipType}`
+    return `${coordinates.join(", ")} - ${dateFormat} - ${summary.summary} - temp: ${summary.temperature}, humidity: ${summary.humidity}, precipitation: ${summary.precipitation}`
 }
 
 /**

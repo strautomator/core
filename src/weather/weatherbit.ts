@@ -105,14 +105,18 @@ export class Weatherbit implements WeatherProvider {
 
         const result: WeatherSummary = {
             summary: data.weather.description,
-            iconText: iconText,
             temperature: data.temp,
             humidity: data.rh,
             pressure: data.pres,
             windSpeed: data.wind_spd,
             windDirection: data.wind_dir,
-            precipType: data.snow ? "snow" : data.rain ? "rain" : null,
-            cloudCover: data.clouds
+            precipitation: data.snow ? "snow" : null,
+            cloudCover: data.clouds,
+            extraData: {
+                iconText: iconText,
+                mmPrecipitation: data.snow || data.precip,
+                visibility: data.vis
+            }
         }
 
         // Process and return weather summary.

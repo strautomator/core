@@ -84,13 +84,6 @@ export class WeatherAPI implements WeatherProvider {
         data = this.filterData(data, date)
         if (!data) return
 
-        let precipType = null
-        if (data.precip_mm > 0) {
-            if (data.temp_c < 0) precipType = "snow"
-            else if (data.temp_c < 3) precipType = "sleet"
-            else precipType = "rain"
-        }
-
         // Replace spaces with dashes on weather code.
         if (data.iconText) {
             data.iconText = data.iconText.replace(/ /g, "-")
@@ -106,8 +99,12 @@ export class WeatherAPI implements WeatherProvider {
             pressure: data.pressure_mb || null,
             windSpeed: wind ? parseFloat(wind) / 3.6 : null,
             windDirection: data.wind_degree ? data.wind_degree : null,
-            precipType: precipType || null,
-            cloudCover: data.cloud
+            precipitation: null,
+            cloudCover: data.cloud,
+            extraData: {
+                mmPrecipitation: data.precip_mm,
+                visibility: data.avgvis_km
+            }
         }
 
         // Process and return weather summary.
@@ -118,7 +115,7 @@ export class WeatherAPI implements WeatherProvider {
     /**
      * Filter the response data from WeatherAPI and get details relevant to the specific date time.
      */
-    private filterData = (data: any, date: Date) => {
+    private filterData = (data: any, date: Date): any => {
         if (!data.current && !data.forecast) {
             return null
         }

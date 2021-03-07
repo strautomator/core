@@ -103,20 +103,24 @@ export class OpenWeatherMap implements WeatherProvider {
                 iconText = "cloudy"
         }
 
-        // Capitalize the summary.
-        let summary = weatherData.description
-        summary = summary.charAt(0).toUpperCase() + summary.slice(1)
+        // Get snow or rain.
+        const mmSnow = data.snow ? data.snow["1h"] : 0
+        const mmRain = data.rain ? data.rain["1h"] : 0
 
         const result: WeatherSummary = {
-            summary: summary,
-            iconText: iconText,
+            summary: weatherData.description,
             temperature: data.main.temp,
             humidity: data.main.humidity,
             pressure: data.main.pressure,
             windSpeed: data.wind.speed,
             windDirection: data.wind.deg,
-            precipType: data.snow ? "snow" : data.rain ? "rain" : null,
-            cloudCover: data.clouds ? data.clouds.all : null
+            precipitation: data.snow && data.snow["1h"] ? "snow" : data.rain ? "rain" : null,
+            cloudCover: data.clouds ? data.clouds.all : null,
+            extraData: {
+                iconText: iconText,
+                mmPrecipitation: mmSnow || mmRain,
+                visibility: data.visibility
+            }
         }
 
         // Process and return weather summary.

@@ -57,16 +57,23 @@ export interface WeatherSummary {
     windSpeed: string | number
     /** Wind direction. */
     windDirection: string | number
-    /** Precipitation type (rain, snow, etc), or null. */
-    precipType: string
+    /** Precipitation type (rain, drizzle, snow etc), or none. */
+    precipitation: string
     /** Cloud coverage, percentage. */
     cloudCover: string | number
     /** Moon phase (as string). */
     moon?: MoonPhase
     /** Weather unicode icon. */
     icon?: string
-    /** Weather icon text. This flag will be removed after the weather summary has processed. */
-    iconText?: string
+    /** Extra data for summary calculation, this will be removed after the weather summary has processed. */
+    extraData?: {
+        /** Weather icon text. This flag will be removed after the weather summary has processed. */
+        iconText?: string
+        /** Precipitation quantity. */
+        mmPrecipitation?: number
+        /** Visibility distance. */
+        visibility?: number
+    }
 }
 
 /**

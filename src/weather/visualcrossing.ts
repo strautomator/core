@@ -87,21 +87,25 @@ export class VisualCrossing implements WeatherProvider {
         if (!data || !data.datetime) return
 
         // Get precipitation details.
-        const precipitation = data.precip
-        const snowDepth = data.snow
-        let precipType = data.preciptype
-        if (!precipType) precipType = snowDepth > 0 && precipitation > 0 ? "snow" : precipitation > 0 ? "rain" : null
+        const precipLevel = data.precip || 0
+        const snowDepth = data.snow || 0
+        let precipitation = data.preciptype
+        if (!precipitation) precipitation = snowDepth > 0 ? "snow" : null
+        else if (precipitation == "freezingrain") precipitation = "freezing rain"
 
         const result: WeatherSummary = {
             summary: data.conditions,
-            iconText: null,
             temperature: data.temp,
             humidity: data.humidity,
             pressure: data.pressure,
             windSpeed: data.windspeed ? data.windspeed / 3.6 : null,
             windDirection: data.winddir,
-            precipType: precipType,
-            cloudCover: data.cloudcover
+            precipitation: precipitation,
+            cloudCover: data.cloudcover,
+            extraData: {
+                mmPrecipitation: snowDepth || precipLevel,
+                visibility: data.visibility
+            }
         }
 
         // Process and return weather summary.

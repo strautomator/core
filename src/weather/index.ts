@@ -38,13 +38,12 @@ export class Weather {
         const emptySummary: WeatherSummary = {
             summary: "",
             icon: "",
-            iconText: "",
             temperature: "",
             humidity: "",
             pressure: "",
             windSpeed: "",
             windDirection: "" as any,
-            precipType: "",
+            precipitation: "",
             cloudCover: "",
             moon: "" as any
         }
