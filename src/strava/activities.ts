@@ -139,7 +139,12 @@ export class StravaActivities {
             logger.info("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, activity.name, timeStart)
             return activity
         } catch (ex) {
-            logger.error("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
+            if (ex.toString().indexOf("404") > 0) {
+                logger.warn("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
+            } else {
+                logger.error("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
+            }
+
             throw ex
         }
     }
