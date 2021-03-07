@@ -89,6 +89,7 @@ export class ClimaCell implements WeatherProvider {
         const result: WeatherSummary = {
             summary: summary,
             temperature: data.temperature,
+            feelsLike: data.temperatureApparent,
             humidity: data.humidity,
             pressure: data.pressureSurfaceLevel,
             windSpeed: data.windSpeed,

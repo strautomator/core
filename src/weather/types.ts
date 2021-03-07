@@ -47,8 +47,10 @@ export interface WeatherSummary {
     provider?: string
     /** Short weather description. */
     summary?: string
-    /** Actual temperature (celsius). */
+    /** Actual temperature. */
     temperature: string | number
+    /** "Feels like" temperature. */
+    feelsLike: string | number
     /** Humidity percentage. */
     humidity: string | number
     /** Air pressure (hPa). */

@@ -106,6 +106,7 @@ export class Weatherbit implements WeatherProvider {
         const result: WeatherSummary = {
             summary: data.weather.description,
             temperature: data.temp,
+            feelsLike: data.app_temp,
             humidity: data.rh,
             pressure: data.pres,
             windSpeed: data.wind_spd,

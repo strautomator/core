@@ -39,6 +39,7 @@ export class Weather {
             summary: "",
             icon: "",
             temperature: "",
+            feelsLike: "",
             humidity: "",
             pressure: "",
             windSpeed: "",

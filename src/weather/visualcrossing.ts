@@ -96,6 +96,7 @@ export class VisualCrossing implements WeatherProvider {
         const result: WeatherSummary = {
             summary: data.conditions,
             temperature: data.temp,
+            feelsLike: data.feelslike,
             humidity: data.humidity,
             pressure: data.pressure,
             windSpeed: data.windspeed ? data.windspeed / 3.6 : null,

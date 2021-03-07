@@ -97,6 +97,7 @@ export class StormGlass implements WeatherProvider {
         const result: WeatherSummary = {
             summary: null,
             temperature: this.getDataProperty(timeData.airTemperature),
+            feelsLike: this.getDataProperty(timeData.airTemperature),
             humidity: this.getDataProperty(timeData.humidity),
             pressure: this.getDataProperty(timeData.pressure),
             windSpeed: this.getDataProperty(timeData.windSpeed),

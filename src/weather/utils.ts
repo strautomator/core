@@ -3,6 +3,7 @@
 import {MoonPhase, WeatherProvider, WeatherSummary} from "./types"
 import {UserPreferences} from "../users/types"
 import Bottleneck from "bottleneck"
+import _ = require("lodash")
 import logger = require("anyhow")
 import moment = require("moment")
 
@@ -172,20 +173,27 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         else if (summary.temperature < 2) tempSummary = "Very cold"
         else if (summary.temperature < 12) tempSummary = "Cold"
 
+        // Make sure the "feels like" temperature is set.
+        if (_.isNil(summary.feelsLike)) {
+            summary.feelsLike = summary.temperature
+        }
+
         // Temperature.
         const tempUnit = preferences.weatherUnit == "f" ? "F" : "C"
         if (preferences.weatherUnit == "f") {
+            summary.feelsLike = celsiusToFahrenheit(summary.feelsLike as number)
             summary.temperature = celsiusToFahrenheit(summary.temperature as number)
         }
+        summary.feelsLike = `${Math.round(summary.feelsLike as number)}°${tempUnit}`
         summary.temperature = `${Math.round(summary.temperature as number)}°${tempUnit}`
 
         // Humidity.
-        if (summary.humidity !== null) {
+        if (!_.isNil(summary.humidity)) {
             summary.humidity = `${Math.round(summary.humidity as number)}%`
         }
 
         // Pressure.
-        if (summary.pressure !== null) {
+        if (!_.isNil(summary.pressure)) {
             summary.pressure = `${Math.round(summary.pressure as number)} hPa`
         }
 
@@ -193,19 +201,19 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         const isWindy = summary.windSpeed && summary.windSpeed > 20
 
         // Wind speed.
-        if (summary.windSpeed !== null) {
+        if (!_.isNil(summary.windSpeed)) {
             const windUnit = preferences.weatherUnit == "f" ? "mph" : "kph"
             const windSpeed = windUnit == "mph" ? msToMph(summary.windSpeed as number) : msToKph(summary.windSpeed as number)
             summary.windSpeed = `${Math.round(windSpeed)} ${windUnit}`
         }
 
         // Wind direction.
-        if (summary.windDirection !== null) {
+        if (!_.isNil(summary.windDirection)) {
             summary.windDirection = degToDirection(summary.windDirection as number)
         }
 
         // Cloud coverage.
-        if (summary.cloudCover !== null) {
+        if (!_.isNil(summary.cloudCover)) {
             summary.cloudCover = `${(summary.cloudCover as number).toFixed(0)}%`
         }
 

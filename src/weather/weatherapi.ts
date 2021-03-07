@@ -94,7 +94,8 @@ export class WeatherAPI implements WeatherProvider {
 
         const result: WeatherSummary = {
             summary: data.condition ? data.condition.text : null,
-            temperature: data.temp_c || data.avgtemp_c,
+            temperature: data.temp_c || data.avgtemp_c || 0,
+            feelsLike: data.feelslike_c,
             humidity: data.humidity || data.avghumidity || null,
             pressure: data.pressure_mb || null,
             windSpeed: wind ? parseFloat(wind) / 3.6 : null,

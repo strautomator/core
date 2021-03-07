@@ -110,6 +110,7 @@ export class OpenWeatherMap implements WeatherProvider {
         const result: WeatherSummary = {
             summary: weatherData.description,
             temperature: data.main.temp,
+            feelsLike: data.main.feels_like,
             humidity: data.main.humidity,
             pressure: data.main.pressure,
             windSpeed: data.wind.speed,
