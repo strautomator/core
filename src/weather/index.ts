@@ -60,7 +60,7 @@ export class Weather {
      */
     init = async (): Promise<void> => {
         try {
-            const all: WeatherProvider[] = [climacell, stormglass, openweathermap, visualcrossing, weatherapi, weatherbit]
+            const all: WeatherProvider[] = [stormglass, climacell, weatherapi, openweathermap, visualcrossing, weatherbit]
 
             // Iterate and init the weather providers.
             for (let provider of all) {
@@ -160,7 +160,7 @@ export class Weather {
 
         // Get providers that accept the given date and are under the daily usage quota.
         const hours = moment.utc().diff(date, "hours")
-        const availableProviders = this.providers.filter((p) => p.maxHours <= hours && p.stats.requestCount < settings.weather[p.name].rateLimit.perDay)
+        const availableProviders = this.providers.filter((p) => p.maxHours >= hours && p.stats.requestCount < settings.weather[p.name].rateLimit.perDay)
 
         const isoDate = date.toISOString()
         const latlon = coordinates.join(", ")
