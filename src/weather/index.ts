@@ -158,17 +158,30 @@ export class Weather {
             return cached
         }
 
-        // Get providers that accept the given date and are under the daily usage quota.
-        const hours = moment.utc().diff(date, "hours")
-        const availableProviders = this.providers.filter((p) => p.maxHours >= hours && p.stats.requestCount < settings.weather[p.name].rateLimit.perDay)
-
+        const mDate = moment.utc()
+        const hours = mDate.diff(date, "hours")
         const isoDate = date.toISOString()
         const latlon = coordinates.join(", ")
 
+        // Get providers that accept the given date and are under the daily usage quota.
+        const availableProviders = this.providers.filter((p: WeatherProvider) => p.maxHours >= hours && (p.stats.requestCount < settings.weather[p.name].rateLimit.perDay || mDate.diff(p.stats.lastRequest, "hours") >= 20))
+
+        // No providers available at the moment? Stop here.
+        if (availableProviders.length == 0) {
+            logger.error("Weather.getLocationWeather", latlon, isoDate, "No weather providers available at the moment")
+            return null
+        }
+
         // First try using the preferred or user's default provider.
+        // If the default provider is not valid, get the first one available.
         try {
-            providerModule = _.find(availableProviders, {name: provider})
-            if (!providerModule) providerModule = availableProviders.shift()
+            providerModule = _.remove(availableProviders, {name: provider})
+
+            if (providerModule) {
+                providerModule = providerModule[0]
+            } else {
+                providerModule = availableProviders.shift()
+            }
 
             result = await providerModule.getWeather(coordinates, date, preferences)
         } catch (ex) {
