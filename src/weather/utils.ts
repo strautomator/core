@@ -26,7 +26,7 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
         const newDay = stats.lastRequest && stats.lastRequest.getDate() < new Date().getDate()
 
         if (newDay) {
-            logger.debug(`Weather.${provider.name}.limiter`, `Daily stats reset`)
+            logger.info(`Weather.${provider.name}.limiter`, "Stats reset", `${stats.requestCount} requests, ${stats.errorCount || "no"} errors`)
             stats.errorCount = 0
             stats.requestCount = 0
         }
