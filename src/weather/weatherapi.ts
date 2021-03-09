@@ -23,7 +23,7 @@ export class WeatherAPI implements WeatherProvider {
 
     name: string = "weatherapi"
     title: string = "WeatherAPI.com"
-    maxHours: number = 48
+    maxHours: number = 730
 
     // METHODS
     // --------------------------------------------------------------------------

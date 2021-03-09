@@ -22,7 +22,7 @@ export class StormGlass implements WeatherProvider {
 
     name: string = "stormglass"
     title: string = "Storm Glass"
-    maxHours: number = 48
+    maxHours: number = 168
 
     // METHODS
     // --------------------------------------------------------------------------
