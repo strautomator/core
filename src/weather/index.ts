@@ -103,7 +103,7 @@ export class Weather {
      */
     getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences, provider?: string): Promise<ActivityWeather> => {
         try {
-            if (!activity.locationEnd && !activity.locationEnd) {
+            if (!activity.locationStart && !activity.locationEnd) {
                 throw new Error(`No location data for activity ${activity.id}`)
             }
 
@@ -175,28 +175,27 @@ export class Weather {
         // First try using the preferred or user's default provider.
         // If the default provider is not valid, get the first one available.
         try {
-            providerModule = _.remove(availableProviders, {name: provider})
-
-            if (providerModule) {
-                providerModule = providerModule[0]
-            } else {
-                providerModule = availableProviders.shift()
-            }
+            const foundProviders = _.remove(availableProviders, {name: provider})
+            providerModule = foundProviders && foundProviders.length > 0 ? foundProviders[0] : availableProviders.shift()
 
             result = await providerModule.getWeather(coordinates, date, preferences)
         } catch (ex) {
             const failedProviderName = providerModule.name
             providerModule = _.sample(availableProviders)
 
-            logger.warn("Weather.getLocationWeather", latlon, isoDate, `${failedProviderName} failed, will try ${providerModule.name}`)
+            if (providerModule) {
+                logger.warn("Weather.getLocationWeather", latlon, isoDate, `${failedProviderName} failed, will try ${providerModule.name}`)
 
-            // Try again using another provider. If also failed, log both exceptions.
-            try {
-                result = await providerModule.getWeather(coordinates, date, preferences)
-            } catch (retryEx) {
+                // Try again using another provider. If also failed, log both exceptions.
+                try {
+                    result = await providerModule.getWeather(coordinates, date, preferences)
+                } catch (retryEx) {
+                    logger.error("Weather.getLocationWeather", latlon, isoDate, failedProviderName, ex)
+                    logger.error("Weather.getLocationWeather", latlon, isoDate, providerModule.name, retryEx)
+                    return null
+                }
+            } else {
                 logger.error("Weather.getLocationWeather", latlon, isoDate, failedProviderName, ex)
-                logger.error("Weather.getLocationWeather", latlon, isoDate, providerModule.name, retryEx)
-                return null
             }
         }
 
