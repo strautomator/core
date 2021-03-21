@@ -23,7 +23,7 @@ export class WeatherAPI implements WeatherProvider {
 
     name: string = "weatherapi"
     title: string = "WeatherAPI.com"
-    maxHours: number = 730
+    maxHours: number = 1
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -43,16 +43,9 @@ export class WeatherAPI implements WeatherProvider {
 
             const baseUrl = settings.weather.weatherapi.baseUrl
             const secret = settings.weather.weatherapi.secret
-            const now = moment.utc().unix()
             const startTime = moment.utc(date).unix()
-            const endTime = now < startTime + 7200 ? now : startTime + 7200
-            const isHistory = startTime < now - 3600
-            const apiPath = isHistory ? "history.json" : "current.json"
             const lang = preferences.language || "en"
-
-            // If using the history endpoint, pass start and end times.
-            let weatherUrl = `${baseUrl}${apiPath}?key=${secret}&lang=${lang}&q=${coordinates.join(",")}`
-            if (isHistory) weatherUrl += `&unixdt=${startTime}&unixend_dt=${endTime}`
+            const weatherUrl = `${baseUrl}current.json?key=${secret}&lang=${lang}&q=${coordinates.join(",")}&unixdt=${startTime}`
 
             // Fetch weather data.
             logger.debug("WeatherAPI.getWeather", weatherUrl)
@@ -66,6 +59,7 @@ export class WeatherAPI implements WeatherProvider {
 
             return result
         } catch (ex) {
+            console.error(ex.response.data)
             logger.error("WeatherAPI.getWeather", coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
