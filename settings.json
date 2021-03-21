@@ -57,7 +57,7 @@
         // By default, when update distance for gear components, get activities that happened
         // 2 days ago (so users will have some time to set the correct activity gear).
         "previousDays": 2,
-        // Wait at least 10 days before sending a GearWear reminder.
+        // Wait at least 10 days before sending another GearWear reminder.
         "reminderDays": 10,
         // Remind user if tracking was not reset and current usage has passed 15% of the alert value.
         "reminderThreshold": 1.15
@@ -116,7 +116,7 @@
         "cacheDuration": 4,
         // Messages will auto expire after 3 months.
         "defaultExpireDays": 90,
-        // Send notifications via email if it hits a certain counter.
+        // Send notifications via email if unread notifications hits a certain count.
         "emailReminderCount": 10,
         // Delete read user messages after 30 days.
         "readDeleteAfterDays": 30
@@ -219,8 +219,8 @@
             // is around 40 requests per minute total, so for 2 instances we use 30
             // as load balancing is not done on a perfect 50/50 level.
             "maxPerMinute": 30,
-            // Default page size 150, max is 200.
-            "pageSize": 150
+            // Default page size 180, max is 200.
+            "pageSize": 180
         },
         "ftp": {
             // User's FTP will be estimated based on the last 14 weeks.
