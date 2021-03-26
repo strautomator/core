@@ -262,6 +262,22 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
 }
 
 /**
+ * Check if the passed boolean condition is valid.
+ * @param activity The Strava activity to be checked.
+ * @param condition The boolean recipe condition.
+ */
+export const checkBoolean = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+    const prop = condition.property
+    const valid: boolean = (!activity[prop] && condition.value === false) || activity[prop] === condition.value
+
+    if (!valid) {
+        logger.debug("Recipes.checkBoolean", `Activity ${activity.id}`, condition, `Failed`)
+    }
+
+    return valid
+}
+
+/**
  * Check if the passed text / string based condition is valid.
  * @param activity The Strava activity to be checked.
  * @param condition The text / string based recipe condition.

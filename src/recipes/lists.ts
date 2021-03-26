@@ -16,7 +16,7 @@ export const recipeOperatorList = {
         {value: "<", text: "is lower than", description: "Number less than the specified value"},
         {value: ">", text: "is higher than", description: "Number greater than the specified value"}
     ],
-    //Any number.
+    // Any number.
     anyNumber: [
         {value: "like", text: "is around (±10%)", description: "Number is around (±10%) the specified value"},
         {value: "=", text: "is exactly", description: "Number matches the specified value"},
@@ -61,9 +61,11 @@ export const recipePropertyList = [
     {value: "movingTime", text: "Moving time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "h"},
     {value: "totalTime", text: "Total elapsed time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "h"},
     {value: "weekday", text: "Week day", type: "day", operators: recipeOperatorList.is},
+    {value: "hasLocation", text: "Has location data", type: "boolean", operators: recipeOperatorList.is},
     {value: "locationStart", text: "Starting location", type: "location", operators: recipeOperatorList.location},
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
     {value: "polyline", text: "Passes on location", type: "location", operators: recipeOperatorList.location},
+    {value: "hasPower", text: "Has a power meter", type: "boolean", operators: recipeOperatorList.is},
     {value: "wattsAvg", text: "Average power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},
     {value: "wattsWeighted", text: "Normalized power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},
     {value: "wattsMax", text: "Max power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},

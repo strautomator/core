@@ -2,7 +2,7 @@
 
 import {recipePropertyList, recipeActionList} from "./lists"
 import {defaultAction, commuteAction, gearAction, webhookAction} from "./actions"
-import {checkText, checkLocation, checkSportType, checkWeekday, checkTimestamp, checkWeather, checkNumber} from "./conditions"
+import {checkBoolean, checkLocation, checkNumber, checkSportType, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
@@ -248,7 +248,13 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            // Text condition.
+            // Boolean condition.
+            else if (_.isBoolean(condition.value)) {
+                const valid = checkBoolean(activity, condition)
+                if (!valid) return false
+            }
+
+            // Text condition (default).
             else {
                 const valid = checkText(activity, condition)
                 if (!valid) return false

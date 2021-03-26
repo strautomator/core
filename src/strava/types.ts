@@ -36,6 +36,8 @@ export interface StravaActivity {
     totalTime: number
     /** Elapsed moving time in seconds. */
     movingTime: number
+    /** The activity has location coordinates? */
+    hasLocation?: boolean
     /** Start location (latitude and longitude). */
     locationStart?: [number, number]
     /** End location (latitude and longitude). */
@@ -100,7 +102,7 @@ export function toStravaActivity(data, user: UserData): StravaActivity {
         movingTime: data.moving_time,
         locationStart: data.start_latlng,
         locationEnd: data.end_latlng,
-        hasPower: data.device_watts,
+        hasPower: data.device_watts || false,
         wattsAvg: data.average_watts ? Math.round(data.average_watts) : null,
         wattsWeighted: data.weighted_average_watts ? Math.round(data.weighted_average_watts) : null,
         wattsMax: data.max_watts ? Math.round(data.max_watts) : null,
@@ -112,6 +114,9 @@ export function toStravaActivity(data, user: UserData): StravaActivity {
         manual: data.manual,
         updatedFields: []
     }
+
+    // Activity has location data?
+    activity.hasLocation = (activity.locationStart && activity.locationStart.length > 0) || (activity.locationEnd && activity.locationEnd.length > 0)
 
     // Strava returns offset in seconds, but we store in minutes.
     if (activity.utcStartOffset) {
