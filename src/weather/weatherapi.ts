@@ -59,7 +59,6 @@ export class WeatherAPI implements WeatherProvider {
 
             return result
         } catch (ex) {
-            console.error(ex.response.data)
             logger.error("WeatherAPI.getWeather", coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
