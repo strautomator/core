@@ -44,7 +44,7 @@ export class VisualCrossing implements WeatherProvider {
             const baseUrl = settings.weather.visualcrossing.baseUrl
             const secret = settings.weather.visualcrossing.secret
             const mDate = moment.utc(date)
-            if (mDate.dayOfYear() != moment().utc().dayOfYear()) mDate.subtract(1, "days")
+            if (mDate.dayOfYear() != moment.utc().dayOfYear()) mDate.subtract(1, "days")
 
             const qDate = mDate.format("YYYY-MM-DDTHH:mm:ss")
             const latlon = coordinates.join(",")

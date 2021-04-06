@@ -95,7 +95,7 @@ export class Calendar {
 
             // Days and timestamp calculations.
             const maxDays = user.isPro ? settings.plans.pro.maxCalendarDays : settings.plans.free.maxCalendarDays
-            const minDate = moment().utc().hours(0).minutes(0).subtract(maxDays, "days")
+            const minDate = moment.utc().hours(0).minutes(0).subtract(maxDays, "days")
             const dateFrom = options.dateFrom ? options.dateFrom : minDate
             const tsAfter = dateFrom.valueOf() / 1000
             const tsBefore = new Date().valueOf() / 1000
@@ -117,8 +117,8 @@ export class Calendar {
             // See if cached version of the calendar is still valid.
             // Check cached calendar expiry date (reversed / backwards) and if user has new activity since the last generated output.
             if (cachedCalendar) {
-                const expiryDate = moment().utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
-                const maxExpiryDate = moment().utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
+                const expiryDate = moment.utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
+                const maxExpiryDate = moment.utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
                 const updatedTs = cachedCalendar.dateUpdated.valueOf()
                 const notExpired = expiryDate.valueOf() < updatedTs
                 const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() < updatedTs && maxExpiryDate.valueOf() < updatedTs
@@ -246,7 +246,7 @@ export class Calendar {
                 id: cacheId,
                 userId: user.id,
                 data: cal.toString(),
-                dateUpdated: moment().utc().toDate()
+                dateUpdated: moment.utc().toDate()
             }
 
             // Only save to database if a cacheDUration is set.

@@ -492,7 +492,7 @@ export class StravaActivities {
             }
 
             // Timestamps for the activities date filter.
-            const dateAfter = moment().utc().subtract(weeks, "weeks")
+            const dateAfter = moment.utc().subtract(weeks, "weeks")
             const tsAfter = dateAfter.valueOf() / 1000
             const tsBefore = new Date().valueOf() / 1000
 

@@ -146,7 +146,7 @@ export class Notifications {
 
             // Expiry date not set? Use the default based on settings.
             if (!notification.dateExpiry) {
-                notification.dateExpiry = moment().utc().add(settings.notifications.defaultExpireDays, "days").toDate()
+                notification.dateExpiry = moment.utc().add(settings.notifications.defaultExpireDays, "days").toDate()
             } else {
                 logDetails.push(`Expires ${moment(notification.dateExpiry).utc().format("lll")}`)
             }
@@ -267,7 +267,7 @@ export class Notifications {
      */
     cleanup = async (): Promise<void> => {
         try {
-            const date = moment().utc().subtract(settings.notifications.readDeleteAfterDays, "days")
+            const date = moment.utc().subtract(settings.notifications.readDeleteAfterDays, "days")
             let counter = 0
             counter += await database.delete("notifications", ["dateRead", "<", date])
             counter += await database.delete("notifications", ["dateExpiry", "<", date])

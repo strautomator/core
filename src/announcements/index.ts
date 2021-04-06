@@ -135,7 +135,7 @@ export class Announcements {
      */
     cleanup = async (): Promise<void> => {
         try {
-            const date = moment().utc().subtract(settings.notifications.readDeleteAfterDays, "days")
+            const date = moment.utc().subtract(settings.notifications.readDeleteAfterDays, "days")
             const counter = await database.delete("announcements", ["dateExpiry", "<", date])
             logger.info("Announcements.cleanup", `Deleted ${counter} announcements`)
         } catch (ex) {

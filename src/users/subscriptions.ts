@@ -25,7 +25,7 @@ export class UserSubscriptions {
      */
     getDangling = async (): Promise<PayPalSubscription[]> => {
         try {
-            const minDate = moment().utc().add(settings.users.danglingDays, "days")
+            const minDate = moment.utc().add(settings.users.danglingDays, "days")
             const queries = [
                 ["dateUpdated", "<", minDate],
                 ["status", "==", "APPROVAL_PENDING"]

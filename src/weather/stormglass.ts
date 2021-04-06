@@ -44,7 +44,7 @@ export class StormGlass implements WeatherProvider {
             const baseUrl = settings.weather.stormglass.baseUrl
             const secret = settings.weather.stormglass.secret
             const mDate = moment.utc(date)
-            const isYesterday = mDate.dayOfYear() != moment().utc().dayOfYear()
+            const isYesterday = mDate.dayOfYear() != moment.utc().dayOfYear()
             const params = "airTemperature,humidity,pressure,cloudCover,windDirection,windSpeed,precipitation,snowDepth"
             let weatherUrl = `${baseUrl}weather/point?lat=${coordinates[0]}&lng=${coordinates[1]}&params=${params}`
 
