@@ -14,9 +14,9 @@
         "eventSummary": "${name} ${icon}",
         // Calendar name.
         "name": "Strava activities",
-        // Calendars are cached for a maximum of 7 days.
-        "maxCacheDuration": 604800,
-        // Default TTL (refresh interval) is once every 4 hours on PRO accounts, double (28800) on free.
+        // Calendars are cached for a maximum of 5 days, even if there were no new activities.
+        "maxCacheDuration": 432000,
+        // Default TTL (refresh interval) is once every 4 hours on PRO accounts.
         "ttl": 14400
     },
     "database": {
@@ -240,8 +240,8 @@
         "danglingDays": 5
     },
     "weather": {
-        // Cache weather results for 20 minutes. Value set in seconds.
-        "cacheDuration": 1200,
+        // Cache weather results for 15 minutes. Value set in seconds.
+        "cacheDuration": 900,
         // Set the default weather provider.
         "defaultProvider": "stormglass",
         // ClimaCell API settings.
