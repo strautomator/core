@@ -22,7 +22,7 @@ export class ClimaCell implements WeatherProvider {
 
     name: string = "climacell"
     title: string = "ClimaCell"
-    maxHours: number = 6
+    maxHours: number = 5
 
     // METHODS
     // --------------------------------------------------------------------------
