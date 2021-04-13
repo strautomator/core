@@ -139,18 +139,19 @@ export class StravaAthletes {
                 if (totalTime < 60 * 20) continue
                 if (!a.hasPower) continue
 
+                let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
                 let power: number
 
                 // FTP ranges from 95% to 100% from 20 minutes to 1 hour, and then
-                // 102.5% for each extra hour of activity time.
+                // 103% for each extra hour of activity time.
                 if (totalTime <= 3600) {
                     const perc = ((3600 - totalTime) / 60 / 8) * 0.01
-                    power = Math.round(a.wattsWeighted * (1 - perc))
+                    power = Math.round(watts * (1 - perc))
                 } else {
                     const extraHours = Math.floor(totalTime / 3600) - 1
                     const fraction = 1 + 0.025 * ((totalTime % 3600) / 60 / 60)
                     const factor = 1.025 ** extraHours * fraction
-                    power = a.wattsWeighted * factor
+                    power = watts * factor
                 }
 
                 // New best power?
