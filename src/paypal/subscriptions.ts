@@ -7,11 +7,15 @@ import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "dayjs"
+import dayjsAdvancedFormat from "dayjs/plugin/advancedFormat"
+import dayjsLocalizedFormat from "dayjs/plugin/localizedFormat"
 import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
 
-// Extends dayjs with UTC.
+// Extends dayjs with required plugins.
 dayjs.extend(dayjsUTC)
+dayjs.extend(dayjsAdvancedFormat)
+dayjs.extend(dayjsLocalizedFormat)
 
 /**
  * PayPal Subscriptions API.

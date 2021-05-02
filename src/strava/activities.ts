@@ -13,10 +13,14 @@ import users from "../users"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "dayjs"
+import dayjsAdvancedFormat from "dayjs/plugin/advancedFormat"
+import dayjsLocalizedFormat from "dayjs/plugin/localizedFormat"
 import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
 
-// Extends dayjs with UTC.
+// Extends dayjs with required plugins.
+dayjs.extend(dayjsAdvancedFormat)
+dayjs.extend(dayjsLocalizedFormat)
 dayjs.extend(dayjsUTC)
 
 /**
@@ -358,8 +362,10 @@ export class StravaActivities {
                     // Create notification for user in case the activity exists but could not be processed.
                     if (activity.dateEnd) {
                         try {
-                            const aDate = dayjs(activity.dateEnd)
-                            if (activity.utcStartOffset) aDate.add(activity.utcStartOffset, "minutes")
+                            let aDate = dayjs(activity.dateEnd)
+                            if (activity.utcStartOffset) {
+                                aDate = aDate.add(activity.utcStartOffset, "minutes")
+                            }
 
                             const title = `Failed to process activity ${activity.id}`
                             const body = `There was an error processing your ${activity.type} "${activity.name}", on ${aDate.format("lll")}. Strava returned an error message.`

@@ -7,10 +7,14 @@ import {axiosRequest} from "../axios"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "dayjs"
+import dayjsAdvancedFormat from "dayjs/plugin/advancedFormat"
+import dayjsLocalizedFormat from "dayjs/plugin/localizedFormat"
 import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
 
-// Extends dayjs with UTC.
+// Extends dayjs with required plugins.
+dayjs.extend(dayjsAdvancedFormat)
+dayjs.extend(dayjsLocalizedFormat)
 dayjs.extend(dayjsUTC)
 
 /**
@@ -130,7 +134,7 @@ export class WeatherAPI implements WeatherProvider {
             if (result) {
                 let hourData = _.find(result.hour, {date: mDate.format(hourFormat)})
                 if (!hourData) hourData = _.find(result.hour, {date: mDate.subtract(1, "h").format(hourFormat)})
-                if (!hourData) hourData = _.find(result.hour, {date: mDate.add(2, "h").format(hourFormat)})
+                if (!hourData) hourData = _.find(result.hour, {date: mDate.add(1, "h").format(hourFormat)})
                 result = hourData || result.day
             }
         } else {

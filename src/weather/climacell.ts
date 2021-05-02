@@ -6,10 +6,14 @@ import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
 import dayjs from "dayjs"
+import dayjsAdvancedFormat from "dayjs/plugin/advancedFormat"
+import dayjsLocalizedFormat from "dayjs/plugin/localizedFormat"
 import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
 
-// Extends dayjs with UTC.
+// Extends dayjs with required plugins.
+dayjs.extend(dayjsAdvancedFormat)
+dayjs.extend(dayjsLocalizedFormat)
 dayjs.extend(dayjsUTC)
 
 /**

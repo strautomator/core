@@ -10,7 +10,13 @@ import recipeStats from "./stats"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "dayjs"
+import dayjsAdvancedFormat from "dayjs/plugin/advancedFormat"
+import dayjsLocalizedFormat from "dayjs/plugin/localizedFormat"
 const settings = require("setmeup").settings
+
+// Extends dayjs with required plugins.
+dayjs.extend(dayjsAdvancedFormat)
+dayjs.extend(dayjsLocalizedFormat)
 
 /**
  * Evaluate and process automation recipes.

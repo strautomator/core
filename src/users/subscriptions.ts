@@ -8,7 +8,7 @@ import dayjs from "dayjs"
 import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
 
-// Extends dayjs with UTC.
+// Extends dayjs with required plugins.
 dayjs.extend(dayjsUTC)
 
 /**

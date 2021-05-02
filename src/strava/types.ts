@@ -5,7 +5,7 @@ import _ = require("lodash")
 import dayjs from "dayjs"
 import dayjsUTC from "dayjs/plugin/utc"
 
-// Extends dayjs with UTC.
+// Extends dayjs with required plugins.
 dayjs.extend(dayjsUTC)
 
 /**

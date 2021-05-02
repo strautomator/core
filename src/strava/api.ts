@@ -11,7 +11,7 @@ import dayjsUTC from "dayjs/plugin/utc"
 import querystring = require("querystring")
 const settings = require("setmeup").settings
 
-// Extends dayjs with UTC.
+// Extends dayjs with required plugins.
 dayjs.extend(dayjsUTC)
 
 /**

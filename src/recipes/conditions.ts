@@ -11,7 +11,7 @@ import dayjs from "dayjs"
 import dayjsUTC from "dayjs/plugin/utc"
 import polyline = require("@mapbox/polyline")
 
-// Extends dayjs with UTC.
+// Extends dayjs with required plugins.
 dayjs.extend(dayjsUTC)
 
 /**
@@ -74,7 +74,7 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
     // Parse activity date, considering the UTC offset for start date.
     let aDate = dayjs.utc(activity[prop])
     if (prop == "dateStart" && activity.utcStartOffset) {
-        aDate.add(activity.utcStartOffset, "minutes")
+        aDate = aDate.add(activity.utcStartOffset, "minutes")
     }
 
     // Parse condition and activity's date.
@@ -150,7 +150,7 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
     // Parse activity date, considering the UTC offset for start date.
     let aDate = dayjs.utc(activity["dateStart"])
     if (activity.utcStartOffset) {
-        aDate.add(activity.utcStartOffset, "minutes")
+        aDate = aDate.add(activity.utcStartOffset, "minutes")
     }
 
     // Parse condition and activity's date.
