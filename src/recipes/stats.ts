@@ -5,7 +5,11 @@ import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * Recipe stats methods.
@@ -42,7 +46,7 @@ export class RecipeStats {
                     stats.counter = 0
                 }
 
-                const lastTrigger = moment(stats.dateLastTrigger).format("lll")
+                const lastTrigger = dayjs(stats.dateLastTrigger).format("lll")
                 logger.debug("RecipeStats.getStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `${stats.activityCount} activities`, `Last triggered: ${lastTrigger}`)
                 return stats
             } else {
@@ -77,7 +81,7 @@ export class RecipeStats {
         const id = `${user.id}-${recipe.id}`
 
         try {
-            const now = moment.utc().toDate()
+            const now = dayjs.utc().toDate()
 
             // Check if a stats document already exists.
             const doc = database.doc("recipe-stats", id)

@@ -3,8 +3,12 @@
 import {PayPalProduct} from "./types"
 import api from "./api"
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * PayPal Products API.
@@ -47,7 +51,7 @@ export class PayPalProducts {
                 products.push({
                     id: p.id,
                     name: p.name,
-                    dateCreated: moment.utc(p.create_time).toDate()
+                    dateCreated: dayjs.utc(p.create_time).toDate()
                 })
             }
 
@@ -90,7 +94,7 @@ export class PayPalProducts {
             return {
                 id: res.id,
                 name: res.name,
-                dateCreated: moment.utc(res.create_time).toDate()
+                dateCreated: dayjs.utc(res.create_time).toDate()
             }
         } catch (ex) {
             logger.error("PayPal.createProduct", "Could not create a new product on PayPal")

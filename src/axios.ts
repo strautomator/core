@@ -1,4 +1,4 @@
-// Strautomator Core: Token request
+// Strautomator Core: Axios
 
 import logger = require("anyhow")
 import url = require("url")
@@ -27,7 +27,7 @@ export const axiosRequest = async (options: any): Promise<any> => {
 
         // Retry the request if it failed due to timeout, rate limiting or server errors.
         if (isTimeout || isRetryable) {
-            const urlInfo = url.parse(options.url)
+            const urlInfo = new url.URL(options.url)
 
             try {
                 const res = await axios(options)

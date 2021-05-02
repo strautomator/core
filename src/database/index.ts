@@ -5,7 +5,7 @@ import {cryptoProcess} from "./crypto"
 import _ = require("lodash")
 import cache = require("bitecache")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
 const settings = require("setmeup").settings
 
 /**
@@ -371,7 +371,7 @@ export class Database {
                     this.transformData(value)
                 } else if (_.isObject(value)) {
                     if (value._seconds > 0 && !_.isNil(value._nanoseconds)) {
-                        data[key] = value.toDate ? data[key].toDate() : moment.unix(value._seconds).toDate()
+                        data[key] = value.toDate ? data[key].toDate() : dayjs.unix(value._seconds).toDate()
                     } else {
                         this.transformData(value)
                     }

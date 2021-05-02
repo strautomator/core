@@ -9,7 +9,7 @@ import {UserData} from "../users/types"
 import recipeStats from "./stats"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
 const settings = require("setmeup").settings
 
 /**
@@ -179,7 +179,7 @@ export class Recipes {
                 // Polyline contents won't be logged.
                 if (!valid) {
                     let conditionProp = condition.property == "polyline" ? null : activity[condition.property]
-                    if (_.isDate(conditionProp)) conditionProp = moment(conditionProp).format("lll")
+                    if (_.isDate(conditionProp)) conditionProp = dayjs(conditionProp).format("lll")
 
                     let logValue = conditionProp ? `Not a match: ${conditionProp}` : "No match"
                     logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)

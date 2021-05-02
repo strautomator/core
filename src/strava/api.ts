@@ -6,9 +6,13 @@ import Bottleneck from "bottleneck"
 import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 import querystring = require("querystring")
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * Strava API handler.
@@ -247,7 +251,7 @@ export class StravaAPI {
 
             // Renew token if it has expired.
             if (tokens) {
-                const now = moment.utc().unix()
+                const now = dayjs.utc().unix()
 
                 if (tokens.expiresAt && tokens.expiresAt < now) {
                     const newTokens = await this.refreshToken(tokens.refreshToken, tokens.accessToken)

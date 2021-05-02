@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "21.152.12143",
+    "version": "21.177.12316",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -14,33 +14,33 @@
         "postinstall": "tsc"
     },
     "dependencies": {
-        "@google-cloud/firestore": "^4.9.9",
-        "@google-cloud/storage": "^5.8.3",
+        "@google-cloud/firestore": "^4.10.1",
+        "@google-cloud/storage": "^5.8.4",
         "@googlemaps/google-maps-services-js": "^3.1.16",
         "@mapbox/polyline": "^1.1.1",
         "anyhow": "^2.1.0",
         "axios": "^0.21.1",
         "bitecache": "^1.1.6",
         "bottleneck": "^2.19.5",
+        "dayjs": "^1.10.4",
         "flatbush": "^3.3.0",
-        "ical-generator": "^1.15.4",
+        "ical-generator": "2.0.0",
         "jaul": "^1.3.9",
         "lodash": "^4.17.21",
-        "moment": "2.29.1",
-        "nodemailer": "^6.5.0",
+        "nodemailer": "^6.6.0",
         "paypal-rest-sdk": "^1.8.1",
         "setmeup": "^1.6.4",
         "twitter-lite": "^1.1.0",
         "typescript": "^4.2.4"
     },
     "devDependencies": {
-        "@types/node": "^14.14.37",
+        "@types/node": "^15.0.1",
         "chai": "^4.3.4",
-        "chalk": "^4.1.0",
+        "chalk": "^4.1.1",
         "mocha": "^8.3.2",
         "mocha-lcov-reporter": "^1.3.0",
         "nyc": "^15.1.0",
-        "typedoc": "^0.20.35"
+        "typedoc": "^0.20.36"
     },
     "peerDependencies": {
         "anyhow": "^2.1.0",

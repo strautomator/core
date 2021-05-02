@@ -5,8 +5,12 @@ import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * ClimaCell weather API.
@@ -38,12 +42,12 @@ export class ClimaCell implements WeatherProvider {
 
         try {
             if (!preferences) preferences = {}
-            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
+            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.climacell.baseUrl
             const secret = settings.weather.climacell.secret
             const dateFormat = "YYYY-MM-DDTHH:mm:ss"
-            const mDate = moment.utc(date)
+            const mDate = dayjs.utc(date)
             const startTime = mDate.format(dateFormat) + "Z"
             const endTime = mDate.add(1, "h").format(dateFormat) + "Z"
             const fields = `weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover`

@@ -7,7 +7,7 @@ import users from "../users"
 import api from "./api"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
 const settings = require("setmeup").settings
 
 /**
@@ -82,8 +82,8 @@ export class StravaAthletes {
             // and only if the value actually changed. Ignore these conditions if force is set.
             if (!force) {
                 if (user.dateLastFtpUpdate) {
-                    const now = moment().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
-                    const lastUpdate = moment(user.dateLastFtpUpdate).unix()
+                    const now = dayjs().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
+                    const lastUpdate = dayjs(user.dateLastFtpUpdate).unix()
 
                     if (lastUpdate >= now) {
                         logger.warn("Strava.setAthleteFtp", `User ${user.id} - ${user.displayName}`, `FTP ${ftp}`, `Abort, FTP was already updated recently`)
@@ -196,8 +196,8 @@ export class StravaAthletes {
             // Check if the FTP was recently updated for that user.
             let recentlyUpdated: boolean = false
             if (user.dateLastFtpUpdate) {
-                const now = moment().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
-                const lastUpdate = moment(user.dateLastFtpUpdate).unix()
+                const now = dayjs().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
+                const lastUpdate = dayjs(user.dateLastFtpUpdate).unix()
                 recentlyUpdated = lastUpdate >= now
             }
 

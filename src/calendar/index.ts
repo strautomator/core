@@ -8,12 +8,17 @@ import crypto = require("crypto")
 import database from "../database"
 import eventManager from "../eventmanager"
 import strava from "../strava"
-import ical = require("ical-generator")
 import jaul = require("jaul")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsDuration from "dayjs/plugin/duration"
+import dayjsUTC from "dayjs/plugin/utc"
 import url = require("url")
+const ical = require("ical-generator").default
 const settings = require("setmeup").settings
+
+// Extends dayjs with duration and UTC.
+dayjs.extend(dayjsDuration, dayjsUTC)
 
 /**
  * Messages manager.
@@ -36,7 +41,7 @@ export class Calendar {
             if (!settings.calendar.cacheDuration) {
                 logger.warn("Calendar.init", "No cacheDuration set, calendars output will NOT be cached")
             } else {
-                const duration = moment.duration(settings.calendar.cacheDuration, "seconds").humanize()
+                const duration = dayjs.duration(settings.calendar.cacheDuration, "seconds").humanize()
                 logger.info("Calendar.init", `Cache calendars for ${duration}`)
             }
         } catch (ex) {
@@ -95,12 +100,12 @@ export class Calendar {
 
             // Days and timestamp calculations.
             const maxDays = user.isPro ? settings.plans.pro.maxCalendarDays : settings.plans.free.maxCalendarDays
-            const minDate = moment.utc().hours(0).minutes(0).subtract(maxDays, "days")
+            const minDate = dayjs.utc().hour(0).minute(0).subtract(maxDays, "days")
             const dateFrom = options.dateFrom ? options.dateFrom : minDate
             const tsAfter = dateFrom.valueOf() / 1000
             const tsBefore = new Date().valueOf() / 1000
 
-            optionsLog = `Since ${moment(dateFrom).format("YYYY-MM-DD")}, `
+            optionsLog = `Since ${dayjs(dateFrom).format("YYYY-MM-DD")}, `
             optionsLog += options.sportTypes ? options.sportTypes.join(", ") : "all sports"
             if (options.excludeCommutes) optionsLog += ", exclude commutes"
 
@@ -117,8 +122,8 @@ export class Calendar {
             // See if cached version of the calendar is still valid.
             // Check cached calendar expiry date (reversed / backwards) and if user has new activity since the last generated output.
             if (cachedCalendar) {
-                const expiryDate = moment.utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
-                const maxExpiryDate = moment.utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
+                const expiryDate = dayjs.utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
+                const maxExpiryDate = dayjs.utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
                 const updatedTs = cachedCalendar.dateUpdated.valueOf()
                 const notExpired = expiryDate.valueOf() < updatedTs
                 const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() < updatedTs && maxExpiryDate.valueOf() < updatedTs
@@ -129,7 +134,7 @@ export class Calendar {
                 }
             }
 
-            const startTime = moment().unix()
+            const startTime = dayjs().unix()
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `Will generate a new calendar`)
 
             // Set calendar name based on passed filters.
@@ -142,7 +147,7 @@ export class Calendar {
             const calUrl = `${settings.app.url}calendar/${user.urlToken}`
 
             // Create ical container.
-            const icalOptions: ical.CalendarData = {
+            const icalOptions = {
                 name: calName,
                 domain: domain,
                 prodId: prodId,
@@ -246,7 +251,7 @@ export class Calendar {
                 id: cacheId,
                 userId: user.id,
                 data: cal.toString(),
-                dateUpdated: moment.utc().toDate()
+                dateUpdated: dayjs.utc().toDate()
             }
 
             // Only save to database if a cacheDUration is set.
@@ -254,7 +259,7 @@ export class Calendar {
                 await database.set("calendar", cachedCalendar, cacheId)
             }
 
-            const duration = Math.round(moment().unix() - startTime / 1000)
+            const duration = Math.round(dayjs().unix() - startTime / 1000)
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `Generated in ${duration} seconds`)
 
             return cachedCalendar.data

@@ -7,8 +7,12 @@ import {WeatherSummary} from "../weather/types"
 import weather from "../weather"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 import polyline = require("@mapbox/polyline")
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * Check if the activity starts, passes on or ends on the specified location.
@@ -68,14 +72,14 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
     }
 
     // Parse activity date, considering the UTC offset for start date.
-    let aDate = moment.utc(activity[prop])
+    let aDate = dayjs.utc(activity[prop])
     if (prop == "dateStart" && activity.utcStartOffset) {
         aDate.add(activity.utcStartOffset, "minutes")
     }
 
     // Parse condition and activity's date.
     const value = parseInt(condition.value as string)
-    const aTime = aDate.seconds() + aDate.minutes() * 60 + aDate.hours() * 3600
+    const aTime = aDate.second() + aDate.minute() * 60 + aDate.hour() * 3600
     let valid: boolean = true
 
     // Check it time is greater, less, within 2 minutes, or around 30 minutes of the condition's time.
@@ -144,7 +148,7 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
     }
 
     // Parse activity date, considering the UTC offset for start date.
-    let aDate = moment.utc(activity["dateStart"])
+    let aDate = dayjs.utc(activity["dateStart"])
     if (activity.utcStartOffset) {
         aDate.add(activity.utcStartOffset, "minutes")
     }

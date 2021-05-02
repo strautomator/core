@@ -5,7 +5,7 @@ import {UserPreferences} from "../users/types"
 import Bottleneck from "bottleneck"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
 
 /**
  * Helper to get an API rate limiter (bottleneck) for the specified provider.
@@ -246,7 +246,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
  * @param summary The parsed weather summary.
  */
 export function weatherSummaryString(coordinates: [number, number], date: Date, summary: WeatherSummary): string {
-    const dateFormat = moment(date).format("YYYY-MM-DD HH:mm")
+    const dateFormat = dayjs(date).format("YYYY-MM-DD HH:mm")
     return `${coordinates.join(", ")} - ${dateFormat} - ${summary.summary} - temp: ${summary.temperature}, humidity: ${summary.humidity}, precipitation: ${summary.precipitation}`
 }
 

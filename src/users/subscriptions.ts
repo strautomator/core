@@ -4,8 +4,12 @@ import {UserData} from "./types"
 import {PayPalSubscription} from "../paypal/types"
 import database from "../database"
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * Manage user subscriptions.
@@ -25,7 +29,7 @@ export class UserSubscriptions {
      */
     getDangling = async (): Promise<PayPalSubscription[]> => {
         try {
-            const minDate = moment.utc().add(settings.users.danglingDays, "days")
+            const minDate = dayjs.utc().add(settings.users.danglingDays, "days")
             const queries = [
                 ["dateUpdated", "<", minDate],
                 ["status", "==", "APPROVAL_PENDING"]

@@ -5,8 +5,13 @@ import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsDayOfYear from "dayjs/plugin/dayOfYear"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsDayOfYear, dayjsUTC)
 
 /**
  * Visual Crossing weather API.
@@ -39,12 +44,12 @@ export class VisualCrossing implements WeatherProvider {
 
         try {
             if (!preferences) preferences = {}
-            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
+            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.visualcrossing.baseUrl
             const secret = settings.weather.visualcrossing.secret
-            const mDate = moment.utc(date)
-            if (mDate.dayOfYear() != moment.utc().dayOfYear()) mDate.subtract(1, "days")
+            const mDate = dayjs.utc(date)
+            if (mDate.dayOfYear() != dayjs.utc().dayOfYear()) mDate.subtract(1, "days")
 
             const qDate = mDate.format("YYYY-MM-DDTHH:mm:ss")
             const latlon = coordinates.join(",")
@@ -79,7 +84,7 @@ export class VisualCrossing implements WeatherProvider {
         if (data.days && data.days.length > 0) {
             data = data.days[0]
             if (data.hours && data.hours.length > 0) {
-                data = data.hours.find((d) => d.datetime == moment.utc(date).format("HH:mm:ss"))
+                data = data.hours.find((d) => d.datetime == dayjs.utc(date).format("HH:mm:ss"))
             }
         }
 

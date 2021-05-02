@@ -5,8 +5,12 @@ import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * OpenWeatherMap weather API. Only supports ccurrent weather (no historical data).
@@ -38,7 +42,7 @@ export class OpenWeatherMap implements WeatherProvider {
 
         try {
             if (!preferences) preferences = {}
-            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
+            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.openweathermap.baseUrl
             const secret = settings.weather.openweathermap.secret

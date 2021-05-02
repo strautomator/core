@@ -10,8 +10,12 @@ import eventManager from "../eventmanager"
 import mailer from "../mailer"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * Manage and process user accounts.
@@ -217,7 +221,7 @@ export class Users {
      */
     getExpired = async (): Promise<UserData[]> => {
         try {
-            const timestamp = moment().subtract(1, "day").unix()
+            const timestamp = dayjs().subtract(1, "day").unix()
             const result = await database.search("users", ["stravaTokens.expiresAt", "<=", timestamp])
 
             logger.info("Users.getExpired", `${result.length} users with expired tokens (>= 1 day)`)
@@ -233,7 +237,7 @@ export class Users {
      */
     getIdle = async (): Promise<UserData[]> => {
         try {
-            const since = moment.utc().subtract(settings.users.idleDays, "days")
+            const since = dayjs.utc().subtract(settings.users.idleDays, "days")
             const result = await database.search("users", ["dateLastActivity", "<", since.toDate()])
 
             // Remove user with no recipes.
@@ -327,7 +331,7 @@ export class Users {
      */
     upsert = async (profile: StravaProfile, stravaTokens: StravaTokens): Promise<UserData> => {
         try {
-            const now = moment.utc().toDate()
+            const now = dayjs.utc().toDate()
 
             const userData: UserData = {
                 id: profile.id,
@@ -414,7 +418,7 @@ export class Users {
                 await database.merge("users", user)
 
                 if (user.dateLastActivity) {
-                    logs.push(moment(user.dateLastActivity).format("lll"))
+                    logs.push(dayjs(user.dateLastActivity).format("lll"))
                 }
 
                 if (user.profile) {

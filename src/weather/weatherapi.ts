@@ -6,8 +6,12 @@ import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * WeatherAPI.com weather API.
@@ -39,11 +43,11 @@ export class WeatherAPI implements WeatherProvider {
 
         try {
             if (!preferences) preferences = {}
-            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
+            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.weatherapi.baseUrl
             const secret = settings.weather.weatherapi.secret
-            const startTime = moment.utc(date).unix()
+            const startTime = dayjs.utc(date).unix()
             const lang = preferences.language || "en"
             const weatherUrl = `${baseUrl}current.json?key=${secret}&lang=${lang}&q=${coordinates.join(",")}&unixdt=${startTime}`
 
@@ -114,7 +118,7 @@ export class WeatherAPI implements WeatherProvider {
             return null
         }
 
-        const mDate = moment(date)
+        const mDate = dayjs(date)
         const dayFormat = "YYYY-MM-DD"
         const hourFormat = "YYYY-MM-DD HH:00"
         let result = null

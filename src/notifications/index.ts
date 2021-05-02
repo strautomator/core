@@ -9,8 +9,13 @@ import users from "../users"
 import _ = require("lodash")
 import cache = require("bitecache")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsDuration from "dayjs/plugin/duration"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with duration and UTC.
+dayjs.extend(dayjsDuration, dayjsUTC)
 
 /**
  * Notifications manager.
@@ -29,7 +34,7 @@ export class Notifications {
      * Init the Notifications manager.
      */
     init = async (): Promise<void> => {
-        const duration = moment.duration(settings.notifications.cacheDuration, "seconds").humanize()
+        const duration = dayjs.duration(settings.notifications.cacheDuration, "seconds").humanize()
         cache.setup("notifications", settings.notifications.cacheDuration)
         logger.info("Notifications.init", `Cache notifications for up to ${duration}`)
 
@@ -134,7 +139,7 @@ export class Notifications {
             }
 
             let logDetails = []
-            const now = moment().toDate()
+            const now = dayjs().toDate()
             const timestamp = now.valueOf().toString(16)
             const random = Math.floor(Math.random() * Math.floor(9))
 
@@ -146,9 +151,9 @@ export class Notifications {
 
             // Expiry date not set? Use the default based on settings.
             if (!notification.dateExpiry) {
-                notification.dateExpiry = moment.utc().add(settings.notifications.defaultExpireDays, "days").toDate()
+                notification.dateExpiry = dayjs.utc().add(settings.notifications.defaultExpireDays, "days").toDate()
             } else {
-                logDetails.push(`Expires ${moment(notification.dateExpiry).utc().format("lll")}`)
+                logDetails.push(`Expires ${dayjs(notification.dateExpiry).utc().format("lll")}`)
             }
 
             // Additional notification details to be logged.
@@ -183,7 +188,7 @@ export class Notifications {
 
             // Message was already marked as read? Return false.
             if (notification.read) {
-                const dateRead = moment(notification.dateRead).utc().format("lll")
+                const dateRead = dayjs(notification.dateRead).utc().format("lll")
                 logger.warn("Notifications.markAsRead", id, `Already read at ${dateRead}`)
                 return false
             }
@@ -267,7 +272,7 @@ export class Notifications {
      */
     cleanup = async (): Promise<void> => {
         try {
-            const date = moment.utc().subtract(settings.notifications.readDeleteAfterDays, "days")
+            const date = dayjs.utc().subtract(settings.notifications.readDeleteAfterDays, "days")
             let counter = 0
             counter += await database.delete("notifications", ["dateRead", "<", date])
             counter += await database.delete("notifications", ["dateExpiry", "<", date])

@@ -9,8 +9,13 @@ import strava from "../strava"
 import users from "../users"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsDayOfYear from "dayjs/plugin/dayOfYear"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsDayOfYear, dayjsUTC)
 
 /**
  * Evaluate and process automation recipes.
@@ -40,11 +45,11 @@ export class GearWear {
             const state: GearWearDbState = await database.appState.get("gearwear")
 
             if (state && state.dateLastProcessed) {
-                const lastDate = moment.utc(state.dateLastProcessed)
+                const lastDate = dayjs.utc(state.dateLastProcessed)
 
                 // Make sure the processing flag is not stuck due to whatever reason.
                 if (state.processing) {
-                    const minDate = moment.utc().subtract(25, "hours")
+                    const minDate = dayjs.utc().subtract(25, "hours")
 
                     if (lastDate.isBefore(minDate)) {
                         await database.appState.set("gearwear", {processing: false})
@@ -287,8 +292,8 @@ export class GearWear {
                 }
 
                 if (state.dateLastProcessed) {
-                    const today = moment.utc()
-                    const runDate = moment.utc(state.dateLastProcessed)
+                    const today = dayjs.utc()
+                    const runDate = dayjs.utc(state.dateLastProcessed)
 
                     if (runDate.dayOfYear() == today.dayOfYear() && state.recentActivityCount > 0) {
                         logger.info("GearWear.processRecentActivities", `Already processed ${state.recentActivityCount} activities today`)
@@ -306,8 +311,8 @@ export class GearWear {
 
             // Get correct date and timestamps to fetch activities on Strava.
             const days = settings.gearwear.previousDays
-            const tsAfter = Math.round(moment.utc().subtract(days, "day").hour(0).minute(0).second(0).unix())
-            const tsBefore = Math.round(moment.utc().subtract(days, "day").hour(23).minute(59).second(59).unix())
+            const tsAfter = Math.round(dayjs.utc().subtract(days, "day").hour(0).minute(0).second(0).unix())
+            const tsBefore = Math.round(dayjs.utc().subtract(days, "day").hour(23).minute(59).second(59).unix())
 
             // Get all GearWear configurations from the database,
             // and generate an array with all the user IDs.
@@ -318,7 +323,7 @@ export class GearWear {
             for (let userId of userIds) {
                 try {
                     const user = await users.getById(userId)
-                    const tsLastActivity = moment.utc(user.dateLastActivity).unix()
+                    const tsLastActivity = dayjs.utc(user.dateLastActivity).unix()
 
                     if (user.suspended) {
                         logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName} is suspended, will not process`)
@@ -340,7 +345,7 @@ export class GearWear {
             state = {
                 recentActivityCount: activityCount,
                 recentUserCount: userCount,
-                dateLastProcessed: moment.utc().toDate(),
+                dateLastProcessed: dayjs.utc().toDate(),
                 processing: false
             }
 
@@ -361,7 +366,7 @@ export class GearWear {
      * @param tsBefore Get activities that occured before this timestamp.
      */
     processUserActivities = async (user: UserData, configs: GearWearConfig[], tsAfter: number, tsBefore: number): Promise<number> => {
-        let dateString = moment.utc(tsAfter * 1000 + 1000).format("ll")
+        let dateString = dayjs.utc(tsAfter * 1000 + 1000).format("ll")
         let count = 0
 
         try {
@@ -455,7 +460,7 @@ export class GearWear {
                             continue
                         }
 
-                        const minReminderDate = moment.utc().subtract(settings.gearwear.reminderDays, "days")
+                        const minReminderDate = dayjs.utc().subtract(settings.gearwear.reminderDays, "days")
                         const reminderDistance = component.alertDistance * settings.gearwear.reminderThreshold
                         const reminderTime = component.alertTime * settings.gearwear.reminderThreshold
 
@@ -480,7 +485,7 @@ export class GearWear {
                         if (component.alertDistance > 0 && component.currentDistance >= component.alertDistance) {
                             if (!component.dateAlertSent) {
                                 this.triggerAlert(user, component, activity)
-                            } else if (component.currentDistance >= reminderDistance && moment.utc(component.dateAlertSent).isBefore(minReminderDate)) {
+                            } else if (component.currentDistance >= reminderDistance && dayjs.utc(component.dateAlertSent).isBefore(minReminderDate)) {
                                 this.triggerAlert(user, component, activity, true)
                             }
                         }
@@ -489,7 +494,7 @@ export class GearWear {
                         if (component.alertTime > 0 && component.currentTime >= component.alertTime) {
                             if (!component.dateAlertSent) {
                                 this.triggerAlert(user, component, activity)
-                            } else if (component.currentTime >= reminderTime && moment.utc(component.dateAlertSent).isBefore(minReminderDate)) {
+                            } else if (component.currentTime >= reminderTime && dayjs.utc(component.dateAlertSent).isBefore(minReminderDate)) {
                                 this.triggerAlert(user, component, activity, true)
                             }
                         }
@@ -502,7 +507,7 @@ export class GearWear {
             // Set lastUpdate details on the GearWear config.
             config.updating = false
             config.lastUpdate = {
-                date: moment.utc().toDate(),
+                date: dayjs.utc().toDate(),
                 activities: activityIds,
                 distance: totalDistance,
                 time: totalTime
@@ -551,7 +556,7 @@ export class GearWear {
             component.currentDistance = 0
             component.currentTime = 0
             component.activityCount = 0
-            component.history.push({date: moment.utc().toDate(), distance: currentDistance, time: currentTime})
+            component.history.push({date: dayjs.utc().toDate(), distance: currentDistance, time: currentTime})
 
             // Save to the database and log.
             await database.set("gearwear", config, config.id)
@@ -580,7 +585,7 @@ export class GearWear {
         }
 
         try {
-            component.dateAlertSent = moment.utc().toDate()
+            component.dateAlertSent = dayjs.utc().toDate()
 
             // Get bike or shoe details.
             const hours = component.currentTime / 3600

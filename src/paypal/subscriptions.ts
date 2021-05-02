@@ -6,8 +6,12 @@ import database from "../database"
 import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * PayPal Subscriptions API.
@@ -94,7 +98,7 @@ export class PayPalSubscriptions {
                 id: res.id,
                 productId: res.product_id,
                 name: res.name,
-                dateCreated: moment.utc(res.create_time).toDate(),
+                dateCreated: dayjs.utc(res.create_time).toDate(),
                 price: parseFloat(res.billing_cycles[0].pricing_scheme.fixed_price.value),
                 frequency: res.billing_cycles[0].frequency.interval_unit.toLowerCase(),
                 enabled: false
@@ -172,7 +176,7 @@ export class PayPalSubscriptions {
                 id: res.id,
                 productId: productId,
                 name: res.name,
-                dateCreated: moment.utc(res.create_time).toDate(),
+                dateCreated: dayjs.utc(res.create_time).toDate(),
                 price: price,
                 frequency: frequency,
                 enabled: true
@@ -237,8 +241,8 @@ export class PayPalSubscriptions {
                 userId: null,
                 status: res.status,
                 billingPlan: api.currentBillingPlans[res.plan_id] || ({id: res.plan_id} as PayPalBillingPlan),
-                dateCreated: moment.utc(res.create_time).toDate(),
-                dateUpdated: moment.utc(res.update_time).toDate()
+                dateCreated: dayjs.utc(res.create_time).toDate(),
+                dateUpdated: dayjs.utc(res.update_time).toDate()
             }
 
             // Has email assigned?
@@ -255,7 +259,7 @@ export class PayPalSubscriptions {
             // Payment info available?
             if (res.billing_info) {
                 if (res.billing_info.next_billing_time) {
-                    subscription.dateNextPayment = moment.utc(res.billing_info.next_billing_time).toDate()
+                    subscription.dateNextPayment = dayjs.utc(res.billing_info.next_billing_time).toDate()
                 }
 
                 // A payment was already made? Fill last payment details.
@@ -263,12 +267,12 @@ export class PayPalSubscriptions {
                     subscription.lastPayment = {
                         amount: parseFloat(res.billing_info.last_payment.amount.value),
                         currency: res.billing_info.last_payment.amount.currency_code,
-                        date: moment.utc(res.billing_info.last_payment.time).toDate()
+                        date: dayjs.utc(res.billing_info.last_payment.time).toDate()
                     }
                 }
             }
 
-            logger.info("PayPal.getSubscription", id, `Plan ${res.plan_id}`, `Last updated ${moment(subscription.dateUpdated).format("llll")}`)
+            logger.info("PayPal.getSubscription", id, `Plan ${res.plan_id}`, `Last updated ${dayjs(subscription.dateUpdated).format("llll")}`)
 
             return subscription
         } catch (ex) {
@@ -295,7 +299,7 @@ export class PayPalSubscriptions {
                 returnRepresentation: true,
                 data: {
                     plan_id: billingPlan.id,
-                    start_date: moment.utc().add(settings.paypal.billingPlan.startMinutes, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
+                    start_date: dayjs.utc().add(settings.paypal.billingPlan.startMinutes, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
                     application_context: {
                         brand_name: settings.app.title,
                         return_url: `${settings.app.url}billing/success`,
@@ -322,8 +326,8 @@ export class PayPalSubscriptions {
                 userId: userId,
                 status: res.status,
                 billingPlan: billingPlan,
-                dateCreated: moment.utc(res.create_time).toDate(),
-                dateUpdated: moment.utc(res.create_time).toDate(),
+                dateCreated: dayjs.utc(res.create_time).toDate(),
+                dateUpdated: dayjs.utc(res.create_time).toDate(),
                 approvalUrl: _.find(res.links, {rel: "approve"}).href
             }
 
@@ -343,7 +347,7 @@ export class PayPalSubscriptions {
      * @param subscription The subscription to be cancelled.
      */
     cancelSubscription = async (subscription: PayPalSubscription, reason?: string): Promise<void> => {
-        const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: moment.utc().toDate()}
+        const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: dayjs.utc().toDate()}
 
         try {
             const options = {

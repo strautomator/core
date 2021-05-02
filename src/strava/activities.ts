@@ -12,8 +12,12 @@ import recipes from "../recipes"
 import users from "../users"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * Strava webhooks manager.
@@ -131,7 +135,7 @@ export class StravaActivities {
             let timeStart
             if (activity.dateStart) {
                 const offset = activity.utcStartOffset > 0 ? `+${activity.utcStartOffset}` : activity.utcStartOffset
-                timeStart = `${moment.utc(activity.dateStart).format("LTS")}, offset ${offset}`
+                timeStart = `${dayjs.utc(activity.dateStart).format("LTS")}, offset ${offset}`
             } else {
                 timeStart = "No dateStart"
             }
@@ -354,7 +358,7 @@ export class StravaActivities {
                     // Create notification for user in case the activity exists but could not be processed.
                     if (activity.dateEnd) {
                         try {
-                            const aDate = moment(activity.dateEnd)
+                            const aDate = dayjs(activity.dateEnd)
                             if (activity.utcStartOffset) aDate.add(activity.utcStartOffset, "minutes")
 
                             const title = `Failed to process activity ${activity.id}`
@@ -441,7 +445,7 @@ export class StravaActivities {
                 type: activity.type,
                 name: activity.name,
                 dateStart: activity.dateStart,
-                dateProcessed: moment.utc().toDate(),
+                dateProcessed: dayjs.utc().toDate(),
                 utcStartOffset: activity.utcStartOffset,
                 user: {
                     id: user.id,
@@ -492,7 +496,7 @@ export class StravaActivities {
             }
 
             // Timestamps for the activities date filter.
-            const dateAfter = moment.utc().subtract(weeks, "weeks")
+            const dateAfter = dayjs.utc().subtract(weeks, "weeks")
             const tsAfter = dateAfter.valueOf() / 1000
             const tsBefore = new Date().valueOf() / 1000
 

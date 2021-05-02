@@ -3,8 +3,12 @@
 import {StravaWebhook} from "./types"
 import api from "./api"
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * Strava webhooks manager.
@@ -55,7 +59,7 @@ export class StravaWebhooks {
             const webhook: StravaWebhook = {
                 id: data.id,
                 callbackUrl: data.callback_url,
-                dateUpdated: moment.utc(data.updated_at).toDate()
+                dateUpdated: dayjs.utc(data.updated_at).toDate()
             }
 
             // Set as curent webhook.
@@ -95,7 +99,7 @@ export class StravaWebhooks {
             this.current = {
                 id: result.id,
                 callbackUrl: this.callbackUrl,
-                dateUpdated: moment.utc().toDate()
+                dateUpdated: dayjs.utc().toDate()
             }
 
             logger.info("Strava.createWebhook", `ID ${result.id}`, this.callbackUrl)

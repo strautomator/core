@@ -5,8 +5,13 @@ import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsDayOfYear from "dayjs/plugin/dayOfYear"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsDayOfYear, dayjsUTC)
 
 /**
  * Storm Glass weather API.
@@ -39,12 +44,12 @@ export class StormGlass implements WeatherProvider {
 
         try {
             if (!preferences) preferences = {}
-            if (moment.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
+            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.stormglass.baseUrl
             const secret = settings.weather.stormglass.secret
-            const mDate = moment.utc(date)
-            const isYesterday = mDate.dayOfYear() != moment.utc().dayOfYear()
+            const mDate = dayjs.utc(date)
+            const isYesterday = mDate.dayOfYear() != dayjs.utc().dayOfYear()
             const params = "airTemperature,humidity,pressure,cloudCover,windDirection,windSpeed,precipitation,snowDepth"
             let weatherUrl = `${baseUrl}weather/point?lat=${coordinates[0]}&lng=${coordinates[1]}&params=${params}`
 
@@ -83,7 +88,7 @@ export class StormGlass implements WeatherProvider {
         data = data.hours || data.data
 
         // Locate weather details for the correct time.
-        const timeFilter = moment.utc(date).format("YYYY-MM-DDTHH")
+        const timeFilter = dayjs.utc(date).format("YYYY-MM-DDTHH")
         const timeData = data.find((r) => r.time.indexOf(timeFilter) >= 0)
 
         // Data for the specified time not found? Stop here.

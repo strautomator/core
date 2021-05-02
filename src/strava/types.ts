@@ -2,7 +2,11 @@
 
 import {UserData} from "../users/types"
 import _ = require("lodash")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * An activity on Strava.
@@ -86,7 +90,7 @@ export interface StravaActivity {
  */
 export function toStravaActivity(data, user: UserData): StravaActivity {
     const profile = user.profile
-    const startDate = moment.utc(data.start_date)
+    const startDate = dayjs.utc(data.start_date)
 
     const activity: StravaActivity = {
         id: data.id,
@@ -394,8 +398,8 @@ export function toStravaProfile(data): StravaProfile {
         lastName: data.lastname,
         city: data.city || null,
         country: data.country || null,
-        dateCreated: moment.utc(data.created_at).toDate(),
-        dateUpdated: moment.utc(data.updated_at).toDate(),
+        dateCreated: dayjs.utc(data.created_at).toDate(),
+        dateUpdated: dayjs.utc(data.updated_at).toDate(),
         units: data.measurement_preference == "feet" ? "imperial" : "metric",
         ftp: data.ftp || null,
         bikes: [],

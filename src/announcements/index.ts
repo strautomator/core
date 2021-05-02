@@ -5,8 +5,13 @@ import {UserData} from "../users/types"
 import database from "../database"
 import logger = require("anyhow")
 import cache = require("bitecache")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsDuration from "dayjs/plugin/duration"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with duration and UTC.
+dayjs.extend(dayjsDuration, dayjsUTC)
 
 /**
  * Announcements manager.
@@ -22,7 +27,7 @@ export class Announcements {
      * Init the Announcements manager.
      */
     init = async (): Promise<void> => {
-        const duration = moment.duration(settings.announcements.cacheDuration, "seconds").humanize()
+        const duration = dayjs.duration(settings.announcements.cacheDuration, "seconds").humanize()
         cache.setup("announcements", settings.announcements.cacheDuration)
         logger.info("Announcements.init", `Cache announcements for up to ${duration}`)
     }
@@ -89,7 +94,7 @@ export class Announcements {
             const docSnapshot = await doc.get()
             const exists = docSnapshot.exists
             const logAction = exists ? "Updated" : "Created"
-            const logFromTill = `${moment(announcement.dateStart).format("lll")} till ${moment(announcement.dateExpiry).format("lll")}`
+            const logFromTill = `${dayjs(announcement.dateStart).format("lll")} till ${dayjs(announcement.dateExpiry).format("lll")}`
 
             // Keep existing read count when updating.
             announcement.readCount = exists ? docSnapshot.data().readCount : 0
@@ -135,7 +140,7 @@ export class Announcements {
      */
     cleanup = async (): Promise<void> => {
         try {
-            const date = moment.utc().subtract(settings.notifications.readDeleteAfterDays, "days")
+            const date = dayjs.utc().subtract(settings.notifications.readDeleteAfterDays, "days")
             const counter = await database.delete("announcements", ["dateExpiry", "<", date])
             logger.info("Announcements.cleanup", `Deleted ${counter} announcements`)
         } catch (ex) {

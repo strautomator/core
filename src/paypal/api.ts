@@ -4,7 +4,7 @@ import {PayPalAuth, PayPalBillingPlan, PayPalProduct} from "./types"
 import {axiosRequest} from "../axios"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
 import querystring = require("querystring")
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
@@ -103,7 +103,7 @@ export class PayPalAPI {
             // Set auth token and expiry timestamp.
             this.auth = {
                 accessToken: res.access_token,
-                expiresAt: expiresIn + moment().unix() - 120
+                expiresAt: expiresIn + dayjs().unix() - 120
             }
 
             logger.info("PayPal.authenticate", "Got a new token")
@@ -118,7 +118,7 @@ export class PayPalAPI {
      */
     makeRequest = async (reqOptions: any): Promise<any> => {
         try {
-            if (this.auth.expiresAt <= moment().unix()) {
+            if (this.auth.expiresAt <= dayjs().unix()) {
                 logger.info("PayPal.makeRequest", reqOptions.url, "Token expired, will fetch a new one")
                 await this.authenticate()
             }

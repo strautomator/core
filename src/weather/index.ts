@@ -13,8 +13,12 @@ import weatherbit from "./weatherbit"
 import _ = require("lodash")
 import cache = require("bitecache")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
+import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
+
+// Extends dayjs with UTC.
+dayjs.extend(dayjsUTC)
 
 /**
  * Weather APIs wrapper.
@@ -158,7 +162,7 @@ export class Weather {
             return cached
         }
 
-        const mDate = moment.utc()
+        const mDate = dayjs.utc()
         const hours = mDate.diff(date, "hours")
         const isoDate = date.toISOString()
         const latlon = coordinates.join(", ")

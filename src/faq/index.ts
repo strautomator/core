@@ -4,7 +4,7 @@ import {FaqQuestion} from "./types"
 import database from "../database"
 import _ = require("lodash")
 import logger = require("anyhow")
-import moment = require("moment")
+import dayjs from "dayjs"
 const settings = require("setmeup").settings
 
 /**
@@ -48,7 +48,7 @@ export class FAQ {
             const result = await database.search("faq", null, ["score", "desc"])
 
             // Update questions and set last refresh.
-            this.lastRefresh = moment().unix()
+            this.lastRefresh = dayjs().unix()
             this.questions = result
 
             logger.info("FAQ.refresh", `Total of ${result.length} questions`)
@@ -69,7 +69,7 @@ export class FAQ {
             const regex = new RegExp(query, "i")
 
             // Refresh questions from the database if they're too old.
-            if (this.lastRefresh < moment().subtract(settings.faq.refreshInterval, "seconds").unix()) {
+            if (this.lastRefresh < dayjs().subtract(settings.faq.refreshInterval, "seconds").unix()) {
                 await this.refresh()
             }
 
