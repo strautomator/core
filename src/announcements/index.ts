@@ -7,11 +7,14 @@ import logger = require("anyhow")
 import cache = require("bitecache")
 import dayjs from "dayjs"
 import dayjsDuration from "dayjs/plugin/duration"
+import dayjsRelativeTime from "dayjs/plugin/relativeTime"
 import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
 
 // Extends dayjs with duration and UTC.
-dayjs.extend(dayjsDuration, dayjsUTC)
+dayjs.extend(dayjsDuration)
+dayjs.extend(dayjsRelativeTime)
+dayjs.extend(dayjsUTC)
 
 /**
  * Announcements manager.

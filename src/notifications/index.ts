@@ -11,11 +11,14 @@ import cache = require("bitecache")
 import logger = require("anyhow")
 import dayjs from "dayjs"
 import dayjsDuration from "dayjs/plugin/duration"
+import dayjsRelativeTime from "dayjs/plugin/relativeTime"
 import dayjsUTC from "dayjs/plugin/utc"
 const settings = require("setmeup").settings
 
 // Extends dayjs with duration and UTC.
-dayjs.extend(dayjsDuration, dayjsUTC)
+dayjs.extend(dayjsDuration)
+dayjs.extend(dayjsRelativeTime)
+dayjs.extend(dayjsUTC)
 
 /**
  * Notifications manager.
@@ -34,11 +37,16 @@ export class Notifications {
      * Init the Notifications manager.
      */
     init = async (): Promise<void> => {
-        const duration = dayjs.duration(settings.notifications.cacheDuration, "seconds").humanize()
-        cache.setup("notifications", settings.notifications.cacheDuration)
-        logger.info("Notifications.init", `Cache notifications for up to ${duration}`)
+        try {
+            const duration = dayjs.duration(settings.notifications.cacheDuration, "seconds").humanize()
+            cache.setup("notifications", settings.notifications.cacheDuration)
+            logger.info("Notifications.init", `Cache notifications for up to ${duration}`)
 
-        eventManager.on("Users.delete", this.onUserDelete)
+            eventManager.on("Users.delete", this.onUserDelete)
+        } catch (ex) {
+            logger.error("Notifications.init", ex)
+            throw ex
+        }
     }
 
     /**

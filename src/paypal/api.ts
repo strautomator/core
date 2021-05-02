@@ -20,10 +20,10 @@ const parseResponseError = (err) => {
         details.push(`Status ${err.response.status}`)
     }
 
-    if (data.name) {
-        details.push(data.name)
-    } else if (data.message) {
-        details.push(data.message)
+    if (data.name && data.name.toString) {
+        details.push(data.name.toString())
+    } else if (data.message && data.message.toString) {
+        details.push(data.message.toString())
     }
 
     if (data.details && data.details.length > 0) {
