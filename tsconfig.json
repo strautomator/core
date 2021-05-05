@@ -11,7 +11,7 @@
         "noUnusedLocals": true,
         "declaration": true,
         "skipLibCheck": true,
-        "typeRoots": ["node_modules/@types", "lib"],
+        "typeRoots": ["node_modules/@types"],
         "paths": {
             "anyhow": ["node_modules/anyhow/", "../api/node_modules/anyhow/"],
             "setmeup": ["node_modules/setmeup/", "../api/node_modules/setmeup/"]
