@@ -239,14 +239,12 @@ export class Calendar {
                         end: activity.dateEnd,
                         summary: summary,
                         description: details,
-                        htmlDescription: details.replace(/\n/, "<br />"),
                         url: `https://www.strava.com/activities/${activity.id}`
                     })
 
                     // Geo location available?
                     if (activity.locationEnd) {
-                        event.location(activity.locationEnd.join(", "))
-                        event.geo({lat: activity.locationEnd[0], lon: activity.locationEnd[1]})
+                        event.location({geo: {lat: activity.locationEnd[0], lon: activity.locationEnd[1]}})
                     }
                 } catch (innerEx) {
                     logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
