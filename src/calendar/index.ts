@@ -243,8 +243,13 @@ export class Calendar {
                     })
 
                     // Geo location available?
-                    if (activity.locationEnd) {
-                        event.location({geo: {lat: activity.locationEnd[0], lon: activity.locationEnd[1]}})
+                    if (activity.locationEnd && activity.locationEnd.length > 0) {
+                        try {
+                            event.location({geo: {lat: activity.locationEnd[0], lon: activity.locationEnd[1]}})
+                        } catch (locationEx) {
+                            event.location(activity.locationEnd.join(", "))
+                            logger.warn("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Location not valid: ${activity.locationEnd.join(", ")}`)
+                        }
                     }
                 } catch (innerEx) {
                     logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
