@@ -2,11 +2,7 @@
 
 import {UserData} from "../users/types"
 import _ = require("lodash")
-import dayjs from "dayjs"
-import dayjsUTC from "dayjs/plugin/utc"
-
-// Extends dayjs with required plugins.
-dayjs.extend(dayjsUTC)
+import dayjs from "../dayjs"
 
 /**
  * An activity on Strava.

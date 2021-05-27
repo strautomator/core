@@ -5,13 +5,7 @@ import {UserPreferences} from "../users/types"
 import Bottleneck from "bottleneck"
 import _ = require("lodash")
 import logger = require("anyhow")
-import dayjs from "dayjs"
-import dayjsAdvancedFormat from "dayjs/plugin/advancedFormat"
-import dayjsLocalizedFormat from "dayjs/plugin/localizedFormat"
-
-// Extends dayjs with required plugins.
-dayjs.extend(dayjsAdvancedFormat)
-dayjs.extend(dayjsLocalizedFormat)
+import dayjs from "../dayjs"
 
 /**
  * Helper to get an API rate limiter (bottleneck) for the specified provider.

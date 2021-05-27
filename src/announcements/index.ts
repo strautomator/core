@@ -5,20 +5,8 @@ import {UserData} from "../users/types"
 import database from "../database"
 import logger = require("anyhow")
 import cache = require("bitecache")
-import dayjs from "dayjs"
-import dayjsAdvancedFormat from "dayjs/plugin/advancedFormat"
-import dayjsLocalizedFormat from "dayjs/plugin/localizedFormat"
-import dayjsDuration from "dayjs/plugin/duration"
-import dayjsRelativeTime from "dayjs/plugin/relativeTime"
-import dayjsUTC from "dayjs/plugin/utc"
+import dayjs from "../dayjs"
 const settings = require("setmeup").settings
-
-// Extends dayjs with required plugins.
-dayjs.extend(dayjsAdvancedFormat)
-dayjs.extend(dayjsLocalizedFormat)
-dayjs.extend(dayjsDuration)
-dayjs.extend(dayjsRelativeTime)
-dayjs.extend(dayjsUTC)
 
 /**
  * Announcements manager.

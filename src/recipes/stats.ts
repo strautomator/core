@@ -5,15 +5,7 @@ import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
 import logger = require("anyhow")
-import dayjs from "dayjs"
-import dayjsAdvancedFormat from "dayjs/plugin/advancedFormat"
-import dayjsLocalizedFormat from "dayjs/plugin/localizedFormat"
-import dayjsUTC from "dayjs/plugin/utc"
-
-// Extends dayjs with required plugins.
-dayjs.extend(dayjsAdvancedFormat)
-dayjs.extend(dayjsLocalizedFormat)
-dayjs.extend(dayjsUTC)
+import dayjs from "../dayjs"
 
 /**
  * Recipe stats methods.

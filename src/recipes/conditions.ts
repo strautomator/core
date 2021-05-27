@@ -7,12 +7,8 @@ import {WeatherSummary} from "../weather/types"
 import weather from "../weather"
 import _ = require("lodash")
 import logger = require("anyhow")
-import dayjs from "dayjs"
-import dayjsUTC from "dayjs/plugin/utc"
+import dayjs from "../dayjs"
 import polyline = require("@mapbox/polyline")
-
-// Extends dayjs with required plugins.
-dayjs.extend(dayjsUTC)
 
 /**
  * Check if the activity starts, passes on or ends on the specified location.

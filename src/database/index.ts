@@ -5,7 +5,7 @@ import {cryptoProcess} from "./crypto"
 import _ = require("lodash")
 import cache = require("bitecache")
 import logger = require("anyhow")
-import dayjs from "dayjs"
+import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**

@@ -5,12 +5,8 @@ import {processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
-import dayjs from "dayjs"
-import dayjsUTC from "dayjs/plugin/utc"
+import dayjs from "../dayjs"
 const settings = require("setmeup").settings
-
-// Extends dayjs with required plugins.
-dayjs.extend(dayjsUTC)
 
 /**
  * OpenWeatherMap weather API. Only supports ccurrent weather (no historical data).

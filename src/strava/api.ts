@@ -6,13 +6,9 @@ import Bottleneck from "bottleneck"
 import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
-import dayjs from "dayjs"
-import dayjsUTC from "dayjs/plugin/utc"
+import dayjs from "../dayjs"
 import querystring = require("querystring")
 const settings = require("setmeup").settings
-
-// Extends dayjs with required plugins.
-dayjs.extend(dayjsUTC)
 
 /**
  * Strava API handler.

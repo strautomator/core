@@ -76,6 +76,10 @@ export const faq: FAQ = FAQ.Instance
 import {EventManager} from "./eventmanager"
 export const events: EventManager = EventManager.Instance
 
+// Export dayjs.
+import dayjsLib from "./dayjs"
+export const dayjs = dayjsLib
+
 // Export types.
 export * from "./gearwear/types"
 export * from "./recipes/types"

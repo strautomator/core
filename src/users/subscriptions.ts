@@ -4,12 +4,8 @@ import {UserData} from "./types"
 import {PayPalSubscription} from "../paypal/types"
 import database from "../database"
 import logger = require("anyhow")
-import dayjs from "dayjs"
-import dayjsUTC from "dayjs/plugin/utc"
+import dayjs from "../dayjs"
 const settings = require("setmeup").settings
-
-// Extends dayjs with required plugins.
-dayjs.extend(dayjsUTC)
 
 /**
  * Manage user subscriptions.

@@ -7,7 +7,7 @@ import users from "../users"
 import api from "./api"
 import _ = require("lodash")
 import logger = require("anyhow")
-import dayjs from "dayjs"
+import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
