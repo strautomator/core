@@ -182,6 +182,6 @@ export const shutdown = async (code) => {
         logger.warn("Strautomator.shutdown", ex)
     }
 
-    logger.warn("Strautomator.shutdown", "Service terminated!")
+    logger.warn("Strautomator.shutdown", "Service terminated")
     process.exit()
 }
