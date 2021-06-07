@@ -6,6 +6,10 @@
         // Hashtag used on social media.
         "hashtag": "#strautomator.com"
     },
+    "axios": {
+        // Retry axios requests afew 2 seconds. Value set in milliseconds.
+        "retryInterval": 2000
+    },
     "calendar": {
         // Default activity fields to be added to event details. Each item is a line, and multiple fields
         // can be added to same line separated by comma.

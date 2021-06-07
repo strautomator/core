@@ -1,5 +1,6 @@
 // Strautomator Core: Axios
 
+import jaul = require("jaul")
 import logger = require("anyhow")
 import url = require("url")
 const axios = require("axios").default
@@ -23,13 +24,14 @@ export const axiosRequest = async (options: any): Promise<any> => {
     } catch (ex) {
         const message = `${ex.code} ${ex.message}`.toUpperCase()
         const isTimeout = message.indexOf("ECONNABORTED") >= 0 || message.indexOf("ETIMEDOUT") >= 0 || message.indexOf("TIMEOUT") >= 0
-        const isRetryable = ex.response && (ex.response.status == 429 || ex.response.status == 500 || ex.response.status == 502)
+        const isRetryable = ex.response && [429, 500, 502, 503].indexOf(ex.response.status) >= 0
 
         // Retry the request if it failed due to timeout, rate limiting or server errors.
         if (isTimeout || isRetryable) {
             const urlInfo = new url.URL(options.url)
 
             try {
+                await jaul.io.sleep(settings.axios.retryInterval)
                 const res = await axios(options)
 
                 logger.warn("Axios.axiosRequest", options.method, `${urlInfo.hostname}${urlInfo.pathname}`, ex, "Failed once, retrying worked")
