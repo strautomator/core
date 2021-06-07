@@ -66,7 +66,7 @@
         // The default "from" on sent emails should be set on settings.secret.json file
         // or via the SMU_mailer_from environment variable.
         "from": "noreply@strautomator.com",
-        // Default SMTP settings are valid for SendGrid. You can overwrite these on
+        // Default SMTP settings are valid for Amazon SES. You can overwrite these on
         // on your secret settings or via environment variables.
         "smtp": {
             "secure": true,
@@ -223,8 +223,8 @@
             "pageSize": 180
         },
         "ftp": {
-            // User's FTP will be estimated based on the last 14 weeks.
-            "weeks": 14,
+            // User's FTP will be estimated based on the last 12 weeks.
+            "weeks": 12,
             // Maximum allowed number of weeks when calculating FTP.
             "maxWeeks": 52,
             // FTP can be updated only once every 24 hours.
