@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "21.263.12116",
+    "version": "21.265.12354",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -14,7 +14,7 @@
         "postinstall": "tsc"
     },
     "dependencies": {
-        "@google-cloud/firestore": "^4.13.0",
+        "@google-cloud/firestore": "^4.13.1",
         "@google-cloud/storage": "^5.8.5",
         "@googlemaps/google-maps-services-js": "^3.1.16",
         "@mapbox/polyline": "^1.1.1",
@@ -31,10 +31,10 @@
         "paypal-rest-sdk": "^1.8.1",
         "setmeup": "^1.7.2",
         "twitter-lite": "^1.1.0",
-        "typescript": "^4.3.4"
+        "typescript": "^4.3.5"
     },
     "devDependencies": {
-        "@types/node": "^15.12.5",
+        "@types/node": "^15.14.0",
         "chai": "^4.3.4",
         "chalk": "^4.1.1",
         "mocha": "^9.0.1",
