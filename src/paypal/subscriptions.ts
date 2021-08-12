@@ -295,6 +295,7 @@ export class PayPalSubscriptions {
                 returnRepresentation: true,
                 data: {
                     plan_id: billingPlan.id,
+                    custom_id: userId,
                     start_date: dayjs.utc().add(settings.paypal.billingPlan.startMinutes, "minute").format("gggg-MM-DDTHH:mm:ss") + "Z",
                     application_context: {
                         brand_name: settings.app.title,
