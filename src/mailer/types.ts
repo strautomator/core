@@ -99,6 +99,7 @@ export const EmailTemplates = {
             "</p>"
     },
 
+    // When user has many unread notifications.
     UnreadNotifications: {
         subject: "You have ${count} unread notifications",
         body:
@@ -108,6 +109,37 @@ export const EmailTemplates = {
             "${notifications}</p>" +
             "<p>" +
             'Please go to <a href="${appUrl}account/notifications">My Notifications</a> for more details.' +
+            "</p>"
+    },
+
+    // User has subscribed to the PRO plan.
+    UpgradedToPro: {
+        subject: "Welcome to Strautomator PRO!",
+        body:
+            "<p>" +
+            "Hi ${userName}!<br /><br />" +
+            "Thanks for your support! Your Strautomator ${subscriptionSource} subscription was activated and you now have a PRO account." +
+            "If you have any feature suggestions or critical feedback, I'm all ears, just get back to me by replying to this email 🙂" +
+            "</p>" +
+            "<p>" +
+            "For your reference, this is your subscription ID: ${subscriptionId}" +
+            "</p>" +
+            "<p>" +
+            "Kind regards,<br /><br />" +
+            "Igor Ramadas" +
+            "</p>"
+    },
+
+    // User was downgraded to the free plan.
+    DowngradedToFree: {
+        subject: "Strautomator PRO switched to the free plan",
+        body:
+            "<p>" +
+            "Hi ${userName}!<br /><br />" +
+            "Your Strautomator PRO subscription status switched to <strong>${subscriptionStatus}</strong>, and your account was downgraded to the free plan.<br /<br />" +
+            "If you have created more automations or GearWear configurations than the free plan allows, please note that some of them will not work, and you will need to manually remove those." +
+            "<p>" +
+            'You can <a href="${appUrl}billing">subscribe</a> again at any time. If you need help or more details about Strautomator subscriptions, please reply to this email.' +
             "</p>"
     }
 }
