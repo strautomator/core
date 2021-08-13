@@ -570,9 +570,9 @@ export class Users {
     switchToPro = async (user: Partial<UserData>, subscription?: PayPalSubscription): Promise<void> => {
         try {
             const existingUser = await this.getById(user.id)
-            user.displayName = existingUser.displayName
 
             // Set PRO flag and subscription details.
+            user.displayName = existingUser.displayName
             user.isPro = true
             user.subscription = {
                 id: subscription ? subscription.id : `F-${dayjs().unix()}`,
@@ -623,7 +623,10 @@ export class Users {
     switchToFree = async (user: Partial<UserData>, subscription?: PayPalSubscription): Promise<void> => {
         try {
             const existingUser = await this.getById(user.id)
+
+            // Remove the PRO flag.
             user.displayName = existingUser.displayName
+            user.isPro = false
 
             // User had a previous subscription set? Mark as disabled.
             if (existingUser.subscription) {
@@ -642,7 +645,7 @@ export class Users {
                 const data = {
                     userId: user.id,
                     userName: user.profile.firstName || user.displayName,
-                    subscriptionId: subscription.id,
+                    subscriptionId: user.subscription.id,
                     subscriptionSource: user.subscription.source,
                     subscriptionStatus: status
                 }
