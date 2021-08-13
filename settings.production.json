@@ -32,6 +32,10 @@
             // This MUST be set voa the settings.secret.json file or via
             // via the SMU_paypal_api_urlToken environment variable.
             "urlToken": null
+        },
+        "billingPlan": {
+            // Subscription set to start 5 minutes after approval on production.
+            "startMinutes": 5
         }
     },
     "strava": {

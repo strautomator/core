@@ -40,6 +40,10 @@
             // This SHOULD be overriden by a secret token set via secret settings
             // or via the SMU_paypal_api_urlToken environment variable.
             "urlToken": "super-secret"
+        },
+        "billingPlan": {
+            // Subscription set to start 1 hours after approval while testing.
+            "startMinutes": 60
         }
     },
     "strava": {
