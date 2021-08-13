@@ -73,6 +73,11 @@ export class Mailer {
 
                 logger.info("Mailer.init", `Fallback SMTP: ${smtpFallback.host}:${smtpFallback.port}`)
             }
+
+            // BCC set?
+            if (settings.mailer.bcc) {
+                logger.info("Mailer.init", `BCC: ${settings.mailer.bcc}`)
+            }
         } catch (ex) {
             logger.error("Mailer.init", ex)
         }
