@@ -123,7 +123,7 @@ export class PayPalWebhooks {
                 if (resource.state) resourceDetails.push(`State: ${resource.state}`)
                 if (resource.status) resourceDetails.push(resource.status)
 
-                // EUser email present on event?
+                // User email present on event?
                 if (resource.subscriber && resource.subscriber.email_address) resourceDetails.push(`Email: ${resource.subscriber.email_address}`)
             } else {
                 resourceDetails.push("No resource details found")
@@ -140,6 +140,10 @@ export class PayPalWebhooks {
                     subscription.status = "ACTIVE"
                 } else if (data.event_type == "BILLING.SUBSCRIPTION.CANCELLED") {
                     subscription.status = "CANCELLED"
+                } else if (data.event_type == "BILLING.SUBSCRIPTION.EXPIRED") {
+                    subscription.status = "EXPIRED"
+                } else if (data.event_type == "BILLING.SUBSCRIPTION.SUSPENDED" || data.event_type == "PAYMENT.SALE.REVERSED") {
+                    subscription.status = "SUSPENDED"
                 }
 
                 // Email present on subscription details?
