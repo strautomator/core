@@ -19,7 +19,7 @@ export class Mailer {
     /**
      * The main SMTP transporter.
      */
-    private client = null
+    private client: nodemailer.Transporter = null
 
     /**
      * The fallback SMTP client.
@@ -93,7 +93,7 @@ export class Mailer {
 
         let body: string = options.body
         let subject: string = options.subject
-        let sendingOptions: any
+        let sendingOptions: nodemailer.SendMailOptions
 
         try {
             if (options.template) {
@@ -149,6 +149,11 @@ export class Mailer {
                 to: options.to,
                 subject: subject,
                 html: body
+            }
+
+            // BCC defined on settings?
+            if (settings.mailer.bcc) {
+                sendingOptions.bcc = settings.mailer.bcc
             }
 
             await this.client.sendMail(sendingOptions)

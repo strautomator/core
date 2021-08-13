@@ -69,7 +69,9 @@
     "mailer": {
         // The default "from" on sent emails should be set on settings.secret.json file
         // or via the SMU_mailer_from environment variable.
-        "from": "noreply@strautomator.com",
+        "from": "info@strautomator.com",
+        // Optional BCC address to be added to all sent emails.
+        "bcc": null,
         // Default SMTP settings are valid for Amazon SES. You can overwrite these on
         // on your secret settings or via environment variables.
         "smtp": {
