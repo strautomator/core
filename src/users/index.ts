@@ -60,31 +60,14 @@ export class Users {
         }
 
         try {
-            const subEnabled = subscription.status != "CANCELLED" && subscription.status != "EXPIRED"
-            const data: Partial<UserData> = {
-                id: subscription.userId,
-                subscription: {
-                    id: subscription.id,
-                    source: "paypal",
-                    enabled: subEnabled
-                }
-            }
+            const user: Partial<UserData> = {id: subscription.userId}
 
-            // User activated a PRO account?
+            // User activated a PRO account or reverted back to the free plan?
             if (subscription.status == "ACTIVE") {
-                data.isPro = true
-            } else if (subscription.status == "CANCELLED") {
-                data.isPro = false
+                await this.switchToPro(user, subscription)
+            } else {
+                await this.switchToFree(user, subscription)
             }
-
-            // Email passed?
-            if (subscription.email) {
-                data.email = subscription.email
-            }
-
-            // Save updated user on the database.
-            await this.update(data)
-            logger.info("Users.onPayPalSubscription", `User ${subscription.userId}, subscription ${subscription.id}, enabled = ${subEnabled}`)
         } catch (ex) {
             logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
         }
@@ -572,6 +555,110 @@ export class Users {
             logger.info("Users.setRecipesOrder", user.id, user.displayName, logOrder.join(", "))
         } catch (ex) {
             logger.error("Users.setRecipesOrder", user.id, user.displayName, ex)
+            throw ex
+        }
+    }
+
+    // SWITCHING SUBSCRIPTIONS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Switch the specified user to the PRO plan.
+     * @param user Data for the user that should be updated.
+     * @param subscription Optional subscription that was created, otherwise default to a "friend" subscription.
+     */
+    switchToPro = async (user: Partial<UserData>, subscription?: PayPalSubscription): Promise<void> => {
+        try {
+            const existingUser = await this.getById(user.id)
+            user.displayName = existingUser.displayName
+
+            // Set PRO flag and subscription details.
+            user.isPro = true
+            user.subscription = {
+                id: subscription ? subscription.id : `F-${dayjs().unix()}`,
+                source: subscription ? "paypal" : "friend",
+                enabled: true
+            }
+
+            // Email passed with the subscription and was not set for that user? Set it now.
+            if (!existingUser.email && subscription && subscription.email) {
+                user.email = subscription.email
+            }
+
+            // Update user on the database.
+            await this.update(user)
+
+            const email = user.email || existingUser.email
+
+            // User was on the free plan before? Send a thanks email.
+            if (email && !existingUser.isPro) {
+                const data = {
+                    userId: user.id,
+                    userName: user.profile.firstName || user.displayName,
+                    subscriptionId: user.subscription.id,
+                    subscriptionSource: user.subscription.source
+                }
+                const options = {
+                    to: user.email,
+                    template: "UpgradedToPro",
+                    data: data
+                }
+
+                // Send upgraded email in async mode (no need to wait).
+                mailer.send(options)
+            }
+
+            logger.info("Users.switchToPro", user.id, user.displayName, `Subscription: ${user.subscription.source} ${user.subscription.id}`)
+        } catch (ex) {
+            logger.error("Users.switchToPro", user.id, user.displayName, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Switch the specified to the free plan.
+     * @param user Data for the user that should be updated.
+     * @param subscription Optional subscription that was deactivated.
+     */
+    switchToFree = async (user: Partial<UserData>, subscription?: PayPalSubscription): Promise<void> => {
+        try {
+            const existingUser = await this.getById(user.id)
+            user.displayName = existingUser.displayName
+
+            // User had a previous subscription set? Mark as disabled.
+            if (existingUser.subscription) {
+                existingUser.subscription.enabled = false
+                user.subscription = existingUser.subscription
+            }
+
+            // Update user on the database.
+            await this.update(user)
+
+            const email = user.email || existingUser.email
+            const status = subscription ? subscription.status.toLowerCase() : "cancelled"
+
+            // User had a valid PRO subscription before? Send an email about the downgrade.
+            if (email && existingUser.isPro) {
+                const data = {
+                    userId: user.id,
+                    userName: user.profile.firstName || user.displayName,
+                    subscriptionId: subscription.id,
+                    subscriptionSource: user.subscription.source,
+                    subscriptionStatus: status
+                }
+                const options = {
+                    to: user.email,
+                    template: "DowngradedToFree",
+                    data: data
+                }
+
+                // Send downgraded email in async mode (no need to wait).
+                mailer.send(options)
+            }
+
+            logger.info("Users.switchToFree", user.id, user.displayName, `Subscription: ${user.subscription.source} ${user.subscription.id} - ${status}`)
+        } catch (ex) {
+            logger.error("Users.switchToFree", user.id, user.displayName, ex)
             throw ex
         }
     }
