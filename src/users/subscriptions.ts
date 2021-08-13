@@ -21,6 +21,27 @@ export class UserSubscriptions {
     // --------------------------------------------------------------------------
 
     /**
+     * Get non-active subscriptions.
+     */
+    getNonActive = async (): Promise<PayPalSubscription[]> => {
+        try {
+            const queries = [
+                ["status", "!=", "APPROVAL_PENDING"],
+                ["status", "!=", "APPROVED"],
+                ["status", "!=", "ACTIVE"]
+            ]
+
+            const subscriptions: PayPalSubscription[] = await database.search("subscriptions", queries)
+            logger.info("UserSubscriptions.getNonActive", `Got ${subscriptions.length} non-active subscriptions`)
+
+            return subscriptions
+        } catch (ex) {
+            logger.error("UserSubscriptions.getNonActive", ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get all dangling user subscriptions (user clicked to subscribed but never finished the process).
      */
     getDangling = async (): Promise<PayPalSubscription[]> => {
