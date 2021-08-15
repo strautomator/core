@@ -116,11 +116,11 @@ export class Announcements {
             const userRead = cache.get("announcements", `${id}-${user.id}`)
 
             if (userRead) {
-                logger.info("Announcements.setReadCount", id, `User ${user.id} - ${user.displayName}`, "Abort, user already read recently")
+                logger.info("Announcements.setReadCount", id, `User ${user.id} ${user.displayName}`, "Abort, user already read recently")
             } else {
                 await database.increment("announcements", id, "readCount")
                 cache.set("announcements", `${id}-${user.id}`, true)
-                logger.info("Announcements.setReadCount", id, `User ${user.id} - ${user.displayName}`)
+                logger.info("Announcements.setReadCount", id, `User ${user.id} ${user.displayName}`)
             }
         } catch (ex) {
             logger.error("Announcements.setReadCount", id, ex)

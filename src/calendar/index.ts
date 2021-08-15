@@ -56,10 +56,10 @@ export class Calendar {
             const counter = await database.delete("calendar", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("Calendar.onUsersDelete", `User ${user.id} - ${user.displayName}`, `Deleted ${counter} calendars`)
+                logger.info("Calendar.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} calendars`)
             }
         } catch (ex) {
-            logger.error("Calendar.onUsersDelete", `User ${user.id} - ${user.displayName}`, ex)
+            logger.error("Calendar.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
         }
     }
 

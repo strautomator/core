@@ -494,7 +494,7 @@ export class StravaActivities {
             // Validate weeks parameter.
             if (!weeks || weeks < 1) weeks = settings.strava.ftp.weeks
             if (weeks > settings.strava.ftp.maxWeeks) {
-                logger.warn("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `Weeks reduced from ${weeks} to ${settings.strava.ftp.maxWeeks}`)
+                logger.warn("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `Weeks reduced from ${weeks} to ${settings.strava.ftp.maxWeeks}`)
                 weeks = settings.strava.ftp.maxWeeks
             }
 
@@ -508,14 +508,14 @@ export class StravaActivities {
             const result = await stravaAthletes.estimateFtp(user, activities)
 
             if (result) {
-                logger.info("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `${weeks} weeks`, `Estimated FTP: ${result.ftpWatts}w`)
+                logger.info("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, `Estimated FTP: ${result.ftpWatts}w`)
             } else {
-                logger.info("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `${weeks} weeks`, "Could not estimate FTP")
+                logger.info("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, "Could not estimate FTP")
             }
 
             return result
         } catch (ex) {
-            logger.error("Strava.ftpFromActivities", `User ${user.id} - ${user.displayName}`, `${weeks} weeks`, "Failed to estimate FTP")
+            logger.error("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, "Failed to estimate FTP")
         }
     }
 }

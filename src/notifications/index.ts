@@ -50,10 +50,10 @@ export class Notifications {
             const counter = await database.delete("notifications", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("Notifications.onUsersDelete", `User ${user.id} - ${user.displayName}`, `Deleted ${counter} notifications`)
+                logger.info("Notifications.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} notifications`)
             }
         } catch (ex) {
-            logger.error("Notifications.onUsersDelete", `User ${user.id} - ${user.displayName}`, ex)
+            logger.error("Notifications.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
         }
     }
 
@@ -250,9 +250,9 @@ export class Notifications {
                             }
 
                             await mailer.send(options)
-                            logger.info("Notifications.sendEmailReminders", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, email sent`)
+                            logger.info("Notifications.sendEmailReminders", `User ${user.id} ${user.displayName}`, `${list.length} unread notifications, email sent`)
                         } else {
-                            logger.info("Notifications.sendEmailReminders", `User ${user.id} - ${user.displayName}`, `${list.length} unread notifications, but no user email set`)
+                            logger.info("Notifications.sendEmailReminders", `User ${user.id} ${user.displayName}`, `${list.length} unread notifications, but no user email set`)
                         }
                     }
                 } catch (innerEx) {

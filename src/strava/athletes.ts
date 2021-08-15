@@ -86,13 +86,13 @@ export class StravaAthletes {
                     const lastUpdate = dayjs(user.dateLastFtpUpdate).unix()
 
                     if (lastUpdate >= now) {
-                        logger.warn("Strava.setAthleteFtp", `User ${user.id} - ${user.displayName}`, `FTP ${ftp}`, `Abort, FTP was already updated recently`)
+                        logger.warn("Strava.setAthleteFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`, `Abort, FTP was already updated recently`)
                         return false
                     }
                 }
 
                 if (ftp == user.profile.ftp) {
-                    logger.warn("Strava.setAthleteFtp", `User ${user.id} - ${user.displayName}`, `Unchanged FTP ${ftp}`)
+                    logger.warn("Strava.setAthleteFtp", `User ${user.id} ${user.displayName}`, `Unchanged FTP ${ftp}`)
                     return false
                 }
             }
@@ -100,7 +100,7 @@ export class StravaAthletes {
             // All good? Update FTP on Strava and save date to the database.
             await api.put(user.stravaTokens, `athlete`, {ftp: ftp})
             await users.update({id: user.id, displayName: user.displayName, dateLastFtpUpdate: new Date()})
-            logger.info("Strava.setAthleteFtp", `User ${user.id} - ${user.displayName}`, `FTP ${ftp}`)
+            logger.info("Strava.setAthleteFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`)
 
             return true
         } catch (ex) {
@@ -119,7 +119,7 @@ export class StravaAthletes {
     estimateFtp = async (user: UserData, activities: StravaActivity[]): Promise<StravaEstimatedFtp> => {
         try {
             if (!activities || activities.length == 0) {
-                logger.warn("Strava.estimateFtp", `User ${user.id} - ${user.displayName}`, "No activities passed, can't estimate FTP")
+                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "No activities passed, can't estimate FTP")
                 return null
             }
 
@@ -173,7 +173,7 @@ export class StravaAthletes {
                 const athlete = await this.getAthlete(user.stravaTokens)
                 user.profile.ftp = athlete.ftp
             } catch (athleteEx) {
-                logger.warn("Strava.estimateFtp", `User ${user.id} - ${user.displayName}`, "Could not get latest athlete data, will use the current one")
+                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "Could not get latest athlete data, will use the current one")
             }
 
             avgWatts = Math.round(_.mean(listWatts))
@@ -201,7 +201,7 @@ export class StravaAthletes {
                 recentlyUpdated = lastUpdate >= now
             }
 
-            logger.info("Strava.estimateFtp", `User ${user.id} - ${user.displayName}`, `Estimated FTP ${ftpWatts}w, current ${currentWatts}w, highest effort ${maxWatts}w`)
+            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP ${ftpWatts}w, current ${currentWatts}w, highest effort ${maxWatts}w`)
 
             return {
                 ftpWatts: ftpWatts,
@@ -213,7 +213,7 @@ export class StravaAthletes {
                 recentlyUpdated: recentlyUpdated
             }
         } catch (ex) {
-            logger.error("Strava.estimateFtp", `User ${user.id} - ${user.displayName}`, ex)
+            logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, ex)
             throw ex
         }
     }

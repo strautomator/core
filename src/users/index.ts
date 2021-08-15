@@ -369,10 +369,10 @@ export class Users {
 
             // If a new user, publish the user creation event.
             if (!exists) {
-                logger.info("Users.upsert", `${userData.id} - ${userData.displayName}`, `New registration`)
+                logger.info("Users.upsert", `${userData.id} ${userData.displayName}`, `New registration`)
                 eventManager.emit("Users.create", userData)
             } else {
-                logger.info("Users.upsert", `${userData.id} - ${userData.displayName}`, "Updated")
+                logger.info("Users.upsert", `${userData.id} ${userData.displayName}`, "Updated")
             }
 
             return userData
@@ -388,7 +388,7 @@ export class Users {
      * @param merge Set to true to fully replace data instead of merging, default is false.
      */
     update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
-        const username = user.displayName ? `${user.id} - ${user.displayName}` : user.id
+        const username = user.displayName ? `${user.id} ${user.displayName}` : user.id
 
         try {
             const logs = []
@@ -450,7 +450,7 @@ export class Users {
             await database.delete("calendar", ["userId", "==", user.id])
             await database.delete("recipe-stats", ["userId", "==", user.id])
             await database.delete("gearwear", ["userId", "==", user.id])
-            logger.warn("Users.delete", `User ${user.id} - ${user.displayName}`, "Deleted")
+            logger.warn("Users.delete", `User ${user.id} ${user.displayName}`, "Deleted")
 
             // Publish deleted event.
             eventManager.emit("Users.deleted", user)
