@@ -41,7 +41,7 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
  * @param recipe The source recipe.
  * @param action The action details.
  */
-export const defaultAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
+export const defaultAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
         let processedValue = action.value
 
@@ -92,7 +92,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         // Empty value? Stop here.
         if (processedValue === null || processedValue.toString().trim() === "") {
             logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Processed action value is empty")
-            return
+            return true
         }
 
         // Set the activity name?
@@ -133,8 +133,11 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
             activity.updatedFields.push("description")
         }
+
+        return true
     } catch (ex) {
         failedAction(user, activity, recipe, action, ex)
+        return false
     }
 }
 
@@ -145,12 +148,15 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
  * @param recipe The source recipe.
  * @param action The action details.
  */
-export const commuteAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
+export const commuteAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
         activity.commute = action.value === false ? false : true
         activity.updatedFields.push("commute")
+
+        return true
     } catch (ex) {
         failedAction(user, activity, recipe, action, ex)
+        return false
     }
 }
 
@@ -161,7 +167,7 @@ export const commuteAction = async (user: UserData, activity: StravaActivity, re
  * @param recipe The source recipe.
  * @param action The action details.
  */
-export const gearAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
+export const gearAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
         const getGear = (): StravaGear => {
             if (activity.type == "Ride" || activity.type == "VirtualRide" || activity.type == "EBikeRide") {
@@ -179,8 +185,11 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
             activity.gear = gear
             activity.updatedFields.push("gear")
         }
+
+        return true
     } catch (ex) {
         failedAction(user, activity, recipe, action, ex)
+        return false
     }
 }
 
@@ -191,7 +200,7 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
  * @param recipe The source recipe.
  * @param action The action details.
  */
-export const webhookAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
+export const webhookAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
         const options = {
             method: "POST",
@@ -201,7 +210,10 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, re
         }
 
         await axiosRequest(options)
+
+        return true
     } catch (ex) {
         failedAction(user, activity, recipe, action, ex)
+        return false
     }
 }

@@ -18,6 +18,8 @@ export interface RecipeData {
     order?: number
     /** Default recipe for a specific sport (applies to all incoming activities). */
     defaultFor?: StravaSport
+    /** Is the recipe disabled? */
+    disabled?: boolean
 }
 
 /**
@@ -62,6 +64,10 @@ export interface RecipeStatsData {
     activityCount?: number
     /** Custom counter that can be used on activity name and description. */
     counter?: number
+    /** Failed execution counter (gets reset if recipe executes sucessfully). */
+    recentFailures?: number
+    /** Recipe stats archived? */
+    archived?: boolean
 }
 
 /**

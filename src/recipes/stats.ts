@@ -6,6 +6,7 @@ import {UserData} from "../users/types"
 import database from "../database"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
+const settings = require("setmeup").settings
 
 /**
  * Recipe stats methods.
@@ -68,12 +69,27 @@ export class RecipeStats {
     }
 
     /**
+     * Get list of recipes that failed to execute many times in a row.
+     */
+    getFailingRecipes = async (): Promise<RecipeStatsData[]> => {
+        try {
+            const arrStats: RecipeStatsData[] = await database.search("recipe-stats", ["recentFailures", ">=", settings.recipes.maxFailures])
+            logger.info("RecipeStats.getFailingRecipes", `${arrStats.length} recipes with too many recent failures`)
+            return arrStats
+        } catch (ex) {
+            logger.error("RecipeStats.getFailingRecipes", ex)
+            throw ex
+        }
+    }
+
+    /**
      * Increment a recipe's trigger count and date.
      * @param user The user to have activity count incremented.
      * @param recipe The recipe to be updated.
      * @param activity The activity that triggered the recipe.
+     * @param success This will be false if any of the recipe actions failed to execute.
      */
-    updateStats = async (user: UserData, recipe: RecipeData, activity: StravaActivity): Promise<void> => {
+    updateStats = async (user: UserData, recipe: RecipeData, activity: StravaActivity, success: boolean): Promise<void> => {
         const id = `${user.id}-${recipe.id}`
 
         try {
@@ -112,11 +128,49 @@ export class RecipeStats {
                 stats.counter++
             }
 
+            // Increase failure counter if recipe execution was not successful.
+            if (success) {
+                stats.recentFailures = 0
+            } else {
+                stats.recentFailures = stats.recentFailures ? stats.recentFailures + 1 : 1
+            }
+
             // Save stats to the database.
             await database.merge("recipe-stats", stats, doc)
             logger.info("RecipeStats.updateStats", id, `Added activity ${activity.id}`)
         } catch (ex) {
             logger.error("RecipeStats.updateStats", id, `Activity ${activity.id}`, ex)
+        }
+    }
+
+    /**
+     * Archive the recipe stats (happens mostly when a user deletes a recipe).
+     * @param user The user to have activity count incremented.
+     * @param recipe The recipe which should have its stats archived..
+     */
+    archiveStats = async (user: UserData, recipe: RecipeData): Promise<void> => {
+        const id = `${user.id}-${recipe.id}`
+
+        try {
+            const doc = database.doc("recipe-stats", id)
+            const docSnapshot = await doc.get()
+            const exists = docSnapshot.exists
+            let stats: RecipeStatsData
+
+            // If not existing, create a new stats object.
+            if (!exists) {
+                logger.warn("RecipeStats.archiveStats", id, `Stats not found, can't archive`)
+                return
+            }
+
+            stats = docSnapshot.data() as RecipeStatsData
+            stats.archived = true
+
+            // Save archived stats to the database.
+            await database.merge("recipe-stats", stats, doc)
+            logger.info("RecipeStats.archiveStats", id, "Archived")
+        } catch (ex) {
+            logger.error("RecipeStats.archiveStats", id, ex)
         }
     }
 

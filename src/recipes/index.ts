@@ -163,6 +163,12 @@ export class Recipes {
             throw new Error(`Recipe ${id} not found`)
         }
 
+        // Recipe disabled? Stop here.
+        if (recipe.disabled) {
+            logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} is disabled`)
+            return false
+        }
+
         // If recipe is default for a sport, check the type.
         if (recipe.defaultFor) {
             if (activity.type != recipe.defaultFor) {
@@ -192,12 +198,13 @@ export class Recipes {
         const sortedActions = _.sortBy(recipe.actions, ["type"])
 
         // Iterate and execute actions.
+        let success: boolean = true
         for (let action of sortedActions) {
-            await this.processAction(user, activity, recipe, action)
+            success = success && (await this.processAction(user, activity, recipe, action))
         }
 
         // Update recipe stats and return OK.
-        await recipeStats.updateStats(user, recipe, activity)
+        await recipeStats.updateStats(user, recipe, activity, success)
         return true
     }
 
@@ -275,7 +282,7 @@ export class Recipes {
      * @param recipe The source recipe.
      * @param action Recipe action to be executed.
      */
-    processAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<void> => {
+    processAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
         logger.debug("Recipes.processAction", user, activity, action)
 
         if (!activity.updatedFields) {
