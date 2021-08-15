@@ -65,7 +65,7 @@ export class Users {
             // User activated a PRO account or reverted back to the free plan?
             if (subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
-            } else {
+            } else if (subscription.status == "CANCELLED" || subscription.status == "EXPIRED" || subscription.status == "SUSPENDED") {
                 await this.switchToFree(user, subscription)
             }
         } catch (ex) {
