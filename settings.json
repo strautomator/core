@@ -200,6 +200,8 @@
         // appended at the end of the text. String is added on a new line on the
         // activity description.
         "linksTexts": ["Powered by", "Updated by", "Automated with", "Tagged with", "Powered by"],
+        // How many times a recipe can fail before getting disabled automatically.
+        "maxFailures": 3,
         // Max length for specific properties.
         "maxLength": {
             "title": 40,
