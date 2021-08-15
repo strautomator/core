@@ -73,7 +73,7 @@ export class RecipeStats {
      */
     getFailingRecipes = async (): Promise<RecipeStatsData[]> => {
         try {
-            const arrStats: RecipeStatsData[] = await database.search("recipe-stats", ["recentFailures", ">=", settings.recipes.maxFailures])
+            const arrStats: RecipeStatsData[] = await database.search("recipe-stats", ["recentFailures", ">", settings.recipes.maxFailures])
             logger.info("RecipeStats.getFailingRecipes", `${arrStats.length} recipes with too many recent failures`)
             return arrStats
         } catch (ex) {
