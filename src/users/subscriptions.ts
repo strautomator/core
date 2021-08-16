@@ -46,7 +46,7 @@ export class UserSubscriptions {
      */
     getDangling = async (): Promise<PayPalSubscription[]> => {
         try {
-            const minDate = dayjs.utc().add(settings.users.danglingDays, "days")
+            const minDate = dayjs.utc().add(settings.users.danglingDays, "days").toDate()
             const queries = [
                 ["dateUpdated", "<", minDate],
                 ["status", "==", "APPROVAL_PENDING"]
