@@ -67,6 +67,14 @@ export class Users {
                 await this.switchToPro(user, subscription)
             } else if (subscription.status == "CANCELLED" || subscription.status == "EXPIRED" || subscription.status == "SUSPENDED") {
                 await this.switchToFree(user, subscription)
+            } else {
+                user.subscription = {
+                    id: subscription.id,
+                    source: "paypal",
+                    enabled: true
+                }
+
+                await this.update(user)
             }
         } catch (ex) {
             logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
