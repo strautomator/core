@@ -144,11 +144,20 @@ export class GearWear {
     /**
      * Get list of GearWear configurations for the specified user.
      * @param user The user owner of the GearWear.
+     * @param includeExpired Also return GearWear for deleted / expired gear?
      */
-    getForUser = async (user: UserData): Promise<GearWearConfig[]> => {
+    getForUser = async (user: UserData, includeExpired?: boolean): Promise<GearWearConfig[]> => {
         try {
             const result: GearWearConfig[] = await database.search("gearwear", ["userId", "==", user.id])
-            logger.info("GearWear.getForUser", `User ${user.id} ${user.displayName}`, `${result.length} GearWear configurations`)
+
+            // If the includeExpired flag is not set, remove GearWear with no matching gear on Strava.
+            if (!includeExpired) {
+                const allGear = _.concat(user.profile.bikes || [], user.profile.shoes || [])
+                _.remove(result, (g) => !_.find(allGear, {id: g.id}))
+                logger.info("GearWear.getForUser", `User ${user.id} ${user.displayName}`, `${result.length} active GearWear configurations`)
+            } else {
+                logger.info("GearWear.getForUser", `User ${user.id} ${user.displayName}`, `${result.length} total GearWear configurations`)
+            }
 
             return result
         } catch (ex) {
