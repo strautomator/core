@@ -327,7 +327,7 @@ export function toStravaGear(data, profile: StravaProfile): StravaGear {
         id: data.id,
         name: data.name || data.description,
         primary: data.primary,
-        distance: data.distance
+        distance: data.distance / 1000
     }
 
     // Has brand and model?
