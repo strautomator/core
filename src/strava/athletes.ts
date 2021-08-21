@@ -54,6 +54,7 @@ export class StravaAthletes {
             const data = await api.get(user.stravaTokens, `gear/${id}`)
             const gear = toStravaGear(data, user.profile)
 
+            logger.info("Strava.getGear", `User ${user.id} ${user.displayName}`, `Gear ${id}: ${gear.name} - distance ${gear.distance}`)
             return gear
         } catch (ex) {
             logger.error("Strava.getGear", id, ex)
