@@ -178,6 +178,8 @@ export class Recipes {
 
         // Otherwise iterate conditions and evaluate each one.
         else {
+            logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, `Will check ${recipe.conditions.length} conditions`)
+
             for (let condition of recipe.conditions) {
                 const valid = await this.checkCondition(user, activity, recipe, condition)
 

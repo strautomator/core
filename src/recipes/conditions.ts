@@ -35,9 +35,9 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
 
     // When using "equals" use around 60m radius, and "like" use 650m radius.
     if (op == RecipeOperator.Equal) {
-        radius = 0.00055
+        radius = 0.000555
     } else if (op == RecipeOperator.Like) {
-        radius = 0.00592
+        radius = 0.005925
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
