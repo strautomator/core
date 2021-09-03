@@ -135,24 +135,12 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             summary.cloudCover = `${(summary.cloudCover as number).toFixed(0)}%`
         }
 
-        // No summary yet? Set one now.
-        if (!summary.summary) {
-            const arr = extraData.iconText.split("-")
-            const baseSummary = arr.length > 1 ? `${arr[0]} ${arr[1]}` : arr[0]
-            summary.summary = `${tempSummary}, ${baseSummary}`
-
-            if (isWindy) summary.summary += ", windy"
-        }
-
-        // Final summary should be always Capital cased.
-        summary.summary = summary.summary.charAt(0).toUpperCase() + summary.summary.slice(1)
-
         // Set moon phase.
         summary.moon = getMoonPhase(date)
 
         // Set missing icon text. Please note that icon texts shoul come as strings
         // separated with dashes here.
-        if (!extraData.iconText) {
+        if (!extraData.iconText || extraData.iconText.length < 3) {
             let iconText = "clear"
             if (summary.precipitation == "snow") iconText = "snow"
             else if (summary.precipitation == "rain") iconText = "rain"
@@ -227,6 +215,18 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         if (unicode) {
             summary.icon = String.fromCodePoint(parseInt(unicode, 16))
         }
+
+        // No summary yet? Set one now.
+        if (!summary.summary) {
+            const arr = extraData.iconText.split("-")
+            const baseSummary = arr.length > 1 ? `${arr[0]} ${arr[1]}` : arr[0]
+            summary.summary = `${tempSummary}, ${baseSummary}`
+
+            if (isWindy) summary.summary += ", windy"
+        }
+
+        // Final summary should be always Capital cased.
+        summary.summary = summary.summary.charAt(0).toUpperCase() + summary.summary.slice(1)
 
         // Extra data not needed any longer.
         delete summary.extraData
