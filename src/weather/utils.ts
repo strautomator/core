@@ -58,9 +58,7 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
 export function processWeatherSummary(summary: WeatherSummary, date: Date, preferences: UserPreferences): void {
     try {
         let hour = date.getHours()
-        let unicode: string = "2601"
-
-        const extraData = summary.extraData || {}
+        let extraData = summary.extraData || {}
 
         // No precipitation? Try calculating it based on the precipitation mm (if passed).
         // If no precipitation, then set it to "dry".
@@ -82,86 +80,6 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             }
         } else {
             summary.precipitation = summary.precipitation.toLowerCase()
-        }
-
-        // Set missing icon text. Please note that icon texts shoul come as strings
-        // separated with dashes here.
-        if (!extraData.iconText) {
-            let iconText = "clear"
-            if (summary.precipitation == "snow") iconText = "snow"
-            else if (summary.precipitation == "rain") iconText = "rain"
-            else if (summary.cloudCover > 50) iconText = "cloudy"
-            else if (summary.cloudCover > 20) iconText = "partly-cloudy"
-            else if (summary.cloudCover > 10) iconText = "mostly-clear"
-
-            extraData.iconText = iconText
-        }
-
-        // Set correct day / night icons.
-        if (extraData.iconText == "clear") {
-            extraData.iconText = hour > 5 && hour < 20 ? "clear-day" : "clear-night"
-        }
-
-        // Property select correct weather icon.
-        switch (extraData.iconText) {
-            case "clear-day":
-                unicode = "2600"
-                break
-            case "rain":
-            case "drizzle":
-                unicode = "1F327"
-                break
-            case "hail":
-            case "ice-pellets":
-            case "ice-pellets-light":
-            case "ice-pellets-heavy":
-                unicode = "1F327"
-                break
-            case "snow":
-            case "snow-light":
-            case "snow-heavy":
-                unicode = "2744"
-                break
-            case "sleet":
-            case "flurries":
-            case "freezing-rain":
-            case "freezing-rain-light":
-            case "freezing-rain-heavy":
-                unicode = "1F328"
-                break
-            case "wind":
-                unicode = "1F32C"
-                break
-            case "fog":
-                unicode = "1F32B"
-                break
-            case "cloudy":
-            case "mostly-cloudy":
-                unicode = "2601"
-                break
-            case "partly-cloudy":
-            case "partly-cloudy-day":
-                unicode = "26C5"
-                break
-            case "tstorm":
-            case "thunderstorm":
-                unicode = "26C8"
-                break
-            case "tornado":
-                unicode = "1F32A"
-                break
-            case "mostly-clear":
-            case "partly-cloudy-night":
-                unicode = "1F319"
-                break
-            case "clear-night":
-                unicode = summary.moon == MoonPhase.Full ? "1F316" : "1F312"
-                break
-        }
-
-        // Convert code to unicode emoji.
-        if (unicode) {
-            summary.icon = String.fromCodePoint(parseInt(unicode, 16))
         }
 
         // Temperature summary.
@@ -231,6 +149,84 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
 
         // Set moon phase.
         summary.moon = getMoonPhase(date)
+
+        // Set missing icon text. Please note that icon texts shoul come as strings
+        // separated with dashes here.
+        if (!extraData.iconText) {
+            let iconText = "clear"
+            if (summary.precipitation == "snow") iconText = "snow"
+            else if (summary.precipitation == "rain") iconText = "rain"
+            else if (summary.extraData.mmPrecipitation > 3) iconText = "rain"
+            else if (summary.cloudCover > 75) iconText = "cloudy"
+            else if (summary.cloudCover > 35) iconText = "partly-cloudy"
+            else if (summary.cloudCover > 15) iconText = "mostly-clear"
+
+            extraData.iconText = iconText
+        } else {
+            extraData.iconText = extraData.iconText.replace("light-", "")
+            extraData.iconText = extraData.iconText.replace("heavy-", "")
+            extraData.iconText = extraData.iconText.replace("strong-", "")
+        }
+
+        // Set correct day / night icons.
+        if (extraData.iconText == "clear") {
+            extraData.iconText = hour > 5 && hour < 20 ? "clear-day" : "clear-night"
+        }
+
+        // Select correct weather icon. Defaults to cloudy.
+        let unicode: string = "2601"
+        switch (extraData.iconText) {
+            case "clear-day":
+                unicode = "2600"
+                break
+            case "clear-night":
+                unicode = summary.moon == MoonPhase.Full ? "1F316" : "1F312"
+                break
+            case "mostly-clear":
+                unicode = "1F324"
+                break
+            case "partly-cloudy":
+            case "partly-cloudy-day":
+                unicode = "26C5"
+                break
+            case "partly-cloudy-night":
+                unicode = "1F319"
+                break
+            case "drizzle":
+            case "rain":
+                unicode = "1F327"
+                break
+            case "hail":
+            case "ice-pellets":
+                unicode = "1F327"
+                break
+            case "snow":
+                unicode = "2744"
+                break
+            case "sleet":
+            case "flurries":
+            case "freezing-rain":
+                unicode = "1F328"
+                break
+            case "wind":
+                unicode = "1F32C"
+                break
+            case "fog":
+                unicode = "1F32B"
+                break
+            case "thunderstorm":
+                unicode = "26C8"
+                break
+            case "tornado":
+            case "hurricane":
+                unicode = "1F32A"
+                break
+        }
+
+        // Convert code to unicode emoji.
+        if (unicode) {
+            summary.icon = String.fromCodePoint(parseInt(unicode, 16))
+        }
 
         // Extra data not needed any longer.
         delete summary.extraData

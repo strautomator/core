@@ -78,7 +78,7 @@ export class Weatherbit implements WeatherProvider {
         const code = data.weather.code.toString().substring(1)
 
         // Get correct icon text based on the wather code.
-        let iconText
+        let iconText = null
         switch (code) {
             case "2":
                 iconText = "thunderstorm"
@@ -93,14 +93,9 @@ export class Weatherbit implements WeatherProvider {
             case "7":
                 iconText = "fog"
                 break
-            case "8":
-                iconText = ["800", "801"].indexOf(data.weather.code) < 0 ? "cloudy" : "clear-day"
-                break
             case "9":
                 iconText = "rain"
                 break
-            default:
-                iconText = "cloudy"
         }
 
         const result: WeatherSummary = {

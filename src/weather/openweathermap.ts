@@ -78,7 +78,7 @@ export class OpenWeatherMap implements WeatherProvider {
         const code = weatherData.icon.substring(1)
 
         // Get correct icon text based on the weather code.
-        let iconText = "clear"
+        let iconText = null
         switch (code) {
             case "2":
                 iconText = "thunderstorm"
@@ -93,14 +93,9 @@ export class OpenWeatherMap implements WeatherProvider {
             case "7":
                 iconText = "fog"
                 break
-            case "8":
-                iconText = ["800", "801"].indexOf(weatherData.id) < 0 ? "cloudy" : "clear-day"
-                break
             case "9":
                 iconText = "rain"
                 break
-            default:
-                iconText = "cloudy"
         }
 
         // Get snow or rain.
