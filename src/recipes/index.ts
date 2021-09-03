@@ -196,6 +196,9 @@ export class Recipes {
             }
         }
 
+        const logConditions = recipe.conditions.map((c) => c.property).join(", ")
+        logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, `Evaluated: ${logConditions}`)
+
         // Sort recipe actions, webhook should come last.
         const sortedActions = _.sortBy(recipe.actions, ["type"])
 
@@ -205,8 +208,9 @@ export class Recipes {
             success = success && (await this.processAction(user, activity, recipe, action))
         }
 
-        // Update recipe stats and return OK.
+        // Update recipe stats.
         await recipeStats.updateStats(user, recipe, activity, success)
+
         return true
     }
 
