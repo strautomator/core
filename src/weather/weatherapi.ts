@@ -78,10 +78,17 @@ export class WeatherAPI implements WeatherProvider {
         if (!data) return
 
         // Set wind speed.
-        const wind = data.wind_kph || data.maxwind_kph || null
+        let wind = data.wind_kph || data.maxwind_kph || null
+
+        // Make sure we don't have sunny at night :-)
+        let summary = data.condition && data.condition.text ? data.condition.text.toLowerCase() : null
+        if (data.is_day === 0) {
+            if (summary == "sunny") summary = "Clear night"
+            else if (summary.indexOf("sunny") > 0) summary = summary.replace("sunny", "clear")
+        }
 
         const result: WeatherSummary = {
-            summary: data.condition ? data.condition.text : null,
+            summary: summary,
             temperature: data.temp_c || data.avgtemp_c || 0,
             feelsLike: data.feelslike_c,
             humidity: data.humidity || data.avghumidity || null,
