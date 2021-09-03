@@ -77,11 +77,6 @@ export class WeatherAPI implements WeatherProvider {
         data = this.filterData(data, date)
         if (!data) return
 
-        // Replace spaces with dashes on weather code.
-        if (data.iconText) {
-            data.iconText = data.iconText.replace(/ /g, "-")
-        }
-
         // Set wind speed.
         const wind = data.wind_kph || data.maxwind_kph || null
 
