@@ -231,6 +231,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         // Extra data not needed any longer.
         delete summary.extraData
     } catch (ex) {
+        delete summary.extraData
         logger.error("Weather.processWeatherSummary", date.toISOString(), Object.values(summary).join(", "), ex)
     }
 }
