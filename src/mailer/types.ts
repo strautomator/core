@@ -21,7 +21,7 @@ export interface EmailSendingOptions {
 /**
  * The base template used on all sent emails.
  */
-export const EmailBaseTemplate = "<div>${contents}</div><div>-<br /><small>Email sent by ${appTitle}</small><br /><a href='${appUrl}'>${appUrl}</a></div>"
+export const EmailBaseTemplate = "<div>${contents}</div><div>-<br /><small>Email sent by ${appTitle}</small><br /><a href='${appUrl}' title='Strautomator'>${appUrl}</a></div>"
 
 /**
  * Email templates.
@@ -62,7 +62,7 @@ export const EmailTemplates = {
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component. You can also edit the component and increase the alert threshold, if needed." +
             "</p>" +
             "<p>" +
-            'Need to buy new components? Check the latest <a href="https://links.devv.com/l/bikes">deals on Amazon</a>!' +
+            'Need to buy new components? Check the latest <a href="https://links.devv.com/l/cycling" title="Affiliate link">deals on Amazon</a> (affiliate link)!' +
             "</p>"
     },
 
@@ -80,7 +80,7 @@ export const EmailTemplates = {
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component. You can also edit the component and increase the alert threshold, if needed." +
             "</p>" +
             "<p>" +
-            'Need to buy new components? Check the latest <a href="https://links.devv.com/l/bikes">deals on Amazon</a>!' +
+            'Need to buy new components? Check the latest <a href="https://links.devv.com/l/cycling" title="Affiliate link">deals on Amazon</a> (affiliate link)!' +
             "</p>"
     },
 
