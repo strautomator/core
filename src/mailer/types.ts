@@ -21,7 +21,7 @@ export interface EmailSendingOptions {
 /**
  * The base template used on all sent emails.
  */
-export const EmailBaseTemplate = "<div>${contents}</div><div>-<br /><small>Email sent by ${appTitle}</small><br /><a href='${appUrl}' title='Strautomator'>${appUrl}</a></div>"
+export const EmailBaseTemplate = "<div>${contents}</div><div>-<br><small>Email sent by ${appTitle}</small><br><a href='${appUrl}' title='Strautomator'>${appUrl}</a></div>"
 
 /**
  * Email templates.
@@ -34,13 +34,13 @@ export const EmailTemplates = {
         subject: "Failed automation: ${recipeTitle}",
         body:
             "<p>" +
-            "Hello there!<br /><br />" +
+            "Hello there!<br><br>" +
             "Just to let you know that one of your automations failed to execute properly, so you might waant to double check its configuration." +
             "</p>" +
             "<p>" +
-            "<strong>${recipeTitle}</strong><br />" +
-            "Action: ${action}<br />" +
-            "Message: ${errorMessage}<br />" +
+            "<strong>${recipeTitle}</strong><br>" +
+            "Action: ${action}<br>" +
+            "Message: ${errorMessage}<br>" +
             "Activity: ID ${activityId}, on ${activityDate}" +
             "</p>" +
             "<p>" +
@@ -53,10 +53,10 @@ export const EmailTemplates = {
         subject: "${gearName} - ${component} (GearWear alert)",
         body:
             "<p>" +
-            "It's about time to replace this component :-)<br />-<br />" +
-            "<strong>${gearName} - ${component}</strong><br />" +
-            "Currently with ${currentDistance} ${units}, ${currentTime} hours<br />" +
-            "Alert on: ${alertDetails}<br />-" +
+            "It's about time to replace this component :-)<br>-<br>" +
+            "<strong>${gearName} - ${component}</strong><br>" +
+            "Currently with ${currentDistance} ${units}, ${currentTime} hours<br>" +
+            "Alert on: ${alertDetails}<br>-" +
             "</p>" +
             "<p>" +
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component. You can also edit the component and increase the alert threshold, if needed." +
@@ -71,10 +71,10 @@ export const EmailTemplates = {
         subject: "${gearName} - ${component} (GearWear reminder)",
         body:
             "<p>" +
-            "This is a small reminder that you haven't reset the distance for the component below, yet :-)<br />-<br />" +
-            "<strong>${gearName} - ${component}</strong><br />" +
-            "Currently with ${currentDistance} ${units}, ${currentTime} hours<br />" +
-            "Alert on: ${alertDetails}<br />-" +
+            "This is a small reminder that you haven't reset the distance for the component below, yet :-)<br>-<br>" +
+            "<strong>${gearName} - ${component}</strong><br>" +
+            "Currently with ${currentDistance} ${units}, ${currentTime} hours<br>" +
+            "Alert on: ${alertDetails}<br>-" +
             "</p>" +
             "<p>" +
             "To reset the current tracking, please <a href='${appUrl}gear/edit?id=${gearId}&reset=${component}'>click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component. You can also edit the component and increase the alert threshold, if needed." +
@@ -89,8 +89,8 @@ export const EmailTemplates = {
         subject: "Please reconnect to Strautomator",
         body:
             "<p>" +
-            "Hi ${userName}!<br /><br />" +
-            "It looks like the connection between Strautomator and your Strava account has expired.<br />" +
+            "Hi ${userName}!<br><br>" +
+            "It looks like the connection between Strautomator and your Strava account has expired.<br>" +
             "If you wish to keep using Strautomator, please reauthenticate at <a href='${appUrl}auth/login'>${appUrl}auth/login</a>" +
             "" +
             "</p>" +
@@ -104,7 +104,7 @@ export const EmailTemplates = {
         subject: "You have ${count} unread notifications",
         body:
             "<p>" +
-            "Hi ${userName}!<br /><br />" +
+            "Hi ${userName}!<br><br>" +
             "It might have been a while since you last checked your account on Strautomator... and there are some unread notifications for you:<br><br>-" +
             "${notifications}</p>" +
             "<p>" +
@@ -117,7 +117,7 @@ export const EmailTemplates = {
         subject: "Welcome to Strautomator PRO!",
         body:
             "<p>" +
-            "Hi ${userName}!<br /><br />" +
+            "Hi ${userName}!<br><br>" +
             "Thanks for your support! Your Strautomator ${subscriptionSource} subscription was activated and you now have a PRO account." +
             "If you have any feature suggestions or critical feedback, I'm all ears, just get back to me by replying to this email 🙂" +
             "</p>" +
@@ -125,7 +125,7 @@ export const EmailTemplates = {
             "For your reference, this is your subscription ID: ${subscriptionId}" +
             "</p>" +
             "<p>" +
-            "Kind regards,<br /><br />" +
+            "Kind regards,<br><br>" +
             "Igor Ramadas" +
             "</p>"
     },
@@ -135,8 +135,8 @@ export const EmailTemplates = {
         subject: "Strautomator PRO switched to the free plan",
         body:
             "<p>" +
-            "Hi ${userName}!<br /><br />" +
-            "Your Strautomator PRO subscription status switched to <strong>${subscriptionStatus}</strong>, and your account was downgraded to the free plan.<br /<br />" +
+            "Hi ${userName}!<br><br>" +
+            "Your Strautomator PRO subscription status switched to <strong>${subscriptionStatus}</strong>, and your account was downgraded to the free plan.<br /<br>" +
             "If you have created more automations or GearWear configurations than the free plan allows, please note that some of them will not work, and you will need to manually remove those." +
             "<p>" +
             'You can <a href="${appUrl}billing">subscribe</a> again at any time. If you need help or more details about Strautomator subscriptions, please reply to this email.' +
