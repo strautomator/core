@@ -92,8 +92,10 @@ export class StravaAthletes {
                     }
                 }
 
-                if (ftp == user.profile.ftp) {
-                    logger.warn("Strava.setAthleteFtp", `User ${user.id} ${user.displayName}`, `Unchanged FTP ${ftp}`)
+                // Only update the FTP if it was changed by at least 1%.
+                const percentChanged = 100 * Math.abs((ftp - user.profile.ftp) / ((ftp + user.profile.ftp) / 2))
+                if (percentChanged < 1) {
+                    logger.warn("Strava.setAthleteFtp", `User ${user.id} ${user.displayName}`, `Only ${percentChanged}% changed, won't update`)
                     return false
                 }
             }
@@ -186,12 +188,12 @@ export class StravaAthletes {
             // Otherwise get the weighted or current value itself, whatever is the lowest.
             if (currentWatts && currentWatts > maxWatts) {
                 const maxWattsWeight = [maxWatts, 1]
-                const currentWattsWeight = [currentWatts, 1.2]
+                const currentWattsWeight = [currentWatts, 1.15]
                 const ftpWeights = [maxWattsWeight, currentWattsWeight]
                 const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
                 ftpWatts = Math.round(ftpTotalSum / ftpWeightSum)
             } else {
-                ftpWatts = maxWatts
+                ftpWatts = Math.round(maxWatts)
             }
 
             // Check if the FTP was recently updated for that user.
