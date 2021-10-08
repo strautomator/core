@@ -324,8 +324,9 @@ export class Users {
      * Create or update user and save its data on database.
      * @param profile Athlete data returned by the Strava API.
      * @param stravaTokens Access and refresh tokens from Strava.
+     * @param login Triggered via user login?
      */
-    upsert = async (profile: StravaProfile, stravaTokens: StravaTokens): Promise<UserData> => {
+    upsert = async (profile: StravaProfile, stravaTokens: StravaTokens, login?: boolean): Promise<UserData> => {
         try {
             const now = dayjs.utc().toDate()
 
@@ -378,6 +379,16 @@ export class Users {
                 for (let shoes of userData.profile.shoes) {
                     const existingShoes = _.find(existingData.profile.shoes, {id: shoes.id})
                     if (existingShoes) _.defaults(shoes, existingShoes)
+                }
+
+                // Triggered via user login? Force reset the reauth and suspended flag.
+                if (login) {
+                    if (userData.suspended) {
+                        logger.error("Users.upsert", `${userData.id} ${userData.displayName}`, "Reactivated, suspended = false")
+                    }
+
+                    userData.suspended = false
+                    userData.reauth = 0
                 }
             }
 
