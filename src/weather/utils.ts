@@ -145,9 +145,9 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             if (summary.precipitation == "snow") iconText = "snow"
             else if (summary.precipitation == "rain") iconText = "rain"
             else if (summary.extraData.mmPrecipitation > 3) iconText = "rain"
-            else if (summary.cloudCover > 75) iconText = "cloudy"
-            else if (summary.cloudCover > 35) iconText = "partly-cloudy"
-            else if (summary.cloudCover > 15) iconText = "mostly-clear"
+            else if (parseInt(summary.cloudCover) > 75) iconText = "cloudy"
+            else if (parseInt(summary.cloudCover) > 35) iconText = "partly-cloudy"
+            else if (parseInt(summary.cloudCover) > 15) iconText = "mostly-clear"
 
             extraData.iconText = iconText
         } else {

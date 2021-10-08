@@ -370,6 +370,7 @@ export class Database {
                 if (_.isArray(value)) {
                     this.transformData(value)
                 } else if (_.isObject(value)) {
+                    value = value as any
                     if (value._seconds > 0 && !_.isNil(value._nanoseconds)) {
                         data[key] = value.toDate ? data[key].toDate() : dayjs.unix(value._seconds).toDate()
                     } else {

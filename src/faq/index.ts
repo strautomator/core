@@ -79,7 +79,7 @@ export class FAQ {
             }
 
             // Filter only relevant questions.
-            const result = _.filter(this.questions, (item) => item.question.search(regex) || item.answer.search(regex))
+            const result = _.filter(this.questions, (item) => item.question.search(regex) || item.answer.search(regex)) as FaqQuestion[]
             logger.info("FAQ.search", query, `${result.length} results`)
 
             return result
