@@ -1,8 +1,9 @@
 // Strautomator Core: Calendar
 
 import {CachedCalendar, CalendarOptions} from "./types"
-import {recipePropertyList} from "../recipes/lists"
 import {UserCalendarTemplate, UserData} from "../users/types"
+import {recipePropertyList} from "../recipes/lists"
+import {transformActivityFields} from "../strava/utils"
 import _ = require("lodash")
 import crypto = require("crypto")
 import database from "../database"
@@ -156,6 +157,9 @@ export class Calendar {
 
             // Iterate activities from Strava, checking filters before proceeding.
             for (let activity of activities) {
+                const arrDetails = []
+
+                // Stop here if the activity was excluded on the calendar options.
                 if (options.sportTypes && options.sportTypes.indexOf(activity.type) < 0) continue
                 if (options.excludeCommutes && activity.commute) continue
 
@@ -166,17 +170,8 @@ export class Calendar {
                     continue
                 }
 
-                // Append suffix to activity values.
-                for (let prop of recipePropertyList) {
-                    let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
-                    if (prop.fSuffix && user.preferences && user.preferences.weatherUnit == "f") suffix = prop.fSuffix
-
-                    if (suffix && !_.isNil(activity[prop.value]) && !_.isDate(activity[prop.value])) {
-                        activity[prop.value] = `${activity[prop.value]}${suffix}`
-                    }
-                }
-
-                const arrDetails = []
+                // Append suffixes to activity values.
+                transformActivityFields(user, activity)
 
                 // If no event details template was set, push default values to the details array.
                 if (!calendarTemplate.eventDetails) {

@@ -1,7 +1,8 @@
 // Strautomator Core: Recipe Action methods
 
-import {recipePropertyList, recipeActionList} from "./lists"
 import {RecipeAction, RecipeActionType, RecipeData, RecipeStatsData} from "./types"
+import {recipeActionList} from "./lists"
+import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
@@ -44,17 +45,10 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
 export const defaultAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
         let processedValue = action.value
+        let activityWithSuffix: any = _.cloneDeep(activity)
 
-        // Append suffixes to values before processing.
-        const activityWithSuffix: any = _.cloneDeep(activity)
-        for (let prop of recipePropertyList) {
-            let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
-            if (prop.fSuffix && user.preferences && user.preferences.weatherUnit == "f") suffix = prop.fSuffix
-
-            if (suffix && !_.isNil(activityWithSuffix[prop.value]) && !_.isDate(activityWithSuffix[prop.value])) {
-                activityWithSuffix[prop.value] = `${activityWithSuffix[prop.value]}${suffix}`
-            }
-        }
+        // Pre-process activity data and append suffixes to values before processing.
+        transformActivityFields(user, activityWithSuffix)
 
         // Value has a counter tag? Get recipe stats to increment the counter.
         if (processedValue.indexOf("${counter}") >= 0) {
