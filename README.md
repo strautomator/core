@@ -1,6 +1,6 @@
 # Strautomator Core
 
-This is the core module of Strautomator containing most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web) and can be linked on other environments as well (Cloud Functions, CLI tools etc...).
+This is the core module of Strautomator, containing most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web) and can be linked on other environments as well (Cloud Functions, CLI tools etc...).
 
 ## Getting started
 
@@ -8,11 +8,11 @@ This is the core module of Strautomator containing most of its business logic. T
 
 Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its [docs](https://setmeup.devv.com). The settings are splitted as follows:
 
-- **settings.json** - general settings shared by all environments
-- **settings.development.json** - development settings, mostly when running on your dev machine
-- **settings.production.json** - production settings, except credentials and secrets
-- **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
-- **GCS settings** - optional, will be downloaded from a Google Cloud Storage bucket on startup
+-   **settings.json** - general settings shared by all environments
+-   **settings.development.json** - development settings, mostly when running on your dev machine
+-   **settings.production.json** - production settings, except credentials and secrets
+-   **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
+-   **GCS settings** - optional, will be downloaded from a Google Cloud Storage bucket on startup
 
 Additionally, you can also define settings via environment variables, prefixed by SMU and separating levels with underscore. So for instance to define the `app.title` via an environment variable, you should set the value on `$SMU_app_title`. To define `gcp.projectId`, use `$SMU_gcp_projectId`. And so on.
 
@@ -26,14 +26,14 @@ By default Strautomator uses Google Cloud Firestore to store its data. But the [
 
 The following collections are currently used:
 
-- **activities** summary of processed activities
-- **app-state** general application state
-- **calendar** cached calendar data
-- **faq** help questions and answers
-- **gearwear** GearWear configurations
-- **recipe-stats** automation recipe stats
-- **subscriptions** subscriptions data
-- **users** registered user details
+-   **activities** summary of processed activities
+-   **app-state** general application state
+-   **calendar** cached calendar data
+-   **faq** help questions and answers
+-   **gearwear** GearWear configurations
+-   **recipe-stats** automation recipe stats
+-   **subscriptions** subscriptions data
+-   **users** registered user details
 
 Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
 
@@ -41,11 +41,11 @@ Also note that these collections might have a suffix, depending on the settings.
 
 You'll have to register an account and get the necessary credentials for the 3rd party integrations:
 
-- Google Cloud Platform
-- Strava API
-- PayPal API
-- Twitter API
-- Weather providers (ClimaCell, Storm Glass etc...)
+-   Google Cloud Platform
+-   Strava API
+-   PayPal API
+-   Twitter API
+-   Weather providers (ClimaCell, Storm Glass etc...)
 
 If you need help getting any of those, or have questions, just open a [new issue](https://github.com/strautomator/core/issues/new) and I'll be glad to help.
 
@@ -80,3 +80,7 @@ Users with expired tokens must have their Strava tokens refreshed regularly. You
 #### Users: FTP auto update
 
 The `strava.activities.ftpFromActivities()` should be triggered once a week for all users that have enabled the feature.
+
+### Users: disable failed recipes
+
+Recipes that keep failing over and over again should be disabled automatically. Failed recipes can be retrieved using the helper `recipes.stats.getFailingRecipes()`.
