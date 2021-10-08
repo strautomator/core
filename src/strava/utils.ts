@@ -27,7 +27,8 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
                 activity[prop.value] = aDuration.format("HH:mm")
             } else if (_.isDate(activity[prop.value])) {
                 const aDate = dayjs.utc(activity[prop.value]).add(activity.utcStartOffset, "minutes")
-                activity[prop.value] = aDate.format("HH:mm")
+                const format = prop.value.substring(0, 4) == "date" ? "L HH:mm" : "HH:mm"
+                activity[prop.value] = aDate.format(format)
             }
         }
 
