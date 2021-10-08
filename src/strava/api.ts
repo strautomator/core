@@ -2,12 +2,12 @@
 
 import {StravaTokens} from "./types"
 import {axiosRequest} from "../axios"
+import {URLSearchParams} from "url"
 import Bottleneck from "bottleneck"
 import eventManager from "../eventmanager"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
-import querystring = require("querystring")
 const settings = require("setmeup").settings
 
 /**
@@ -98,9 +98,10 @@ export class StravaAPI {
             }
 
             // Post auth data to Strava.
+            const urlParams = new URLSearchParams(qs)
             const reqOptions = {
                 method: "POST",
-                url: `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`,
+                url: `${settings.strava.api.tokenUrl}?${urlParams.toString()}`,
                 timeout: settings.oauth.tokenTimeout
             }
 
@@ -122,7 +123,8 @@ export class StravaAPI {
 
             return tokens
         } catch (ex) {
-            this.extractResponseError(ex)
+            this.extractTokenError(ex)
+
             logger.error("Strava.getToken", ex)
             throw ex
         }
@@ -151,9 +153,10 @@ export class StravaAPI {
             }
 
             // Post auth data to Strava.
+            const urlParams = new URLSearchParams(qs)
             const reqOptions = {
                 method: "POST",
-                url: `${settings.strava.api.tokenUrl}?${querystring.stringify(qs)}`,
+                url: `${settings.strava.api.tokenUrl}?${urlParams.toString()}`,
                 timeout: settings.oauth.tokenTimeout
             }
 
@@ -176,10 +179,10 @@ export class StravaAPI {
 
             return tokens
         } catch (ex) {
-            this.extractResponseError(ex)
+            this.extractTokenError(ex)
 
             if (ex.friendlyMessage && ex.friendlyMessage.indexOf("RefreshToken") >= 0) {
-                eventManager.emit("Strava.refreshTokenExpired", refreshToken)
+                eventManager.emit("Strava.tokenFailure", refreshToken, true)
             }
 
             logger.error("Strava.refreshToken", ex)
@@ -200,9 +203,10 @@ export class StravaAPI {
             }
 
             // Post auth data to Strava.
+            const urlParams = new URLSearchParams(qs)
             const reqOptions = {
                 method: "POST",
-                url: `${settings.strava.api.deauthUrl}?${querystring.stringify(qs)}`,
+                url: `${settings.strava.api.deauthUrl}?${urlParams.toString()}`,
                 timeout: settings.oauth.tokenTimeout
             }
 
@@ -211,7 +215,7 @@ export class StravaAPI {
 
             logger.info("Strava.revokeToken", `User ${userId}`, `Token deauthorized`)
         } catch (ex) {
-            this.extractResponseError(ex)
+            this.extractTokenError(ex)
 
             if (refreshToken) {
                 logger.warn("Strava.revokeToken", `User ${userId}`, ex, "Will retry with refreshed token")
@@ -234,11 +238,12 @@ export class StravaAPI {
      * @param path The API path.
      * @param params Additional parameters to be passed, optional.
      * @param body Additional body to be posted with the request.
+     * @event Strava.refreshTokenExpired
      */
     private makeRequest = async (tokens: StravaTokens, method: string, path: string, params?: any, body?: any) => {
-        try {
-            let token: string = null
+        let token: string = null
 
+        try {
             const options: any = {
                 url: `${settings.strava.api.baseUrl}${path}`,
                 method: method,
@@ -264,7 +269,8 @@ export class StravaAPI {
 
             // Additonal parameters were passed?
             if (params) {
-                options.url += `?${querystring.stringify(params)}`
+                const urlParams = new URLSearchParams(params)
+                options.url += `?${urlParams.toString()}`
             }
 
             // Body data was passed?
@@ -281,6 +287,10 @@ export class StravaAPI {
 
             return res
         } catch (ex) {
+            if (token && ex.response && ex.response.status == 401) {
+                eventManager.emit("Strava.tokenFailure", token)
+            }
+
             logger.debug("Strava.makeRequest", path, method, ex)
             throw ex
         }
@@ -352,13 +362,13 @@ export class StravaAPI {
      * append to the "friendlyMessage" prop on the error itself.
      * @param ex Error or exception object.
      */
-    extractResponseError = (ex: any): void => {
+    extractTokenError = (ex: any): void => {
         try {
             if (ex.response && ex.response.data && ex.response.data.errors) {
                 ex.friendlyMessage = _.map(ex.response.data.errors, (e) => Object.values(e).join(" - ")).join(" | ")
             }
         } catch (ex) {
-            logger.warn("Strava.extractResponseError", "Failed to extract error")
+            logger.warn("Strava.extractTokenError", "Failed to extract error")
         }
     }
 }

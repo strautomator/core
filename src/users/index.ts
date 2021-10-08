@@ -46,7 +46,7 @@ export class Users {
 
         // Strava events.
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
-        eventManager.on("Strava.refreshTokenExpired", this.onStravaRefreshTokenExpired)
+        eventManager.on("Strava.tokenFailure", this.onStravaTokenFailure)
     }
 
     /**
@@ -129,27 +129,32 @@ export class Users {
 
     /**
      * When a refresh token has expired, check if user has an email address and contact asking to login again.
-     * @param refreshToken The expired or invalid refresh token.
+     * @param token The expired or invalid Strava auth token.
+     * @param refresh Is it a refresh token?
      */
-    private onStravaRefreshTokenExpired = async (refreshToken: string): Promise<void> => {
-        if (!refreshToken) {
-            logger.error("Users.onStravaRefreshTokenExpired", "Missing refresh token")
+    private onStravaTokenFailure = async (token: string, refresh?: boolean): Promise<void> => {
+        if (!token) {
+            logger.error("Users.onStravaTokenFailure", "Missing token")
             return
         }
 
         // Masked token used on warning logs.
-        const maskedToken = `${refreshToken.substring(0, 2)}***${refreshToken.substring(refreshToken.length - 2)}`
+        const maskedToken = `${token.substring(0, 2)}***${token.substring(token.length - 2)}`
 
         try {
-            let user = await this.getByToken({refreshToken: refreshToken})
+            const byToken: StravaTokens = refresh ? {refreshToken: token} : {accessToken: token}
+            const user = await this.getByToken(byToken)
             if (!user) return
 
             // Increment the reauth counter.
             if (!user.reauth) user.reauth = 0
             user.reauth++
 
-            // User has an email address? Contact asking to connect to Strautomator again.
-            if (user.email && user.reauth == settings.oauth.reauthFailedAlert) {
+            const updatedUser: Partial<UserData> = {id: user.id, reauth: user.reauth}
+
+            // User has an email address? Contact asking to connect to Strautomator again,
+            // and if it fails too many times, disable the user.
+            if (user.email && user.reauth == settings.oauth.tokenFailuresAlert) {
                 const data = {
                     userId: user.id,
                     userName: user.profile.firstName || user.displayName
@@ -162,11 +167,15 @@ export class Users {
 
                 // Send email in async mode (no need to wait).
                 mailer.send(options)
+            } else if (user.reauth >= settings.oauth.tokenFailuresDisable) {
+                updatedUser.suspended = true
+
+                logger.warn("Users.onStravaTokenFailure", `User ${user.id} ${user.displayName} suspended due to too many token failures`)
             }
 
-            await this.update({id: user.id, reauth: user.reauth})
+            await this.update(updatedUser)
         } catch (ex) {
-            logger.error("Users.onStravaRefreshTokenExpired", `Failed to email user for expired token ${maskedToken}`)
+            logger.error("Users.onStravaTokenFailure", `Failed to email user about invalid token ${maskedToken}`)
         }
     }
 
