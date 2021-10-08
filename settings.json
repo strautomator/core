@@ -26,7 +26,7 @@
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.
-        "cacheDuration": 4,
+        "cacheDuration": 3,
         // Encryption options.
         "crypto": {
             "algorithm": "aes-256-cbc",
