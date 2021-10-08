@@ -26,7 +26,7 @@ build:
 update:
 	-ncu -u
 	npm version $(shell date '+%y.%-V%u.1%H%M') --force --allow-same-version --no-git-tag-version
-	npm install
+	npm install --prefer-online
 	$(TSC)
 
 # Dry run (check if startup() is completing).
