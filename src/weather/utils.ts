@@ -141,13 +141,14 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         // Set missing icon text. Please note that icon texts shoul come as strings
         // separated with dashes here.
         if (!extraData.iconText || extraData.iconText.length < 3) {
+            let cloudCover = summary.cloudCover as any
             let iconText = "clear"
             if (summary.precipitation == "snow") iconText = "snow"
             else if (summary.precipitation == "rain") iconText = "rain"
             else if (summary.extraData.mmPrecipitation > 3) iconText = "rain"
-            else if (parseInt(summary.cloudCover) > 75) iconText = "cloudy"
-            else if (parseInt(summary.cloudCover) > 35) iconText = "partly-cloudy"
-            else if (parseInt(summary.cloudCover) > 15) iconText = "mostly-clear"
+            else if (cloudCover > 75) iconText = "cloudy"
+            else if (cloudCover > 35) iconText = "partly-cloudy"
+            else if (cloudCover > 15) iconText = "mostly-clear"
 
             extraData.iconText = iconText
         } else {
