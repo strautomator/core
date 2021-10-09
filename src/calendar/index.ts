@@ -170,6 +170,10 @@ export class Calendar {
                     continue
                 }
 
+                // Activity start and end dates.
+                const startDate = activity.dateStart
+                const endDate = activity.dateEnd
+
                 // Append suffixes to activity values.
                 transformActivityFields(user, activity)
 
@@ -218,8 +222,8 @@ export class Calendar {
                     // Add activity to the calendar as an event.
                     const event = cal.createEvent({
                         uid: activity.id,
-                        start: activity.dateStart,
-                        end: activity.dateEnd,
+                        start: startDate,
+                        end: endDate,
                         summary: summary,
                         description: details,
                         url: `https://www.strava.com/activities/${activity.id}`
