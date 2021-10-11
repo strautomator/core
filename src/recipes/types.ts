@@ -82,6 +82,7 @@ export enum RecipeActionType {
     PrependDescription = "prependDescription",
     AppendDescription = "appendDescription",
     Gear = "gear",
+    HideHome = "hideHome",
     Webhook = "webhook"
 }
 

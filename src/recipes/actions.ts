@@ -155,6 +155,25 @@ export const commuteAction = async (user: UserData, activity: StravaActivity, re
 }
 
 /**
+ * Hide the activity on home feeds.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param action The action details.
+ */
+export const hideHomeAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+    try {
+        activity.hideHome = action.value === false ? false : true
+        activity.updatedFields.push("hideHome")
+
+        return true
+    } catch (ex) {
+        failedAction(user, activity, recipe, action, ex)
+        return false
+    }
+}
+
+/**
  * Set an activity's gear.
  * @param user The activity owner.
  * @param activity The Strava activity details.

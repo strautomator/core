@@ -1,7 +1,7 @@
 // Strautomator Core: Recipes
 
 import {recipePropertyList, recipeActionList} from "./lists"
-import {defaultAction, commuteAction, gearAction, webhookAction} from "./actions"
+import {defaultAction, commuteAction, gearAction, hideHomeAction, webhookAction} from "./actions"
 import {checkBoolean, checkLocation, checkNumber, checkSportType, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
@@ -298,6 +298,11 @@ export class Recipes {
         // Mark activity as commute?
         if (action.type == RecipeActionType.Commute) {
             return commuteAction(user, activity, recipe, action)
+        }
+
+        // Change activity gear?
+        if (action.type == RecipeActionType.HideHome) {
+            return hideHomeAction(user, activity, recipe, action)
         }
 
         // Change activity gear?

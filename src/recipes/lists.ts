@@ -92,5 +92,6 @@ export const recipeActionList = [
     {value: "description", text: "Set activity description"},
     {value: "prependDescription", text: "Prepend to activity description"},
     {value: "appendDescription", text: "Append to activity description"},
+    {value: "hideHome", text: "Mute (activity hidden on home feeds)"},
     {value: "webhook", text: "Webhook URL"}
 ]
