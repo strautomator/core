@@ -1,7 +1,7 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaGear, StravaProcessedActivity, StravaEstimatedFtp} from "./types"
-import {toStravaActivity} from "./types"
+import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProcessedActivity} from "./types"
+import {toStravaActivity} from "./utils"
 import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
 import stravaAthletes from "./athletes"
@@ -261,13 +261,21 @@ export class StravaActivities {
 
             // Set fields to be updated on the activity.
             for (let field of activity.updatedFields) {
+                let targetField = field
+                let targetValue = activity[field]
+                let targetLog = `${field}=${activity[field]}`
+
                 if (field == "gear") {
-                    data["gear_id"] = activity.gear.id
-                    logResult.push(`${field}=${activity.gear.name}`)
-                } else {
-                    data[field] = activity[field]
-                    logResult.push(`${field}=${activity[field]}`)
+                    targetField = "gear_id"
+                    targetValue = activity.gear.id
+                    targetLog = `${field}=${activity.gear.name}`
+                } else if (field == "hideHome") {
+                    targetField = "hide_from_home"
                 }
+
+                // Set data and update result log.
+                data[targetField] = targetValue
+                logResult.push(targetLog)
             }
 
             // If running on test mode, log the activity instead.

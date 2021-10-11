@@ -1,7 +1,7 @@
 // Strautomator Core: Strava Athletes
 
 import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProfile, StravaSport, StravaTokens} from "./types"
-import {toStravaGear, toStravaProfile} from "./types"
+import {toStravaGear, toStravaProfile} from "./utils"
 import {UserData} from "../users/types"
 import users from "../users"
 import api from "./api"
