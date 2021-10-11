@@ -71,8 +71,8 @@ export interface UserPreferences {
     language?: string
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
-    /** Reset recipe counters every year? Set using the format MM-DD. */
-    dateResetCounter?: string
+    /** Reset recipe counters every year? Set using the format MM-DD, or false to disable. */
+    dateResetCounter?: string | false
     /** Prefered weather provider. */
     weatherProvider?: "climacell" | "openweathermap" | "stormglass" | "visualcrossing" | "weatherbit" | "weatherapi"
     /** Weather temperature unit. */
