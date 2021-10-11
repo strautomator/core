@@ -71,6 +71,8 @@ export interface UserPreferences {
     language?: string
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
+    /** Reset recipe counters every year? */
+    dateResetCounter?: Date
     /** Prefered weather provider. */
     weatherProvider?: "climacell" | "openweathermap" | "stormglass" | "visualcrossing" | "weatherbit" | "weatherapi"
     /** Weather temperature unit. */
