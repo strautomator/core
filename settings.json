@@ -207,7 +207,7 @@
         // Max length for specific properties.
         "maxLength": {
             "title": 40,
-            "conditionValue": 400,
+            "conditionValue": 600,
             "actionValue": 600
         },
         // Webhook timeout is set to 5 seconds by default.
