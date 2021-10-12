@@ -59,6 +59,8 @@ export class Users {
             return
         }
 
+        logger.info("Users.onPayPalSubscription", `User ${subscription.userId}`, subscription.id, subscription.status)
+
         try {
             const user: Partial<UserData> = {id: subscription.userId}
 
