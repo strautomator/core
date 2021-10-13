@@ -4,6 +4,7 @@ import {StravaTokens} from "./types"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
+import stravaClubs from "./clubs"
 import stravaWebhooks from "./webhooks"
 import api from "./api"
 import eventManager from "../eventmanager"
@@ -29,6 +30,11 @@ export class Strava {
      * Atlhete methods.
      */
     athletes = stravaAthletes
+
+    /**
+     * Club methods.
+     */
+    clubs = stravaClubs
 
     /**
      * Webhook methods.

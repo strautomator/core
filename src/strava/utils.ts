@@ -1,6 +1,6 @@
 // Strautomator Core: Strava utils
 
-import {StravaActivity, StravaGear, StravaProfile} from "./types"
+import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaProfile} from "./types"
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import dayjs from "../dayjs"
@@ -204,6 +204,55 @@ export function toStravaProfile(data): StravaProfile {
     }
 
     return profile
+}
+
+/**
+ * Helper to transform data from the API to a StravaClub interface.
+ * @param data Input data.
+ */
+export function toStravaClub(data): StravaClub {
+    const club: StravaClub = {
+        id: data.id.toString(),
+        name: data.name,
+        url: data.url,
+        sport: data.sport_type,
+        type: data.club_type,
+        photo: data.cover_photo,
+        city: data.city,
+        country: data.country,
+        memberCount: data.member_count,
+        private: data.private
+    }
+
+    return club
+}
+
+/**
+ * Helper to transform data from the API to a StravaClubEvent interface.
+ * @param data Input data.
+ */
+export function toStravaClubEvent(data): StravaClubEvent {
+    const clubEvent: StravaClubEvent = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        activityType: data.activity_type,
+        dates: [],
+        joined: data.joined,
+        private: data.private,
+        womenOnly: data.women_only,
+        locationStart: data.start_latlng
+    }
+
+    if (data.organizing_athlete) {
+        clubEvent.organizer = toStravaProfile(data.organizing_athlete)
+    }
+
+    if (data.upcoming_occurrences && data.upcoming_occurrences.length > 0) {
+        clubEvent.dates = data.upcoming_occurrences.map((d) => dayjs(d).toDate())
+    }
+
+    return clubEvent
 }
 
 /**

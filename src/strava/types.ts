@@ -187,6 +187,58 @@ export interface StravaTokens {
 }
 
 /**
+ * A Strava club.
+ */
+export interface StravaClub {
+    /** The club ID. */
+    id: string
+    /** Club name. */
+    name: string
+    /** Sport type. */
+    sport: "cycling" | "running" | "triathlon" | "other"
+    /** Club target URL. */
+    url: string
+    /** Club type. */
+    type?: string
+    /** Cover photo. */
+    photo?: string
+    /** Club location city. */
+    city?: string
+    /** Club location country. */
+    country?: string
+    /** How many members. */
+    memberCount?: number
+    /** Is the club private? */
+    private?: boolean
+}
+
+/**
+ * A scheduled Strava event.
+ */
+export interface StravaClubEvent {
+    /** The club ID. */
+    id: string
+    /** Event title. */
+    title: string
+    /** Event description. */
+    description: string
+    /** Which sport is it? */
+    activityType: StravaSport
+    /** Event dates. */
+    dates: Date[]
+    /** Has the requesting athlete joined the event? */
+    joined: boolean
+    /** Is it a private event? */
+    private: boolean
+    /** Women only? */
+    womenOnly: boolean
+    /** The organizer. */
+    organizer?: Partial<StravaProfile>
+    /** Start location (latitude and longitude). */
+    locationStart?: [number, number]
+}
+
+/**
  * Represents a webhook (subscription) for events dispatched by Strava.
  */
 export interface StravaWebhook {
