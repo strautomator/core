@@ -176,8 +176,8 @@
             // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
-            // Free accounts limited to 3 months of calendar events.
-            "maxCalendarDays": 90,
+            // Free accounts limited to 6 months of calendar events.
+            "maxCalendarDays": 180,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5
         },
@@ -185,8 +185,8 @@
             // Pro accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
-            // Pro accounts limited to 2 full years of calendar events.
-            "maxCalendarDays": 730,
+            // Pro accounts limited to 3 full years of calendar events.
+            "maxCalendarDays": 1095,
             // No links on Pro accounts processed activities.
             "linksOn": false,
             // Subscription prices on PayPal to get a PRO account.
