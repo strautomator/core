@@ -11,7 +11,7 @@ import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
- * Strava webhooks manager.
+ * Strava athletes manager.
  */
 export class StravaAthletes {
     private constructor() {}

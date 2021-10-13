@@ -7,6 +7,7 @@ import {UserData} from "../users/types"
 import stravaAthletes from "./athletes"
 import api from "./api"
 import database from "../database"
+import eventManager from "../eventmanager"
 import notifications from "../notifications"
 import recipes from "../recipes"
 import users from "../users"
@@ -16,7 +17,7 @@ import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
- * Strava webhooks manager.
+ * Strava activities manager.
  */
 export class StravaActivities {
     private constructor() {}
@@ -393,6 +394,8 @@ export class StravaActivities {
                 } catch (ex) {
                     logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "Can't save to database", ex)
                 }
+
+                eventManager.emit("Strava.processActivity", user, activity)
             } else {
                 logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `No matching recipes`)
             }
