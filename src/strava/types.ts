@@ -223,7 +223,7 @@ export interface StravaClubEvent {
     /** Event description. */
     description: string
     /** Which sport is it? */
-    activityType: StravaSport
+    type: StravaSport
     /** Event dates. */
     dates: Date[]
     /** Has the requesting athlete joined the event? */
@@ -234,8 +234,8 @@ export interface StravaClubEvent {
     womenOnly: boolean
     /** The organizer. */
     organizer?: Partial<StravaProfile>
-    /** Start location (latitude and longitude). */
-    locationStart?: [number, number]
+    /** Start location. */
+    address?: string
 }
 
 /**

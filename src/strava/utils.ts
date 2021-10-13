@@ -122,7 +122,7 @@ export function toStravaActivity(data: any, user: UserData): StravaActivity {
     }
 
     // Get activity emoticon.
-    activity.icon = getActivityIcon(activity)
+    activity.icon = getSportIcon(activity)
 
     return activity
 }
@@ -236,12 +236,12 @@ export function toStravaClubEvent(data): StravaClubEvent {
         id: data.id,
         title: data.title,
         description: data.description,
-        activityType: data.activity_type,
+        type: data.activity_type,
         dates: [],
         joined: data.joined,
         private: data.private,
         womenOnly: data.women_only,
-        locationStart: data.start_latlng
+        address: data.address
     }
 
     if (data.organizing_athlete) {
@@ -257,10 +257,10 @@ export function toStravaClubEvent(data): StravaClubEvent {
 
 /**
  * Return activity icon (emoji) based on its type.
- * @param activity The relevant Strava activity.
+ * @param source The relevant Strava activity or club event.
  */
-export function getActivityIcon(activity: StravaActivity): string {
-    switch (activity.type) {
+export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
+    switch (source.type) {
         case "Run":
         case "VirtualRun":
             return "🏃"
