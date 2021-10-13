@@ -3,7 +3,7 @@
 import {CachedCalendar, CalendarOptions} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
-import {transformActivityFields} from "../strava/utils"
+import {getSportIcon, transformActivityFields} from "../strava/utils"
 import _ = require("lodash")
 import crypto = require("crypto")
 import database from "../database"
@@ -221,7 +221,7 @@ export class Calendar {
 
                     // Add activity to the calendar as an event.
                     const event = cal.createEvent({
-                        uid: activity.id,
+                        uid: `a-${activity.id}`,
                         start: startDate,
                         end: endDate,
                         summary: summary,
@@ -238,6 +238,42 @@ export class Calendar {
                 }
             }
 
+            // Get future group events as well? Only available for PRO users.
+            if (user.isPro) {
+                try {
+                    const clubs = await strava.clubs.getClubs(user)
+
+                    for (let club of clubs) {
+                        const clubEvents = await strava.clubs.getClubEvents(user, club.id)
+
+                        for (let clubEvent of clubEvents) {
+                            for (let eDate of clubEvent.dates) {
+                                const event = cal.createEvent({
+                                    uid: `e-${clubEvent.id}`,
+                                    start: eDate,
+                                    end: dayjs(eDate).add(1, "hour"),
+                                    summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
+                                    description: `${club.name}\n\n${clubEvent.description}`,
+                                    url: `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
+                                })
+
+                                // Location available?
+                                if (clubEvent.address) {
+                                    event.location(clubEvent.address)
+                                }
+
+                                // Organizer available?
+                                if (clubEvent.organizer) {
+                                    event.organizer(`${clubEvent.organizer.firstName} ${clubEvent.organizer.lastName}`)
+                                }
+                            }
+                        }
+                    }
+                } catch (clubEx) {
+                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `Failed to create club events`, clubEx)
+                }
+            }
+
             // Send calendar output to the database.
             cachedCalendar = {
                 id: cacheId,
@@ -251,7 +287,7 @@ export class Calendar {
                 await database.set("calendar", cachedCalendar, cacheId)
             }
 
-            const duration = Math.round(dayjs().unix() - startTime / 1000)
+            const duration = dayjs().unix() - startTime
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `Generated in ${duration} seconds`)
 
             return cachedCalendar.data
