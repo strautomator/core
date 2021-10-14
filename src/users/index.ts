@@ -319,6 +319,27 @@ export class Users {
         }
     }
 
+    /**
+     * Get list of users that should have their recipe counters reset on the specified date.
+     * @param resetDate Target reset date.
+     */
+    getByResetCounter = async (resetDate: Date): Promise<UserData[]> => {
+        const dateFormat = dayjs(resetDate).format("MM-DD")
+
+        try {
+            if (!resetDate) throw new Error("Missing reset date")
+
+            const where = [["preferences.dateResetCounter", "==", dateFormat]]
+            const users = await database.search("users", where)
+
+            logger.info("Users.getByResetCounter", dateFormat, `Got ${users.length || "no"} users`)
+            return users
+        } catch (ex) {
+            logger.error("Users.getByResetCounter", dateFormat, ex)
+            throw ex
+        }
+    }
+
     // UPDATE USERS
     // --------------------------------------------------------------------------
 
