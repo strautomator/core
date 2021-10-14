@@ -203,11 +203,12 @@ export class RecipeStats {
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
                 stats.counter = counter
+
+                logger.info("RecipeStats.setCounter", id, `Counter ${counter ? counter : "reset to 0"}`)
             }
 
             // Update the counter on the database.
             await database.merge("recipe-stats", stats, doc)
-            logger.info("RecipeStats.setCounter", id, `Counter ${counter}`)
         } catch (ex) {
             logger.error("RecipeStats.setCounter", id, `Counter ${counter}`, ex)
         }
