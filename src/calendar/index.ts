@@ -118,7 +118,7 @@ export class Calendar {
 
             // Check and set default options.
             if (!options.sportTypes || options.sportTypes.length == 0) {
-                options.sportTypes = null
+                delete options.sportTypes
             }
 
             // Get calendar template from user.
@@ -134,7 +134,7 @@ export class Calendar {
             const tsAfter = dateFrom.valueOf() / 1000
             const tsBefore = dateTo.valueOf() / 1000
 
-            optionsLog = `Since ${dayjs(dateFrom).format("YYYY-MM-DD")}, `
+            optionsLog = `${dayjs(dateFrom).format("YYYY-MM-DD")} to ${dayjs(dateTo).format("YYYY-MM-DD")}, `
             optionsLog += options.sportTypes ? options.sportTypes.join(", ") : "all sports"
             if (options.excludeCommutes) optionsLog += ", exclude commutes"
 
@@ -172,6 +172,8 @@ export class Calendar {
 
             // Set calendar name based on passed filters.
             let calName = settings.calendar.name
+            if (!options.activities) calName += ` clubs`
+            if (!options.clubs) calName += ` activities`
             if (options.sportTypes) calName += ` (${options.sportTypes.join(", ")})`
 
             // Prepare calendar details.
@@ -198,7 +200,7 @@ export class Calendar {
                     const arrDetails = []
 
                     // Stop here if the activity was excluded on the calendar options.
-                    if (options.sportTypes && options.sportTypes.indexOf(activity.type) < 0) continue
+                    if (options.sportTypes && !options.sportTypes.includes(activity.type)) continue
                     if (options.excludeCommutes && activity.commute) continue
 
                     // For whatever reason Strava sometimes returned no dates on activities, so adding this extra check here
@@ -287,6 +289,9 @@ export class Calendar {
                         const clubEvents = await strava.clubs.getClubEvents(user, club.id)
 
                         for (let clubEvent of clubEvents) {
+                            if (options.sportTypes && !options.sportTypes.includes(clubEvent.type)) continue
+
+                            // Iterate event dates and add each one of them to the calendar.
                             for (let eDate of clubEvent.dates) {
                                 if (minDate.isAfter(eDate) || maxDate.isBefore(eDate)) continue
 
@@ -302,11 +307,6 @@ export class Calendar {
                                 // Location available?
                                 if (clubEvent.address) {
                                     event.location(clubEvent.address)
-                                }
-
-                                // Organizer available?
-                                if (clubEvent.organizer) {
-                                    event.organizer({name: `${clubEvent.organizer.firstName} ${clubEvent.organizer.lastName}`})
                                 }
                             }
                         }
@@ -330,7 +330,8 @@ export class Calendar {
             }
 
             const duration = dayjs().unix() - startTime
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `Generated in ${duration} seconds`)
+            const size = (cachedCalendar.data.length / 1000 / 1024).toFixed(1)
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `${size} MB`, `Generated in ${duration} seconds`)
 
             return cachedCalendar.data
         } catch (ex) {
