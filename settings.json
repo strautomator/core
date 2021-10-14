@@ -16,8 +16,8 @@
         "activityFields": ["distance,elevationGain", "speedAvg", "calories", "hrAvg,wattsAvg", "description"],
         // Default template for the event summary.
         "eventSummary": "${name} ${icon}",
-        // Calendar name.
-        "name": "Strava activities",
+        // Calendar base name.
+        "name": "Strava",
         // Calendars are cached for a maximum of 5 days, even if there were no new activities.
         "maxCacheDuration": 432000,
         // Default TTL (refresh interval) is once every 4 hours.
