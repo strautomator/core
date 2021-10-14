@@ -20,7 +20,7 @@
         "name": "Strava activities",
         // Calendars are cached for a maximum of 5 days, even if there were no new activities.
         "maxCacheDuration": 432000,
-        // Default TTL (refresh interval) is once every 4 hours on PRO accounts.
+        // Default TTL (refresh interval) is once every 4 hours.
         "ttl": 14400
     },
     "database": {
@@ -176,8 +176,9 @@
             // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
-            // Free accounts limited to 6 months of calendar events.
-            "maxCalendarDays": 180,
+            // Free accounts limited to 6 months of previous calendar events up to tomorrow.
+            "pastCalendarDays": 180,
+            "futureCalendarDays": 2,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5
         },
@@ -185,8 +186,9 @@
             // Pro accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
-            // Pro accounts limited to 3 full years of calendar events.
-            "maxCalendarDays": 1095,
+            // Pro accounts limited to 3 years of previous calendar events up to 1 year in the future.
+            "pastCalendarDays": 1095,
+            "futureCalendarDays": 365,
             // No links on Pro accounts processed activities.
             "linksOn": false,
             // Subscription prices on PayPal to get a PRO account.
