@@ -76,8 +76,7 @@ export class Twitter {
     }
 
     /**
-     * Post interesting activities to Twitter. A max of 10% of activities from users that opted
-     * for Twitter sharing will be processed here.
+     * Post interesting processed activities to Twitter.
      * @param user The activity owner.
      * @param activity The activity data.
      */
