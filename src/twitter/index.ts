@@ -1,8 +1,9 @@
 // Strautomator Core: Twitter
 
 import {StravaActivity} from "../strava/types"
+import {transformActivityFields} from "../strava/utils"
 import {UserData} from "../users/types"
-import * as messageTemplates from "./messages"
+import * as messages from "./messages"
 import eventManager from "../eventmanager"
 import _ = require("lodash")
 import TwitterLite from "twitter-lite"
@@ -80,47 +81,51 @@ export class Twitter {
      * @param user The activity owner.
      * @param activity The activity data.
      */
-    private onStravaActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
+    onStravaActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
         try {
             if (!user.preferences || !user.preferences.twitterShare) return
-            if (Math.random() < 0.9) return
 
             // Parameters to decide if the ride was "impressive" or not.
             const imperial: boolean = user.profile.units == "imperial"
             const rideDistance: number = imperial ? 130 : 200
             const rideSpeed: number = imperial ? 26 : 42
             const runDistance: number = imperial ? 26 : 42
-            let possibleMessages: string[] = null
+            let messageTemplates: string[] = null
 
             // Rides.
             if (activity.type == "Ride") {
                 if (activity.distance > rideDistance) {
-                    possibleMessages = messageTemplates.RideLongDistance
+                    messageTemplates = messages.RideLongDistance
                 } else if (activity.speedAvg > rideSpeed) {
-                    possibleMessages = messageTemplates.RideFast
+                    messageTemplates = messages.RideFast
                 }
             }
 
             // Runs.
             else if (activity.type == "Run") {
                 if (activity.distance > runDistance) {
-                    possibleMessages = messageTemplates.RunLongDistance
+                    messageTemplates = messages.RunLongDistance
                 }
             }
 
             // Nothing interesting to post?
-            if (!possibleMessages) {
-                logger.info("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Not interesting, won't post")
+            if (!messageTemplates) {
+                logger.debug("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Not interesting, won't post")
                 return
             }
 
-            await this.postActivity(user, activity, _.sample(possibleMessages))
+            // Only a few percent of interesting rides should be actually posted to Twitter.
+            if (Math.random() <= settings.twitter.activityThreshold) {
+                await this.postActivity(user, activity, _.sample(messageTemplates))
+            } else {
+                logger.info("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Did not win in the lottery :-(")
+            }
         } catch (ex) {
             logger.error("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
         }
     }
 
-    // INTERNAL METHODS
+    // GET TWITTER INFO
     // --------------------------------------------------------------------------
 
     /**
@@ -138,8 +143,12 @@ export class Twitter {
         }
     }
 
+    // POSTING TO TWITTER
+    // --------------------------------------------------------------------------
+
     /**
      * Post a message to Twitter.
+     * @param status Status to be posted to Twitter.
      */
     postStatus = async (status: string): Promise<void> => {
         try {
@@ -151,11 +160,15 @@ export class Twitter {
     }
 
     /**
-     * Post about a user activity on Twitter. This is a shortcut to
-     * postStatus() with the activity details as the status message.
+     * Shortcut to postStatus() with the activity details as the status message.
+     * @param user The owner of the activity.
+     * @param activity The Strava activity.
+     * @param message Template message to be used.
      */
     postActivity = async (user: UserData, activity: StravaActivity, message: string): Promise<void> => {
         try {
+            transformActivityFields(user, activity)
+
             message = jaul.data.replaceTags(message, {user: user.displayName})
             message = jaul.data.replaceTags(message, activity)
 

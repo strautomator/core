@@ -241,6 +241,10 @@
             "sinceLastHours": 24
         }
     },
+    "twitter": {
+        // Only 10% chances of posting interesting activities on Twitter.
+        "activityThreshold": 0.1
+    },
     "users": {
         // Consider users idle if they had no processed activities for more than 2 months.
         "idleDays": 60,
