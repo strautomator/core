@@ -1,6 +1,6 @@
 // Strautomator Core: Strava utils
 
-import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaProfile} from "./types"
+import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaProfile, StravaRoute, StravaSport} from "./types"
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import dayjs from "../dayjs"
@@ -10,7 +10,7 @@ import _ = require("lodash")
  * Helper to transform data from the API to a StravaActivity interface.
  * @param data Input data.
  */
-export function toStravaActivity(data: any, user: UserData): StravaActivity {
+export function toStravaActivity(user: UserData, data: any): StravaActivity {
     const profile = user.profile
     const startDate = dayjs.utc(data.start_date)
 
@@ -60,7 +60,7 @@ export function toStravaActivity(data: any, user: UserData): StravaActivity {
     if (gearId) {
         activity.gear = activity.gear = _.find(profile.bikes, {id: gearId}) || _.find(profile.shoes, {id: gearId})
     } else if (data.gear) {
-        activity.gear = toStravaGear(data.gear.id, profile)
+        activity.gear = toStravaGear(profile, data.gear.id)
     }
 
     // Set polyline.
@@ -131,7 +131,7 @@ export function toStravaActivity(data: any, user: UserData): StravaActivity {
  * Helper to transform data from the API to a StravaGear interface.
  * @param data Input data.
  */
-export function toStravaGear(data, profile: StravaProfile): StravaGear {
+export function toStravaGear(profile: StravaProfile, data: any): StravaGear {
     const gear: StravaGear = {
         id: data.id,
         name: data.name || data.description,
@@ -163,7 +163,7 @@ export function toStravaGear(data, profile: StravaProfile): StravaGear {
  * Helper to transform data from the API to a StravaProfile interface.
  * @param data Input data.
  */
-export function toStravaProfile(data): StravaProfile {
+export function toStravaProfile(data: any): StravaProfile {
     const profile: StravaProfile = {
         id: data.id.toString(),
         username: data.username,
@@ -182,14 +182,14 @@ export function toStravaProfile(data): StravaProfile {
     // Has bikes?
     if (data.bikes && data.bikes.length > 0) {
         for (let bike of data.bikes) {
-            profile.bikes.push(toStravaGear(bike, profile))
+            profile.bikes.push(toStravaGear(profile, bike))
         }
     }
 
     // Has shoes?
     if (data.shoes && data.shoes.length > 0) {
         for (let shoes of data.shoes) {
-            profile.shoes.push(toStravaGear(shoes, profile))
+            profile.shoes.push(toStravaGear(profile, shoes))
         }
     }
 
@@ -210,7 +210,7 @@ export function toStravaProfile(data): StravaProfile {
  * Helper to transform data from the API to a StravaClub interface.
  * @param data Input data.
  */
-export function toStravaClub(data): StravaClub {
+export function toStravaClub(data: any): StravaClub {
     const club: StravaClub = {
         id: data.id.toString(),
         name: data.name,
@@ -231,7 +231,7 @@ export function toStravaClub(data): StravaClub {
  * Helper to transform data from the API to a StravaClubEvent interface.
  * @param data Input data.
  */
-export function toStravaClubEvent(data): StravaClubEvent {
+export function toStravaClubEvent(data: any): StravaClubEvent {
     const clubEvent: StravaClubEvent = {
         id: data.id,
         title: data.title,
@@ -252,7 +252,39 @@ export function toStravaClubEvent(data): StravaClubEvent {
         clubEvent.dates = data.upcoming_occurrences.map((d) => dayjs(d).toDate())
     }
 
+    // Club event has a route defined? Set the base route ID, which can then be used
+    // to fetch the full route details.
+    if (data.route && data.route.id_str) {
+        clubEvent.route = {id: data.route.id_str}
+    }
+
     return clubEvent
+}
+
+/**
+ * Helper to transform data from the API to a StravaRoute interface.
+ * @param data Input data.
+ */
+export function toStravaRoute(user: UserData, data: any): StravaRoute {
+    const multDistance = user.profile.units == "imperial" ? 0.621371 : 1
+    const multFeet = user.profile.units == "imperial" ? 3.28084 : 1
+    const distance = parseFloat(((data.distance / 1000) * multDistance).toFixed(1))
+    const elevationGain = Math.round(data.elevation_gain * multFeet)
+
+    const route: StravaRoute = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        type: data.type == 1 ? StravaSport.Ride : StravaSport.Run,
+        distance: distance,
+        elevationGain: elevationGain
+    }
+
+    if (data.estimated_moving_time) {
+        route.estimatedTime = data.estimated_moving_time
+    }
+
+    return route
 }
 
 /**

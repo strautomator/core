@@ -236,6 +236,28 @@ export interface StravaClubEvent {
     organizer?: Partial<StravaProfile>
     /** Start location. */
     address?: string
+    /** Attached route. */
+    route?: StravaRoute
+}
+
+/**
+ * A strava Route.
+ */
+export interface StravaRoute {
+    /** ID of the route. */
+    id: string
+    /** Name of the route. */
+    name?: string
+    /** Description of the route. */
+    description?: string
+    /** Ride or Run. */
+    type?: StravaSport
+    /** Route distance. */
+    distance?: number
+    /** Total elevation gain. */
+    elevationGain?: number
+    /** Estimated moving time in seconds. */
+    estimatedTime?: number
 }
 
 /**

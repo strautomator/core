@@ -29,9 +29,8 @@ export class StravaClubs {
         try {
             const data: any[] = await api.get(user.stravaTokens, "athlete/clubs")
             const clubs: StravaClub[] = data.map((d) => toStravaClub(d))
-            const clubNames = clubs.map((c) => c.name).join(", ")
 
-            logger.info("Strava.getClubs", `User ${user.id} ${user.displayName}`, `Clubs: ${clubNames}`)
+            logger.info("Strava.getClubs", `User ${user.id} ${user.displayName}`, `Got ${clubs.length} clubs`)
             return clubs
         } catch (ex) {
             logger.error("Strava.getClubs", `User ${user.id} ${user.displayName}`, ex)

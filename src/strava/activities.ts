@@ -61,7 +61,7 @@ export class StravaActivities {
 
                     // Iterate and transform activities from raw strava data to StravaActivity models.
                     for (let activity of data) {
-                        activities.push(toStravaActivity(activity, user))
+                        activities.push(toStravaActivity(user, activity))
                     }
 
                     // If count is more than half the page size, consider it might have more and increment the page.
@@ -96,7 +96,7 @@ export class StravaActivities {
         try {
             const tokens = user.stravaTokens
             const data = await api.get(tokens, `activities/${id}?include_all_efforts=false`)
-            const activity = toStravaActivity(data, user)
+            const activity = toStravaActivity(user, data)
 
             // Activity's gear was set?
             // First we try fetching gear details from cached database user.
