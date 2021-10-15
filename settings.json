@@ -7,8 +7,8 @@
         "hashtag": "#strautomator.com"
     },
     "axios": {
-        // Retry axios requests afew 2 seconds. Value set in milliseconds.
-        "retryInterval": 2000
+        // Retry axios requests afew 5 seconds. Value set in milliseconds.
+        "retryInterval": 5000
     },
     "calendar": {
         // Default activity fields to be added to event details. Each item is a line, and multiple fields
@@ -18,9 +18,11 @@
         "eventSummary": "${name} ${icon}",
         // Calendar base name.
         "name": "Strava",
-        // Calendars are cached for a maximum of 5 days, even if there were no new activities.
+        // Default event duration in minutes (ie. for past club events).
+        "defaultDurationMinutes": 15,
+        // Calendars are cached for a maximum of 5 days, even if there were no new activities. Value in seconds.
         "maxCacheDuration": 432000,
-        // Default TTL (refresh interval) is once every 4 hours.
+        // Default TTL (refresh interval) is once every 4 hours. Value in seconds.
         "ttl": 14400
     },
     "database": {
@@ -218,6 +220,11 @@
         }
     },
     "strava": {
+        // Some Strava resources might be cached in memory. Duration in seconds.
+        "cacheDuration": {
+            "clubs": 600,
+            "routes": 600
+        },
         // API endpoints and credentials from Strava.
         "api": {
             "baseUrl": "https://www.strava.com/api/v3/",
@@ -231,8 +238,8 @@
             // is around 40 requests per minute total, so for 2 instances we use 30
             // as load balancing is not done on a perfect 50/50 level.
             "maxPerMinute": 30,
-            // Default page size 180, max is 200.
-            "pageSize": 180
+            // Default page size is the max of 200.
+            "pageSize": 200
         },
         "ftp": {
             // User's FTP will be estimated based on the last 12 weeks.
