@@ -9,10 +9,10 @@ import crypto = require("crypto")
 import database from "../database"
 import eventManager from "../eventmanager"
 import strava from "../strava"
+import ical, {ICalCalendar} from "ical-generator"
 import jaul = require("jaul")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
-const ical = require("ical-generator").default
 const settings = require("setmeup").settings
 
 /**
@@ -110,7 +110,7 @@ export class Calendar {
      * @param options Calendar generation options.
      */
     generate = async (user: UserData, options?: CalendarOptions): Promise<string> => {
-        let arrOptionsLog: string
+        let optionsLog: string
         let cachedCalendar: CachedCalendar
 
         try {
@@ -121,22 +121,15 @@ export class Calendar {
                 delete options.sportTypes
             }
 
-            // Get calendar template from user.
-            const calendarTemplate: UserCalendarTemplate = user.calendarTemplate || {}
+            optionsLog = _.map(_.toPairs(options), (r) => r.join("=")).join(" | ")
 
             // Days and timestamp calculations.
             const pastDays = user.isPro ? settings.plans.pro.pastCalendarDays : settings.plans.free.pastCalendarDays
             const futureDays = user.isPro ? settings.plans.pro.futureCalendarDays : settings.plans.free.futureCalendarDays
             const minDate = dayjs.utc().hour(0).minute(0).subtract(pastDays, "days")
             const maxDate = dayjs.utc().hour(0).minute(0).add(futureDays, "days")
-            const dateFrom = options.dateFrom ? options.dateFrom : minDate
-            const dateTo = options.dateFrom ? options.dateFrom : maxDate
-            const tsAfter = dateFrom.valueOf() / 1000
-            const tsBefore = dateTo.valueOf() / 1000
-
-            arrOptionsLog = `${dayjs(dateFrom).format("YYYY-MM-DD")} to ${dayjs(dateTo).format("YYYY-MM-DD")}, `
-            arrOptionsLog += options.sportTypes ? options.sportTypes.join(", ") : "all sports"
-            if (options.excludeCommutes) arrOptionsLog += ", exclude commutes"
+            const dateFrom = options.dateFrom ? dayjs(options.dateFrom) : minDate
+            const dateTo = options.dateFrom ? dayjs(options.dateFrom) : maxDate
 
             // Date validation checks.
             if (minDate.isAfter(dateFrom)) {
@@ -147,7 +140,6 @@ export class Calendar {
             }
 
             const startTime = dayjs().unix()
-            const logOptions = _.map(_.toPairs(options), (r) => r.join("=")).join(" | ")
 
             // Use "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
             const hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 12)
@@ -167,33 +159,32 @@ export class Calendar {
                     const notExpired = expiryDate.valueOf() <= updatedTs
                     const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() <= updatedTs && maxExpiryDate.valueOf() <= updatedTs
 
+                    // Return cached calendar if it has not expired or has not changed.
+                    // If data is stored in shards, rebuild it first.
                     if (notExpired || notChanged) {
-                        let cacheOutput: string = ""
+                        if (cachedCalendar.shards) {
+                            cachedCalendar.data = ""
 
-                        // Is the cache stored as whole on the data field, or in smaller shards?
-                        if (cachedCalendar.data) {
-                            cacheOutput = cachedCalendar.data
-                        } else {
                             const shardDocs = await cacheDoc.collection("shards").get()
                             const shardMap = (s) => s.data()
                             const shards = _.orderBy(shardDocs.docs.map(shardMap), "index")
 
                             for (let shard of shards) {
-                                cacheOutput += shard.data().data
+                                cachedCalendar.data += shard.data().data
                             }
                         }
 
-                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, logOptions)
-                        return cacheOutput
+                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, "From cache")
+                        return cachedCalendar.data
                     } else {
-                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, logOptions, `Cache invalidated, will generate a new calendar`)
+                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `Cache invalidated, will generate a new calendar`)
                     }
                 } catch (cacheEx) {
-                    logger.error("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, logOptions, cacheEx)
+                    logger.error("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, cacheEx)
                 }
             }
 
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, logOptions)
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, optionsLog)
 
             // Set calendar name based on passed filters.
             let calName = settings.calendar.name
@@ -216,135 +207,23 @@ export class Calendar {
             }
             const cal = ical(icalOptions)
 
+            // Force set the dates from and to so we can build the activities / club events.
+            options.dateFrom = dateFrom.toDate()
+            options.dateTo = dateTo.toDate()
+
             // Get activities from Strava?
             if (options.activities) {
-                const activities = await strava.activities.getActivities(user, {before: tsBefore, after: tsAfter})
-
-                // Iterate activities from Strava, checking filters before proceeding.
-                for (let activity of activities) {
-                    const arrDetails = []
-
-                    // Stop here if the activity was excluded on the calendar options.
-                    if (options.sportTypes && !options.sportTypes.includes(activity.type)) continue
-                    if (options.excludeCommutes && activity.commute) continue
-
-                    // For whatever reason Strava sometimes returned no dates on activities, so adding this extra check here
-                    // that should go away once the root cause is identified.
-                    if (!activity.dateStart || !activity.dateEnd) {
-                        logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id} has no start or end date`)
-                        continue
-                    }
-
-                    // Activity start and end dates.
-                    const startDate = activity.dateStart
-                    const endDate = activity.dateEnd
-
-                    // Append suffixes to activity values.
-                    transformActivityFields(user, activity)
-
-                    // If no event details template was set, push default values to the details array.
-                    if (!calendarTemplate.eventDetails) {
-                        if (activity.commute) {
-                            arrDetails.push("Commute")
-                        }
-
-                        // Iterate default fields to be added to the event details.
-                        for (let f of settings.calendar.activityFields) {
-                            const subDetails = []
-                            const arrFields = f.split(",")
-
-                            for (let field of arrFields) {
-                                field = field.trim()
-
-                                if (activity[field]) {
-                                    const fieldInfo = _.find(recipePropertyList, {value: field})
-                                    const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
-                                    subDetails.push(`${fieldName}: ${activity[field]}`)
-                                }
-
-                                arrDetails.push(subDetails.join(" - "))
-                            }
-                        }
-                    }
-
-                    // Replace gear object with the gear name.
-                    if (activity.gear && activity.gear.name) {
-                        activity.gear = activity.gear.name as any
-                    }
-
-                    // Replace boolean tags with yes or no.
-                    for (let field of Object.keys(activity)) {
-                        if (activity[field] === true) activity[field] = "yes"
-                        else if (activity[field] === false) activity[field] = "no"
-                    }
-
-                    // Get summary and details from options or from defaults.
-                    try {
-                        const summaryTemplate = calendarTemplate.eventSummary ? calendarTemplate.eventSummary : settings.calendar.eventSummary
-                        const summary = jaul.data.replaceTags(summaryTemplate, activity)
-                        const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join("\n")
-
-                        // Add activity to the calendar as an event.
-                        const event = cal.createEvent({
-                            uid: `a-${activity.id}`,
-                            start: startDate,
-                            end: endDate,
-                            summary: summary,
-                            description: details,
-                            url: `https://www.strava.com/activities/${activity.id}`
-                        })
-
-                        // Geo location available?
-                        if (activity.locationEnd && activity.locationEnd.length > 0) {
-                            event.location(activity.locationEnd.join(", "))
-                        }
-                    } catch (innerEx) {
-                        logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
-                    }
-                }
+                await this.buildActivities(user, options, cal)
             }
 
             // Get club events?
             if (options.clubs) {
-                try {
-                    const clubs = await strava.clubs.getClubs(user)
-
-                    // Iterate user's clubs to get their events and push to the calendar.
-                    for (let club of clubs) {
-                        const clubEvents = await strava.clubs.getClubEvents(user, club.id)
-
-                        for (let clubEvent of clubEvents) {
-                            if (options.sportTypes && !options.sportTypes.includes(clubEvent.type)) continue
-
-                            // Iterate event dates and add each one of them to the calendar.
-                            for (let eDate of clubEvent.dates) {
-                                if (minDate.isAfter(eDate) || maxDate.isBefore(eDate)) continue
-
-                                const event = cal.createEvent({
-                                    uid: `c-${clubEvent.id}`,
-                                    start: eDate,
-                                    end: dayjs(eDate).add(1, "hour"),
-                                    summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
-                                    description: `${club.name}\n\n${clubEvent.description}`,
-                                    url: `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
-                                })
-
-                                // Location available?
-                                if (clubEvent.address) {
-                                    event.location(clubEvent.address)
-                                }
-                            }
-                        }
-                    }
-                } catch (clubEx) {
-                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `Failed to create club events`, clubEx)
-                }
+                await this.buildClubs(user, options, cal)
             }
 
             const output = cal.toString()
             const duration = dayjs().unix() - startTime
-            const bytes = output.length
-            const size = bytes / 1000 / 1024
+            const size = output.length / 1000 / 1024
             const maxSize = 0.95
 
             // Only save to database if a cacheDuration is set.
@@ -378,16 +257,210 @@ export class Calendar {
                 }
             }
 
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${arrOptionsLog}`, `${cal.events().length} events`, `${size.toFixed(1)} MB`, `Generated in ${duration} seconds`)
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
             return output
         } catch (ex) {
             if (cachedCalendar && cachedCalendar.data) {
-                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${arrOptionsLog}`, ex, "Fallback to cached calendar")
+                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex, "Fallback to cached calendar")
                 return cachedCalendar.data
             } else {
-                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${arrOptionsLog}`, ex)
+                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
                 throw ex
             }
+        }
+    }
+
+    /**
+     * Build the user activities events in the calendar.
+     * @param user The user.
+     * @param options Calendar options.
+     * @param cal The ical instance.
+     */
+    private buildActivities = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
+        const fromLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
+        const toLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
+        const optionsLog = `From ${fromLog} to ${toLog}`
+        let eventCount = 0
+
+        try {
+            const calendarTemplate: UserCalendarTemplate = user.calendarTemplate || {}
+            const tsAfter = options.dateFrom.valueOf() / 1000
+            const tsBefore = options.dateTo.valueOf() / 1000
+
+            // Fetch user activities.
+            const activities = await strava.activities.getActivities(user, {before: tsBefore, after: tsAfter})
+
+            // Iterate activities from Strava, checking filters before proceeding.
+            for (let activity of activities) {
+                const arrDetails = []
+
+                // Stop here if the activity was excluded on the calendar options.
+                if (options.sportTypes && !options.sportTypes.includes(activity.type)) continue
+                if (options.excludeCommutes && activity.commute) continue
+
+                // For whatever reason Strava sometimes returned no dates on activities, so adding this extra check here
+                // that should go away once the root cause is identified.
+                if (!activity.dateStart || !activity.dateEnd) {
+                    logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id} has no start or end date`)
+                    continue
+                }
+
+                // Activity start and end dates.
+                const startDate = activity.dateStart
+                const endDate = activity.dateEnd
+
+                // Append suffixes to activity values.
+                transformActivityFields(user, activity)
+
+                // If no event details template was set, push default values to the details array.
+                if (!calendarTemplate.eventDetails) {
+                    if (activity.commute) {
+                        arrDetails.push("Commute")
+                    }
+
+                    // Iterate default fields to be added to the event details.
+                    for (let f of settings.calendar.activityFields) {
+                        const subDetails = []
+                        const arrFields = f.split(",")
+
+                        for (let field of arrFields) {
+                            field = field.trim()
+
+                            if (activity[field]) {
+                                const fieldInfo = _.find(recipePropertyList, {value: field})
+                                const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
+                                subDetails.push(`${fieldName}: ${activity[field]}`)
+                            }
+
+                            arrDetails.push(subDetails.join(" - "))
+                        }
+                    }
+                }
+
+                // Replace gear object with the gear name.
+                if (activity.gear && activity.gear.name) {
+                    activity.gear = activity.gear.name as any
+                }
+
+                // Replace boolean tags with yes or no.
+                for (let field of Object.keys(activity)) {
+                    if (activity[field] === true) activity[field] = "yes"
+                    else if (activity[field] === false) activity[field] = "no"
+                }
+
+                // Get summary and details from options or from defaults.
+                try {
+                    const summaryTemplate = calendarTemplate.eventSummary ? calendarTemplate.eventSummary : settings.calendar.eventSummary
+                    const summary = jaul.data.replaceTags(summaryTemplate, activity)
+                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join("\n")
+
+                    // Add activity to the calendar as an event.
+                    const event = cal.createEvent({
+                        start: startDate,
+                        end: endDate,
+                        summary: summary,
+                        description: details,
+                        url: `https://www.strava.com/activities/${activity.id}`
+                    })
+
+                    // Geo location available?
+                    if (activity.locationEnd && activity.locationEnd.length > 0) {
+                        event.location(activity.locationEnd.join(", "))
+                    }
+                } catch (innerEx) {
+                    logger.error("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
+                }
+
+                eventCount++
+            }
+
+            logger.debug("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, optionsLog, `Got ${eventCount} activity events`)
+        } catch (ex) {
+            logger.error("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, optionsLog, ex)
+        }
+    }
+
+    /**
+     * Build the club events in the calendar.
+     * @param user The user.
+     * @param options Calendar options.
+     * @param cal The ical instance.
+     */
+    private buildClubs = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
+        const today = dayjs().hour(0).toDate()
+        const fromLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
+        const toLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
+        const optionsLog = `From ${fromLog} to ${toLog}`
+        let eventCount = 0
+
+        try {
+            const clubs = await strava.clubs.getClubs(user)
+
+            // Iterate user's clubs to get their events and push to the calendar.
+            for (let club of clubs) {
+                const clubEvents = await strava.clubs.getClubEvents(user, club.id)
+
+                for (let clubEvent of clubEvents) {
+                    if (options.sportTypes && !options.sportTypes.includes(clubEvent.type)) continue
+                    if (options.excludeNotJoined && !clubEvent.joined) continue
+
+                    // Check if event has future dates.
+                    const hasFutureDate = clubEvent.dates.find((d) => d > today)
+
+                    // Club has a route set? Fetch its details.
+                    if (hasFutureDate && clubEvent.route && clubEvent.route.id) {
+                        try {
+                            clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.id)
+                        } catch (routeEx) {
+                            logger.debug("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Failed to fetch route for event ${clubEvent.id}`)
+                        }
+                    }
+
+                    // Iterate event dates and add each one of them to the calendar.
+                    for (let eventDate of clubEvent.dates) {
+                        if (options.dateFrom > eventDate || options.dateTo < eventDate) continue
+                        let endDate: Date
+
+                        // Upcoming event has a route with estimated time? Use it as the end date,
+                        // otherwise defaults to 10 minutes.
+                        if (clubEvent.route && clubEvent.route.estimatedTime && eventDate >= today) {
+                            const targetDate = dayjs(eventDate).add(clubEvent.route.estimatedTime * 1.05, "seconds")
+                            const toQuarter = 15 - (targetDate.minute() % 15)
+                            endDate = targetDate.add(toQuarter, "minutes").toDate()
+                        } else {
+                            endDate = dayjs(eventDate).add(settings.calendar.defaultDurationMinutes, "minutes").toDate()
+                        }
+
+                        // Add all relevant details to the event description.
+                        const arrDescription = [club.name]
+                        if (clubEvent.description) {
+                            arrDescription.push(clubEvent.description)
+                        }
+                        if (clubEvent.route) {
+                            arrDescription.push(`Route: https://strava.com/routes/${clubEvent.route.id}`)
+                        }
+
+                        const event = cal.createEvent({
+                            start: eventDate,
+                            end: endDate,
+                            summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
+                            description: arrDescription.join("\n\n"),
+                            url: `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
+                        })
+
+                        // Location available?
+                        if (clubEvent.address) {
+                            event.location(clubEvent.address)
+                        }
+
+                        eventCount++
+                    }
+                }
+            }
+
+            logger.debug("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, optionsLog, `Got ${eventCount} club events`)
+        } catch (ex) {
+            logger.error("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, optionsLog, ex)
         }
     }
 }
