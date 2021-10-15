@@ -30,6 +30,8 @@ export interface CalendarOptions {
     dateTo?: Date
     /** Exclude commutes? Default is false. */
     excludeCommutes?: boolean
+    /** Exclude club events which user hasn't joined to? */
+    excludeNotJoined?:boolean
     /** Filter only specific sport types. Default is all. */
     sportTypes?: string[]
 }
