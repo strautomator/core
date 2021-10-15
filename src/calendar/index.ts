@@ -110,7 +110,7 @@ export class Calendar {
      * @param options Calendar generation options.
      */
     generate = async (user: UserData, options?: CalendarOptions): Promise<string> => {
-        let optionsLog: string
+        let arrOptionsLog: string
         let cachedCalendar: CachedCalendar
 
         try {
@@ -134,9 +134,9 @@ export class Calendar {
             const tsAfter = dateFrom.valueOf() / 1000
             const tsBefore = dateTo.valueOf() / 1000
 
-            optionsLog = `${dayjs(dateFrom).format("YYYY-MM-DD")} to ${dayjs(dateTo).format("YYYY-MM-DD")}, `
-            optionsLog += options.sportTypes ? options.sportTypes.join(", ") : "all sports"
-            if (options.excludeCommutes) optionsLog += ", exclude commutes"
+            arrOptionsLog = `${dayjs(dateFrom).format("YYYY-MM-DD")} to ${dayjs(dateTo).format("YYYY-MM-DD")}, `
+            arrOptionsLog += options.sportTypes ? options.sportTypes.join(", ") : "all sports"
+            if (options.excludeCommutes) arrOptionsLog += ", exclude commutes"
 
             // Date validation checks.
             if (minDate.isAfter(dateFrom)) {
@@ -146,29 +146,54 @@ export class Calendar {
                 throw new Error(`Maximum accepted date for the calendar is ${minDate.format("l")} (${futureDays} days)`)
             }
 
+            const startTime = dayjs().unix()
+            const logOptions = _.map(_.toPairs(options), (r) => r.join("=")).join(" | ")
+
             // Use "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
             const hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 12)
             const cacheId = `${user.id}-${hash}`
-            cachedCalendar = await database.get("calendar", cacheId)
+            const cacheDoc = database.doc("calendar", cacheId)
+            const cacheData = await cacheDoc.get()
 
             // See if cached version of the calendar is still valid.
             // Check cached calendar expiry date (reversed / backwards) and if user has new activity since the last generated output.
-            if (cachedCalendar) {
-                const expiryDate = dayjs.utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
-                const maxExpiryDate = dayjs.utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
-                const updatedTs = cachedCalendar.dateUpdated.valueOf()
-                const notExpired = expiryDate.valueOf() < updatedTs
-                const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() < updatedTs && maxExpiryDate.valueOf() < updatedTs
+            if (cacheData.exists) {
+                try {
+                    cachedCalendar = database.transformData(cacheData.data()) as CachedCalendar
 
-                if (notExpired || notChanged) {
-                    logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "From cache")
-                    return cachedCalendar.data
+                    const expiryDate = dayjs.utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
+                    const maxExpiryDate = dayjs.utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
+                    const updatedTs = cachedCalendar.dateUpdated.valueOf()
+                    const notExpired = expiryDate.valueOf() <= updatedTs
+                    const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() <= updatedTs && maxExpiryDate.valueOf() <= updatedTs
+
+                    if (notExpired || notChanged) {
+                        let cacheOutput: string = ""
+
+                        // Is the cache stored as whole on the data field, or in smaller shards?
+                        if (cachedCalendar.data) {
+                            cacheOutput = cachedCalendar.data
+                        } else {
+                            const shardDocs = await cacheDoc.collection("shards").get()
+                            const shardMap = (s) => s.data()
+                            const shards = _.orderBy(shardDocs.docs.map(shardMap), "index")
+
+                            for (let shard of shards) {
+                                cacheOutput += shard.data().data
+                            }
+                        }
+
+                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, logOptions)
+                        return cacheOutput
+                    } else {
+                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, logOptions, `Cache invalidated, will generate a new calendar`)
+                    }
+                } catch (cacheEx) {
+                    logger.error("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, logOptions, cacheEx)
                 }
             }
 
-            const startTime = dayjs().unix()
-            const logOptions = _.map(_.toPairs(options), (r) => r.join("="))
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, logOptions.join(" | "))
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, logOptions)
 
             // Set calendar name based on passed filters.
             let calName = settings.calendar.name
@@ -296,7 +321,7 @@ export class Calendar {
                                 if (minDate.isAfter(eDate) || maxDate.isBefore(eDate)) continue
 
                                 const event = cal.createEvent({
-                                    uid: `e-${clubEvent.id}`,
+                                    uid: `c-${clubEvent.id}`,
                                     start: eDate,
                                     end: dayjs(eDate).add(1, "hour"),
                                     summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
@@ -316,30 +341,51 @@ export class Calendar {
                 }
             }
 
-            // Send calendar output to the database.
-            cachedCalendar = {
-                id: cacheId,
-                userId: user.id,
-                data: cal.toString(),
-                dateUpdated: dayjs.utc().toDate()
-            }
-
-            // Only save to database if a cacheDUration is set.
-            if (settings.calendar.cacheDuration) {
-                await database.set("calendar", cachedCalendar, cacheId)
-            }
-
+            const output = cal.toString()
             const duration = dayjs().unix() - startTime
-            const size = (cachedCalendar.data.length / 1000 / 1024).toFixed(1)
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `${size} MB`, `Generated in ${duration} seconds`)
+            const bytes = output.length
+            const size = bytes / 1000 / 1024
+            const maxSize = 0.95
 
-            return cachedCalendar.data
+            // Only save to database if a cacheDuration is set.
+            if (settings.calendar.cacheDuration) {
+                cachedCalendar = {
+                    id: cacheId,
+                    userId: user.id,
+                    dateUpdated: dayjs.utc().toDate()
+                }
+
+                // If calendar is smaller than 0.95MB, save it on a single data field,
+                // otherwise split into multiple documents in the "shards" sub-collection.
+                if (size <= maxSize) {
+                    delete cachedCalendar.shards
+                    cachedCalendar.data = output
+
+                    await database.set("calendar", cachedCalendar, cacheId)
+                } else {
+                    delete cachedCalendar.data
+                    const doc = database.doc("calendar", cacheId)
+                    const shardCount = 1 + Math.floor(size / maxSize)
+                    const chunkSize = Math.floor(output.length / shardCount)
+
+                    for (let i = 0; i < shardCount; i++) {
+                        const index = i * chunkSize
+                        const chunk = output.substring(index, index + chunkSize)
+                        doc.collection("shards").add({index: index, data: chunk})
+                    }
+
+                    await doc.set(cachedCalendar)
+                }
+            }
+
+            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${arrOptionsLog}`, `${cal.events().length} events`, `${size.toFixed(1)} MB`, `Generated in ${duration} seconds`)
+            return output
         } catch (ex) {
             if (cachedCalendar && cachedCalendar.data) {
-                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex, "Fallback to cached calendar")
+                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${arrOptionsLog}`, ex, "Fallback to cached calendar")
                 return cachedCalendar.data
             } else {
-                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
+                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${arrOptionsLog}`, ex)
                 throw ex
             }
         }

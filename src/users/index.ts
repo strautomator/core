@@ -447,6 +447,10 @@ export class Users {
             if (!replace) {
                 await database.merge("users", user)
 
+                if (user.suspended) {
+                    logs.push("Suspended")
+                }
+
                 if (user.dateLastActivity) {
                     logs.push(dayjs(user.dateLastActivity).format("lll"))
                 }
@@ -471,12 +475,16 @@ export class Users {
                 if (user.preferences) {
                     logs.push(_.toPairs(user.preferences).join(" | ").replace(/\,/gi, "="))
                 }
+
+                if (user.stravaTokens) {
+                    logs.push("Strava tokens")
+                }
             } else {
                 await database.set("users", user, user.id)
                 logs.push("Replaced entire user data")
             }
 
-            logger.info("Users.update", username, logs.join(" | "))
+            logger.info("Users.update", username, logs.length > 0 ? logs.join(" | ") : "Updated")
         } catch (ex) {
             logger.error("Users.update", username, ex)
             throw ex

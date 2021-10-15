@@ -351,9 +351,10 @@ export class Database {
 
     /**
      * Transform result from the database to standard JS formats.
-     * @data The data to be parsed and (if necessary) transformed.
+     * Mutates and returns the transformed result.
+     * @param data The data to be parsed and (if necessary) transformed.
      */
-    private transformData = (data: any): void => {
+    transformData = (data: any): any => {
         if (!data) return
 
         let key: string
@@ -379,6 +380,8 @@ export class Database {
                 }
             }
         }
+
+        return data
     }
 }
 

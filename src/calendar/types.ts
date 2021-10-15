@@ -8,10 +8,12 @@ export interface CachedCalendar {
     id: string
     /** User ID. */
     userId: string
-    /** The calendar data (as .ics string). */
-    data: string
     /** Date when calendar was last updated. */
     dateUpdated: Date
+    /** The calendar data (as .ics string). */
+    data?: string
+    /** If calendar is too long, data is stored as shards instead. */
+    shards?: any[]
 }
 
 /**
