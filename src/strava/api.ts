@@ -3,8 +3,9 @@
 import {StravaTokens} from "./types"
 import {axiosRequest} from "../axios"
 import {URLSearchParams} from "url"
-import Bottleneck from "bottleneck"
 import eventManager from "../eventmanager"
+import Bottleneck from "bottleneck"
+import cache = require("bitecache")
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
@@ -72,6 +73,11 @@ export class StravaAPI {
             this.limiter.on("depleted", () => {
                 logger.warn("Strava.limiter", "Rate limited")
             })
+
+            // Setup bitecache.
+            for (let [key, duration] of Object.entries(settings.strava.cacheDuration)) {
+                cache.setup(`strava-${key}`, duration as number)
+            }
 
             logger.info("Strava.init", `Max concurrent: ${settings.strava.api.maxConcurrent}, per minute: ${settings.strava.api.maxPerMinute}`)
         } catch (ex) {
@@ -304,7 +310,34 @@ export class StravaAPI {
      */
     get = async (tokens: StravaTokens, path: string, params?: any) => {
         try {
-            return await this.makeRequest(tokens, "GET", path, params)
+            const arrPath = path.split("/")
+            const cacheKey = arrPath.shift()
+            const shouldCache = settings.strava.cacheDuration[cacheKey] && tokens && tokens.accessToken
+            let cacheId: string
+            let fromCache: any
+
+            // Resource might be available on the cache?
+            if (shouldCache) {
+                let resourceId = arrPath.join("-")
+                if (params) resourceId += `-${_.map(_.toPairs(params), (p) => p.join("-"))}`
+                cacheId = `${resourceId}-${tokens.accessToken.substring(5, 20)}`
+
+                fromCache = cache.get(`strava-${cacheKey}`, cacheId)
+
+                if (fromCache) {
+                    logger.info("Strava.get", path, `From cache: ${resourceId}`)
+                    return fromCache
+                }
+            }
+
+            const result = await this.makeRequest(tokens, "GET", path, params)
+
+            // Respons should be cached?
+            if (shouldCache) {
+                cache.set(`strava-${cacheKey}`, cacheId, result)
+            }
+
+            return result
         } catch (ex) {
             throw ex
         }
