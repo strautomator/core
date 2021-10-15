@@ -9,8 +9,8 @@
         "cacheDuration": 60
     },
     "calendar": {
-        // Calendars are cached only for only 1 minute on dev.
-        "cacheDuration": 60
+        // Calendars are cached only for only 10 minutes on dev.
+        "cacheDuration": 1200
     },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
