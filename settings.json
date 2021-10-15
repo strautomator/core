@@ -186,8 +186,8 @@
             // Pro accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
-            // Pro accounts limited to 2 years of previous calendar events up to 1 year in the future.
-            "pastCalendarDays": 730,
+            // Pro accounts limited to 3 years of previous calendar events up to 1 year in the future.
+            "pastCalendarDays": 1095,
             "futureCalendarDays": 365,
             // No links on Pro accounts processed activities.
             "linksOn": false,
