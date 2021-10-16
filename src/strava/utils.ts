@@ -374,4 +374,9 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             activity[prop.value] = `${activity[prop.value]}${suffix}`
         }
     }
+
+    // Replace gear object with the gear name.
+    if (activity.gear && activity.gear.name) {
+        activity.gear = activity.gear.name as any
+    }
 }

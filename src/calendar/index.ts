@@ -337,11 +337,6 @@ export class Calendar {
                     }
                 }
 
-                // Replace gear object with the gear name.
-                if (activity.gear && activity.gear.name) {
-                    activity.gear = activity.gear.name as any
-                }
-
                 // Replace boolean tags with yes or no.
                 for (let field of Object.keys(activity)) {
                     if (activity[field] === true) activity[field] = "yes"
