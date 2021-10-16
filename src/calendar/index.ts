@@ -393,6 +393,11 @@ export class Calendar {
 
             // Iterate user's clubs to get their events and push to the calendar.
             for (let club of clubs) {
+                if (!options.includeAllCountries && club.country != user.profile.country) {
+                    logger.debug("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Club ${club.id} from another country (${club.country}), skip it`)
+                    continue
+                }
+
                 const clubEvents = await strava.clubs.getClubEvents(user, club.id)
 
                 for (let clubEvent of clubEvents) {
