@@ -215,14 +215,27 @@ export class Calendar {
             options.dateFrom = dateFrom.toDate()
             options.dateTo = dateTo.toDate()
 
-            // Get activities from Strava?
-            if (options.activities) {
-                await this.buildActivities(user, options, cal)
-            }
+            // User is suspended? Add a single event, otherwise process activities and club events.
+            if (user.suspended) {
+                const soon = dayjs().add(8, "hours")
+                const later = dayjs().add(36, "hours")
 
-            // Get club events?
-            if (options.clubs) {
-                await this.buildClubs(user, options, cal)
+                for (let date of [soon, later]) {
+                    cal.createEvent({
+                        start: date.toDate(),
+                        end: date.add(1, "hour").toDate(),
+                        summary: "Strautomator account is suspended!",
+                        description: "Your Strautomator account is suspended!\n\nTo reactivate it and enable the calendar, please login again at strautomator.com.",
+                        url: "https://strautomator.com/auth/login"
+                    })
+                }
+            } else {
+                if (options.activities) {
+                    await this.buildActivities(user, options, cal)
+                }
+                if (options.clubs) {
+                    await this.buildClubs(user, options, cal)
+                }
             }
 
             const output = cal.toString()
