@@ -37,7 +37,7 @@ export class Calendar {
                 logger.warn("Calendar.init", "No cacheDuration set, calendars output will NOT be cached")
             } else {
                 const duration = dayjs.duration(settings.calendar.cacheDuration, "seconds").humanize()
-                logger.info("Calendar.init", `Cache calendars for ${duration}`)
+                logger.info("Calendar.init", `Calendars base cache duration: ${duration}`)
             }
         } catch (ex) {
             logger.error("Calendar.init", ex)
@@ -124,10 +124,11 @@ export class Calendar {
             optionsLog = _.map(_.toPairs(options), (r) => r.join("=")).join(" | ")
 
             // Days and timestamp calculations.
+            const nowUtc = dayjs.utc()
             const pastDays = user.isPro ? settings.plans.pro.pastCalendarDays : settings.plans.free.pastCalendarDays
             const futureDays = user.isPro ? settings.plans.pro.futureCalendarDays : settings.plans.free.futureCalendarDays
-            const minDate = dayjs.utc().hour(0).minute(0).subtract(pastDays, "days")
-            const maxDate = dayjs.utc().hour(0).minute(0).add(futureDays, "days")
+            const minDate = nowUtc.hour(0).minute(0).subtract(pastDays, "days")
+            const maxDate = nowUtc.hour(0).minute(0).add(futureDays, "days")
             const dateFrom = options.dateFrom ? dayjs(options.dateFrom) : minDate
             const dateTo = options.dateFrom ? dayjs(options.dateFrom) : maxDate
 
@@ -153,15 +154,17 @@ export class Calendar {
                 try {
                     cachedCalendar = database.transformData(cacheData.data()) as CachedCalendar
 
-                    const expiryDate = dayjs.utc().subtract(settings.calendar.cacheDuration, "seconds").toDate()
-                    const maxExpiryDate = dayjs.utc().subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
+                    const cacheDuration = user.isPro ? settings.calendar.cacheDuration : settings.calendar.cacheDuration * 2
+                    const expiryDate = nowUtc.subtract(cacheDuration, "seconds").toDate()
+                    const maxExpiryDate = nowUtc.subtract(settings.calendar.maxCacheDuration + cacheDuration, "seconds").toDate()
                     const updatedTs = cachedCalendar.dateUpdated.valueOf()
                     const notExpired = expiryDate.valueOf() <= updatedTs
                     const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() <= updatedTs && maxExpiryDate.valueOf() <= updatedTs
+                    const onlyClubs = options.clubs && !options.activities
 
-                    // Return cached calendar if it has not expired or has not changed.
-                    // If data is stored in shards, rebuild it first.
-                    if (notExpired || notChanged) {
+                    // Return cached calendar if it has not expired, and has not changed
+                    // or if calendar is for club events only.
+                    if (notExpired && (notChanged || onlyClubs)) {
                         if (cachedCalendar.shards) {
                             cachedCalendar.data = ""
 
@@ -169,6 +172,7 @@ export class Calendar {
                             const shardMap = (s) => s.data()
                             const shards = _.orderBy(shardDocs.docs.map(shardMap), "index")
 
+                            // If data is stored in shards, rebuild it first.
                             for (let shard of shards) {
                                 cachedCalendar.data += shard.data().data
                             }
@@ -203,7 +207,7 @@ export class Calendar {
                 domain: domain,
                 prodId: prodId,
                 url: calUrl,
-                ttl: settings.calendar.ttl
+                ttl: settings.calendar.cacheDuration
             }
             const cal = ical(icalOptions)
 

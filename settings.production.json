@@ -9,7 +9,7 @@
         "cacheDuration": 1800
     },
     "calendar": {
-        // Calendars are cached for up to 4 hours.
+        // Calendars are cached for up to 4 hours on PRO, double that on free accounts.
         "cacheDuration": 14400
     },
     "database": {
