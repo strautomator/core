@@ -170,9 +170,8 @@ export class Users {
                 // Send email in async mode (no need to wait).
                 mailer.send(options)
             } else if (user.reauth >= settings.oauth.tokenFailuresDisable) {
-                updatedUser.suspended = true
-
-                logger.warn("Users.onStravaTokenFailure", `User ${user.id} ${user.displayName} suspended due to too many token failures`)
+                logger.warn("Users.onStravaTokenFailure", `User ${user.id} ${user.displayName} will be suspended due to too many token failures`)
+                await this.suspend(user)
             }
 
             await this.update(updatedUser)
@@ -516,6 +515,20 @@ export class Users {
         } catch (ex) {
             logger.error("Users.delete", user.id, user.displayName, ex)
             throw ex
+        }
+    }
+
+    /**
+     * Suspend / deactivate the specified user.
+     * @param user The user to be deactivate.
+     */
+    suspend = async (user: UserData): Promise<void> => {
+        try {
+            await this.update({id: user.id, suspended: true})
+
+            logger.info("Users.suspend", user.id, user.displayName, "Suspended")
+        } catch (ex) {
+            logger.error("Users.suspend", user.id, user.displayName, ex)
         }
     }
 

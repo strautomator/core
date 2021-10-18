@@ -26,8 +26,9 @@ export class StravaAthletes {
     /**
      * Get profile info for the logged user.
      * @param tokens Strava access tokens.
+     * @param deauthCheck Is it a check to validate if user is still authorized?
      */
-    getAthlete = async (tokens: StravaTokens): Promise<StravaProfile> => {
+    getAthlete = async (tokens: StravaTokens, deauthCheck?: boolean): Promise<StravaProfile> => {
         logger.debug("Strava.getAthlete")
 
         try {
@@ -37,6 +38,10 @@ export class StravaAthletes {
             logger.info("Strava.getAthlete", `ID ${profile.id}`, profile.username || profile.firstName || profile.lastName)
             return profile
         } catch (ex) {
+            if (deauthCheck && ex.response && ex.response.status == 401) {
+                return null
+            }
+
             const tokenLog = []
             if (tokens.accessToken) tokenLog.push(`Access *${tokens.accessToken.substring(10, 13)}*`)
             if (tokens.refreshToken) tokenLog.push(`Refresh *${tokens.refreshToken.substring(10, 13)}*`)
@@ -66,7 +71,7 @@ export class StravaAthletes {
         }
     }
 
-    // SET ATHLETE DATA
+    // FTP
     // --------------------------------------------------------------------------
 
     /**
@@ -114,9 +119,6 @@ export class StravaAthletes {
             logger.error("Strava.setAthleteFtp", ex)
         }
     }
-
-    // HELPERS
-    // --------------------------------------------------------------------------
 
     /**
      * Estimate the user's FTP based on the passed activities.
@@ -222,6 +224,27 @@ export class StravaAthletes {
         } catch (ex) {
             logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, ex)
             throw ex
+        }
+    }
+
+    // AUTH
+    // --------------------------------------------------------------------------
+
+    /**
+     * Check if the specified athlete still has the Strautomator app authorized.
+     * @param userId The user ID.
+     */
+    deauthCheck = async (userId: string): Promise<void> => {
+        try {
+            const user = await users.getById(userId)
+            const athlete = await this.getAthlete(user.stravaTokens, true)
+
+            // If athlete was returned as null, means it was deauthorized.
+            if (!athlete) {
+                await users.suspend(user)
+            }
+        } catch (ex) {
+            logger.error("Strava.deauthCheck", userId)
         }
     }
 }
