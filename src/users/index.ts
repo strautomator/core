@@ -524,9 +524,8 @@ export class Users {
      */
     suspend = async (user: UserData): Promise<void> => {
         try {
-            await this.update({id: user.id, suspended: true})
-
-            logger.info("Users.suspend", user.id, user.displayName, "Suspended")
+            await database.merge("users", {id: user.id, suspended: true})
+            logger.info("Users.suspend", user.id, user.displayName)
         } catch (ex) {
             logger.error("Users.suspend", user.id, user.displayName, ex)
         }

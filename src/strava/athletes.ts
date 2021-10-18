@@ -244,7 +244,7 @@ export class StravaAthletes {
                 await users.suspend(user)
             }
         } catch (ex) {
-            logger.error("Strava.deauthCheck", userId)
+            logger.error("Strava.deauthCheck", userId, ex)
         }
     }
 }
