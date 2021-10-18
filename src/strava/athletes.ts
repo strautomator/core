@@ -37,7 +37,11 @@ export class StravaAthletes {
             logger.info("Strava.getAthlete", `ID ${profile.id}`, profile.username || profile.firstName || profile.lastName)
             return profile
         } catch (ex) {
-            logger.error("Strava.getAthlete", ex)
+            const tokenLog = []
+            if (tokens.accessToken) tokenLog.push(`Access *${tokens.accessToken.substring(10, 13)}*`)
+            if (tokens.refreshToken) tokenLog.push(`Refresh *${tokens.refreshToken.substring(10, 13)}*`)
+
+            logger.error("Strava.getAthlete", tokenLog.length > 0 ? tokenLog.join(", ") : "No tokens", ex)
             throw ex
         }
     }
