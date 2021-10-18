@@ -20,8 +20,8 @@
         "name": "Strava",
         // Default event duration in minutes (ie. for past club events).
         "defaultDurationMinutes": 15,
-        // Calendars are cached for a maximum of 5 days, even if there were no new activities. Value in seconds.
-        "maxCacheDuration": 432000,
+        // Calendars are cached for a maximum of 4 days, even if there were no new activities. Value in seconds.
+        "maxCacheDuration": 345600,
         // Default TTL (refresh interval) is once every 4 hours. Value in seconds.
         "ttl": 14400
     },
