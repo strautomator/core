@@ -1,6 +1,20 @@
 // Strautomator Core: Maps types
 
 /**
+ * Detailed address with neighborhood, city, state and country.
+ */
+export interface MapAddress {
+    /** Neighborhood. */
+    neighborhood?: string
+    /** City name. */
+    city?: string
+    /** State name. */
+    state?: string
+    /** Country name. */
+    country?: string
+}
+
+/**
  * Latitude and longitude for a specific address.
  */
 export interface MapCoordinates {

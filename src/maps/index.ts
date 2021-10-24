@@ -1,8 +1,8 @@
 // Strautomator Core: Maps
 
-import {Client, GeocodeRequest} from "@googlemaps/google-maps-services-js"
+import {Client, GeocodeRequest, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
 import {Polyline} from "./Polyline"
-import {MapCoordinates} from "./types"
+import {MapAddress, MapCoordinates} from "./types"
 import cache = require("bitecache")
 import jaul = require("jaul")
 import logger = require("anyhow")
@@ -77,7 +77,7 @@ export class Maps {
             }
 
             // Location stored on cache?
-            const cached = cache.get("maps", `${region}-${addressId}`)
+            const cached = cache.get("maps", `${region || "global"}-${addressId}`)
             if (cached) return cached
 
             // Geo request parameters.
@@ -125,6 +125,73 @@ export class Maps {
             return []
         } catch (ex) {
             logger.error("Maps.getGeocode", address, region, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get the reverse geocode data for the specified coordinates.
+     * @param coordinates Lat / long coordinates to be queried.
+     */
+    getReverseGeocode = async (coordinates: [number, number]): Promise<MapAddress> => {
+        logger.debug("Maps.getReverseGeocode", coordinates)
+
+        try {
+            if (!coordinates && coordinates.length != 2) {
+                throw new Error("Invalid or missing coordinates")
+            }
+
+            // Cache coordinates with a precision of 111 meters.
+            const cacheId = `reverse-${coordinates.map((c) => c.toFixed(3)).join("-")}`
+            const logCoordinates = coordinates.join(", ")
+
+            // Location stored on cache?
+            const cached = cache.get("maps", cacheId)
+            if (cached) return cached
+
+            // Geo request parameters.
+            const geoRequest: ReverseGeocodeRequest = {
+                params: {
+                    latlng: coordinates,
+                    key: settings.maps.api.key
+                }
+            }
+
+            // Get geocode from Google Maps.
+            const res = await this.client.reverseGeocode(geoRequest)
+
+            if (res.data && res.data.results && res.data.results.length > 0) {
+                const components = res.data.results[0].address_components
+
+                // Get relevant address components.
+                const neighborhood = components.find((c) => c.types.includes("neighborhood" as any) || c.types.includes("sublocality" as any))
+                const city = components.find((c) => c.types.includes("locality" as any) || c.types.includes("administrative_area_level_2" as any))
+                const state = components.find((c) => c.types.includes("administrative_area_level_1" as any))
+                const country = components.find((c) => c.types.includes("country" as any))
+
+                // Build the resulting MapAddress.
+                const address: MapAddress = {}
+                if (neighborhood) address.neighborhood = neighborhood.long_name
+                if (city) address.city = city.long_name
+                if (state) address.state = state.long_name
+                if (country) address.country = country.long_name
+
+                cache.set("maps", cacheId, address)
+                logger.info("Maps.getReverseGeocode", logCoordinates, Object.values(address).join(", "))
+
+                return address
+            }
+
+            // Error returned by the Maps API?
+            if (res.data && res.data.error_message) {
+                throw new Error(res.data.error_message)
+            }
+
+            logger.info("Maps.getReverseGeocode", logCoordinates, `No results for: ${logCoordinates}`)
+            return null
+        } catch (ex) {
+            const logCoordinates = coordinates ? coordinates.join(", ") : "[]"
+            logger.error("Maps.getReverseGeocode", logCoordinates, ex)
             throw ex
         }
     }
