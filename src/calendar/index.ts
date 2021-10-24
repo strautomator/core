@@ -8,6 +8,7 @@ import _ = require("lodash")
 import crypto = require("crypto")
 import database from "../database"
 import eventManager from "../eventmanager"
+import maps from "../maps"
 import strava from "../strava"
 import ical, {ICalCalendar} from "ical-generator"
 import jaul = require("jaul")
@@ -130,7 +131,7 @@ export class Calendar {
             const minDate = nowUtc.hour(0).minute(0).subtract(pastDays, "days")
             const maxDate = nowUtc.hour(0).minute(0).add(futureDays, "days")
             const dateFrom = options.dateFrom ? dayjs(options.dateFrom) : minDate
-            const dateTo = options.dateFrom ? dayjs(options.dateFrom) : maxDate
+            const dateTo = options.dateTo ? dayjs(options.dateTo) : maxDate
 
             // Date validation checks.
             if (minDate.isAfter(dateFrom)) {
@@ -377,7 +378,27 @@ export class Calendar {
 
                     // Geo location available?
                     if (activity.locationEnd && activity.locationEnd.length > 0) {
-                        event.location(activity.locationEnd.join(", "))
+                        let locationString: string = activity.locationEnd.join(", ")
+
+                        // PRO users will have the location parsed into an address.
+                        if (user.isPro) {
+                            try {
+                                const address = await maps.getReverseGeocode(activity.locationEnd)
+                                delete address.country
+
+                                // City available? Then we don't need to add the country,
+                                // so we keep the string output small.
+                                if (address.city) {
+                                    delete address.country
+                                }
+
+                                locationString = Object.values(address).join(", ")
+                            } catch (locationEx) {
+                                logger.error("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Can't fetch address for ${locationString}`)
+                            }
+                        }
+
+                        event.location(locationString)
                     }
                 } catch (innerEx) {
                     logger.error("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
