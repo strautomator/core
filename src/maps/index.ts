@@ -141,8 +141,8 @@ export class Maps {
                 throw new Error("Invalid or missing coordinates")
             }
 
-            // Cache coordinates with a precision of 111 meters.
-            const cacheId = `reverse-${coordinates.map((c) => c.toFixed(3)).join("-")}`
+            // Cache coordinates with a precision of 1km.
+            const cacheId = `reverse-${coordinates.map((c) => c.toFixed(settings.maps.cachePrecision)).join("-")}`
             const logCoordinates = coordinates.join(", ")
 
             // Location stored on cache?

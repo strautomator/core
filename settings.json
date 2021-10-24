@@ -103,6 +103,8 @@
     "maps": {
         // Cache geolocation results for 30 minutes. Value set in seconds.
         "cacheDuration": 1800,
+        // Geocoded results are cached down to a precision of around 1km (2 decimal digits).
+        "cachePrecision": 2,
         // Circle color, will also be used as a fill color with half opacity.
         "circleColor": "0x0066CC",
         // Default marker style and color.
