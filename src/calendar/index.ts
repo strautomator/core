@@ -130,7 +130,8 @@ export class Calendar {
             const futureDays = user.isPro ? settings.plans.pro.futureCalendarDays : settings.plans.free.futureCalendarDays
             const minDate = nowUtc.hour(0).minute(0).subtract(pastDays, "days")
             const maxDate = nowUtc.hour(0).minute(0).add(futureDays, "days")
-            const dateFrom = options.dateFrom ? dayjs(options.dateFrom) : minDate
+            const defaultFromDate = nowUtc.subtract(settings.plans.free.pastCalendarDays, "days")
+            const dateFrom = options.dateFrom ? dayjs(options.dateFrom) : defaultFromDate
             const dateTo = options.dateTo ? dayjs(options.dateTo) : maxDate
 
             // Date validation checks.
