@@ -21,7 +21,7 @@ export class Database {
     /**
      * Firestore client.
      */
-    private firestore: Firestore
+    firestore: Firestore
 
     // INIT
     // --------------------------------------------------------------------------
