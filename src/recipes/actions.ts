@@ -174,6 +174,25 @@ export const hideHomeAction = async (user: UserData, activity: StravaActivity, r
 }
 
 /**
+ * Set the activity map style.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param action The action details.
+ */
+export const mapStyleAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+    try {
+        activity.mapStyle = action.value
+        activity.updatedFields.push("mapStyle")
+
+        return true
+    } catch (ex) {
+        failedAction(user, activity, recipe, action, ex)
+        return false
+    }
+}
+
+/**
  * Set an activity's gear.
  * @param user The activity owner.
  * @param activity The Strava activity details.

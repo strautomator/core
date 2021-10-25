@@ -272,6 +272,8 @@ export class StravaActivities {
                     targetLog = `${field}=${activity.gear.name}`
                 } else if (field == "hideHome") {
                     targetField = "hide_from_home"
+                } else if (field == "mapStyle") {
+                    targetField = "selected_polyline_style"
                 }
 
                 // Set data and update result log.

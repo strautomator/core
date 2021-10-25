@@ -70,6 +70,8 @@ export interface StravaActivity {
     device?: string
     /** Was the activity created manually? */
     manual?: boolean
+    /** Activity map style. */
+    mapStyle?: StravaMapStyle
     /** Activity icon (emoticon). */
     icon?: string
     /** Fields that were updated by Strautomator (internal use only). */
@@ -333,4 +335,21 @@ export enum StravaSport {
     Windsurf = "Windsurf",
     Workout = "Workout",
     Yoga = "Yoga"
+}
+
+/**
+ * Strava activity map styles.
+ */
+export enum StravaMapStyle {
+    Default = "default",
+    SurfaceType = "surface_type",
+    Elevation = "elevation",
+    Gradient = "gradient",
+    HeartRate = "heartrate",
+    Pace = "pace",
+    Speed = "speed",
+    Temperature = "temperature",
+    Time = "time",
+    BlackLivesMatter = "black_lives_matter",
+    Pride = "pride"
 }
