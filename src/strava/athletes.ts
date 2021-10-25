@@ -237,11 +237,14 @@ export class StravaAthletes {
     deauthCheck = async (userId: string): Promise<void> => {
         try {
             const user = await users.getById(userId)
-            const athlete = await this.getAthlete(user.stravaTokens, true)
 
-            // If athlete was returned as null, means it was deauthorized.
-            if (!athlete) {
-                await users.suspend(user)
+            if (user) {
+                const athlete = await this.getAthlete(user.stravaTokens, true)
+
+                // If athlete was returned as null, means it was deauthorized.
+                if (!athlete) {
+                    await users.suspend(user)
+                }
             }
         } catch (ex) {
             logger.error("Strava.deauthCheck", userId, ex)
