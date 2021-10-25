@@ -385,7 +385,7 @@ export class Calendar {
                         if (user.isPro) {
                             try {
                                 const address = await maps.getReverseGeocode(activity.locationEnd)
-                                delete address.country
+                                delete address.state
 
                                 // City available? Then we don't need to add the country,
                                 // so we keep the string output small.
