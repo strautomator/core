@@ -78,7 +78,10 @@ export class Maps {
 
             // Location stored on cache?
             const cached = cache.get("maps", `${region || "global"}-${addressId}`)
-            if (cached) return cached
+            if (cached) {
+                logger.debug("Maps.getGeocode", address, `From cache: ${cached.length} results`)
+                return cached
+            }
 
             // Geo request parameters.
             const geoRequest: GeocodeRequest = {
@@ -142,12 +145,15 @@ export class Maps {
             }
 
             // Cache coordinates with a precision of 1km.
-            const cacheId = `reverse-${coordinates.map((c) => c.toFixed(settings.maps.cachePrecision)).join("-")}`
+            const cacheId = `reverse-${coordinates.map((c) => (Math.round(c * 100) / 100).toFixed(settings.maps.cachePrecision)).join("-")}`
             const logCoordinates = coordinates.join(", ")
 
             // Location stored on cache?
             const cached = cache.get("maps", cacheId)
-            if (cached) return cached
+            if (cached) {
+                logger.debug("Maps.getReverseGeocode", logCoordinates, `From cache: ${Object.values(cached).join(", ")}`)
+                return cached
+            }
 
             // Geo request parameters.
             const geoRequest: ReverseGeocodeRequest = {
