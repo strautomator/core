@@ -1,6 +1,7 @@
 // Strautomator Core: Mailer
 
-import {EmailSendingOptions, EmailBaseTemplate, EmailTemplates} from "./types"
+import {EmailSendingOptions} from "./types"
+import {EmailBaseTemplate, EmailTemplates} from "./templates"
 import jaul = require("jaul")
 import logger = require("anyhow")
 import nodemailer = require("nodemailer")
