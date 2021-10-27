@@ -12,6 +12,8 @@ export interface StravaActivity {
     name: string
     /** Activity description or details. */
     description?: string
+    /** Private note (visible to the owner only). */
+    privateNote?: string
     /** Marked as coomute? */
     commute?: boolean
     /** Activity hidden on the home feed? */
@@ -64,12 +66,18 @@ export interface StravaActivity {
     cadenceAvg?: number
     /** Calories. */
     calories?: number
+    /** Relative effort (previously called suffer score). */
+    relativeEffort?: number
+    /** Perceived exertion, where 1 is easy and 10 is max effort.  */
+    perceivedExertion?: number
     /** Average temperature. */
     temperature?: number
     /** Device name. */
     device?: string
     /** Was the activity created manually? */
     manual?: boolean
+    /** Has photos? */
+    hasPhotos?: boolean
     /** Activity map style. */
     mapStyle?: StravaMapStyle
     /** Activity icon (emoticon). */

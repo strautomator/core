@@ -95,7 +95,8 @@ export class StravaActivities {
 
         try {
             const tokens = user.stravaTokens
-            const data = await api.get(tokens, `activities/${id}?include_all_efforts=false`)
+            const data = await api.get(tokens, `activities/${id}?include_all_efforts=0`)
+            console.dir(data)
             const activity = toStravaActivity(user, data)
 
             // Activity's gear was set?
@@ -195,7 +196,7 @@ export class StravaActivities {
         // If user has a custom linksOn, it will add the linkback even if user has PRO status.
         const defaultLinksOn = user.isPro ? 0 : settings.plans.free.linksOn
         const linksOn = user.preferences ? user.preferences.linksOn || defaultLinksOn : defaultLinksOn
-        const shouldAddLink = (!user.isPro || linksOn > 0) && user.activityCount > 0 && user.activityCount % linksOn == 0
+        const shouldAddLink = (!user.isPro || linksOn > 0) && user.activityCount > 0 && user.activityCount % linksOn == 0 && settings.app.url
 
         try {
             if (!activity.updatedFields || activity.updatedFields.length == 0) {
@@ -274,6 +275,8 @@ export class StravaActivities {
                     targetField = "hide_from_home"
                 } else if (field == "mapStyle") {
                     targetField = "selected_polyline_style"
+                } else if (field == "privateNote") {
+                    targetField = "private_note"
                 }
 
                 // Set data and update result log.

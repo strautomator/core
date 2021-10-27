@@ -66,18 +66,21 @@ export const recipePropertyList = [
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
     {value: "polyline", text: "Passes on location", type: "location", operators: recipeOperatorList.location},
     {value: "hasPower", text: "Has a power meter", type: "boolean", operators: recipeOperatorList.is},
-    {value: "wattsAvg", text: "Average power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},
-    {value: "wattsWeighted", text: "Normalized power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},
-    {value: "wattsMax", text: "Max power", type: "number", operators: recipeOperatorList.number, suffix: "watts"},
-    {value: "hrAvg", text: "Average heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm"},
-    {value: "hrMax", text: "Max heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm"},
-    {value: "calories", text: "Calories", type: "number", operators: recipeOperatorList.number, suffix: "kcal"},
+    {value: "wattsAvg", text: "Average power", type: "number", operators: recipeOperatorList.number, suffix: "watts", max: 5000},
+    {value: "wattsWeighted", text: "Normalized power", type: "number", operators: recipeOperatorList.number, suffix: "watts", max: 5000},
+    {value: "wattsMax", text: "Max power", type: "number", operators: recipeOperatorList.number, suffix: "watts", max: 5000},
+    {value: "hrAvg", text: "Average heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm", max: 299},
+    {value: "hrMax", text: "Max heart rate", type: "number", operators: recipeOperatorList.number, suffix: "bpm", max: 299},
+    {value: "calories", text: "Calories", type: "number", operators: recipeOperatorList.number, suffix: "kcal", max: 99999},
+    {value: "relativeEffort", text: "Relative effort", type: "number", operators: recipeOperatorList.number, max: 99999},
+    {value: "perceivedExertion", text: "Perceived exertion", type: "number", operators: recipeOperatorList.number, max: 10},
     {value: "name", text: "Name", type: "text", operators: recipeOperatorList.text},
     {value: "device", text: "GPS device name", type: "text", operators: recipeOperatorList.text},
     {value: "temperature", text: "Device temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.temperature", text: "Weather temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "m/s", impSuffix: "mph"},
-    {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%"}
+    {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%"},
+    {value: "hasPhotos", text: "Has photos", type: "boolean", operators: recipeOperatorList.text}
 ]
 
 /**
@@ -92,7 +95,8 @@ export const recipeActionList = [
     {value: "description", text: "Set activity description"},
     {value: "prependDescription", text: "Prepend to activity description"},
     {value: "appendDescription", text: "Append to activity description"},
-    {value: "hideHome", text: "Mute (activity hidden on home feeds)"},
+    {value: "privateNote", text: "Set private note"},
     {value: "mapStyle", text: "Set map style"},
+    {value: "hideHome", text: "Mute (activity hidden on home feeds)"},
     {value: "webhook", text: "Webhook URL"}
 ]

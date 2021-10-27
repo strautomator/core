@@ -37,13 +37,23 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         hrMax: data.max_heartrate ? Math.round(data.max_heartrate) : null,
         cadenceAvg: data.average_cadence || null,
         calories: data.calories || data.kilojoules || null,
+        relativeEffort: data.suffer_score || null,
         device: data.device_name,
         manual: data.manual,
+        hasPhotos: data.photos && data.photos.count > 0 ? true : false,
         updatedFields: []
     }
 
     // Activity has location data?
     activity.hasLocation = (activity.locationStart && activity.locationStart.length > 0) || (activity.locationEnd && activity.locationEnd.length > 0)
+
+    // Extra optional fields.
+    if (data.private_note) {
+        activity.privateNote = data.private_note
+    }
+    if (data.perceived_exertion) {
+        activity.perceivedExertion = data.perceived_exertion
+    }
 
     // Strava returns offset in seconds, but we store in minutes.
     if (activity.utcStartOffset) {
