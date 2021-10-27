@@ -109,6 +109,9 @@ export const startup = async (quickStart?: boolean) => {
         if (!settings.gcp.projectId) {
             throw new Error("Missing the mandatory gcp.projectId setting")
         }
+        if (!settings.app.url) {
+            throw new Error("Missing the mandatory app.url setting")
+        }
 
         // Get extra settings from Google Cloud Storage? To do so you must set the correct
         // bucket and filename on the settings, or via environment variables.
