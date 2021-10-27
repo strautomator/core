@@ -602,6 +602,9 @@ export class GearWear {
             if (component.alertDistance > 0) alertDetails.push(`${component.alertDistance} ${units}`)
             if (component.alertTime > 0) alertDetails.push(`${Math.round(component.alertTime / 3600)} hours`)
 
+            // Get affiliate link based on component name (only alphanumeric characters allowed).
+            const affiliateQuery = encodeURI(`${bike ? "bike" : "shoes"} ${component.name}`.replace(/[^\w\s]/gi, ""))
+
             // Set correct template and keywords to be replaced.
             const template = reminder ? "GearWearReminder" : "GearWearAlert"
             const data = {
@@ -612,7 +615,9 @@ export class GearWear {
                 component: component.name,
                 currentDistance: component.currentDistance,
                 currentTime: Math.round(hours * 10) / 10,
-                alertDetails: alertDetails.join(", ")
+                alertDetails: alertDetails.join(", "),
+                resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(component.name)}`,
+                affiliateLink: `https://links.devv.com/s/${affiliateQuery}`
             }
 
             // Dispatch email to user.
