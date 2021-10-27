@@ -100,6 +100,12 @@ export class Recipes {
                         throw new Error(`Condition friendly value is too long (max length is ${settings.recipes.maxLength.conditionValue})`)
                     }
 
+                    // Check numbers.
+                    const propSpecs = recipePropertyList.find((p) => p.value == condition.property)
+                    if (propSpecs && propSpecs.type == "number" && isNaN(condition.value as any)) {
+                        throw new Error(`Condition ${condition.property} must be a valid number`)
+                    }
+
                     // Check for non-schema fields.
                     const keys = Object.keys(condition)
                     for (let key of keys) {
