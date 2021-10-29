@@ -414,12 +414,32 @@ export class StravaActivities {
     /**
      * Get saved processed activities for the specified user.
      * @param user The activities owner.
+     * @param dateFrom Activities processed since date.
+     * @param dateTo Activities processed up to date.
      * @param limit Limit how many results should be returned?
+     *
      */
-    getProcessedActivites = async (user: UserData, limit?: number): Promise<StravaProcessedActivity[]> => {
+    getProcessedActivites = async (user: UserData, dateFrom?: Date, dateTo?: Date, limit?: number): Promise<StravaProcessedActivity[]> => {
         try {
-            const activities = await database.search("activities", ["user.id", "==", user.id], ["dateProcessed", "desc"], limit)
-            logger.info("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, `Got ${activities.length} processed activities`)
+            let logFrom = ""
+            let logTo = ""
+            let logLimit = ""
+
+            const where: any[] = [["user.id", "==", user.id]]
+            if (dateFrom) {
+                where.push(["dateProcessed", ">=", dateFrom])
+                logFrom = ` from ${dayjs(dateFrom).format("YYYY-MM-DD")}`
+            }
+            if (dateTo) {
+                where.push(["dateProcessed", "<=", dateTo])
+                logTo = ` to ${dayjs(dateTo).format("YYYY-MM-DD")}`
+            }
+            if (limit) {
+                logLimit = `, limit ${logLimit}`
+            }
+
+            const activities = await database.search("activities", where, ["dateProcessed", "desc"], limit)
+            logger.info("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, `Got ${activities.length} activities${logFrom}${logTo}${logLimit}`)
 
             return activities
         } catch (ex) {
