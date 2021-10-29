@@ -69,6 +69,8 @@ export interface UserPreferences {
     activityHashtag?: boolean
     /** Language used on automations. Lowercased 2 letter country code. */
     language?: string
+    /** Delay processing activities? */
+    delayedProcessing?: boolean
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
     /** Reset recipe counters every year? Set using the format MM-DD, or false to disable. */
