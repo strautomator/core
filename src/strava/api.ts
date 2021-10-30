@@ -297,6 +297,11 @@ export class StravaAPI {
                 eventManager.emit("Strava.tokenFailure", token)
             }
 
+            // Has a error response data? Add it to the exception message.
+            if (ex.response && ex.response.data) {
+                ex.message = ex.message ? `${ex.message} - ${ex.response.data}` : ex.response.data
+            }
+
             logger.debug("Strava.makeRequest", path, method, ex)
             throw ex
         }
