@@ -139,7 +139,7 @@ export const startup = async (quickStart?: boolean) => {
             }
         }
     } catch (ex) {
-        logger.error("Strautomator.startup", "Failed to load settings, will exit...")
+        logger.error("Strautomator.startup", ex, "Failed to load settings, will exit")
         return process.exit(1)
     }
 
