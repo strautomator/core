@@ -28,7 +28,7 @@
     "database": {
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.
-        "cacheDuration": 3,
+        "cacheDuration": 2,
         // Encryption options.
         "crypto": {
             "algorithm": "aes-256-cbc",
@@ -250,7 +250,9 @@
             "maxWeeks": 52,
             // FTP can be updated only once every 24 hours.
             "sinceLastHours": 24
-        }
+        },
+        // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
+        "delayedProcessingInterval": 600
     },
     "twitter": {
         // Only 10% chances of posting interesting activities on Twitter.

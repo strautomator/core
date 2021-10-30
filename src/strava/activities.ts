@@ -26,6 +26,11 @@ export class StravaActivities {
         return this._instance || (this._instance = new this())
     }
 
+    /**
+     * Holds the date of the oldest queued activity to be processed.
+     */
+    oldestQueueDate: Date = null
+
     // GET ACTIVITIES
     // --------------------------------------------------------------------------
 
@@ -297,12 +302,105 @@ export class StravaActivities {
     }
 
     /**
+     * Add activity to the collection of activities to be processed later.
+     * @param user The activity's owner (user).
+     * @param activityId The activity's unique ID.
+     */
+    queueActivity = async (user: UserData, activityId: number): Promise<void> => {
+        logger.debug("Strava.queueActivity", user.id, activityId)
+
+        // User suspended? Stop here.
+        if (user.suspended) {
+            logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
+            return
+        }
+
+        // Add activity to the queue to be processed later.
+        try {
+            const activity: Partial<StravaProcessedActivity> = {
+                id: activityId,
+                dateQueued: new Date(),
+                user: {id: user.id, displayName: user.displayName}
+            }
+
+            await database.set("activities", activity, activity.id.toString())
+            logger.info("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} queued`)
+
+            // If no queued activities were added since the last processed queue, set current date as the oldest.
+            if (!this.oldestQueueDate) {
+                this.oldestQueueDate = new Date()
+            }
+        } catch (ex) {
+            logger.error("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Check if the oldest activity queued in memory has reached the time threshold,
+     * and if so, process all relevant queued activities.
+     */
+    checkQueuedActivities = async (): Promise<void> => {
+        const minDate = dayjs().subtract(settings.strava.delayedProcessingInterval, "seconds")
+
+        if (minDate.isAfter(this.oldestQueueDate)) {
+            await this.processQueuedActivities()
+        } else {
+            const dateLog = this.oldestQueueDate ? this.oldestQueueDate.toString() : "none"
+            logger.debug("Strava.checkQueuedActivities", "Nothing to be processed at the moment", `oldestQueueDate = ${dateLog}`)
+        }
+    }
+
+    /**
+     * Get and process queued activities to be processed with a delay.
+     * @param intervalSeconds Only get activities that were added that many seconds ago.
+     */
+    processQueuedActivities = async (intervalSeconds?: number): Promise<void> => {
+        if (!intervalSeconds) intervalSeconds = settings.strava.delayedProcessingInterval
+
+        // Reset the oldest queue date.
+        this.oldestQueueDate = null
+
+        const minDate = dayjs().subtract(intervalSeconds, "seconds")
+        const logDate = `Since ${minDate.format("YYYY-MM-DD HH:mm:ss")}`
+        const usersCache: {[id: string]: UserData} = {}
+
+        try {
+            const where = [["dateQueued", "<=", minDate.toDate()]]
+            const activities: StravaProcessedActivity[] = await database.search("activities", where)
+
+            // No activities to be processed? Stop here.
+            if (activities.length == 0) {
+                logger.debug("Strava.processQueuedActivities", logDate, `No queued activities to be processed`)
+                return
+            }
+
+            logger.info("Strava.processQueuedActivities", logDate, `Got ${activities.length} queued activities`)
+
+            // Process each of the queued activities.
+            for (let activity of activities) {
+                try {
+                    if (!usersCache[activity.user.id]) {
+                        usersCache[activity.user.id] = await users.getById(activity.user.id)
+                    }
+
+                    await this.processActivity(usersCache[activity.user.id], activity.id, true)
+                } catch (activityEx) {
+                    logger.warn("Strava.processQueuedActivities", logDate, `Failed to process queued activity ${activity.id} from user ${activity.user.id}`)
+                }
+            }
+        } catch (ex) {
+            logger.error("Strava.processQueuedActivities", logDate, ex)
+        }
+    }
+
+    /**
      * Process activity event pushed by Strava.
      * @param user The activity's owner (user).
      * @param activityId The activity's unique ID.
-     * @param retryCount How many times it tried to process the activity.
+     * @param queued Was the activity queued to be processed? Defaults to false (real time).
      */
-    processActivity = async (user: UserData, activityId: number): Promise<StravaProcessedActivity> => {
+    processActivity = async (user: UserData, activityId: number, queued?: boolean): Promise<StravaProcessedActivity> => {
         logger.debug("Strava.processActivity", user.id, activityId)
 
         let saveError
@@ -357,7 +455,7 @@ export class StravaActivities {
 
             // Activity updated? Save to Strava and increment activity counter.
             if (recipeIds.length > 0) {
-                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `Recipes: ${recipeIds.join(", ")}`)
+                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`)
 
                 // Remove duplicates from list of updated fields.
                 activity.updatedFields = _.uniq(activity.updatedFields)
@@ -426,6 +524,7 @@ export class StravaActivities {
             let logLimit = ""
 
             const where: any[] = [["user.id", "==", user.id]]
+
             if (dateFrom) {
                 where.push(["dateProcessed", ">=", dateFrom])
                 logFrom = ` from ${dayjs(dateFrom).format("YYYY-MM-DD")}`

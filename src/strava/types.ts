@@ -102,8 +102,6 @@ export interface StravaProcessedActivity {
     dateStart: Date
     /** Original UTC offset (timezone) of the activity. */
     utcStartOffset: number
-    /** Processing date. */
-    dateProcessed: Date
     /** User details for this activity. */
     user: {
         /** User ID. */
@@ -130,6 +128,12 @@ export interface StravaProcessedActivity {
     linkback?: boolean
     /** If failed, this will contain the error description. */
     error?: string
+    /** Is the activity queued to be processed? */
+    queued?: boolean
+    /** Queued date. */
+    dateQueued?: Date
+    /** Processing date. */
+    dateProcessed?: Date
 }
 
 /**
