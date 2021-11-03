@@ -89,7 +89,7 @@ export interface StravaActivity {
 }
 
 /**
- * Processed activity details to be saved on the database.
+ * Processed or queued activity details to be saved on the database.
  */
 export interface StravaProcessedActivity {
     /** Activity ID. */

@@ -181,6 +181,150 @@ export class StravaActivities {
         }
     }
 
+    // ACTIVITY QUEUE
+    // --------------------------------------------------------------------------
+
+    /**
+     * Add activity to the collection of activities to be processed later.
+     * @param user The activity's owner (user).
+     * @param activityId The activity's unique ID.
+     */
+    queueActivity = async (user: UserData, activityId: number): Promise<void> => {
+        logger.debug("Strava.queueActivity", user.id, activityId)
+
+        // User suspended? Stop here.
+        if (user.suspended) {
+            logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
+            return
+        }
+
+        // Add activity to the queue to be processed later.
+        try {
+            const activity: Partial<StravaProcessedActivity> = {
+                id: activityId,
+                dateQueued: new Date(),
+                user: {id: user.id, displayName: user.displayName}
+            }
+
+            await database.set("activities", activity, activity.id.toString())
+            logger.info("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} queued`)
+
+            // If no queued activities were added since the last processed queue, set current date as the oldest.
+            if (!this.oldestQueueDate) {
+                this.oldestQueueDate = new Date()
+            }
+        } catch (ex) {
+            logger.error("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Check if the oldest activity queued in memory has reached the time threshold,
+     * and if so, process all relevant queued activities.
+     */
+    checkQueuedActivities = async (): Promise<void> => {
+        const minDate = dayjs().subtract(settings.strava.delayedProcessingInterval, "seconds")
+
+        if (minDate.isAfter(this.oldestQueueDate)) {
+            await this.processQueuedActivities()
+        } else {
+            const dateLog = this.oldestQueueDate ? this.oldestQueueDate.toString() : "none"
+            logger.debug("Strava.checkQueuedActivities", "Nothing to be processed at the moment", `oldestQueueDate = ${dateLog}`)
+        }
+    }
+
+    /**
+     * Get queued activities, with an optional minimum interval.
+     * @param beforeDate Only get activities that were queued before that specified date.
+     */
+    getQueuedActivities = async (beforeDate: Date): Promise<StravaProcessedActivity[]> => {
+        const logDate = `Before ${dayjs(beforeDate).format("YYYY-MM-DD HH:mm:ss")}`
+
+        // Get queued activities from the database.
+        try {
+            const where = [["dateQueued", "<=", beforeDate]]
+            const activities: StravaProcessedActivity[] = await database.search("activities", where)
+
+            logger.info("Strava.getQueuedActivities", logDate, `Got ${activities.length || "no"} queued activities`)
+
+            return activities
+        } catch (ex) {
+            logger.error("Strava.getQueuedActivities", logDate, ex)
+        }
+    }
+
+    /**
+     * Get and process queued activities to be processed with a delay.
+     * @param intervalSeconds Only get activities that were queued that many seconds ago.
+     */
+    processQueuedActivities = async (): Promise<void> => {
+        const usersCache: {[id: string]: UserData} = {}
+
+        // Reset oldest queued activity date.
+        this.oldestQueueDate = null
+
+        try {
+            const beforeDate = dayjs().subtract(settings.strava.delayedProcessingInterval, "seconds").toDate()
+            const activities = await this.getQueuedActivities(beforeDate)
+            let processedCount = 0
+
+            // No activities to be processed? Stop here.
+            if (activities.length == 0) {
+                logger.debug("Strava.processQueuedActivities", `No queued activities to be processed`)
+                return
+            }
+
+            // Process each of the queued activities.
+            for (let activity of activities) {
+                try {
+                    if (!usersCache[activity.user.id]) {
+                        usersCache[activity.user.id] = await users.getById(activity.user.id)
+                    }
+
+                    const processed = await this.processActivity(usersCache[activity.user.id], activity.id, true)
+
+                    // Queued activity had no matching recipes? Delete it.
+                    if (!processed) {
+                        await this.deleteQueuedActivity(usersCache[activity.user.id], activity.id)
+                    } else {
+                        processedCount++
+                    }
+                } catch (activityEx) {
+                    logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${activity.id} from user ${activity.user.id}`)
+                }
+            }
+
+            if (processedCount > 0) {
+                logger.info("Strava.processQueuedActivities", `Processed ${processedCount} out of ${activities.length} queued activities`)
+            } else {
+                logger.debug("Strava.processQueuedActivities", `No processed activities out of ${activities.length} queued activities`)
+            }
+        } catch (ex) {
+            logger.error("Strava.processQueuedActivities", ex)
+        }
+    }
+
+    /**
+     * Delete the queued or processed activity from the database.
+     * @param user The activity's owner.
+     * @param activityId The Strava activity ID.
+     */
+    deleteQueuedActivity = async (user: UserData, activityId: number): Promise<void> => {
+        try {
+            const count = await database.delete("activities", activityId.toString())
+
+            if (count > 0) {
+                logger.info("Strava.deleteQueuedActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} deleted`)
+            } else {
+                logger.warn("Strava.deleteQueuedActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} not previously saved`)
+            }
+        } catch (ex) {
+            logger.error("Strava.deleteQueuedActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
+            throw ex
+        }
+    }
+
     // SET AND PROCESS ACTIVITIES
     // --------------------------------------------------------------------------
 
@@ -298,99 +442,6 @@ export class StravaActivities {
         } catch (ex) {
             logger.error("Strava.setActivity", `${activity.id}, from user ${user.id}`, logResult.join(", "), ex)
             throw ex
-        }
-    }
-
-    /**
-     * Add activity to the collection of activities to be processed later.
-     * @param user The activity's owner (user).
-     * @param activityId The activity's unique ID.
-     */
-    queueActivity = async (user: UserData, activityId: number): Promise<void> => {
-        logger.debug("Strava.queueActivity", user.id, activityId)
-
-        // User suspended? Stop here.
-        if (user.suspended) {
-            logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
-            return
-        }
-
-        // Add activity to the queue to be processed later.
-        try {
-            const activity: Partial<StravaProcessedActivity> = {
-                id: activityId,
-                dateQueued: new Date(),
-                user: {id: user.id, displayName: user.displayName}
-            }
-
-            await database.set("activities", activity, activity.id.toString())
-            logger.info("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} queued`)
-
-            // If no queued activities were added since the last processed queue, set current date as the oldest.
-            if (!this.oldestQueueDate) {
-                this.oldestQueueDate = new Date()
-            }
-        } catch (ex) {
-            logger.error("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
-            throw ex
-        }
-    }
-
-    /**
-     * Check if the oldest activity queued in memory has reached the time threshold,
-     * and if so, process all relevant queued activities.
-     */
-    checkQueuedActivities = async (): Promise<void> => {
-        const minDate = dayjs().subtract(settings.strava.delayedProcessingInterval, "seconds")
-
-        if (minDate.isAfter(this.oldestQueueDate)) {
-            await this.processQueuedActivities()
-        } else {
-            const dateLog = this.oldestQueueDate ? this.oldestQueueDate.toString() : "none"
-            logger.debug("Strava.checkQueuedActivities", "Nothing to be processed at the moment", `oldestQueueDate = ${dateLog}`)
-        }
-    }
-
-    /**
-     * Get and process queued activities to be processed with a delay.
-     * @param intervalSeconds Only get activities that were added that many seconds ago.
-     */
-    processQueuedActivities = async (intervalSeconds?: number): Promise<void> => {
-        if (!intervalSeconds) intervalSeconds = settings.strava.delayedProcessingInterval
-
-        // Reset the oldest queue date.
-        this.oldestQueueDate = null
-
-        const minDate = dayjs().subtract(intervalSeconds, "seconds")
-        const logDate = `Since ${minDate.format("YYYY-MM-DD HH:mm:ss")}`
-        const usersCache: {[id: string]: UserData} = {}
-
-        try {
-            const where = [["dateQueued", "<=", minDate.toDate()]]
-            const activities: StravaProcessedActivity[] = await database.search("activities", where)
-
-            // No activities to be processed? Stop here.
-            if (activities.length == 0) {
-                logger.debug("Strava.processQueuedActivities", logDate, `No queued activities to be processed`)
-                return
-            }
-
-            logger.info("Strava.processQueuedActivities", logDate, `Got ${activities.length} queued activities`)
-
-            // Process each of the queued activities.
-            for (let activity of activities) {
-                try {
-                    if (!usersCache[activity.user.id]) {
-                        usersCache[activity.user.id] = await users.getById(activity.user.id)
-                    }
-
-                    await this.processActivity(usersCache[activity.user.id], activity.id, true)
-                } catch (activityEx) {
-                    logger.warn("Strava.processQueuedActivities", logDate, `Failed to process queued activity ${activity.id} from user ${activity.user.id}`)
-                }
-            }
-        } catch (ex) {
-            logger.error("Strava.processQueuedActivities", logDate, ex)
         }
     }
 
