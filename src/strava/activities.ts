@@ -286,7 +286,7 @@ export class StravaActivities {
 
                     // Queued activity had no matching recipes? Delete it.
                     if (!processed) {
-                        await this.deleteQueuedActivity(usersCache[activity.user.id], activity.id)
+                        await this.deleteQueuedActivity(activity)
                     } else {
                         processedCount++
                     }
@@ -307,20 +307,19 @@ export class StravaActivities {
 
     /**
      * Delete the queued or processed activity from the database.
-     * @param user The activity's owner.
-     * @param activityId The Strava activity ID.
+     * @param activity The activity to be deleted.
      */
-    deleteQueuedActivity = async (user: UserData, activityId: number): Promise<void> => {
+    deleteQueuedActivity = async (activity: StravaProcessedActivity): Promise<void> => {
         try {
-            const count = await database.delete("activities", activityId.toString())
+            const count = await database.delete("activities", activity.id.toString())
 
             if (count > 0) {
-                logger.info("Strava.deleteQueuedActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} deleted`)
+                logger.info("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `Activity ${activity.id} deleted`)
             } else {
-                logger.warn("Strava.deleteQueuedActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} not previously saved`)
+                logger.warn("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `Activity ${activity.id} not previously saved`)
             }
         } catch (ex) {
-            logger.error("Strava.deleteQueuedActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
+            logger.error("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `Activity ${activity.id}`, ex)
             throw ex
         }
     }
