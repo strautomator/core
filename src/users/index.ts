@@ -502,7 +502,7 @@ export class Users {
 
             // Delete user from database first.
             await database.delete("users", user.id)
-            logger.warn("Users.delete", `User ${user.id} ${user.displayName}`, "Deleted")
+            logger.warn("Users.delete", `User ${user.id} ${user.displayName}`, `${user.isPro ? "PRO" : "Free"} account deleted`)
 
             // Publish delete event so related contents can be removed as well.
             eventManager.emit("Users.delete", user)
