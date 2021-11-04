@@ -510,8 +510,8 @@ export class Users {
             await database.delete("gearwear", ["userId", "==", user.id])
             logger.warn("Users.delete", `User ${user.id} ${user.displayName}`, "Deleted")
 
-            // Publish deleted event.
-            eventManager.emit("Users.deleted", user)
+            // Publish delete event.
+            eventManager.emit("Users.delete", user)
         } catch (ex) {
             logger.error("Users.delete", user.id, user.displayName, ex)
             throw ex
