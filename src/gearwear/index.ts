@@ -4,6 +4,7 @@ import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
+import eventManager from "../eventmanager"
 import mailer from "../mailer"
 import strava from "../strava"
 import users from "../users"
@@ -22,7 +23,7 @@ export class GearWear {
         return this._instance || (this._instance = new this())
     }
 
-    // INIT AND VALIDATION
+    // INIT
     // --------------------------------------------------------------------------
 
     /**
@@ -57,7 +58,28 @@ export class GearWear {
         } catch (ex) {
             logger.error("GearWear.init", ex)
         }
+
+        eventManager.on("Users.delete", this.onUserDelete)
     }
+
+    /**
+     * Delete user gearwear configs after it gets deleted from the database.
+     * @param user User that was deleted from the database.
+     */
+    private onUserDelete = async (user: UserData): Promise<void> => {
+        try {
+            const counter = await database.delete("gearwear", ["userId", "==", user.id])
+
+            if (counter > 0) {
+                logger.info("GearWear.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} GearWear configs`)
+            }
+        } catch (ex) {
+            logger.error("GearWear.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
+        }
+    }
+
+    // VALIDATION
+    // --------------------------------------------------------------------------
 
     /**
      * Validate a GearWear configuration set by the user.
@@ -272,7 +294,7 @@ export class GearWear {
             await database.doc("gearwear", gearwear.id).delete()
             logger.warn("GearWear.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id} configuration deleted`)
         } catch (ex) {
-            logger.error("Users.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id}`, ex)
+            logger.error("GearWear.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id}`, ex)
             throw ex
         }
     }

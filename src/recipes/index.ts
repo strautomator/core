@@ -6,6 +6,8 @@ import {checkBoolean, checkLocation, checkNumber, checkSportType, checkText, che
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
+import database from "../database"
+import eventManager from "../eventmanager"
 import recipeStats from "./stats"
 import _ = require("lodash")
 import logger = require("anyhow")
@@ -39,6 +41,32 @@ export class Recipes {
      */
     get actionList() {
         return recipeActionList
+    }
+
+    // INIT
+    // --------------------------------------------------------------------------
+
+    /**
+     * Init the Recipes Manager.
+     */
+    init = async () => {
+        eventManager.on("Users.delete", this.onUserDelete)
+    }
+
+    /**
+     * Delete user recipe stats after it gets deleted from the database.
+     * @param user User that was deleted from the database.
+     */
+    private onUserDelete = async (user: UserData): Promise<void> => {
+        try {
+            const counter = await database.delete("recipe-stats", ["userId", "==", user.id])
+
+            if (counter > 0) {
+                logger.info("Recipes.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} recipe stats`)
+            }
+        } catch (ex) {
+            logger.error("Recipes.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
+        }
     }
 
     // PROCESSING

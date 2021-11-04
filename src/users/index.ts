@@ -502,15 +502,9 @@ export class Users {
 
             // Delete user from database first.
             await database.delete("users", user.id)
-
-            // Delete related contents.
-            await database.delete("activities", ["user.id", "==", user.id])
-            await database.delete("calendar", ["userId", "==", user.id])
-            await database.delete("recipe-stats", ["userId", "==", user.id])
-            await database.delete("gearwear", ["userId", "==", user.id])
             logger.warn("Users.delete", `User ${user.id} ${user.displayName}`, "Deleted")
 
-            // Publish delete event.
+            // Publish delete event so related contents can be removed as well.
             eventManager.emit("Users.delete", user)
         } catch (ex) {
             logger.error("Users.delete", user.id, user.displayName, ex)

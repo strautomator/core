@@ -8,6 +8,7 @@ import stravaClubs from "./clubs"
 import stravaRoutes from "./routes"
 import stravaWebhooks from "./webhooks"
 import api from "./api"
+import database from "../database"
 import eventManager from "../eventmanager"
 import logger = require("anyhow")
 const settings = require("setmeup").settings
@@ -84,7 +85,17 @@ export class Strava {
             const tokens = user.stravaTokens
             await this.revokeToken(user.id, tokens.accessToken, tokens.refreshToken)
         } catch (ex) {
-            logger.error("Strava.onUsersDelete", `Failed to revoke token for user ${user.id} ${user.displayName}`)
+            logger.error("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, `Failed to revoke Strava token`)
+        }
+
+        try {
+            const counter = await database.delete("activities", ["user.id", "==", user.id])
+
+            if (counter > 0) {
+                logger.info("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} GearWear configs`)
+            }
+        } catch (ex) {
+            logger.error("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
         }
     }
 
