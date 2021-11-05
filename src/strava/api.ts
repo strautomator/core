@@ -299,7 +299,17 @@ export class StravaAPI {
 
             // Has a error response data? Add it to the exception message.
             if (ex.response && ex.response.data) {
-                const details = _.isObject(ex.response.data) ? Object.values(ex.response.data).join(" - ") : ex.response.data.toString()
+                let details: any
+
+                if (_.isArray(ex.response.data)) {
+                    details = ex.response.data.map((v) => JSON.stringify(v, null, 0))
+                } else if (_.isObject(ex.response.data)) {
+                    details = Object.values(ex.response.data).map((v) => JSON.stringify(v, null, 0))
+                } else {
+                    details = [ex.response.data.toString()]
+                }
+
+                details = details.join(" - ")
                 ex.message = ex.message ? `${ex.message} - ${details}` : details
             }
 
