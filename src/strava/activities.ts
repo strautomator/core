@@ -198,20 +198,27 @@ export class StravaActivities {
             return
         }
 
-        // Add activity to the queue to be processed later.
+        // Add the activity to the queue to be processed on the next batch.
+        // If the activity was already queued then keep the original dateQueued.
         try {
+            const existing: Partial<StravaProcessedActivity> = await database.get("activities", activityId.toString())
             const activity: Partial<StravaProcessedActivity> = {
                 id: activityId,
-                dateQueued: new Date(),
+                dateQueued: existing ? existing.dateQueued : new Date(),
                 user: {id: user.id, displayName: user.displayName}
             }
 
-            await database.set("activities", activity, activity.id.toString())
-            logger.info("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} queued`)
+            await database.set("activities", activity, activityId.toString())
 
-            // If no queued activities were added since the last processed queue, set current date as the oldest.
-            if (!this.oldestQueueDate) {
-                this.oldestQueueDate = new Date()
+            if (existing) {
+                logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} already queued`)
+            } else {
+                logger.info("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} queued`)
+
+                // If no queued activities were added since the last processed queue, set current date as the oldest.
+                if (!this.oldestQueueDate) {
+                    this.oldestQueueDate = new Date()
+                }
             }
         } catch (ex) {
             logger.error("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
@@ -476,9 +483,16 @@ export class StravaActivities {
             try {
                 activity = await this.getActivity(user, activityId)
             } catch (ex) {
-                if (ex.response && ex.response.status == 404) {
+                const status = ex.response ? ex.response.status : null
+
+                if (status == 404) {
                     logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} not found`)
                     return null
+                }
+
+                // Add the activity to the queue to retry processing it later.
+                if (!queued) {
+                    await this.queueActivity(user, activityId)
                 }
 
                 throw ex
