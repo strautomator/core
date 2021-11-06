@@ -1,4 +1,4 @@
-// Strautomator Core: Weather - ClimaCell
+// Strautomator Core: Weather - Tomorrow
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
 import {processWeatherSummary, weatherSummaryString} from "./utils"
@@ -9,19 +9,19 @@ import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
- * ClimaCell weather API.
+ * Tomorrow weather API.
  */
-export class ClimaCell implements WeatherProvider {
+export class Tomorrow implements WeatherProvider {
     private constructor() {}
-    private static _instance: ClimaCell
-    static get Instance(): ClimaCell {
+    private static _instance: Tomorrow
+    static get Instance(): Tomorrow {
         return this._instance || (this._instance = new this())
     }
     apiRequest = null
     stats: WeatherApiStats = null
 
-    name: string = "climacell"
-    title: string = "ClimaCell"
+    name: string = "tomorrow"
+    title: string = "Tomorrow"
     maxHours: number = 5
 
     // METHODS
@@ -40,8 +40,8 @@ export class ClimaCell implements WeatherProvider {
             if (!preferences) preferences = {}
             if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
-            const baseUrl = settings.weather.climacell.baseUrl
-            const secret = settings.weather.climacell.secret
+            const baseUrl = settings.weather.tomorrow.baseUrl
+            const secret = settings.weather.tomorrow.secret
             const dateFormat = "YYYY-MM-DDTHH:mm:ss"
             const mDate = dayjs.utc(date)
             const startTime = mDate.format(dateFormat) + "Z"
@@ -51,29 +51,29 @@ export class ClimaCell implements WeatherProvider {
             const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
 
             // Fetch weather data.
-            logger.debug("ClimaCell.getWeather", weatherUrl)
+            logger.debug("Tomorrow.getWeather", weatherUrl)
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
             const result = this.toWeatherSummary(res, date, preferences)
             if (result) {
-                logger.info("ClimaCell.getWeather", weatherSummaryString(coordinates, date, result))
+                logger.info("Tomorrow.getWeather", weatherSummaryString(coordinates, date, result))
             }
 
             return result
         } catch (ex) {
-            logger.error("ClimaCell.getWeather", coordinates, isoDate, unit, ex)
+            logger.error("Tomorrow.getWeather", coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }
     }
 
     /**
-     * Transform data from the ClimaCell API to a WeatherSummary.
-     * @param data Data from ClimaCell.
+     * Transform data from the Tomorrow API to a WeatherSummary.
+     * @param data Data from Tomorrow.
      */
     private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("ClimaCell.toWeatherSummary", data, date, preferences.weatherUnit)
+        logger.debug("Tomorrow.toWeatherSummary", data, date, preferences.weatherUnit)
 
         // Check if received data is valid.
         data = data.data && data.data.timelines ? data.data.timelines[0].intervals[0].values : null
@@ -112,7 +112,7 @@ export class ClimaCell implements WeatherProvider {
     // --------------------------------------------------------------------------
 
     /**
-     * Field descriptors from ClimaCell.
+     * Field descriptors from Tomorrow.
      */
     private fieldDescriptors = {
         precipitationType: {
@@ -155,4 +155,4 @@ export class ClimaCell implements WeatherProvider {
 }
 
 // Exports...
-export default ClimaCell.Instance
+export default Tomorrow.Instance

@@ -272,20 +272,7 @@
         // Cache weather results for 15 minutes. Value set in seconds.
         "cacheDuration": 900,
         // Set the default weather providers.
-        "defaultProviders": ["stormglass", "climacell"],
-        // ClimaCell API settings.
-        "climacell": {
-            "baseUrl": "https://data.climacell.co/v4/",
-            // ClimaCell API rate limits.
-            "rateLimit": {
-                "maxConcurrent": 1,
-                "perHour": 23,
-                "perDay": 450
-            },
-            // The ClimaCell API secret MUST be set via secret settings or
-            // via the SMU_climacell_api_secret environment variable.
-            "secret": null
-        },
+        "defaultProviders": ["stormglass", "tomorrow"],
         // OpenWeatherMap API settings.
         "openweathermap": {
             "baseUrl": "https://api.openweathermap.org/data/2.5/weather",
@@ -310,6 +297,19 @@
             },
             // The Storm Glass API secret MUST be set via secret settings or
             // via the SMU_weather_stormglass_secret environment variable.
+            "secret": null
+        },
+        // Tomorrow API settings.
+        "tomorrow": {
+            "baseUrl": "https://api.tomorrow.io/v4/",
+            // Tomorrow API rate limits.
+            "rateLimit": {
+                "maxConcurrent": 2,
+                "perHour": 23,
+                "perDay": 450
+            },
+            // The Tomorrow API secret MUST be set via secret settings or
+            // via the SMU_tomorrow_api_secret environment variable.
             "secret": null
         },
         // Visual Crossing API settings.

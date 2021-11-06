@@ -4,7 +4,7 @@ import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {apiRateLimiter} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserPreferences} from "../users/types"
-import climacell from "./climacell"
+import tomorrow from "./tomorrow"
 import openweathermap from "./openweathermap"
 import stormglass from "./stormglass"
 import visualcrossing from "./visualcrossing"
@@ -60,7 +60,7 @@ export class Weather {
      */
     init = async (): Promise<void> => {
         try {
-            const all: WeatherProvider[] = [stormglass, climacell, weatherapi, openweathermap, visualcrossing, weatherbit]
+            const all: WeatherProvider[] = [stormglass, tomorrow, weatherapi, openweathermap, visualcrossing, weatherbit]
 
             // Iterate and init the weather providers.
             for (let provider of all) {
