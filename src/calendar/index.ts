@@ -470,21 +470,21 @@ export class Calendar {
                             endDate = dayjs(eventDate).add(settings.calendar.defaultDurationMinutes, "minutes").toDate()
                         }
 
+                        const eventLink = `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
+
                         // Add all relevant details to the event description.
-                        const arrDescription = [club.name]
+                        const arrDescription = [`${club.name}\n`]
                         if (clubEvent.description) {
-                            arrDescription.push(clubEvent.description)
+                            arrDescription.push(`${clubEvent.description}\n`)
                         }
-                        if (clubEvent.route) {
-                            arrDescription.push(`Route: https://strava.com/routes/${clubEvent.route.id}`)
-                        }
+                        arrDescription.push(`Event link: ${eventLink}`)
 
                         const event = cal.createEvent({
                             start: eventDate,
                             end: endDate,
                             summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
-                            description: arrDescription.join("\n\n"),
-                            url: `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
+                            description: arrDescription.join("\n"),
+                            url: eventLink
                         })
 
                         // Location available?
