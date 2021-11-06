@@ -37,6 +37,8 @@ export interface WeatherProvider {
     apiRequest?: Bottleneck
     /** Weather API stats. */
     stats?: WeatherApiStats
+    /** Disable this weather provider till the specified date. */
+    disabledTillDate?: Date
 }
 
 /**

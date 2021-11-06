@@ -165,7 +165,11 @@ export class Weather {
         const latlon = coordinates.join(", ")
 
         // Get providers that accept the given date and are under the daily usage quota.
-        const availableProviders = this.providers.filter((p: WeatherProvider) => p.maxHours >= hours && (p.stats.requestCount < settings.weather[p.name].rateLimit.perDay || mDate.diff(p.stats.lastRequest, "hours") >= 20))
+        const availableProviders = this.providers.filter((p) => {
+            if (p.maxHours < hours) return false
+            if (p.disabledTillDate && mDate.isBefore(p.disabledTillDate)) return false
+            return p.stats.requestCount < settings.weather[p.name].rateLimit.perDay || mDate.diff(p.stats.lastRequest, "hours") > 16
+        })
 
         // No providers available at the moment? Stop here.
         if (availableProviders.length == 0) {
@@ -180,7 +184,13 @@ export class Weather {
             providerModule = foundProviders && foundProviders.length > 0 ? foundProviders[0] : availableProviders.shift()
 
             result = await providerModule.getWeather(coordinates, date, preferences)
+            providerModule.disabledTillDate = null
         } catch (ex) {
+            if (ex.response && ex.response.status == 402) {
+                providerModule.disabledTillDate = dayjs.utc().endOf("day").toDate()
+                logger.warn("Weather.getLocationWeather", `${providerModule.name} daily quota reached`)
+            }
+
             const failedProviderName = providerModule.name
             providerModule = _.sample(availableProviders)
 
