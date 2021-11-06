@@ -180,7 +180,8 @@ export class Calendar {
                             }
                         }
 
-                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, "From cache")
+                        const cacheSize = (cachedCalendar.data.length / 1000 / 1024).toFixed(2)
+                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `From cache: ${cacheSize} MB`)
                         return cachedCalendar.data
                     } else {
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `Cache invalidated, will generate a new calendar`)
@@ -471,19 +472,23 @@ export class Calendar {
                         }
 
                         const eventLink = `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
+                        const organizer = clubEvent.organizer ? `${clubEvent.organizer.firstName} ${clubEvent.organizer.lastName}` : null
 
                         // Add all relevant details to the event description.
-                        const arrDescription = [`${club.name}\n`]
+                        const arrDescription = [club.name]
                         if (clubEvent.description) {
-                            arrDescription.push(`${clubEvent.description}\n`)
+                            arrDescription.push(clubEvent.description)
                         }
-                        arrDescription.push(`Event link: ${eventLink}`)
+                        if (organizer) {
+                            arrDescription.push(`Organizer: ${organizer}`)
+                        }
+                        arrDescription.push(eventLink)
 
                         const event = cal.createEvent({
                             start: eventDate,
                             end: endDate,
                             summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
-                            description: arrDescription.join("\n"),
+                            description: arrDescription.join("\n\n"),
                             url: eventLink
                         })
 
