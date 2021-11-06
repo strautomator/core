@@ -147,7 +147,8 @@ export class Weather {
 
         // Get provider from parameter, then preferences, finally the default from settings.
         if (!provider) {
-            provider = preferences && preferences.weatherProvider ? preferences.weatherProvider : settings.weather.defaultProvider
+            const defaultProvider = _.sample(settings.weather.defaultProviders)
+            provider = preferences && preferences.weatherProvider ? preferences.weatherProvider : defaultProvider
         }
 
         // Look on cache first.

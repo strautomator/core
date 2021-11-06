@@ -271,8 +271,8 @@
     "weather": {
         // Cache weather results for 15 minutes. Value set in seconds.
         "cacheDuration": 900,
-        // Set the default weather provider.
-        "defaultProvider": "stormglass",
+        // Set the default weather providers.
+        "defaultProviders": ["stormglass", "climacell"],
         // ClimaCell API settings.
         "climacell": {
             "baseUrl": "https://data.climacell.co/v4/",
