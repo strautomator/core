@@ -91,12 +91,18 @@ export class Recipes {
                 throw new Error(`Recipe title is too long (max length is ${settings.recipes.maxLength.title})`)
             }
 
-            if (!recipe.actions || !_.isArray(recipe.actions) || recipe.actions.length < 0) {
+            if (recipe.order && isNaN(recipe.order)) {
+                throw new Error("Recipe order must be a number")
+            }
+
+            if (_.isArray(recipe.actions)) {
+                recipe.actions = recipe.actions.filter((a) => !_.isEmpty(a))
+            } else {
                 throw new Error("Missing recipe actions")
             }
 
-            if (recipe.order && isNaN(recipe.order)) {
-                throw new Error("Recipe order must be a number")
+            if (_.isArray(recipe.conditions)) {
+                recipe.conditions = recipe.conditions.filter((c) => !_.isEmpty(c))
             }
 
             // Default recipes for a specific sport type should have no conditions, and order 0.
@@ -106,7 +112,7 @@ export class Recipes {
             }
             // Non-default recipes must have conditions defined.
             else {
-                if (!recipe.conditions || !_.isArray(recipe.conditions) || recipe.conditions.length < 0) {
+                if (!_.isArray(recipe.conditions)) {
                     throw new Error("Missing recipe conditions")
                 }
 
