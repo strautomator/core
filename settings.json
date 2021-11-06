@@ -216,7 +216,7 @@
             "conditionValue": 600,
             "actionValue": 600
         },
-        // Webhook timeout is set to 5 seconds by default.
+        // Webhook timeout is set to 5 seconds by default. Value in milliseconds.
         "webhook": {
             "timeout": 5000
         }
@@ -252,7 +252,9 @@
             "sinceLastHours": 24
         },
         // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
-        "delayedProcessingInterval": 600
+        "delayedProcessingInterval": 600,
+        // How long can activities stayed queued for processing? Value set in seconds.
+        "maxQueueAge": 43200
     },
     "twitter": {
         // Only 30% chances of posting interesting activities on Twitter.
