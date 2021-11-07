@@ -32,10 +32,15 @@ export class Weather {
     providers: WeatherProvider[] = []
 
     /**
+     * How far back in time can we get weather forecasts at the moment?
+     */
+    maxHours: number = 0
+
+    /**
      * Helper property to return an empty summary.
      */
-    get emptySummary() {
-        const emptySummary: WeatherSummary = {
+    get emptySummary(): WeatherSummary {
+        return {
             summary: "",
             icon: "",
             temperature: "",
@@ -48,8 +53,6 @@ export class Weather {
             cloudCover: "",
             moon: "" as any
         }
-
-        return emptySummary
     }
 
     // INIT
@@ -78,11 +81,14 @@ export class Weather {
                     continue
                 }
 
-                // Set the API rate limiting object and stats.
+                // Set the API rate limiting object and stats and add provider.
                 provider.apiRequest = apiRateLimiter(provider, pSettings.rateLimit)
                 provider.stats = {requestCount: 0, errorCount: 0, lastRequest: null}
-
                 this.providers.push(provider)
+
+                if (provider.maxHours > this.maxHours) {
+                    this.maxHours = provider.maxHours
+                }
             }
 
             cache.setup("weather", settings.weather.cacheDuration)
@@ -99,12 +105,18 @@ export class Weather {
      * Return the weather for the specified activity.
      * @param activity The Strava activity.
      * @param user The user requesting a weather report.
-     * @param provider Optional, the preferred weather provider.
      */
-    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences, provider?: string): Promise<ActivityWeather> => {
+    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
         try {
             if (!activity.locationStart && !activity.locationEnd) {
                 throw new Error(`No location data for activity ${activity.id}`)
+            }
+
+            // Stop right here if activity happened too long ago.
+            const minDate = dayjs.utc().subtract(this.maxHours, "hours")
+            if (minDate.isAfter(activity.dateEnd)) {
+                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Happened before ${minDate.format(settings.dayjs.datetime)}, can't fetch weather`)
+                return null
             }
 
             // Fetch weather for the start and end locations of the activity.
@@ -113,7 +125,7 @@ export class Weather {
                 weather.start = await this.getLocationWeather(activity.locationStart, activity.dateStart, preferences)
                 weather.end = await this.getLocationWeather(activity.locationEnd, activity.dateEnd, preferences)
             } catch (ex) {
-                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Provider ${provider} failed, will try another`)
+                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Failed to get weather`)
             }
 
             // Make sure weather result is valid.
@@ -144,17 +156,19 @@ export class Weather {
 
         let result: WeatherSummary
         let providerModule: WeatherProvider
+        let isDefaultProvider: boolean = false
 
         // Get provider from parameter, then preferences, finally the default from settings.
         if (!provider) {
             const defaultProvider = _.sample(settings.weather.defaultProviders)
             provider = preferences && preferences.weatherProvider ? preferences.weatherProvider : defaultProvider
+            isDefaultProvider = true
         }
 
         // Look on cache first.
         const cacheId = `${coordinates.join("-")}-${date.valueOf() / 1000}`
         const cached: WeatherSummary = cache.get(`weather`, cacheId)
-        if (cached && cached.provider == provider) {
+        if (cached && (isDefaultProvider || cached.provider == provider)) {
             logger.info("Weather.getLocationWeather", coordinates.join(", "), date, `From cache: ${cached.provider}`)
             return cached
         }
@@ -173,28 +187,39 @@ export class Weather {
 
         // No providers available at the moment? Stop here.
         if (availableProviders.length == 0) {
-            logger.error("Weather.getLocationWeather", latlon, isoDate, "No weather providers available at the moment")
+            logger.warn("Weather.getLocationWeather", latlon, isoDate, "No weather providers available for that query")
             return null
         }
 
+        let currentProviders: WeatherProvider[]
+
         // First try using the preferred or user's default provider.
-        // If the default provider is not valid, get the first one available.
+        // If the default provider is not valid, get random ones.
         try {
-            const foundProviders = _.remove(availableProviders, {name: provider})
-            providerModule = foundProviders && foundProviders.length > 0 ? foundProviders[0] : availableProviders.shift()
+            currentProviders = _.remove(availableProviders, {name: provider})
+
+            if (currentProviders.length > 0) {
+                currentProviders.push(_.sample(availableProviders))
+            } else {
+                currentProviders = _.sampleSize(availableProviders, 2)
+            }
+
+            providerModule = currentProviders[0]
 
             result = await providerModule.getWeather(coordinates, date, preferences)
             providerModule.disabledTillDate = null
         } catch (ex) {
+            const failedProviderName = providerModule.name
+
             if (ex.response && ex.response.status == 402) {
                 providerModule.disabledTillDate = dayjs.utc().endOf("day").toDate()
-                logger.warn("Weather.getLocationWeather", `${providerModule.name} daily quota reached`)
+                logger.warn("Weather.getLocationWeather", `${failedProviderName} daily quota reached`)
             }
 
-            const failedProviderName = providerModule.name
-            providerModule = _.sample(availableProviders)
+            // Has a second alternative? Try again.
+            if (currentProviders.length > 1) {
+                providerModule = currentProviders[1]
 
-            if (providerModule) {
                 logger.warn("Weather.getLocationWeather", latlon, isoDate, `${failedProviderName} failed, will try ${providerModule.name}`)
 
                 // Try again using another provider. If also failed, log both exceptions.

@@ -194,6 +194,11 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
         const weatherSummary = await weather.getActivityWeather(activity, preferences)
         let summary: WeatherSummary
 
+        // Weather could not be fetched? Stop here.
+        if (!weatherSummary) {
+            return false
+        }
+
         // Check for weather on start and end of the activity.
         for (summary of [weatherSummary.start, weatherSummary.end]) {
             if (!summary || summary[weatherProp] === null) {
