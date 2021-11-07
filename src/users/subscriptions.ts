@@ -25,13 +25,8 @@ export class UserSubscriptions {
      */
     getNonActive = async (): Promise<PayPalSubscription[]> => {
         try {
-            const queries = [
-                ["status", "!=", "APPROVAL_PENDING"],
-                ["status", "!=", "APPROVED"],
-                ["status", "!=", "ACTIVE"]
-            ]
-
-            const subscriptions: PayPalSubscription[] = await database.search("subscriptions", queries)
+            const where = [["status", "in", ["SUSPENDED", "CANCELLED", "EXPIRED"]]]
+            const subscriptions: PayPalSubscription[] = await database.search("subscriptions", where)
             logger.info("UserSubscriptions.getNonActive", `Got ${subscriptions.length} non-active subscriptions`)
 
             return subscriptions
