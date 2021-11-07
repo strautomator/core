@@ -236,8 +236,8 @@ export class Recipes {
             }
         }
 
-        const logConditions = recipe.conditions.map((c) => c.property).join(", ")
-        logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, `Evaluated: ${logConditions}`)
+        const logEvaluated = recipe.defaultFor ? `default for ${recipe.defaultFor}` : recipe.conditions.map((c) => c.property).join(", ")
+        logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, `Evaluated: ${logEvaluated}`)
 
         // Sort recipe actions, webhook should come last.
         const sortedActions = _.sortBy(recipe.actions, ["type"])
