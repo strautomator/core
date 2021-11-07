@@ -310,7 +310,11 @@ export class StravaAPI {
                 }
 
                 details = details.join(" - ")
-                ex.message = ex.message ? `${ex.message} - ${details}` : details
+
+                // Only add extra error details if it wasn't returned as HTML.
+                if (!details.includes("<html>")) {
+                    ex.message = ex.message ? `${ex.message} - ${details}` : details
+                }
             }
 
             logger.debug("Strava.makeRequest", path, method, ex)
