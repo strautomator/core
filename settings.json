@@ -236,10 +236,8 @@
             "scopes": "read,profile:read_all,profile:write,activity:read_all,activity:write",
             // Maximum concurrent requests per instance.
             "maxConcurrent": 4,
-            // Maximum requests per minute per instance. Default maximum on Strava
-            // is around 40 requests per minute total, so for 2 instances we use 30
-            // as load balancing is not done on a perfect 50/50 level.
-            "maxPerMinute": 30,
+            // Maximum requests per minute per instance is around 40 on Strava, here we use 38.
+            "maxPerMinute": 38,
             // Default page size is the max of 200.
             "pageSize": 200
         },
