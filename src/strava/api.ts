@@ -302,14 +302,14 @@ export class StravaAPI {
                 let details: any
 
                 if (_.isArray(ex.response.data)) {
-                    details = ex.response.data.map((v) => JSON.stringify(v, null, 0))
+                    details = ex.response.data.map((a) => Object.values(a).map((v) => JSON.stringify(v, null, 0)))
                 } else if (_.isObject(ex.response.data)) {
                     details = Object.values(ex.response.data).map((v) => JSON.stringify(v, null, 0))
                 } else {
                     details = [ex.response.data.toString()]
                 }
 
-                details = details.join(" - ")
+                details = _.flattenDeep(details).join(" - ")
 
                 // Only add extra error details if it wasn't returned as HTML.
                 if (!details.includes("<html>")) {
