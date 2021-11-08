@@ -58,10 +58,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
         if (processedValue.indexOf("${weather.") >= 0) {
-            const hasStart = activity.locationStart && activity.locationStart.length > 0
-            const hasEnd = activity.locationEnd && activity.locationEnd.length > 0
-
-            if (hasStart || hasEnd) {
+            if (activity.hasLocation) {
                 const weatherSummary = await weather.getActivityWeather(activity, user.preferences)
 
                 if (weatherSummary) {

@@ -108,8 +108,9 @@ export class Weather {
      */
     getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
         try {
-            if (!activity.locationStart && !activity.locationEnd) {
-                throw new Error(`No location data for activity ${activity.id}`)
+            if (!activity.hasLocation) {
+                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `No start / end location, can't fetch weather`)
+                return null
             }
 
             // Stop right here if activity happened too long ago.
@@ -152,7 +153,10 @@ export class Weather {
      * @param provider Optional preferred weather provider.
      */
     getLocationWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences, provider?: string): Promise<WeatherSummary> => {
-        if (!coordinates || !date) return null
+        if (!date || !coordinates || coordinates.length != 2) {
+            logger.warn("Weather.getLocationWeather", coordinates.join(", "), date, `Invalid date coordinates or date, can't fetch weather`)
+            return null
+        }
 
         let result: WeatherSummary
         let providerModule: WeatherProvider

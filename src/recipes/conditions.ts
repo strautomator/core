@@ -178,8 +178,8 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
     const prop = condition.property
     const op = condition.operator
 
-    // If activity has no location data, stop right here.
-    if (!activity.locationStart && !activity.locationEnd) {
+    // If activity has no valid location data, stop right here.
+    if (!activity.hasLocation) {
         return false
     }
 
