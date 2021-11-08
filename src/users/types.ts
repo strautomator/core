@@ -67,8 +67,8 @@ export interface UserPreferences {
     linksOn?: number
     /** Add a #strautomator.com hashtag on name of processed activities? */
     activityHashtag?: boolean
-    /** Language used on automations. Lowercased 2 letter country code. */
-    language?: string
+    /** Language (code) used for automations and weather tags. */
+    language?: "en" | "de" | "es" | "fr" | "pt"
     /** Delay processing activities? */
     delayedProcessing?: boolean
     /** Opt in to have activities shared on Strautomator's Twitter? */
