@@ -4,6 +4,7 @@ import {CachedCalendar, CalendarOptions} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
+import {translation} from "../translations"
 import _ = require("lodash")
 import crypto = require("crypto")
 import database from "../database"
@@ -426,6 +427,7 @@ export class Calendar {
         const fromLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
         const toLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
         const optionsLog = `From ${fromLog} to ${toLog}`
+        const tOrganizer = translation("Organizer", user.preferences, true)
         let eventCount = 0
 
         try {
@@ -480,7 +482,7 @@ export class Calendar {
                             arrDescription.push(clubEvent.description)
                         }
                         if (organizer) {
-                            arrDescription.push(`Organizer: ${organizer}`)
+                            arrDescription.push(`${tOrganizer}: ${organizer}`)
                         }
                         arrDescription.push(eventLink)
 

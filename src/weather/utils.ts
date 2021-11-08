@@ -2,6 +2,7 @@
 
 import {MoonPhase, WeatherProvider, WeatherSummary} from "./types"
 import {UserPreferences} from "../users/types"
+import {translation} from "../translations"
 import Bottleneck from "bottleneck"
 import _ = require("lodash")
 import logger = require("anyhow")
@@ -66,30 +67,30 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             const mm = extraData.mmPrecipitation || 0
 
             if (mm > 0) {
-                if (summary.temperature < 1) summary.precipitation = "snow"
-                else if (summary.temperature < 4) summary.precipitation = "sleet"
-                else if (mm < 1) summary.precipitation = "drizzle"
-                else summary.precipitation = "rain"
+                if (summary.temperature < 1) summary.precipitation = translation("Snow", preferences)
+                else if (summary.temperature < 4) summary.precipitation = translation("Sleet", preferences)
+                else if (mm < 1) summary.precipitation = translation("Drizzle", preferences)
+                else summary.precipitation = translation("Rain", preferences)
 
-                // Heavy precipitation? Append prefix.
+                // Heavy precipitation? Append suffix.
                 if (mm > 20) {
-                    summary.precipitation = `heavy ${summary.precipitation}`
+                    summary.precipitation = `${summary.precipitation} (${translation("Heavy", preferences)})`
                 }
             } else {
-                summary.precipitation = "dry"
+                summary.precipitation = translation("Dry", preferences)
             }
-        } else {
-            summary.precipitation = summary.precipitation.toLowerCase()
         }
 
+        summary.precipitation = summary.precipitation.toLowerCase()
+
         // Temperature summary.
-        let tempSummary = "cool"
-        if (summary.temperature > 40) tempSummary = "Extremely warm"
-        else if (summary.temperature > 30) tempSummary = "Very warm"
-        else if (summary.temperature > 22) tempSummary = "Warm"
-        else if (summary.temperature < -10) tempSummary = "Extremely cold"
-        else if (summary.temperature < 2) tempSummary = "Very cold"
-        else if (summary.temperature < 12) tempSummary = "Cold"
+        let tempSummary = translation("Cool", preferences)
+        if (summary.temperature > 40) tempSummary = translation("ExtremelyWarm", preferences)
+        else if (summary.temperature > 30) tempSummary = translation("VeryWarm", preferences)
+        else if (summary.temperature > 22) tempSummary = translation("Warm", preferences)
+        else if (summary.temperature < -10) tempSummary = translation("ExtremelyCold", preferences)
+        else if (summary.temperature < 2) tempSummary = translation("VeryCold", preferences)
+        else if (summary.temperature < 12) tempSummary = translation("Cold", preferences)
 
         // Make sure the "feels like" temperature is set.
         if (_.isNil(summary.feelsLike)) {
@@ -223,7 +224,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             const baseSummary = arr.length > 1 ? `${arr[0]} ${arr[1]}` : arr[0]
             summary.summary = `${tempSummary}, ${baseSummary}`
 
-            if (isWindy) summary.summary += ", windy"
+            if (isWindy) summary.summary += `, ${translation("Windy", preferences)}`
         }
 
         // Final summary should be always Capital cased.
@@ -242,10 +243,13 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
  * @param coordinates Coordinates.
  * @param date The date.
  * @param summary The parsed weather summary.
+ * @param preferences User preferences (used for language translations).
  */
-export function weatherSummaryString(coordinates: [number, number], date: Date, summary: WeatherSummary): string {
+export function weatherSummaryString(coordinates: [number, number], date: Date, summary: WeatherSummary, preferences: UserPreferences): string {
     const dateFormat = dayjs(date).format("YYYY-MM-DD HH:mm")
-    return `${coordinates.join(", ")} - ${dateFormat} - ${summary.summary} - temp: ${summary.temperature}, humidity: ${summary.humidity}, precipitation: ${summary.precipitation}`
+    return `${coordinates.join(", ")} - ${dateFormat} - ${summary.summary} - ${translation("Temp", preferences)}: ${summary.temperature}, ${translation("Humidity", preferences)}: ${summary.humidity}, ${translation("Precipitation", preferences)}: ${
+        summary.precipitation
+    }`
 }
 
 /**

@@ -61,7 +61,7 @@ export class VisualCrossing implements WeatherProvider {
             // Parse result.
             const result = this.toWeatherSummary(res, date, preferences)
             if (result) {
-                logger.info("VisualCrossing.getWeather", weatherSummaryString(coordinates, date, result))
+                logger.info("VisualCrossing.getWeather", weatherSummaryString(coordinates, date, result, preferences))
             }
 
             return result

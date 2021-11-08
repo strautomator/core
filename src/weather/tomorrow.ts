@@ -57,7 +57,7 @@ export class Tomorrow implements WeatherProvider {
             // Parse result.
             const result = this.toWeatherSummary(res, date, preferences)
             if (result) {
-                logger.info("Tomorrow.getWeather", weatherSummaryString(coordinates, date, result))
+                logger.info("Tomorrow.getWeather", weatherSummaryString(coordinates, date, result, preferences))
             }
 
             return result

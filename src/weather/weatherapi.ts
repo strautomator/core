@@ -54,7 +54,7 @@ export class WeatherAPI implements WeatherProvider {
             // Parse result.
             const result = this.toWeatherSummary(res, date, preferences)
             if (result) {
-                logger.info("WeatherAPI.getWeather", weatherSummaryString(coordinates, date, result))
+                logger.info("WeatherAPI.getWeather", weatherSummaryString(coordinates, date, result, preferences))
             }
 
             return result
