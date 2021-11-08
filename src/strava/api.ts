@@ -315,6 +315,12 @@ export class StravaAPI {
                 if (!details.includes("<html>")) {
                     ex.message = ex.message ? `${ex.message} - ${details}` : details
                 }
+
+                // Make sure a status is set directly on the exception so
+                // we can use it elsewhere.
+                if (ex.response.status && !ex.status) {
+                    ex.status = ex.response.status
+                }
             }
 
             logger.debug("Strava.makeRequest", path, method, ex)
