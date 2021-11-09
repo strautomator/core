@@ -188,6 +188,7 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
 
         // Parse condition value and weather property.
         const value = parseInt(condition.value as string)
+        const diff = value * 0.1
         const weatherProp = prop.split(".")[1]
 
         // Get activity weather.
@@ -210,6 +211,8 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
 
             if (op == RecipeOperator.Equal) {
                 valid = valid || weatherPropValue == value
+            } else if (op == RecipeOperator.Like) {
+                valid = value < weatherPropValue + diff && value > weatherPropValue - diff
             } else if (op == RecipeOperator.GreaterThan) {
                 valid = valid || weatherPropValue > value
             } else if (op == RecipeOperator.LessThan) {
