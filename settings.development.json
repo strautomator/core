@@ -22,6 +22,10 @@
             "iv": "1234567890ABCDEF"
         }
     },
+    "faq": {
+        // On dev we cache the FAQ questions only for 60 seconds.
+        "refreshInterval": 60
+    },
     "github": {
         "api": {
             // Token to be appended to the URL of GitHub webhooks, for
