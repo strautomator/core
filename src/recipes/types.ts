@@ -78,6 +78,7 @@ export enum RecipeActionType {
     Name = "name",
     PrependName = "prependName",
     AppendName = "appendName",
+    GenerateName = "generateName",
     Description = "description",
     PrependDescription = "prependDescription",
     AppendDescription = "appendDescription",

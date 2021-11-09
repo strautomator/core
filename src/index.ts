@@ -85,6 +85,7 @@ export * from "./calendar/types"
 export * from "./notifications/types"
 export * from "./announcements/types"
 export * from "./paypal/types"
+export * from "./fortune"
 
 // Flag if the server is shutting down.
 let terminating = false

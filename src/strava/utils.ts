@@ -1,4 +1,4 @@
-// Strautomator Core: Strava utils
+// Strautomator Core: Strava Utils
 
 import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaProfile, StravaRoute, StravaSport} from "./types"
 import {UserData} from "../users/types"

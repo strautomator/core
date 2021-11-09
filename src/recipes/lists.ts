@@ -93,6 +93,7 @@ export const recipeActionList = [
     {value: "name", text: "Set activity name"},
     {value: "prependName", text: "Prepend to activity name"},
     {value: "appendName", text: "Append to activity name"},
+    {value: "generateName", text: "Auto generate the activity name"},
     {value: "description", text: "Set activity description"},
     {value: "prependDescription", text: "Prepend to activity description"},
     {value: "appendDescription", text: "Append to activity description"},

@@ -6,6 +6,7 @@ import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
+import {getActivityFortune} from "../fortune"
 import recipeStats from "./stats"
 import notifications from "../notifications"
 import weather from "../weather"
@@ -101,6 +102,12 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         // Append to the activity name?
         else if (action.type == RecipeActionType.AppendName) {
             activity.name = `${activity.name} ${processedValue}`
+
+            activity.updatedFields.push("name")
+        }
+        // AUto generate the activity name?
+        else if (action.type == RecipeActionType.GenerateName) {
+            activity.name = getActivityFortune(user, activity)
 
             activity.updatedFields.push("name")
         }
