@@ -138,10 +138,17 @@ export class StravaAthletes {
             let ftpWatts: number = 0
             let currentWatts: number = 0
             let bestActivity: StravaActivity
+            let lastActivityDate = new Date("2000-01-01")
+            let adjusted: boolean = false
 
             // Iterate activities to get the highest FTP possible.
             for (let a of activities) {
                 const totalTime = a.movingTime || a.totalTime
+
+                // Date of the last activity.
+                if (dayjs(a.dateEnd).isAfter(lastActivityDate)) {
+                    lastActivityDate = a.dateEnd
+                }
 
                 // Ignore cycling activities with no power meter or that lasted less than 20 minutes.
                 if (a.type != StravaSport.Ride && a.type != StravaSport.VirtualRide) continue
@@ -197,9 +204,9 @@ export class StravaAthletes {
                 const currentWattsWeight = [currentWatts, 1.15]
                 const ftpWeights = [maxWattsWeight, currentWattsWeight]
                 const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
-                ftpWatts = Math.round(ftpTotalSum / ftpWeightSum)
+                ftpWatts = ftpTotalSum / ftpWeightSum
             } else {
-                ftpWatts = Math.round(maxWatts)
+                ftpWatts = maxWatts
             }
 
             // Check if the FTP was recently updated for that user.
@@ -210,7 +217,17 @@ export class StravaAthletes {
                 recentlyUpdated = lastUpdate >= now
             }
 
-            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP ${ftpWatts}w, current ${currentWatts}w, highest effort ${maxWatts}w`)
+            // Adjust to around 3% loss per week off the bike.
+            const weeks = Math.floor(dayjs().diff(lastActivityDate, "d") / 7)
+            if (weeks > 0) {
+                adjusted = true
+                ftpWatts -= ftpWatts * (weeks * 0.03)
+            }
+
+            // Round FTP.
+            ftpWatts = Math.round(ftpWatts)
+
+            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP ${ftpWatts}w${adjusted ? " (adjusted)" : ""}, current ${currentWatts}w, highest effort ${maxWatts}w`)
 
             return {
                 ftpWatts: ftpWatts,
