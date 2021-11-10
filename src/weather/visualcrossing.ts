@@ -1,7 +1,7 @@
 // Strautomator Core: Weather - Visual Crossing
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {processWeatherSummary, weatherSummaryString} from "./utils"
+import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
@@ -52,14 +52,15 @@ export class VisualCrossing implements WeatherProvider {
             const qDate = mDate.format("YYYY-MM-DDTHH:mm:ss")
             const latlon = coordinates.join(",")
             const include = "current,obs,histfcst"
-            let weatherUrl = `${baseUrl}timeline/${latlon}/${qDate}?key=${secret}&include=${include}&unitGroup=metric`
+            const lang = preferences.language && preferences.language != "pt" ? preferences.language || "en" : "en"
+            let weatherUrl = `${baseUrl}timeline/${latlon}/${qDate}?key=${secret}&include=${include}&unitGroup=metric&lang=${lang}`
 
             // Fetch weather data.
             logger.debug("VisualCrossing.getWeather", weatherUrl)
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, date, preferences)
             if (result) {
                 logger.info("VisualCrossing.getWeather", weatherSummaryString(coordinates, date, result, preferences))
             }
@@ -75,7 +76,7 @@ export class VisualCrossing implements WeatherProvider {
      * Transform data from the Visual Crossing API to a WeatherSummary.
      * @param data Data from Visual Crossing.
      */
-    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("VisualCrossing.toWeatherSummary", data, date, preferences.weatherUnit)
 
         // Locate correct hour report from the response.
@@ -93,8 +94,8 @@ export class VisualCrossing implements WeatherProvider {
         const precipLevel = data.precip || 0
         const snowDepth = data.snow || 0
         let precipitation = data.preciptype
-        if (!precipitation) precipitation = snowDepth > 0 ? "snow" : null
-        else if (precipitation == "freezingrain") precipitation = "freezing rain"
+        if (!precipitation) precipitation = snowDepth > 0 ? "Snow" : null
+        else if (precipitation == "freezingrain" || precipitation == "ice") precipitation = "Sleet"
 
         const result: WeatherSummary = {
             summary: data.conditions,
@@ -106,9 +107,10 @@ export class VisualCrossing implements WeatherProvider {
             windDirection: data.winddir,
             precipitation: precipitation,
             cloudCover: data.cloudcover,
+            visibility: data.visibility,
             extraData: {
-                mmPrecipitation: snowDepth || precipLevel,
-                visibility: data.visibility
+                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                mmPrecipitation: snowDepth || precipLevel
             }
         }
 

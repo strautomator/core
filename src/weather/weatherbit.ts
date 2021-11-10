@@ -1,7 +1,7 @@
 // Strautomator Core: Weather - Weatherbit
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {processWeatherSummary, weatherSummaryString} from "./utils"
+import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
@@ -30,6 +30,7 @@ export class Weatherbit implements WeatherProvider {
     /**
      * Get current weather conditions for the specified coordinates.
      * @param coordinates Array with latitude and longitude.
+     * @param date Date for the weather request.
      * @param preferences User preferences to get proper weather units.
      */
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
@@ -50,7 +51,7 @@ export class Weatherbit implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, date, preferences)
             if (result) {
                 logger.info("Weatherbit.getWeather", weatherSummaryString(coordinates, date, result, preferences))
             }
@@ -68,7 +69,7 @@ export class Weatherbit implements WeatherProvider {
      * @param data Data from Weatherbit.
      * @param preferences User preferences.
      */
-    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("Weatherbit.toWeatherSummary", data, date, preferences.weatherUnit)
 
         // Check if received data is valid.
@@ -81,20 +82,20 @@ export class Weatherbit implements WeatherProvider {
         let iconText = null
         switch (code) {
             case "2":
-                iconText = "thunderstorm"
+                iconText = "Thunderstorm"
                 break
             case "3":
             case "5":
-                iconText = "rain"
+                iconText = "Rain"
                 break
             case "6":
-                iconText = ["610", "611"].indexOf(data.weather.code) < 0 ? "snow" : "sleet"
+                iconText = ["610", "611"].indexOf(data.weather.code) < 0 ? "Snow" : "Sleet"
                 break
             case "7":
-                iconText = "fog"
+                iconText = "Fog"
                 break
             case "9":
-                iconText = "rain"
+                iconText = "Rain"
                 break
         }
 
@@ -106,12 +107,13 @@ export class Weatherbit implements WeatherProvider {
             pressure: data.pres,
             windSpeed: data.wind_spd,
             windDirection: data.wind_dir,
-            precipitation: data.snow ? "snow" : null,
+            precipitation: data.snow ? "Snow" : data.precip ? "Rain" : null,
             cloudCover: data.clouds,
+            visibility: data.vis ,
             extraData: {
+                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
                 iconText: iconText,
-                mmPrecipitation: data.snow || data.precip,
-                visibility: data.vis
+                mmPrecipitation: data.snow || data.precip
             }
         }
 

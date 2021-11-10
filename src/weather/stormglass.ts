@@ -1,7 +1,7 @@
 // Strautomator Core: Weather - Storm Glass
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {processWeatherSummary, weatherSummaryString} from "./utils"
+import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
@@ -45,7 +45,7 @@ export class StormGlass implements WeatherProvider {
             const secret = settings.weather.stormglass.secret
             const mDate = dayjs.utc(date)
             const isYesterday = mDate.dayOfYear() != dayjs.utc().dayOfYear()
-            const params = "airTemperature,humidity,pressure,cloudCover,windDirection,windSpeed,precipitation,snowDepth"
+            const params = "airTemperature,humidity,pressure,cloudCover,windDirection,windSpeed,precipitation,snowDepth,visibility"
             let weatherUrl = `${baseUrl}weather/point?lat=${coordinates[0]}&lng=${coordinates[1]}&params=${params}`
 
             // If date is different than today, send it with the request.
@@ -59,7 +59,7 @@ export class StormGlass implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl, headers: headers}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, date, preferences)
             if (result) {
                 logger.info("StormGlass.getWeather", weatherSummaryString(coordinates, date, result, preferences))
             }
@@ -76,7 +76,7 @@ export class StormGlass implements WeatherProvider {
      * Transform data from the Storm Glass API to a WeatherSummary.
      * @param data Data from Storm Glass.
      */
-    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("StormGlass.toWeatherSummary", data, date, preferences.weatherUnit)
 
         // Get correct array from response.
@@ -92,7 +92,7 @@ export class StormGlass implements WeatherProvider {
         const cloudCover = this.getDataProperty(timeData.cloudCover)
         const precipLevel = this.getDataProperty(timeData.precipitation)
         const snowDepth = this.getDataProperty(timeData.snowDepth)
-        const precipitation = snowDepth > 0 && precipLevel > 0 ? "snow" : null
+        const precipitation = snowDepth > 0 && precipLevel > 0 ? "Snow" : null
 
         const result: WeatherSummary = {
             summary: null,
@@ -104,9 +104,10 @@ export class StormGlass implements WeatherProvider {
             windDirection: this.getDataProperty(timeData.windDirection),
             precipitation: precipitation,
             cloudCover: cloudCover,
+            visibility: this.getDataProperty(timeData.visibility),
             extraData: {
-                mmPrecipitation: precipLevel,
-                visibility: timeData.visibility
+                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                mmPrecipitation: precipLevel
             }
         }
 

@@ -22,6 +22,18 @@ export enum MoonPhase {
 }
 
 /**
+ * Sunrise and sunset details.
+ */
+export interface Suntimes {
+    /** Sunrise, will be null if sun never rises. */
+    sunrise?: string
+    /** Sunset, will be null if sun never sets. */
+    sunset?: string
+    /** Optional time of day, if a date was passed when calculating the sun times. */
+    timeOfDay: "day" | "night"
+}
+
+/**
  * Weather providers.
  */
 export interface WeatherProvider {
@@ -65,18 +77,20 @@ export interface WeatherSummary {
     precipitation: string
     /** Cloud coverage, percentage. */
     cloudCover: string | number
+    /** Visibility distance. */
+    visibility?: number
     /** Moon phase (as string). */
     moon?: MoonPhase
     /** Weather unicode icon. */
     icon?: string
     /** Extra data for summary calculation, this will be removed after the weather summary has processed. */
     extraData?: {
+        /** Day or night? */
+        timeOfDay?: "day" | "night"
         /** Weather icon text. This flag will be removed after the weather summary has processed. */
         iconText?: string
         /** Precipitation quantity. */
         mmPrecipitation?: number
-        /** Visibility distance. */
-        visibility?: number
     }
 }
 

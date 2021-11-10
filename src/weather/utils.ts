@@ -1,6 +1,6 @@
 // Strautomator Core: Weather Utils
 
-import {MoonPhase, WeatherProvider, WeatherSummary} from "./types"
+import {MoonPhase, Suntimes, WeatherProvider, WeatherSummary} from "./types"
 import {UserPreferences} from "../users/types"
 import {translation} from "../translations"
 import Bottleneck from "bottleneck"
@@ -58,7 +58,6 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
  */
 export function processWeatherSummary(summary: WeatherSummary, date: Date, preferences: UserPreferences): void {
     try {
-        let hour = date.getHours()
         let extraData = summary.extraData || {}
 
         // No precipitation? Try calculating it based on the precipitation mm (if passed).
@@ -139,76 +138,65 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         // Set moon phase.
         summary.moon = getMoonPhase(date)
 
-        // Set missing icon text. Please note that icon texts shoul come as strings
-        // separated with dashes here.
+        // Set missing icon text.
         if (!extraData.iconText || extraData.iconText.length < 3) {
             let cloudCover = summary.cloudCover as any
-            let iconText = "clear"
-            if (summary.precipitation == "snow") iconText = "snow"
-            else if (summary.precipitation == "rain") iconText = "rain"
-            else if (summary.extraData.mmPrecipitation > 3) iconText = "rain"
-            else if (cloudCover > 75) iconText = "cloudy"
-            else if (cloudCover > 35) iconText = "partly-cloudy"
-            else if (cloudCover > 15) iconText = "mostly-clear"
+            let iconText = "Clear"
+            if (summary.precipitation == "Snow") iconText = "Snow"
+            else if (summary.precipitation == "Rain") iconText = "Rain"
+            else if (summary.extraData.mmPrecipitation > 3) iconText = "Rain"
+            else if (summary.visibility <= 1) iconText = "Fog"
+            else if (cloudCover > 75) iconText = "Cloudy"
+            else if (cloudCover > 40) iconText = "MostlyCloudy"
+            else if (cloudCover > 15) iconText = "MostlyClear"
 
             extraData.iconText = iconText
-        } else {
-            extraData.iconText = extraData.iconText.replace("light-", "")
-            extraData.iconText = extraData.iconText.replace("heavy-", "")
-            extraData.iconText = extraData.iconText.replace("strong-", "")
-        }
-
-        // Set correct day / night icons.
-        if (extraData.iconText == "clear") {
-            extraData.iconText = hour > 5 && hour < 20 ? "clear-day" : "clear-night"
         }
 
         // Select correct weather icon. Defaults to cloudy.
         let unicode: string = "2601"
         switch (extraData.iconText) {
-            case "clear-day":
-                unicode = "2600"
+            case "Clear":
+                if (summary.extraData.timeOfDay == "day") {
+                    unicode = "2600"
+                } else if (summary.moon == MoonPhase.Full) {
+                    unicode = "1F316"
+                } else {
+                    unicode = "1F312"
+                }
                 break
-            case "clear-night":
-                unicode = summary.moon == MoonPhase.Full ? "1F316" : "1F312"
-                break
-            case "mostly-clear":
+            case "MostlyClear":
                 unicode = "1F324"
                 break
-            case "partly-cloudy":
-            case "partly-cloudy-day":
-                unicode = "26C5"
+            case "MostlyCloudy":
+                if (summary.extraData.timeOfDay == "day") {
+                    unicode = "26C5"
+                } else {
+                    unicode = "1F319"
+                }
                 break
-            case "partly-cloudy-night":
-                unicode = "1F319"
-                break
-            case "drizzle":
-            case "rain":
+            case "Drizzle":
+            case "Rain":
                 unicode = "1F327"
                 break
-            case "hail":
-            case "ice-pellets":
-                unicode = "1F327"
-                break
-            case "snow":
+            case "Snow":
                 unicode = "2744"
                 break
-            case "sleet":
-            case "flurries":
-            case "freezing-rain":
+            case "Sleet":
                 unicode = "1F328"
                 break
-            case "wind":
+            case "Wind":
+            case "Windy":
                 unicode = "1F32C"
                 break
-            case "fog":
+            case "Fog":
                 unicode = "1F32B"
                 break
-            case "thunderstorm":
+            case "Thunderstorm":
                 unicode = "26C8"
                 break
-            case "tornado":
-            case "hurricane":
+            case "Tornado":
+            case "Hurricane":
                 unicode = "1F32A"
                 break
         }
@@ -218,10 +206,11 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             summary.icon = String.fromCodePoint(parseInt(unicode, 16))
         }
 
-        // No summary yet? Set one now.
-        if (!summary.summary) {
-            const arr = extraData.iconText.split("-")
-            const baseSummary = arr.length > 1 ? `${arr[0]} ${arr[1]}` : arr[0]
+        // Summary set? Check if it has a translation. If unset, set one now.
+        if (summary.summary) {
+            summary.summary = translation(summary.summary, preferences) || summary.summary
+        } else {
+            const baseSummary = translation(summary.extraData.iconText, preferences) || summary.extraData.iconText
             summary.summary = `${tempSummary}, ${baseSummary}`
 
             if (isWindy) summary.summary += `, ${translation("Windy", preferences)}`
@@ -287,6 +276,57 @@ export function getMoonPhase(date: Date): MoonPhase {
     if (phase == 0) return MoonPhase.New
     if (phase == 4) return MoonPhase.Full
     return MoonPhase.Quarter
+}
+
+/**
+ * Get the sunrise and sunset on the specified coordinates / date.
+ * @param coordinates Latitude and longitude.
+ * @param date The date.
+ * @param tz Optional timezone offset (hours).
+ */
+export function getSuntimes(coordinates: [number, number], date: Date, tz?: number): Suntimes {
+    const lat = coordinates[0]
+    const lng = coordinates[1]
+    const radians = Math.PI / 180.0
+    const degrees = 180.0 / Math.PI
+
+    // Based on https://gist.github.com/ruiokada/b28076d4911820ddcbbc
+    const a = Math.floor((14 - (date.getMonth() + 1.0)) / 12)
+    const y = date.getFullYear() + 4800 - a
+    const m = date.getMonth() + 1 + 12 * a - 3
+    const jDay = date.getDate() + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045
+    const nStar = jDay - 2451545.0009 - lng / 360.0
+    const n = Math.floor(nStar + 0.5)
+    const solarNoon = 2451545.0009 - lng / 360.0 + n
+    const M = 356.047 + 0.9856002585 * n
+    const C = 1.9148 * Math.sin(M * radians) + 0.02 * Math.sin(2 * M * radians) + 0.0003 * Math.sin(3 * M * radians)
+    const L = (M + 102.9372 + C + 180) % 360
+    const jTransit = solarNoon + 0.0053 * Math.sin(M * radians) - 0.0069 * Math.sin(2 * L * radians)
+    const D = Math.asin(Math.sin(L * radians) * Math.sin(23.45 * radians)) * degrees
+    const cosOmega = (Math.sin(-0.83 * radians) - Math.sin(lat * radians) * Math.sin(D * radians)) / (Math.cos(lat * radians) * Math.cos(D * radians))
+
+    // Sun never rises or never sets.
+    if (cosOmega > 1) return {timeOfDay: "night"}
+    if (cosOmega < -1) return {timeOfDay: "day"}
+
+    // Get Julian dates of sunrise/sunset.
+    const omega = Math.acos(cosOmega) * degrees
+    const jRise = jTransit - omega / 360.0
+    const jSet = jTransit + omega / 360.0
+
+    // Calculate it.
+    const utcRise = 24 * (jRise - jDay) + 12
+    const utcSet = 24 * (jSet - jDay) + 12
+    const tzOffset = tz === undefined ? (-1 * date.getTimezoneOffset()) / 60 : tz
+    const localRise = (utcRise + tzOffset) % 24
+    const localSet = (utcSet + tzOffset) % 24
+
+    const sunrise = `${Math.floor(localRise)}:${localRise - Math.floor(localRise) * 60}`
+    const sunset = `${Math.floor(localSet)}:${localRise - Math.floor(localSet) * 60}`
+    const fDate = dayjs(date).format("HH:mm")
+    const timeOfDay = fDate >= sunrise && fDate <= sunset ? "day" : "night"
+
+    return {sunrise: sunrise, sunset: sunset, timeOfDay: timeOfDay}
 }
 
 /**

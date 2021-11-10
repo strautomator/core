@@ -1,6 +1,7 @@
 // Strautomator Core: Translations
 
 import {UserPreferences} from "./users/types"
+import logger = require("anyhow")
 
 /**
  * Set of language strings.
@@ -31,6 +32,13 @@ interface LanguageString {
     ElevationGain: string
     Speed: string
     Calories: string
+    Clear: string
+    MostlyClear: string
+    Cloudy: string
+    MostlyCloudy: string
+    Thunderstorm: string
+    Tornado: string
+    Hurricane: string
 }
 
 /**
@@ -62,7 +70,14 @@ const languageStrings: {[id: string]: LanguageString} = {
         Distance: "distance",
         ElevationGain: "elevatin gain",
         Speed: "speed",
-        Calories: "calories"
+        Calories: "calories",
+        Clear: "clear",
+        MostlyClear: "mostly clear",
+        Cloudy: "cloudy",
+        MostlyCloudy: "mostly cloudy",
+        Thunderstorm: "thunderstorm",
+        Hurricane: "hurricane",
+        Tornado: "tornado"
     },
     de: {
         Description: "beschreibung",
@@ -89,7 +104,14 @@ const languageStrings: {[id: string]: LanguageString} = {
         Distance: "distanz",
         ElevationGain: "höhenmeter",
         Speed: "geschwindigkeit",
-        Calories: "kalorien"
+        Calories: "kalorien",
+        Clear: "klar",
+        MostlyClear: "meist klarer",
+        Cloudy: "bewölkt",
+        MostlyCloudy: "meist bewölkt",
+        Thunderstorm: "gewitter",
+        Hurricane: "hurrikan",
+        Tornado: "tornado"
     },
     es: {
         Description: "descripción",
@@ -116,7 +138,14 @@ const languageStrings: {[id: string]: LanguageString} = {
         Distance: "distancia",
         ElevationGain: "desnivel",
         Speed: "velocidad",
-        Calories: "calorías"
+        Calories: "calorías",
+        Clear: "claro",
+        MostlyClear: "mayormente claro",
+        Cloudy: "mublado",
+        MostlyCloudy: "mayormente nublado",
+        Thunderstorm: "tormenta",
+        Hurricane: "huracán",
+        Tornado: "tornado"
     },
     fr: {
         Description: "description",
@@ -143,7 +172,14 @@ const languageStrings: {[id: string]: LanguageString} = {
         Distance: "distance",
         ElevationGain: "gain d'altitude",
         Speed: "vitesse",
-        Calories: "calories"
+        Calories: "calories",
+        Clear: "ciel clair",
+        MostlyClear: "ciel généralement dégagé",
+        Cloudy: "nuageux",
+        MostlyCloudy: "plutôt nuageux",
+        Thunderstorm: "orage",
+        Hurricane: "ouragan",
+        Tornado: "tornade"
     },
     pt: {
         Description: "descrição",
@@ -170,7 +206,14 @@ const languageStrings: {[id: string]: LanguageString} = {
         Distance: "distância",
         ElevationGain: "elevação",
         Speed: "velocidade",
-        Calories: "calorias"
+        Calories: "calorias",
+        Clear: "céu aberto",
+        MostlyClear: "parcialmente nublado",
+        Cloudy: "nublado",
+        MostlyCloudy: "parcialmente nublado",
+        Thunderstorm: "tempestade",
+        Hurricane: "furacão",
+        Tornado: "tornado"
     }
 }
 
@@ -187,5 +230,11 @@ export const translation = (id: string, preferences: UserPreferences, capitalize
     }
 
     const result = languageStrings[language][id]
+
+    if (!result) {
+        logger.warn("Translations.translation", language, `No translation found for: ${id}`)
+        return id
+    }
+
     return capitalized ? result.charAt(0).toUpperCase() + result.slice(1) : result
 }

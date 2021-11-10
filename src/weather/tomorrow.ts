@@ -1,9 +1,10 @@
 // Strautomator Core: Weather - Tomorrow
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {processWeatherSummary, weatherSummaryString} from "./utils"
+import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
+import {translation} from "../translations"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
@@ -30,6 +31,7 @@ export class Tomorrow implements WeatherProvider {
     /**
      * Get current weather conditions for the specified coordinates.
      * @param coordinates Array with latitude and longitude.
+     * @param date Date for the weather request.
      * @param preferences User preferences to get proper weather units.
      */
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
@@ -46,7 +48,7 @@ export class Tomorrow implements WeatherProvider {
             const mDate = dayjs.utc(date)
             const startTime = mDate.format(dateFormat) + "Z"
             const endTime = mDate.add(1, "h").format(dateFormat) + "Z"
-            const fields = `weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover`
+            const fields = `weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover,visibility`
             const latlon = coordinates.join(",")
             const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
 
@@ -55,7 +57,7 @@ export class Tomorrow implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, date, preferences)
             if (result) {
                 logger.info("Tomorrow.getWeather", weatherSummaryString(coordinates, date, result, preferences))
             }
@@ -72,7 +74,7 @@ export class Tomorrow implements WeatherProvider {
      * Transform data from the Tomorrow API to a WeatherSummary.
      * @param data Data from Tomorrow.
      */
-    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("Tomorrow.toWeatherSummary", data, date, preferences.weatherUnit)
 
         // Check if received data is valid.
@@ -82,9 +84,8 @@ export class Tomorrow implements WeatherProvider {
         const hasPrecip = data.precipitationType && data.precipitationType > 0
         const precipitation = hasPrecip ? this.fieldDescriptors.precipitationType[data.precipitationType] : null
 
-        // Get correct icon text based on the weatherCode.
+        // Get correct summary / icon text based on the weatherCode.
         const summary = data.weatherCode ? this.fieldDescriptors.weatherCode[data.weatherCode] : null
-        const iconText = summary ? summary.replace(/ /gi, "-").toLowerCase() : null
 
         const result: WeatherSummary = {
             summary: summary,
@@ -94,12 +95,13 @@ export class Tomorrow implements WeatherProvider {
             pressure: data.pressureSurfaceLevel,
             windSpeed: data.windSpeed,
             windDirection: data.windDirection,
-            precipitation: precipitation,
+            precipitation: translation(precipitation, preferences),
             cloudCover: data.cloudCover,
+            visibility: data.visibility,
             extraData: {
-                iconText: iconText,
-                mmPrecipitation: data.precipitationIntensity,
-                visibility: data.visibility
+                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                iconText: summary,
+                mmPrecipitation: data.precipitationIntensity
             }
         }
 
@@ -116,39 +118,39 @@ export class Tomorrow implements WeatherProvider {
      */
     private fieldDescriptors = {
         precipitationType: {
-            "0": "dry",
-            "1": "rain",
-            "2": "snow",
-            "3": "freezing rain",
-            "4": "ice pellets"
+            "0": "Dry",
+            "1": "Rain",
+            "2": "Snow",
+            "3": "Sleet",
+            "4": "Sleet"
         },
         weatherCode: {
             "0": "Unknown",
             "1000": "Clear",
             "1001": "Cloudy",
-            "1100": "Mostly Clear",
-            "1101": "Partly Cloudy",
-            "1102": "Mostly Cloudy",
+            "1100": "MostlyClear",
+            "1101": "Cloudy",
+            "1102": "MostlyCloudy",
             "2000": "Fog",
-            "2100": "Light Fog",
-            "3000": "Light Wind",
-            "3001": "Wind",
-            "3002": "Strong Wind",
+            "2100": "Fog",
+            "3000": "Windy",
+            "3001": "Windy",
+            "3002": "Windy",
             "4000": "Drizzle",
             "4001": "Rain",
-            "4200": "Light Rain",
-            "4201": "Heavy Rain",
+            "4200": "Rain",
+            "4201": "Rain",
             "5000": "Snow",
-            "5001": "Flurries",
-            "5100": "Light Snow",
-            "5101": "Heavy Snow",
-            "6000": "Freezing Drizzle",
-            "6001": "Freezing Rain",
-            "6200": "Light Freezing Rain",
-            "6201": "Heavy Freezing Rain",
-            "7000": "Ice Pellets",
-            "7101": "Heavy Ice Pellets",
-            "7102": "Light Ice Pellets",
+            "5001": "Snow",
+            "5100": "Snow",
+            "5101": "Snow",
+            "6000": "Drizzle",
+            "6001": "Rain",
+            "6200": "Sleet",
+            "6201": "Sleet",
+            "7000": "Sleet",
+            "7101": "Sleet",
+            "7102": "Sleet",
             "8000": "Thunderstorm"
         }
     }

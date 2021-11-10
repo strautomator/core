@@ -1,7 +1,7 @@
 // Strautomator Core: WeatherAPI.com (NOT WORKING YET)
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {processWeatherSummary, weatherSummaryString} from "./utils"
+import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
 import _ = require("lodash")
@@ -31,6 +31,7 @@ export class WeatherAPI implements WeatherProvider {
     /**
      * Get current weather conditions for the specified coordinates.
      * @param coordinates Array with latitude and longitude.
+     * @param date Date for the weather request.
      * @param preferences User preferences to get proper weather units.
      */
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
@@ -52,7 +53,7 @@ export class WeatherAPI implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, date, preferences)
             if (result) {
                 logger.info("WeatherAPI.getWeather", weatherSummaryString(coordinates, date, result, preferences))
             }
@@ -71,7 +72,7 @@ export class WeatherAPI implements WeatherProvider {
      * @param date Weather observation date.
      * @param preferences User preferences.
      */
-    private toWeatherSummary = (data: any, date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
         logger.debug("WeatherAPI.toWeatherSummary", data, date, preferences.weatherUnit)
 
         data = this.filterData(data, date)
@@ -83,8 +84,8 @@ export class WeatherAPI implements WeatherProvider {
         // Make sure we don't have sunny at night :-)
         let summary = data.condition && data.condition.text ? data.condition.text.toLowerCase() : null
         if (data.is_day === 0) {
-            if (summary == "sunny") summary = "Clear night"
-            else if (summary.indexOf("sunny") > 0) summary = summary.replace("sunny", "clear")
+            if (summary == "sunny") summary = "Clear"
+            else if (summary.indexOf("sunny") > 0) summary = summary.replace("Sunny", "Clear")
         }
 
         const result: WeatherSummary = {
@@ -97,9 +98,10 @@ export class WeatherAPI implements WeatherProvider {
             windDirection: data.wind_degree ? data.wind_degree : null,
             precipitation: null,
             cloudCover: data.cloud,
+            visibility: data.avgvis_km || data.vis_km || 99,
             extraData: {
-                mmPrecipitation: data.precip_mm,
-                visibility: data.avgvis_km
+                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                mmPrecipitation: data.precip_mm
             }
         }
 
