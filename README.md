@@ -45,7 +45,7 @@ You'll have to register an account and get the necessary credentials for the 3rd
 -   Strava API
 -   PayPal API
 -   Twitter API
--   Weather providers (Tomorrow, Storm Glass etc...)
+-   Weather providers (Tomorrow.io, Storm Glass etc...)
 
 If you need help getting any of those, or have questions, just open a [new issue](https://github.com/strautomator/core/issues/new) and I'll be glad to help.
 

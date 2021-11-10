@@ -1,4 +1,4 @@
-// Strautomator Core: Weather - Tomorrow
+// Strautomator Core: Weather - Tomorrow.io
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
 import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
@@ -10,7 +10,7 @@ import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
- * Tomorrow weather API.
+ * Tomorrow.io weather API.
  */
 export class Tomorrow implements WeatherProvider {
     private constructor() {}
@@ -22,7 +22,7 @@ export class Tomorrow implements WeatherProvider {
     stats: WeatherApiStats = null
 
     name: string = "tomorrow"
-    title: string = "Tomorrow"
+    title: string = "Tomorrow.io"
     maxHours: number = 5
 
     // METHODS
