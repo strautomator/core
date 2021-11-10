@@ -105,7 +105,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
             activity.updatedFields.push("name")
         }
-        // AUto generate the activity name?
+        // Auto generate the activity name?
         else if (action.type == RecipeActionType.GenerateName) {
             activity.name = getActivityFortune(user, activity)
 
