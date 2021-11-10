@@ -153,8 +153,10 @@ export class Weather {
      * @param provider Optional preferred weather provider.
      */
     getLocationWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences, provider?: string): Promise<WeatherSummary> => {
-        if (!date || !coordinates || coordinates.length != 2) {
-            logger.warn("Weather.getLocationWeather", coordinates.join(", "), date, `Invalid date coordinates or date, can't fetch weather`)
+        if (!date || !coordinates || coordinates.length != 2 || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
+            const coordinatesLog = coordinates ? coordinates.join(", ") : "no coordinates"
+            const dateLog = date ? dayjs(date).format(settings.dayjs.datetime) : "no date"
+            logger.warn("Weather.getLocationWeather", coordinatesLog, dateLog, "Missing coordinates or date, won't fetch")
             return null
         }
 
