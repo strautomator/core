@@ -18,6 +18,8 @@ export interface StravaActivity {
     commute?: boolean
     /** Activity hidden on the home feed? */
     hideHome?: boolean
+    /** Activity done on a trainer machine? */
+    trainer?: boolean
     /** Start date and time, local time. */
     dateStart?: Date
     /** End date and time, local time. */
