@@ -3,7 +3,7 @@
 import {RecipeAction, RecipeActionType, RecipeData, RecipeStatsData} from "./types"
 import {recipeActionList} from "./lists"
 import {transformActivityFields} from "../strava/utils"
-import {StravaActivity, StravaGear} from "../strava/types"
+import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {getActivityFortune} from "../fortune"
@@ -205,22 +205,59 @@ export const mapStyleAction = async (user: UserData, activity: StravaActivity, r
  */
 export const gearAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        const getGear = (): StravaGear => {
-            if (activity.type == "Ride" || activity.type == "VirtualRide" || activity.type == "EBikeRide") {
-                return _.find(user.profile.bikes, {id: action.value})
-            } else {
-                return _.find(user.profile.shoes, {id: action.value})
-            }
-        }
+        const isRide = activity.type == "Ride" || activity.type == "VirtualRide" || activity.type == "EBikeRide"
+        const isRun = activity.type == "Run" || activity.type == "VirtualRun" || activity.type == "Walk"
+        const bike = _.find(user.profile.bikes, {id: action.value})
+        const shoe = _.find(user.profile.shoes, {id: action.value})
+        const gear = bike || shoe
 
-        let gear: StravaGear = getGear()
-
+        // Make sure gear is valid for the correct activity type.
         if (!gear) {
             throw new Error(`Gear ID ${action.value} not found`)
+        } else if ((isRide && shoe) || (isRun && bike)) {
+            logger.info("Recipes.gearAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `Gear ${action.value} not valid for type ${activity.type}`)
+            return false
         } else {
             activity.gear = gear
             activity.updatedFields.push("gear")
         }
+
+        return true
+    } catch (ex) {
+        failedAction(user, activity, recipe, action, ex)
+        return false
+    }
+}
+
+/**
+ * Set the activity workout type.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param action The action details.
+ */
+export const workoutTypeAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+    try {
+        const isRide = activity.type == "Ride"
+        const isRun = activity.type == "Run"
+        let abortMessage: string
+
+        // Avoid setting ride workout types to runs, and vice versa.
+        if (!isRide && !isRun) {
+            abortMessage = `Activity is not a ride or run, won't set workout type to ${action.value}`
+        } else if (isRide && action.value < 10) {
+            abortMessage = `Activity is not a ride, won't set workout type to ${action.value}`
+        } else if (isRun && action.value >= 10) {
+            abortMessage = `Activity is not a run, won't set workout type to ${action.value}`
+        }
+
+        if (abortMessage) {
+            logger.info("Recipes.workoutTypeAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, abortMessage)
+            return false
+        }
+
+        activity.workoutType = action.value
+        activity.updatedFields.push("workoutType")
 
         return true
     } catch (ex) {

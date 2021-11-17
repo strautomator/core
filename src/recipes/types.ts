@@ -84,8 +84,9 @@ export enum RecipeActionType {
     AppendDescription = "appendDescription",
     Gear = "gear",
     HideHome = "hideHome",
-    MapStyle = "mapStyle",
+    WorkoutType = "workoutType",
     PrivateNote = "privateNote",
+    MapStyle = "mapStyle",
     Webhook = "webhook"
 }
 
