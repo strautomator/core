@@ -242,6 +242,8 @@
             "pageSize": 200
         },
         "ftp": {
+            // Estimated FTP will go down by 2% for each week of no activities.
+            "idleLossPerWeek": 0.02,
             // User's FTP will be estimated based on the last 10 weeks.
             "weeks": 10,
             // Maximum allowed number of weeks when calculating FTP.
@@ -255,8 +257,8 @@
         "maxQueueAge": 43200
     },
     "twitter": {
-        // Only 30% chances of posting interesting activities on Twitter.
-        "activityThreshold": 0.3
+        // Around 35% chances of posting interesting activities on Twitter.
+        "activityThreshold": 0.35
     },
     "users": {
         // Consider users idle if they had no processed activities for more than 2 months.

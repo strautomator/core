@@ -710,7 +710,7 @@ export class StravaActivities {
             if (result) {
                 logger.info("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, `Estimated FTP: ${result.ftpWatts}w`)
             } else {
-                logger.info("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, "Could not estimate FTP")
+                logger.debug("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, "Could not estimate FTP")
             }
 
             return result
