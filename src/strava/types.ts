@@ -8,6 +8,8 @@ export interface StravaActivity {
     id: number
     /** Activity type (Ride, Run, etc). */
     type: StravaSport
+    /** Workout (ride or run) type. */
+    workoutType?: StravaRideType | StravaRunType
     /** Activity name. */
     name: string
     /** Activity description or details. */
@@ -349,6 +351,23 @@ export enum StravaSport {
     Windsurf = "Windsurf",
     Workout = "Workout",
     Yoga = "Yoga"
+}
+
+/**
+ * Strava "Ride" workout types.
+ */
+export enum StravaRideType {
+    Race = 11,
+    Workout = 12
+}
+
+/**
+ * Strava "Run" workout types.
+ */
+export enum StravaRunType {
+    Race = 1,
+    LongRun = 2,
+    Workout = 3
 }
 
 /**

@@ -49,6 +49,9 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     activity.hasLocation = (activity.locationStart && activity.locationStart.length > 0) || (activity.locationEnd && activity.locationEnd.length > 0)
 
     // Extra optional fields.
+    if (data.workout_type && data.workout_type != 0 && data.workout_type != 10) {
+        activity.workoutType = data.workout_type
+    }
     if (data.private_note) {
         activity.privateNote = data.private_note
     }
