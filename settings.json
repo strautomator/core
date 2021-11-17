@@ -242,8 +242,8 @@
             "pageSize": 200
         },
         "ftp": {
-            // User's FTP will be estimated based on the last 12 weeks.
-            "weeks": 12,
+            // User's FTP will be estimated based on the last 10 weeks.
+            "weeks": 10,
             // Maximum allowed number of weeks when calculating FTP.
             "maxWeeks": 52,
             // FTP can be updated only once every 24 hours.
