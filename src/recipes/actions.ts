@@ -45,7 +45,7 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
  */
 export const defaultAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        let processedValue = action.value
+        let processedValue = action.value || ""
         let activityWithSuffix: any = _.cloneDeep(activity)
 
         // Pre-process activity data and append suffixes to values before processing.
@@ -78,8 +78,12 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             }
         }
 
-        // Iterate activity properties and replace keywords set on the action value.
-        processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
+        // Using the activity fortune?
+        if (action.type == RecipeActionType.GenerateName) {
+            processedValue = await getActivityFortune(user, activity)
+        } else if (processedValue) {
+            processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
+        }
 
         // Empty value? Stop here.
         if (processedValue === null || processedValue.toString().trim() === "") {
@@ -88,33 +92,23 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         }
 
         // Set the activity name?
-        if (action.type == RecipeActionType.Name) {
+        if (action.type == RecipeActionType.Name || action.type == RecipeActionType.GenerateName) {
             activity.name = processedValue
-
             activity.updatedFields.push("name")
         }
         // Prepend to the activity name?
         else if (action.type == RecipeActionType.PrependName) {
             activity.name = `${processedValue} ${activity.name}`
-
             activity.updatedFields.push("name")
         }
         // Append to the activity name?
         else if (action.type == RecipeActionType.AppendName) {
             activity.name = `${activity.name} ${processedValue}`
-
-            activity.updatedFields.push("name")
-        }
-        // Auto generate the activity name?
-        else if (action.type == RecipeActionType.GenerateName) {
-            activity.name = await getActivityFortune(user, activity)
-
             activity.updatedFields.push("name")
         }
         // Set the activity description?
         else if (action.type == RecipeActionType.Description) {
             activity.description = processedValue
-
             activity.updatedFields.push("description")
         }
         // Prepend to the activity description?
