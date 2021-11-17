@@ -128,7 +128,7 @@ export class StravaAthletes {
     estimateFtp = async (user: UserData, activities: StravaActivity[]): Promise<StravaEstimatedFtp> => {
         try {
             if (!activities || activities.length == 0) {
-                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "No activities passed, can't estimate FTP")
+                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "No activities, can't estimate FTP")
                 return null
             }
 
@@ -217,11 +217,11 @@ export class StravaAthletes {
                 recentlyUpdated = lastUpdate >= now
             }
 
-            // Adjust to around 3% loss per week off the bike.
+            // Adjusted loss per week off the bike.
             const weeks = Math.floor(dayjs().diff(lastActivityDate, "d") / 7)
             if (weeks > 0) {
                 adjusted = true
-                ftpWatts -= ftpWatts * (weeks * 0.03)
+                ftpWatts -= ftpWatts * (weeks * settings.strava.ftp.idleLossPerWeek)
             }
 
             // Round FTP.
