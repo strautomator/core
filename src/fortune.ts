@@ -50,6 +50,8 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     let prefixes = ["", "delightful", "amazing", "great", "", "just your regular", "crazy", "superb", "", "magnificent", "marvellous", "exotic", ""]
     let names = []
     let uniqueNames = []
+    let seqCount = 0
+    let usingWeather = false
 
     // Rounded activity properties.
     const distanceR = Math.round(activity.distance)
@@ -62,15 +64,16 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         prefixes.unshift("virtual:")
     }
     if (activity.trainer) {
+        prefixes.push("pain cave:")
         prefixes.push("turbo trainer:")
         prefixes.unshift("indoor:")
     }
 
     // Cycling.
     if (activity.type == StravaSport.Ride || activity.type == StravaSport.VirtualRide || activity.type == StravaSport.EBikeRide) {
-        if (activity.distance >= 500) {
+        if (activity.distance >= 400) {
             uniqueNames.push("almost a lap around the world")
-            uniqueNames.push("short and easy that was")
+            uniqueNames.push("short and easy tour")
         } else if (activity.distance >= 200 && activity.distance <= 220) {
             names.push("double century ride")
             names.push("century x2")
@@ -81,14 +84,14 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
             names.push("and so close to 3 digits")
         } else if ((imperial && distanceR == 26) || distanceR == 42) {
             uniqueNames.push("marathon on two wheels")
-            uniqueNames.push("maratho... on a bike")
+            uniqueNames.push("marathon on a bike")
         } else if (((imperial && activity.distance < 6) || activity.distance) < 10 && activity.distance > 0) {
             names.push("and short, too short of a ride")
             names.push("short, very short ride")
-            names.push("shorty")
+            names.push("mini ride")
         }
 
-        if ((imperial && activity.speedAvg > 31) || activity.speedAvg >= 50) {
+        if ((imperial && activity.speedAvg > 26) || activity.speedAvg > 42) {
             uniqueNames.push("fast and furious")
             uniqueNames.push("shut up legs")
             uniqueNames.push("lightspeed")
@@ -101,12 +104,14 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         if (activity.wattsMax > 1600 || activity.wattsAvg > 400) {
             uniqueNames.push("rocket propelled")
             uniqueNames.push("shut up legs")
-        } else if (activity.wattsAvg < 100 && activity.wattsAvg > 0) {
-            names.push("easy does it")
-            names.push("soft pedalling")
+            uniqueNames.push("legs are pumping hard")
+        } else if (activity.wattsAvg < 80 && activity.wattsAvg > 0) {
+            uniqueNames.push("easy does it")
+            uniqueNames.push("soft pedalling")
+            uniqueNames.push("smoooth")
         }
 
-        if (activity.distance > 0 && activity.elevationGain > 0 && activity.climbingRatio <= 0.1) {
+        if (activity.distance > 0 && activity.elevationGain > 0 && activity.climbingRatio < 0.15) {
             names.push("flatland tour")
             names.push("ride along some massive hills")
         }
@@ -122,52 +127,56 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         } else if (distanceR == 10) {
             names.push("10K")
             names.push("10K or 6 miles?")
-        } else if (((imperial && activity.distance < 3) || activity.distance < 5) && activity.distance > 0) {
+        } else if (((imperial && activity.distance < 2.5) || activity.distance < 4) && activity.distance > 0) {
             names.push("super short run")
             names.push("mini workout")
         }
     }
 
     // High elevation gain.
-    if ((!imperial && activity.elevationGain > 8000) || activity.elevationGain > 27000) {
+    if ((!imperial && activity.elevationGain > 6000) || activity.elevationGain > 19500) {
         uniqueNames.push("everesting")
         uniqueNames.push("the sky is the limit")
         uniqueNames.push("don’t buy upgrades, ride up grades")
         uniqueNames.push("don’t upgrade, go up grades")
-    } else if ((!imperial && activity.elevationGain > 2500) || activity.elevationGain > 9000) {
+    } else if ((!imperial && activity.elevationGain > 2000) || activity.elevationGain > 6500) {
         names.push("roller coaster")
-        names.push("way up to the sky")
+        names.push("tour with lots of elevation")
     }
 
-    // Ultra long workouts or short workouts.
-    if (activity.movingTime > 86400) {
+    // Ultra long or short workouts.
+    if (activity.movingTime > 43200) {
+        uniqueNames.push("a long, long day")
+        uniqueNames.push("short tour around the block")
         uniqueNames.push("keep going, never stop")
-        uniqueNames.push("that was a long day")
     } else if (activity.movingTime > 28800) {
-        uniqueNames.push("call it a work day")
-    } else if (activity.distance < 1) {
+        names.push("many-hours tour")
+        names.push("short tour around the block")
+    } else if (activity.distance < 2 && activity.distance > 0) {
         uniqueNames.push("now that was quick")
         uniqueNames.push("training for the IRONMAN")
         uniqueNames.push("training for the TdF")
     }
 
     // Lots of calories.
-    if (activity.calories > 10000) {
+    if (activity.calories > 6000) {
         uniqueNames.push("a week's worth of calories")
         uniqueNames.push("energy galore")
-    } else if (activity.calories > 5000) {
+    } else if (activity.calories > 4000) {
         names.push("caloric extermination")
         names.push("caloric workout")
     }
 
     // High heart rate.
-    if (activity.hrMax > 200) {
+    if (activity.hrMax > 210 || activity.hrAvg > 170) {
         uniqueNames.push("heart stress test")
+        uniqueNames.push("cardiovascular festival")
     }
 
     // High cadence.
     if (activity.cadenceAvg > 120) {
-        names.push("ultra fast knitting machine")
+        uniqueNames.push("the knitting machine")
+        uniqueNames.push("RPM")
     }
     if (activity.cadenceAvg > 100) {
         names.push("knitting machine")
@@ -177,8 +186,24 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     if (distanceR == speedAvgR) {
         uniqueNames.push(`${distanceR} / ${speedAvgR}`)
     }
-    if (elevationGainR == 1234) {
-        uniqueNames.push("one two three four")
+
+    // Sequencing.
+    if (distanceR == 123 || activity.wattsAvg == 123 || activity.relativeEffort == 123 || activity.hrAvg == 123) {
+        uniqueNames.push("one two three")
+    } else if (distanceR == 321 || activity.wattsAvg == 321 || activity.relativeEffort == 321) {
+        uniqueNames.push("three two one")
+    }
+
+    for (let value of [distanceR, elevationGainR, activity.wattsAvg, activity.wattsMax, activity.relativeEffort, activity.hrAvg]) {
+        const aValue = value ? value.toString() : ""
+        if (aValue.length > 2 && /^(.)\1+$/.test(aValue)) {
+            seqCount++
+        }
+    }
+    if (seqCount > 2) {
+        uniqueNames.push("royal straight flush")
+    } else if (seqCount > 1) {
+        names.push("straight flush")
     }
 
     // Commutes.
@@ -187,14 +212,13 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
             prefixes.push("commute:")
             prefixes.unshift("yet another commute:")
         } else {
-            names.push("commuting around")
-            names.push("commute galore")
+            names.push("commute")
         }
     }
 
-    // Weather based checks for 30% of non-PRO and 80% of PRO users, but only
+    // Weather based checks for 30% of non-PRO and 90% of PRO users, but only
     // for activities that happened on the last 2 days.
-    const rndWeather = user.isPro ? 0.81 : 0.31
+    const rndWeather = user.isPro ? 0.91 : 0.31
     if (activity.hasLocation && now.subtract(2, "days").isBefore(activity.dateEnd) && Math.random() < rndWeather) {
         const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
 
@@ -204,44 +228,48 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
 
         // Fetch weather summary for activity.
         const weatherSummary = await weather.getActivityWeather(activity, preferences)
-        let wPrefixes: string[] = []
+        if (weatherSummary) {
+            let wPrefixes: string[] = []
 
-        // Check for weather on start and end of the activity.
-        for (let summary of [weatherSummary.start, weatherSummary.end]) {
-            if (!summary) continue
+            // Check for weather on start and end of the activity.
+            for (let summary of [weatherSummary.start, weatherSummary.end]) {
+                if (!summary) continue
 
-            const temperature = parseFloat(summary.temperature.toString().replace(/[^\d.-]/g, ""))
-            const precipitation = summary.precipitation ? summary.precipitation.toLowerCase() : ""
-            const random = Math.random()
+                const temperature = parseFloat(summary.temperature.toString().replace(/[^\d.-]/g, ""))
+                const precipitation = summary.precipitation ? summary.precipitation.toLowerCase() : ""
+                const random = Math.random()
 
-            if ((weatherUnit == "f" && temperature < 23) || temperature < -5) {
-                uniqueNames.push("ice age")
-                uniqueNames.push("frostbite festival")
-                uniqueNames.push("feels like summer")
-            } else if ((weatherUnit == "f" && temperature > 95) || temperature > 35) {
-                uniqueNames.push("melting")
-                uniqueNames.push("outdoor sauna")
-                uniqueNames.push("doesn't feel warm, at all")
-            } else if ((weatherUnit == "f" && temperature < 33) || temperature < 1) {
-                wPrefixes.push(random > 0.5 ? "freezing" : "icy")
-            } else if ((weatherUnit == "f" && temperature < 51) || temperature < 11) {
-                wPrefixes.push(random > 0.5 ? "chilly" : "cold")
-            } else if ((weatherUnit == "f" && temperature > 86) || temperature > 30) {
-                wPrefixes.push(random > 0.5 ? "tropical" : "hot")
-            } else if ((weatherUnit == "f" && temperature > 68) || temperature > 20) {
-                wPrefixes.push(random > 0.5 ? "warm" : "cozy")
+                if ((weatherUnit == "f" && temperature < 23) || temperature < -5) {
+                    uniqueNames.push("ice age")
+                    uniqueNames.push("frostbite festival")
+                    uniqueNames.push("feels like summer")
+                } else if ((weatherUnit == "f" && temperature > 95) || temperature > 35) {
+                    uniqueNames.push("melting")
+                    uniqueNames.push("outdoor sauna")
+                    uniqueNames.push("doesn't feel warm, at all")
+                } else if ((weatherUnit == "f" && temperature < 33) || temperature < 1) {
+                    wPrefixes.push(random > 0.5 ? "freezing" : "icy")
+                } else if ((weatherUnit == "f" && temperature < 51) || temperature < 11) {
+                    wPrefixes.push(random > 0.5 ? "chilly" : "cold")
+                } else if ((weatherUnit == "f" && temperature > 86) || temperature > 30) {
+                    wPrefixes.push(random > 0.5 ? "tropical" : "hot")
+                } else if ((weatherUnit == "f" && temperature > 68) || temperature > 20) {
+                    wPrefixes.push(random > 0.5 ? "warm" : "cozy")
+                }
+
+                if (precipitation.includes("snow")) {
+                    wPrefixes.push(random > 0.5 ? "snowy" : "snow-powdered")
+                } else if (precipitation.includes("rain") || precipitation.includes("drizzle")) {
+                    wPrefixes.push(random > 0.5 ? "raining" : "wet")
+                }
             }
 
-            if (precipitation.includes("snow")) {
-                wPrefixes.push(random > 0.5 ? "snowy" : "snow-powdered")
-            } else if (precipitation.includes("rain") || precipitation.includes("drizzle")) {
-                wPrefixes.push(random > 0.5 ? "raining" : "wet")
+            // Weather prefixes were set? Append them to the original prefixes.
+            if (wPrefixes.length > 0) {
+                prefixes = prefixes.map((p) => `${_.sample(wPrefixes)} ${p}`)
             }
-        }
 
-        // Weather prefixes were set? Append them to the original prefixes.
-        if (wPrefixes.length > 0) {
-            prefixes = prefixes.map((p) => `${_.sample(wPrefixes)} ${p}`)
+            usingWeather = true
         }
     }
 
@@ -257,7 +285,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     }
 
     result = result ? result.charAt(0).toUpperCase() + result.slice(1) : _.sample(fortuneCookies)
-    logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, result)
+    logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, `${usingWeather ? "with" : "withour"} weather`, result)
 
     return result
 }
