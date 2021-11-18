@@ -53,6 +53,10 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     let seqCount = 0
     let usingWeather = false
 
+    // Activity types.
+    const isRide = activity.type == StravaSport.Ride || activity.type == StravaSport.VirtualRide || activity.type == StravaSport.EBikeRide
+    const isRun = activity.type == StravaSport.Run || activity.type == StravaSport.Walk
+
     // Rounded activity properties.
     const distanceR = Math.round(activity.distance)
     const speedAvgR = Math.round(activity.speedAvg)
@@ -70,16 +74,18 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     }
 
     // Cycling.
-    if (activity.type == StravaSport.Ride || activity.type == StravaSport.VirtualRide || activity.type == StravaSport.EBikeRide) {
+    if (isRide) {
         if (activity.distance >= 400) {
             uniqueNames.push("almost a lap around the world")
             uniqueNames.push("short and easy tour")
-        } else if (activity.distance >= 200 && activity.distance <= 220) {
+        } else if (activity.distance >= 200 && activity.distance <= 250) {
+            names.push("double century tour")
             names.push("double century ride")
             names.push("century x2")
-        } else if (activity.distance >= 100 && activity.distance <= 110) {
+        } else if (activity.distance >= 100 && activity.distance <= 120) {
             names.push("century ride")
-        } else if (activity.distance > 99 && activity.distance < 100) {
+            names.push("century tour")
+        } else if (activity.distance > 98 && activity.distance < 100) {
             names.push("almost-a-century ride")
             names.push("and so close to 3 digits")
         } else if ((imperial && distanceR == 26) || distanceR == 42) {
@@ -118,7 +124,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     }
 
     // Running.
-    else if (activity.type == StravaSport.Run || activity.type == StravaSport.Walk) {
+    else if (isRun) {
         if ((imperial && activity.distance >= 52) || activity.distance >= 84) {
             uniqueNames.push("when a marathon is not enough")
             uniqueNames.push("double marathon")
@@ -270,6 +276,16 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
             }
 
             usingWeather = true
+        }
+    }
+
+    // No uniqe names or names? Maybe just use the basic stuff, 10% chances.
+    if (uniqueNames.length == 0 && names.length == 0 && Math.random() < 0.11) {
+        if (isRide) {
+            names.push("ride")
+            names.push("tour")
+            names.push("bike ride")
+            names.push("bike tour")
         }
     }
 
