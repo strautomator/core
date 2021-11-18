@@ -35,7 +35,7 @@ export const EmailTemplates = {
         subject: "${gearName} - ${component} (GearWear alert)",
         body:
             "<p>" +
-            "It's about time to replace this component 🙂<br>-<br>" +
+            "It's about time to replace this component... 🙂<br>-<br>" +
             "<strong>${gearName} - ${component}</strong><br>" +
             "Currently with ${currentDistance} ${units}, ${currentTime} hours<br>" +
             "Alert on: ${alertDetails}<br>-" +
@@ -53,7 +53,7 @@ export const EmailTemplates = {
         subject: "${gearName} - ${component} (GearWear reminder)",
         body:
             "<p>" +
-            "This is a small reminder that you haven't reset the distance for the component below, yet 🙂<br>-<br>" +
+            "This is a quick reminder that you haven't reset the distance for the component below... 🙂<br>-<br>" +
             "<strong>${gearName} - ${component}</strong><br>" +
             "Currently with ${currentDistance} ${units}, ${currentTime} hours<br>" +
             "Alert on: ${alertDetails}<br>-" +
