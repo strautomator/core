@@ -180,7 +180,7 @@ export class Weather {
         const cacheId = `${coordinates.join("-")}-${date.valueOf() / 1000}`
         const cached: WeatherSummary = cache.get(`weather`, cacheId)
         if (cached && (isDefaultProvider || cached.provider == provider)) {
-            logger.info("Weather.getLocationWeather.fromCache", latlon, logDate, cached.provider)
+            logger.info("Weather.getLocationWeather.fromCache", latlon, logDate, cached.provider, cached.summary)
             return cached
         }
 
@@ -242,7 +242,7 @@ export class Weather {
         }
 
         cache.set(`weather`, cacheId, result)
-        logger.debug("Weather.getLocationWeather", latlon, logDate, result.summary)
+        logger.info("Weather.getLocationWeather", latlon, logDate, result.provider, result.summary)
         return result
     }
 }

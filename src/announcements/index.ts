@@ -54,7 +54,7 @@ export class Announcements {
 
             // Cached announcements still valid?
             if (fromCache && fromCache.length > 0) {
-                logger.info("Announcements.getActive", `${fromCache.length} active announcements`, `From cache`)
+                logger.info("Announcements.getActive.fromCache", `${fromCache.length} active announcements`)
                 return fromCache
             }
 
