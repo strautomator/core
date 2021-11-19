@@ -284,7 +284,7 @@ export function toStravaTotals(user: UserData, data: any): StravaTotals {
         movingTime: data.moving_time
     }
 
-    if (data.data.achievement_count > 0) {
+    if (data.achievement_count > 0) {
         totals.achievements = data.achievement_count
     }
 
