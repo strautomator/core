@@ -337,7 +337,10 @@ export class StravaAPI {
     get = async (tokens: StravaTokens, path: string, params?: any) => {
         try {
             const arrPath = path.split("/")
-            const cacheKey = arrPath.shift()
+
+            // The cache key is composed by the first, or first and third parts
+            // of the requested path.
+            const cacheKey = arrPath.length < 3 ? arrPath[0] : `${arrPath[0]}-${arrPath[2]}`
             const shouldCache = settings.strava.cacheDuration[cacheKey] && tokens && tokens.accessToken
             let cacheId: string
             let fromCache: any
@@ -351,7 +354,7 @@ export class StravaAPI {
                 fromCache = cache.get(`strava-${cacheKey}`, cacheId)
 
                 if (fromCache) {
-                    logger.info("Strava.get", path, `From cache: ${resourceId}`)
+                    logger.info("Strava.get.fromCache", resourceId)
                     return fromCache
                 }
             }
