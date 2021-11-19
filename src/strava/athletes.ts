@@ -1,13 +1,14 @@
 // Strautomator Core: Strava Athletes
 
-import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProfile, StravaSport, StravaTokens} from "./types"
-import {toStravaGear, toStravaProfile} from "./utils"
+import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProfile, StravaProfileStats, StravaSport, StravaTokens} from "./types"
+import {toStravaGear, toStravaProfile, toStravaProfileStats} from "./utils"
 import {UserData} from "../users/types"
 import users from "../users"
 import api from "./api"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
+import {StravaTotals} from "src"
 const settings = require("setmeup").settings
 
 /**
@@ -52,12 +53,39 @@ export class StravaAthletes {
     }
 
     /**
+     * Get profile stats for the logged user.
+     * @param user The user to get stats for.
+     */
+    getProfileStats = async (user: UserData): Promise<StravaProfileStats> => {
+        logger.debug("Strava.getProfileStats", user.id)
+
+        try {
+            const units = user.profile.units == "imperial" ? "mi" : "km"
+            const data = await api.get(user.stravaTokens, `athletes/${user.id}/stats`)
+            const stats = toStravaProfileStats(user, data)
+
+            const arrStats = []
+            if (stats.allRideTotals) arrStats.push([stats.allRideTotals, "Ride"])
+            if (stats.allRunTotals) arrStats.push([stats.allRunTotals, "Run"])
+            if (stats.allSwimTotals) arrStats.push([stats.allSwimTotals, "Swim"])
+
+            const statsLog = arrStats.map((s: [StravaTotals, string]) => `${s[1]}: ${s[0].count} - ${s[0].distance} ${units}`)
+            logger.info("Strava.getProfileStats", `User ${user.id} ${user.displayName}`, statsLog.join(" | "))
+
+            return stats
+        } catch (ex) {
+            logger.error("Strava.getProfileStats", `User ${user.id} ${user.displayName}`, ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get gear details from Strava.
      * @param user User data.
      * @param id The gear ID string.
      */
     getGear = async (user: UserData, id: string): Promise<StravaGear> => {
-        logger.debug("Strava.getGear", id)
+        logger.debug("Strava.getGear", user.id, id)
 
         try {
             const data = await api.get(user.stravaTokens, `gear/${id}`)
@@ -66,7 +94,7 @@ export class StravaAthletes {
             logger.info("Strava.getGear", `User ${user.id} ${user.displayName}`, `Gear ${id}: ${gear.name} - distance ${gear.distance}`)
             return gear
         } catch (ex) {
-            logger.error("Strava.getGear", id, ex)
+            logger.error("Strava.getGear", `User ${user.id} ${user.displayName}`, id, ex)
             throw ex
         }
     }

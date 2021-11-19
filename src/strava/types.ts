@@ -191,6 +191,46 @@ export interface StravaProfile {
 }
 
 /**
+ * Strava athlete stats.
+ */
+export interface StravaProfileStats {
+    /** Longest ride distance.  */
+    biggestRideDistance?: number
+    /** Highest climb ridden. */
+    biggestRideClimb?: number
+    /** Recent ride total stats. */
+    recentRideTotals?: StravaTotals
+    /** Recent run total stats. */
+    recentRunTotals?: StravaTotals
+    /** Recent swim total stats. */
+    recentSwimTotals?: StravaTotals
+    /** All time ride total stats. */
+    allRideTotals?: StravaTotals
+    /** All time run total stats. */
+    allRunTotals?: StravaTotals
+    /** All time swim total stats. */
+    allSwimTotals?: StravaTotals
+}
+
+/**
+ * Activity total statistics.
+ */
+export interface StravaTotals {
+    /** How many activities. */
+    count?: number
+    /** Total distance. */
+    distance?: number
+    /** Total (elapsed) time.  */
+    totalTime?: number
+    /** Moving time. */
+    movingTime?: number
+    /** Total elevation gain. */
+    elevationGain?: number
+    /** Achievements count. */
+    achievements?: number
+}
+
+/**
  * OAuth2 access and refresh token for a particular user.
  */
 export interface StravaTokens {

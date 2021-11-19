@@ -5,9 +5,15 @@ import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import dayjs from "../dayjs"
 import _ = require("lodash")
+import {StravaProfileStats, StravaTotals} from "src"
+
+// Feet and miles ratio.
+const rFeet = 3.28084
+const rMiles = 0.621371
 
 /**
  * Helper to transform data from the API to a StravaActivity interface.
+ * @param user The activity owner.
  * @param data Input data.
  */
 export function toStravaActivity(user: UserData, data: any): StravaActivity {
@@ -24,8 +30,6 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         trainer: data.trainer ? true : false,
         dateStart: startDate.toDate(),
         utcStartOffset: data.utc_offset,
-        elevationGain: data.total_elevation_gain,
-        elevationMax: data.elev_high,
         totalTime: data.elapsed_time,
         movingTime: data.moving_time,
         locationStart: data.start_latlng,
@@ -87,28 +91,31 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
 
     // Convert values according to the specified units.
     if (profile.units == "imperial") {
-        const feet = 3.28084
-        const miles = 0.621371
-
         // Imperial climbing ration multiplier is 100ft / 1mi
         cRatioMultiplier = 100
 
         if (data.total_elevation_gain) {
-            activity.elevationGain = Math.round(data.total_elevation_gain * feet)
+            activity.elevationGain = Math.round(data.total_elevation_gain * rFeet)
         }
         if (data.elev_high) {
-            activity.elevationMax = Math.round(data.elev_high * feet)
+            activity.elevationMax = Math.round(data.elev_high * rFeet)
         }
         if (data.distance) {
-            activity.distance = parseFloat(((data.distance / 1000) * miles).toFixed(1))
+            activity.distance = parseFloat(((data.distance / 1000) * rMiles).toFixed(1))
         }
         if (data.average_speed) {
-            activity.speedAvg = parseFloat((data.average_speed * 3.6 * miles).toFixed(1))
+            activity.speedAvg = parseFloat((data.average_speed * 3.6 * rMiles).toFixed(1))
         }
         if (data.max_speed) {
-            activity.speedMax = parseFloat((data.max_speed * 3.6 * miles).toFixed(1))
+            activity.speedMax = parseFloat((data.max_speed * 3.6 * rMiles).toFixed(1))
         }
     } else {
+        if (data.total_elevation_gain) {
+            activity.elevationGain = data.total_elevation_gain
+        }
+        if (data.elev_high) {
+            activity.elevationMax = data.elev_high
+        }
         if (data.distance) {
             activity.distance = parseFloat((data.distance / 1000).toFixed(1))
         }
@@ -218,6 +225,87 @@ export function toStravaProfile(data: any): StravaProfile {
     }
 
     return profile
+}
+
+/**
+ * Helper to transform data from the API to a StravaProfileStats interface.
+ * @param user The profile owner.
+ * @param data Input data.
+ */
+export function toStravaProfileStats(user: UserData, data: any): StravaProfileStats {
+    const stats: StravaProfileStats = {}
+    const recentRideTotals = toStravaTotals(user, data.recent_ride_totals)
+    const recentRunTotals = toStravaTotals(user, data.recent_run_totals)
+    const recentSwimTotals = toStravaTotals(user, data.recent_swim_totals)
+    const allRideTotals = toStravaTotals(user, data.all_ride_totals)
+    const allRunTotals = toStravaTotals(user, data.all_run_totals)
+    const allSwimTotals = toStravaTotals(user, data.all_swim_totals)
+
+    // Append only totals with an actual value.
+    if (recentRideTotals) stats.recentRideTotals = recentRideTotals
+    if (recentRunTotals) stats.recentRideTotals = recentRunTotals
+    if (recentSwimTotals) stats.recentRideTotals = recentSwimTotals
+    if (allRideTotals) stats.recentRideTotals = allRideTotals
+    if (allRunTotals) stats.recentRideTotals = allRunTotals
+    if (allSwimTotals) stats.recentRideTotals = allSwimTotals
+
+    // Convert values according to the specified units.
+    if (user.profile.units == "imperial") {
+        if (data.distance) {
+            stats.biggestRideDistance = parseFloat(((data.biggest_ride_distance / 1000) * rMiles).toFixed(1))
+        }
+        if (data.elevation_gain) {
+            stats.biggestRideClimb = Math.round(data.biggest_climb_elevation_gain * rFeet)
+        }
+    } else {
+        if (data.distance) {
+            stats.biggestRideDistance = parseFloat((data.biggest_ride_distance / 1000).toFixed(1))
+        }
+        if (data.elevation_gain) {
+            stats.biggestRideClimb = data.biggest_climb_elevation_gain
+        }
+    }
+
+    return stats
+}
+/**
+ * Helper to transform data from the API to a StravaTotals interface.
+ * @param user The activities owner.
+ * @param data Input data.
+ */
+export function toStravaTotals(user: UserData, data: any): StravaTotals {
+    if (data.count < 1) {
+        return null
+    }
+
+    const totals: StravaTotals = {
+        count: data.count,
+        totalTime: data.elapsed_time,
+        movingTime: data.moving_time
+    }
+
+    if (data.data.achievement_count > 0) {
+        totals.achievements = data.achievement_count
+    }
+
+    // Convert values according to the specified units.
+    if (user.profile.units == "imperial") {
+        if (data.distance) {
+            totals.distance = parseFloat(((data.distance / 1000) * rMiles).toFixed(1))
+        }
+        if (data.elevation_gain) {
+            totals.elevationGain = Math.round(data.total_elevation_gain * rFeet)
+        }
+    } else {
+        if (data.distance) {
+            totals.distance = parseFloat((data.distance / 1000).toFixed(1))
+        }
+        if (data.elevation_gain) {
+            totals.elevationGain = data.elevation_gain
+        }
+    }
+
+    return totals
 }
 
 /**
