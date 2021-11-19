@@ -89,6 +89,7 @@ export class WeatherAPI implements WeatherProvider {
         }
 
         const result: WeatherSummary = {
+            provider: this.name,
             summary: summary,
             temperature: data.temp_c || data.avgtemp_c || 0,
             feelsLike: data.feelslike_c,

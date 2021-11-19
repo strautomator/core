@@ -164,6 +164,11 @@ export class Weather {
         let providerModule: WeatherProvider
         let isDefaultProvider: boolean = false
 
+        const logDate = dayjs(date).format(settings.dayjs.datetime)
+        const mDate = dayjs.utc()
+        const hours = mDate.diff(date, "hours")
+        const latlon = coordinates.join(", ")
+
         // Get provider from parameter, then preferences, finally the default from settings.
         if (!provider) {
             const defaultProvider = _.sample(settings.weather.defaultProviders)
@@ -175,14 +180,9 @@ export class Weather {
         const cacheId = `${coordinates.join("-")}-${date.valueOf() / 1000}`
         const cached: WeatherSummary = cache.get(`weather`, cacheId)
         if (cached && (isDefaultProvider || cached.provider == provider)) {
-            logger.info("Weather.getLocationWeather", coordinates.join(", "), date, `From cache: ${cached.provider}`)
+            logger.info("Weather.getLocationWeather.fromCache", latlon, logDate, cached.provider)
             return cached
         }
-
-        const mDate = dayjs.utc()
-        const hours = mDate.diff(date, "hours")
-        const isoDate = date.toISOString()
-        const latlon = coordinates.join(", ")
 
         // Get providers that accept the given date and are under the daily usage quota.
         const availableProviders = this.providers.filter((p) => {
@@ -193,7 +193,7 @@ export class Weather {
 
         // No providers available at the moment? Stop here.
         if (availableProviders.length == 0) {
-            logger.warn("Weather.getLocationWeather", latlon, isoDate, "No weather providers available for that query")
+            logger.warn("Weather.getLocationWeather", latlon, logDate, "No weather providers available for that query")
             return null
         }
 
@@ -226,23 +226,23 @@ export class Weather {
             if (currentProviders.length > 1) {
                 providerModule = currentProviders[1]
 
-                logger.warn("Weather.getLocationWeather", latlon, isoDate, `${failedProviderName} failed, will try ${providerModule.name}`)
+                logger.warn("Weather.getLocationWeather", latlon, logDate, `${failedProviderName} failed, will try ${providerModule.name}`)
 
                 // Try again using another provider. If also failed, log both exceptions.
                 try {
                     result = await providerModule.getWeather(coordinates, date, preferences)
                 } catch (retryEx) {
-                    logger.error("Weather.getLocationWeather", latlon, isoDate, failedProviderName, ex)
-                    logger.error("Weather.getLocationWeather", latlon, isoDate, providerModule.name, retryEx)
+                    logger.error("Weather.getLocationWeather", latlon, logDate, failedProviderName, ex)
+                    logger.error("Weather.getLocationWeather", latlon, logDate, providerModule.name, retryEx)
                     return null
                 }
             } else {
-                logger.error("Weather.getLocationWeather", latlon, isoDate, failedProviderName, ex)
+                logger.error("Weather.getLocationWeather", latlon, logDate, failedProviderName, ex)
             }
         }
 
         cache.set(`weather`, cacheId, result)
-        logger.debug("Weather.getLocationWeather", latlon, isoDate, result.summary)
+        logger.debug("Weather.getLocationWeather", latlon, logDate, result.summary)
         return result
     }
 }

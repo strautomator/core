@@ -104,6 +104,7 @@ export class OpenWeatherMap implements WeatherProvider {
         const mmRain = data.rain ? data.rain["1h"] : 0
 
         const result: WeatherSummary = {
+            provider: this.name,
             summary: weatherData.description,
             temperature: data.main.temp,
             feelsLike: data.main.feels_like,

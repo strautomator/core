@@ -100,6 +100,7 @@ export class Weatherbit implements WeatherProvider {
         }
 
         const result: WeatherSummary = {
+            provider: this.name,
             summary: data.weather.description,
             temperature: data.temp,
             feelsLike: data.app_temp,
@@ -109,7 +110,7 @@ export class Weatherbit implements WeatherProvider {
             windDirection: data.wind_dir,
             precipitation: data.snow ? "Snow" : data.precip ? "Rain" : null,
             cloudCover: data.clouds,
-            visibility: data.vis ,
+            visibility: data.vis,
             extraData: {
                 timeOfDay: getSuntimes(coordinates, date).timeOfDay,
                 iconText: iconText,

@@ -98,6 +98,7 @@ export class VisualCrossing implements WeatherProvider {
         else if (precipitation == "freezingrain" || precipitation == "ice") precipitation = "Sleet"
 
         const result: WeatherSummary = {
+            provider: this.name,
             summary: data.conditions,
             temperature: data.temp,
             feelsLike: data.feelslike,

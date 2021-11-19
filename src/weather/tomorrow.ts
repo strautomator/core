@@ -88,6 +88,7 @@ export class Tomorrow implements WeatherProvider {
         const summary = data.weatherCode ? this.fieldDescriptors.weatherCode[data.weatherCode] : null
 
         const result: WeatherSummary = {
+            provider: this.name,
             summary: summary,
             temperature: data.temperature,
             feelsLike: data.temperatureApparent,
