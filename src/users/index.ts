@@ -456,16 +456,29 @@ export class Users {
             const logs = []
 
             if (!replace) {
+                if (user.profile) {
+                    user.displayName = user.profile.username || user.profile.firstName || user.profile.lastName
+                }
+
+                // Update user on the database.
                 await database.merge("users", user)
 
+                // Check updated properties which should be logged.
                 if (user.suspended) {
                     logs.push("Suspended")
                 }
-
                 if (user.dateLastActivity) {
                     logs.push(dayjs(user.dateLastActivity).format("lll"))
                 }
-
+                if (user.dateLastFtpUpdate) {
+                    logs.push("FTP")
+                }
+                if (user.calendarTemplate) {
+                    logs.push("Calendar template")
+                }
+                if (user.stravaTokens) {
+                    logs.push("Strava tokens")
+                }
                 if (user.profile) {
                     if (user.profile.bikes && user.profile.bikes.length > 0) {
                         logs.push("Bikes")
@@ -474,21 +487,8 @@ export class Users {
                         logs.push("Shoes")
                     }
                 }
-
-                if (user.dateLastFtpUpdate) {
-                    logs.push("FTP")
-                }
-
-                if (user.calendarTemplate) {
-                    logs.push("Calendar template")
-                }
-
                 if (user.preferences) {
                     logs.push(_.toPairs(user.preferences).join(" | ").replace(/\,/gi, "="))
-                }
-
-                if (user.stravaTokens) {
-                    logs.push("Strava tokens")
                 }
             } else {
                 await database.set("users", user, user.id)
@@ -541,7 +541,7 @@ export class Users {
      * Replace user name with a random value.
      * @param user The user to be anonymized.
      */
-    anonymize = (user: UserData): void => {
+    anonymize = (user: UserData | Partial<UserData>): void => {
         if (!user.profile) user.profile = {} as any
         const firstNames = ["Chair", "Table", "Ball", "Wheel", "Flower", "Sun", "Globe", "January", "Dry", "Chain", "High"]
         const lastNames = ["Winter", "McGyver", "Second", "Tequila", "Whiskey", "Wine", "House", "Light", "Fast", "Rock"]
@@ -551,6 +551,8 @@ export class Users {
         user.profile.firstName = _.sample(firstNames)
         user.profile.lastName = _.sample(lastNames)
         user.profile.city = "Atlantis"
+
+        logger.info("Users.anonymize", user.id, `${user.profile.firstName} ${user.profile.lastName}`)
     }
 
     /**

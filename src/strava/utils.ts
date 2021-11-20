@@ -129,7 +129,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
 
     // Get device temperature if available, using the correct weather unit.
     if (_.isNumber(data.average_temp)) {
-        if (user.preferences && user.preferences.weatherUnit == "f") {
+        if (user.preferences.weatherUnit == "f") {
             activity.temperature = Math.round((data.average_temp / 5) * 9 + 32)
         } else {
             activity.temperature = Math.round(data.average_temp)
@@ -455,7 +455,7 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
         let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
 
         // Farenheit temperature suffix (special case).
-        if (prop.fSuffix && user.preferences && user.preferences.weatherUnit == "f") {
+        if (prop.fSuffix && user.preferences.weatherUnit == "f") {
             suffix = prop.fSuffix
         }
 
