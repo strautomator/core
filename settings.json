@@ -3,8 +3,13 @@
 
 {
     "app": {
+        "title": "Strautomator",
         // Hashtag used on social media.
         "hashtag": "#strautomator.com"
+    },
+    "announcements": {
+        // Active announcements should be cached for up to 30 minutes.
+        "cacheDuration": 1800
     },
     "axios": {
         // Retry axios requests afew 5 seconds. Value set in milliseconds.
@@ -20,12 +25,15 @@
         "name": "Strava",
         // Default event duration in minutes (ie. for past club events).
         "defaultDurationMinutes": 15,
+        // Calendars are cached on aveage for up to 4 hours.
+        "cacheDuration": 14400,
         // Calendars are cached for a maximum of 4 days, even if there were no new activities. Value in seconds.
-        "maxCacheDuration": 345600,
-        // Default TTL (refresh interval) is once every 4 hours. Value in seconds.
-        "ttl": 14400
+        "maxCacheDuration": 345600
     },
     "database": {
+        // If you're hosting multiple sites or services within the same Google Project,
+        // you might add a default suffix to Firestore collection names.
+        "collectionSuffix": "",
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.
         "cacheDuration": 2,
@@ -33,7 +41,11 @@
         "crypto": {
             "algorithm": "aes-256-cbc",
             // List of property names that should be saved in encrypted format.
-            "fields": ["accessToken", "previousAccessToken", "refreshToken", "urlToken", "password", "cryptoKey"]
+            "fields": ["accessToken", "previousAccessToken", "refreshToken", "urlToken", "password", "cryptoKey"],
+            // Encryption key and IV must be set on the settings.secret.json file, or via the
+            // $SMU_database_crypto_key and $SMU_database_crypto_iv environment variables.
+            "key": null,
+            "iv": null
         },
         // You can use this settings to read data from production by allowing a user
         // to login with credentials stored on dev, but using recipes / activities / gearwear
@@ -142,6 +154,13 @@
     },
     "paypal": {
         "api": {
+            "mode": "live",
+            "baseUrl": "https://api.paypal.com/v1/",
+            // Token to be appended to the URL of PayPal webhooks, for
+            // extra security. Can only include alphanumeric characters.
+            // This MUST be set voa the settings.secret.json file or via
+            // via the SMU_paypal_api_urlToken environment variable.
+            "urlToken": null,
             // The PayPal API client ID and secret must be set on the settings.secret.json file,
             // or via the SMU_paypal_api_clientId and SMU_paypal_api_clientSecret env variables.
             // Please note that on development it will default the sandbox environment.
@@ -240,7 +259,15 @@
             // Maximum requests per minute per instance is around 40 on Strava, here we use 38.
             "maxPerMinute": 38,
             // Default page size is the max of 200.
-            "pageSize": 200
+            "pageSize": 200,
+            // Token to be appended to the URL of Strava webhooks, for
+            // extra security. Can only include alphanumeric characters.
+            // This MUST be set voa the settings.secret.json file or via
+            // via the SMU_strava_api_urlToken environment variable.
+            "urlToken": null,
+            // Default verification token to be sent by Strava on subcriptions, MUST be set
+            // via secret settings or the SMU_strava_api_verifyToken environment variable.
+            "verifyToken": null
         },
         "ftp": {
             // Estimated FTP will go down by 2% for each week of no activities.
@@ -251,6 +278,10 @@
             "maxWeeks": 52,
             // FTP can be updated only once every 24 hours.
             "sinceLastHours": 24
+        },
+        "records": {
+            // For "average" records, consider only the activities that have at least 20 minutes of moving time.
+            "minMovingTimeAvg": 1200
         },
         // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
         "delayedProcessingInterval": 600,

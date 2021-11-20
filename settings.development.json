@@ -23,7 +23,7 @@
         }
     },
     "faq": {
-        // On dev we cache the FAQ questions only for 60 seconds.
+        // On dev we cache the FAQ questions only for 1 minute on dev.
         "refreshInterval": 60
     },
     "github": {
