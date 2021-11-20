@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Athletes
 
-import {StravaActivity, StravaRecords, StravaEstimatedFtp, StravaGear, StravaProfile, StravaProfileStats, StravaSport, StravaTotals, StravaTokens} from "./types"
+import {StravaActivity, StravaRecords, StravaEstimatedFtp, StravaGear, StravaProfile, StravaProfileStats, StravaRecordDetails, StravaSport, StravaTotals, StravaTokens} from "./types"
 import {toStravaGear, toStravaProfile, toStravaProfileStats} from "./utils"
 import {UserData} from "../users/types"
 import users from "../users"
@@ -274,6 +274,67 @@ export class StravaAthletes {
 
     // RECORDS
     // --------------------------------------------------------------------------
+
+    /**
+     * Check if activity has broken any of the user personal records.
+     * @param user The user account.
+     * @param activities List of activities to be checked against.
+     */
+    checkActivityRecords = async (user: UserData, activities: StravaActivity[]) => {
+        if (user.preferences.privacyMode) {
+            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "User has opted in for privacy mode")
+            return
+        }
+
+        if (activities && activities.length > 0) {
+            const today = new Date()
+            const allRecords = await this.getAthleteRecords(user)
+
+            // Iterate the passed activites to check for new records.
+            for (let activity of activities) {
+                try {
+                    const newRecords: StravaRecords = {}
+                    const currentRecords: StravaRecords = allRecords[activity.type] || {}
+                    const movingTime = activity.movingTime || 0
+                    let hasNewRecord = false
+
+                    // Check all of the possible record properties. The "average" records will
+                    // consider only activities with at least 20 minutes of moving time.
+                    for (let prop of ["distance", "movingTime", "elevationGain", "speedMax", "speedAvg", "hrMax", "hrAvg", "wattsMax", "wattsAvg", "calories"]) {
+                        const currentValue: number = currentRecords[prop] ? currentRecords[prop].value || 0 : 0
+
+                        if (activity[prop] && activity[prop] > currentValue) {
+                            if (prop.includes("Avg") && movingTime < settings.strava.records.minMovingTimeAvg) continue
+
+                            // Make sure the records references exist.
+                            if (!allRecords[activity.type]) allRecords[activity.type] = {}
+                            if (!activity.newRecords) activity.newRecords = []
+
+                            const details: StravaRecordDetails = {
+                                value: activity[prop],
+                                previous: currentValue,
+                                activityId: activity.id,
+                                date: today
+                            }
+
+                            allRecords[activity.type][prop] = details
+                            newRecords[prop] = details
+                            activity.newRecords.push(prop)
+
+                            hasNewRecord = true
+                        }
+                    }
+
+                    // User has broken a personal record? Save it.
+                    if (hasNewRecord) {
+                        await this.setAthleteRecords(user, activity, newRecords)
+                    }
+                } catch (ex) {
+                    logger.error("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+                }
+            }
+        }
+    }
 
     /**
      * Get the PRs (records) for the specified user.
