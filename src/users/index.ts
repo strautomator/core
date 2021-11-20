@@ -354,7 +354,6 @@ export class Users {
 
             const userData: UserData = {
                 id: profile.id,
-                displayName: profile.username || profile.firstName || profile.lastName || "strava-user",
                 profile: profile,
                 stravaTokens: stravaTokens,
                 dateLogin: now,
@@ -370,6 +369,7 @@ export class Users {
 
             // Set registration date, if user does not exist yet.
             if (!exists) {
+                userData.displayName = profile.username || profile.firstName || profile.lastName
                 userData.dateRegistered = now
                 userData.preferences = {}
                 userData.recipes = {}
@@ -404,6 +404,17 @@ export class Users {
                     if (existingShoes) _.defaults(shoes, existingShoes)
                 }
 
+                // User has opted for the privacy mode?
+                if (existingData.preferences.privacyMode) {
+                    delete userData.profile.username
+                    delete userData.profile.firstName
+                    delete userData.profile.lastName
+                    delete userData.profile.city
+                    userData.displayName = existingData.displayName
+                } else {
+                    userData.displayName = profile.username || profile.firstName || profile.lastName
+                }
+
                 // Triggered via user login? Force reset the reauth and suspended flag.
                 if (login) {
                     if (userData.suspended) {
@@ -412,11 +423,6 @@ export class Users {
 
                     userData.suspended = false
                     userData.reauth = 0
-                }
-
-                // User has opted for the privacy mode?
-                if (existingData.preferences.privacyMode) {
-                    userData.displayName = userData.id
                 }
             }
 
@@ -529,6 +535,22 @@ export class Users {
         } catch (ex) {
             logger.error("Users.suspend", user.id, user.displayName, ex)
         }
+    }
+
+    /**
+     * Replace user name with a random value.
+     * @param user The user to be anonymized.
+     */
+    anonymize = (user: UserData): void => {
+        if (!user.profile) user.profile = {} as any
+        const firstNames = ["Chair", "Table", "Ball", "Wheel", "Flower", "Sun", "Globe", "January", "Dry", "Chain", "High"]
+        const lastNames = ["Winter", "McGyver", "Second", "Tequila", "Whiskey", "Wine", "House", "Light", "Fast", "Rock"]
+
+        user.displayName = "anonymous"
+        user.profile.username = "anonymous"
+        user.profile.firstName = _.sample(firstNames)
+        user.profile.lastName = _.sample(lastNames)
+        user.profile.city = "Atlantis"
     }
 
     /**
