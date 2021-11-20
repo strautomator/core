@@ -415,7 +415,7 @@ export class Users {
                 }
 
                 // User has opted for the privacy mode?
-                if (existingData.preferences.noTracking) {
+                if (existingData.preferences.privacyMode) {
                     userData.displayName = userData.id
                 }
             }

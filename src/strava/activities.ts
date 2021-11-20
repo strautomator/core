@@ -666,7 +666,7 @@ export class StravaActivities {
             }
 
             // Extra activity details in case user has not opted for the privacy mode.
-            if (!user.preferences.noTracking) {
+            if (!user.preferences.privacyMode) {
                 data.type = activity.type
                 data.name = activity.name
                 data.dateStart = activity.dateStart
@@ -744,8 +744,8 @@ export class StravaActivities {
      * @param activities List of activities to be checked against.
      */
     checkActivityRecords = async (user: UserData, activities: StravaActivity[]) => {
-        if (user.preferences.noTracking) {
-            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "User has opted in for noTracking")
+        if (user.preferences.privacyMode) {
+            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "User has opted in for privacy mode")
             return
         }
 
