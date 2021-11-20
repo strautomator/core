@@ -182,7 +182,7 @@ export class Calendar {
                         }
 
                         const cacheSize = (cachedCalendar.data.length / 1000 / 1024).toFixed(2)
-                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `From cache: ${cacheSize} MB`)
+                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `${cacheSize} MB`)
                         return cachedCalendar.data
                     } else {
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `Cache invalidated, will generate a new calendar`)

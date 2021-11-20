@@ -371,6 +371,7 @@ export class Users {
             // Set registration date, if user does not exist yet.
             if (!exists) {
                 userData.dateRegistered = now
+                userData.preferences = {}
                 userData.recipes = {}
                 userData.recipeCount = 0
                 userData.activityCount = 0
@@ -411,6 +412,11 @@ export class Users {
 
                     userData.suspended = false
                     userData.reauth = 0
+                }
+
+                // User has opted for the privacy mode?
+                if (existingData.preferences.noTracking) {
+                    userData.displayName = userData.id
                 }
             }
 

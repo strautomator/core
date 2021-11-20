@@ -79,6 +79,8 @@ export interface UserPreferences {
     weatherProvider?: "tomorrow" | "openweathermap" | "stormglass" | "visualcrossing" | "weatherbit" | "weatherapi"
     /** Weather temperature unit. */
     weatherUnit?: "c" | "f"
+    /** Do not save processed activities and records (privacy mode). */
+    noTracking?: boolean
 }
 
 /**

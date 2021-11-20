@@ -665,7 +665,7 @@ export class StravaActivities {
                 updatedFields: updatedFields
             }
 
-            // Extra activity details in case user has not opted for the ultra privacy mode.
+            // Extra activity details in case user has not opted for the privacy mode.
             if (!user.preferences.noTracking) {
                 data.type = activity.type
                 data.name = activity.name
