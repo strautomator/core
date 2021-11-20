@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProcessedActivity} from "./types"
+import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProcessedActivity, StravaRecords} from "./types"
 import {toStravaActivity} from "./utils"
 import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
@@ -14,6 +14,7 @@ import users from "../users"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
+import {StravaRecordDetails} from "src"
 const settings = require("setmeup").settings
 
 /**
@@ -38,8 +39,9 @@ export class StravaActivities {
      * Get list of activities from Strava.
      * @param user The owner of the activity.
      * @param query Query options.
+     * @param checkRecords If true, new records will be checked against the resulting activities.
      */
-    getActivities = async (user: UserData, query: any): Promise<StravaActivity[]> => {
+    getActivities = async (user: UserData, query: any, checkRecords?: boolean): Promise<StravaActivity[]> => {
         logger.debug("Strava.getActivities", `User ${user.id} ${user.displayName}`, query)
 
         const arrLogQuery = Object.entries(query).map((p) => p[0] + "=" + p[1])
@@ -83,6 +85,12 @@ export class StravaActivities {
             }
 
             logger.info("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Got ${activities.length} activities`)
+
+            // Check new records?
+            if (checkRecords) {
+                this.checkActivityRecords(user, activities)
+            }
+
             return activities
         } catch (ex) {
             logger.error("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, ex)
@@ -500,6 +508,9 @@ export class StravaActivities {
                 throw ex
             }
 
+            // Check for new records.
+            this.checkActivityRecords(user, [activity])
+
             // Get recipes, having the defaults first and then sorted by order.
             let sortedRecipes: any[] = _.sortBy(Object.values(user.recipes), ["defaultFor", "order", "title"])
 
@@ -645,17 +656,25 @@ export class StravaActivities {
             // Data to be saved on the database.
             const data: StravaProcessedActivity = {
                 id: activity.id,
-                type: activity.type,
-                name: activity.name,
-                dateStart: activity.dateStart,
                 dateProcessed: dayjs.utc().toDate(),
-                utcStartOffset: activity.utcStartOffset,
                 user: {
                     id: user.id,
                     displayName: user.displayName
                 },
                 recipes: recipeDetails,
                 updatedFields: updatedFields
+            }
+
+            // Extra activity details in case user has not opted for the ultra privacy mode.
+            if (!user.preferences.noTracking) {
+                data.type = activity.type
+                data.name = activity.name
+                data.dateStart = activity.dateStart
+                data.utcStartOffset = activity.utcStartOffset
+
+                if (activity.newRecords) {
+                    data.newRecords = activity.newRecords
+                }
             }
 
             // Linkback added to activity?
@@ -679,7 +698,7 @@ export class StravaActivities {
         }
     }
 
-    // ACTIVITY DATA CALCULATIONS
+    // ACTIVITY HELPERS
     // --------------------------------------------------------------------------
 
     /**
@@ -716,6 +735,67 @@ export class StravaActivities {
             return result
         } catch (ex) {
             logger.error("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, "Failed to estimate FTP")
+        }
+    }
+
+    /**
+     * Check if activity has broken any of the user personal records.
+     * @param user The user account.
+     * @param activities List of activities to be checked against.
+     */
+    checkActivityRecords = async (user: UserData, activities: StravaActivity[]) => {
+        if (user.preferences.noTracking) {
+            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "User has opted in for noTracking")
+            return
+        }
+
+        if (activities && activities.length > 0) {
+            const today = new Date()
+            const allRecords = await stravaAthletes.getAthleteRecords(user)
+
+            // Iterate the passed activites to check for new records.
+            for (let activity of activities) {
+                try {
+                    const newRecords: StravaRecords = {}
+                    const currentRecords: StravaRecords = allRecords[activity.type] || {}
+                    const movingTime = activity.movingTime || 0
+                    let hasNewRecord = false
+
+                    // Check all of the possible record properties. The "average" records will
+                    // consider only activities with at least 20 minutes of moving time.
+                    for (let prop of ["distance", "movingTime", "elevationGain", "speedMax", "speedAvg", "hrMax", "hrAvg", "wattsMax", "wattsAvg", "calories"]) {
+                        const currentValue: number = currentRecords[prop] ? currentRecords[prop].value || 0 : 0
+
+                        if (activity[prop] && activity[prop] > currentValue) {
+                            if (prop.includes("Avg") && movingTime < settings.strava.records.minMovingTimeAvg) continue
+
+                            // Make sure the records references exist.
+                            if (!allRecords[activity.type]) allRecords[activity.type] = {}
+                            if (!activity.newRecords) activity.newRecords = []
+
+                            const details: StravaRecordDetails = {
+                                value: activity[prop],
+                                previous: currentValue,
+                                activityId: activity.id,
+                                date: today
+                            }
+
+                            allRecords[activity.type][prop] = details
+                            newRecords[prop] = details
+                            activity.newRecords.push(prop)
+
+                            hasNewRecord = true
+                        }
+                    }
+
+                    // User has broken a personal record? Save it.
+                    if (hasNewRecord) {
+                        await stravaAthletes.setAthleteRecords(user, activity, newRecords)
+                    }
+                } catch (ex) {
+                    logger.error("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+                }
+            }
         }
     }
 }

@@ -88,6 +88,8 @@ export interface StravaActivity {
     icon?: string
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
+    /** List of new records. */
+    newRecords?: string[]
     /** Was a link to Strautomator added to the activity (internal use only)? */
     linkback?: boolean
 }
@@ -99,13 +101,13 @@ export interface StravaProcessedActivity {
     /** Activity ID. */
     id: number
     /** Activity type (Ride, Run, etc). */
-    type: StravaSport
+    type?: StravaSport
     /** Name of the saved activity. */
-    name: string
+    name?: string
     /** Start date of the activity. */
-    dateStart: Date
+    dateStart?: Date
     /** Original UTC offset (timezone) of the activity. */
-    utcStartOffset: number
+    utcStartOffset?: number
     /** User details for this activity. */
     user: {
         /** User ID. */
@@ -134,6 +136,8 @@ export interface StravaProcessedActivity {
     error?: string
     /** Is the activity queued to be processed? */
     queued?: boolean
+    /** List of new records. */
+    newRecords?: string[]
     /** Queued date. */
     dateQueued?: Date
     /** Processing date. */
@@ -228,6 +232,46 @@ export interface StravaTotals {
     elevationGain?: number
     /** Achievements count. */
     achievements?: number
+}
+
+/**
+ * Strava athlete records by activity type.
+ */
+export interface StravaRecords {
+    /** Longest distance. */
+    distance?: StravaRecordDetails
+    /** Longest by moving time. */
+    movingTime?: StravaRecordDetails
+    /** Highest elevation gain. */
+    elevationGain?: StravaRecordDetails
+    /** Highest max speed. */
+    speedMax?: StravaRecordDetails
+    /** Highest average speed (only activities with more than 20 minutes). */
+    speedAvg?: StravaRecordDetails
+    /** Highest max heart rate. */
+    hrMax?: StravaRecordDetails
+    /** Highest average heart rate (only activities with more than 1 hour). */
+    hrAvg?: StravaRecordDetails
+    /** Highest max power. */
+    wattsMax?: StravaRecordDetails
+    /** Highest average power (only activities with more than 20 minutes). */
+    wattsAvg?: StravaRecordDetails
+    /** Highest calories expenditure. */
+    calories?: StravaRecordDetails
+}
+
+/**
+ * Represents a personal record.
+ */
+export interface StravaRecordDetails {
+    /** Personal record value. */
+    value?: number
+    /** Previous record value. */
+    previous?: number
+    /** The activity ID. */
+    activityId?: number
+    /** The date when the record was broken. */
+    date?: Date
 }
 
 /**

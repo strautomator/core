@@ -1,14 +1,14 @@
 // Strautomator Core: Strava Athletes
 
-import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProfile, StravaProfileStats, StravaSport, StravaTokens} from "./types"
+import {StravaActivity, StravaRecords, StravaEstimatedFtp, StravaGear, StravaProfile, StravaProfileStats, StravaSport, StravaTotals, StravaTokens} from "./types"
 import {toStravaGear, toStravaProfile, toStravaProfileStats} from "./utils"
 import {UserData} from "../users/types"
 import users from "../users"
 import api from "./api"
+import database from "../database"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
-import {StravaTotals} from "src"
 const settings = require("setmeup").settings
 
 /**
@@ -269,6 +269,47 @@ export class StravaAthletes {
         } catch (ex) {
             logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, ex)
             throw ex
+        }
+    }
+
+    // RECORDS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Get the PRs (records) for the specified user.
+     * @param user The user account.
+     */
+    getAthleteRecords = async (user: UserData): Promise<{[sport: string]: StravaRecords}> => {
+        try {
+            const records = await database.get("athlete-records", user.id)
+
+            if (!records) {
+                logger.debug("Strava.getAthleteRecords", `User ${user.id} ${user.displayName} has no records saved`)
+            }
+
+            return records || {}
+        } catch (ex) {
+            logger.error("Strava.getAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
+        }
+    }
+
+    /**
+     * Save the PRs (records) for the specified user.
+     * @param user The user account.
+     * @param activity The activity that generated a new PR.
+     * @param records The new records.
+     */
+    setAthleteRecords = async (user: UserData, activity: StravaActivity, records: StravaRecords): Promise<void> => {
+        try {
+            const newRecords = {}
+            newRecords[activity.type] = records
+
+            const recordsLog = _.map(_.toPairs(records), (r) => `${r[0]}=${r[1].value}`).join(" | ")
+            logger.info("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, `${activity.type} ${activity.id} has new records`, recordsLog)
+
+            await database.set("athlete-records", newRecords, user.id)
+        } catch (ex) {
+            logger.error("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, `${activity.type} ${activity.id}`, ex)
         }
     }
 
