@@ -82,7 +82,7 @@ export class Twitter {
      */
     onStravaActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
         try {
-            if (!user.preferences || !user.preferences.twitterShare) return
+            if (!user.preferences.twitterShare || user.preferences.privacyMode) return
 
             // Parameters to decide if the ride was "impressive" or not.
             const imperial: boolean = user.profile.units == "imperial"
