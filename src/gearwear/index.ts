@@ -551,10 +551,11 @@ export class GearWear {
 
     /**
      * Reset the current distance / time tracking for the specified gear component.
+     * @param user The GearWear owner.
      * @param config The GearWear configuration.
      * @param component The component to have its distance set to 0.
      */
-    resetTracking = async (config: GearWearConfig, componentName: string): Promise<void> => {
+    resetTracking = async (user: UserData, config: GearWearConfig, componentName: string): Promise<void> => {
         try {
             const component: GearWearComponent = _.find(config.components, {name: componentName})
 
@@ -582,7 +583,11 @@ export class GearWear {
             component.currentDistance = 0
             component.currentTime = 0
             component.activityCount = 0
-            component.history.push({date: dayjs.utc().toDate(), distance: currentDistance, time: currentTime})
+
+            // Only update the history if privacy mode is not enabled.
+            if (!user.preferences.privacyMode) {
+                component.history.push({date: dayjs.utc().toDate(), distance: currentDistance, time: currentTime})
+            }
 
             // Save to the database and log.
             await database.set("gearwear", config, config.id)
