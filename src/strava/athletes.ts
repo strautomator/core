@@ -280,9 +280,12 @@ export class StravaAthletes {
      * records object if any new values were set.
      * @param user The user account.
      * @param activities List of activities to be checked against.
-     * @param doNotSave Optional flag to prevent auto-saving the new records.
      */
-    checkActivityRecords = async (user: UserData, activities: StravaActivity[], doNotSave?: boolean): Promise<StravaAthleteRecords> => {
+    checkActivityRecords = async (user: UserData, activities: StravaActivity[]): Promise<StravaAthleteRecords> => {
+        if (user.suspended) {
+            logger.warn("Strava.checkActivityRecords", `User ${user.id} ${user.displayName} is suspended`)
+            return null
+        }
         if (user.preferences.privacyMode) {
             logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "User has opted in for privacy mode")
             return null
@@ -306,6 +309,11 @@ export class StravaAthletes {
         // Iterate the passed activites to check for new records.
         for (let activity of activities) {
             try {
+                if (!user.isPro && !settings.plans.free.recordSports.includes(activity.type)) {
+                    logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id} ${activity.type} not tracked on free accounts`)
+                    continue
+                }
+
                 if (!allRecords[activity.type]) {
                     allRecords[activity.type] = {}
                 }
@@ -350,19 +358,14 @@ export class StravaAthletes {
             }
         }
 
-        if (!hasNewRecord) {
+        // User has broken a personal record? Save it.
+        if (hasNewRecord) {
+            await this.setAthleteRecords(user, result)
+            return result
+        } else {
             logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `${activities.length} activities`, `No new records`)
             return null
         }
-
-        // User has broken a personal record? Save it.
-        if (doNotSave) {
-            logger.info("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `${activities.length} activities`, `New records were NOT saved`)
-        } else {
-            await this.setAthleteRecords(user, result)
-        }
-
-        return result
     }
 
     /**
@@ -433,10 +436,14 @@ export class StravaAthletes {
 
             // First we get the basic totals from the user's profile.
             const profileStats = await this.getProfileStats(user)
-            const recentStats = {
+            const recentStats: {[sport: string]: StravaTotals} = {
                 Ride: profileStats.recentRideTotals,
-                Run: profileStats.recentRunTotals,
-                Swim: profileStats.recentSwimTotals
+                Run: profileStats.recentRunTotals
+            }
+
+            // Swim only for PRO users.
+            if (user.isPro) {
+                recentStats.Swim = profileStats.recentSwimTotals
             }
 
             // Crude estimation of maximum distances based on recent activity stats for ride, run and swim.
