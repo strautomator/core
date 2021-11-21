@@ -203,7 +203,9 @@
             "pastCalendarDays": 180,
             "futureCalendarDays": 2,
             // Links on 1 out of 5 processed activities on free accounts by default.
-            "linksOn": 5
+            "linksOn": 5,
+            // Track personal records for which sports?
+            "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"]
         },
         "pro": {
             // Pro accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.

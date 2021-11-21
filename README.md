@@ -6,11 +6,11 @@ This is the core module of Strautomator, containing most of its business logic. 
 
 ### Settings
 
-Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its [docs](https://setmeup.devv.com). The settings are splitted as follows:
+Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its [docs](https://setmeup.devv.com). The settings are split as follows:
 
--   **settings.json** - general settings shared by all environments
+-   **settings.json** - settings shared by all environments, targeting production by default
 -   **settings.development.json** - development settings, mostly when running on your dev machine
--   **settings.production.json** - production settings, except credentials and secrets
+-   **settings.production.json** - production-only settings, except credentials and secrets (optional)
 -   **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
 -   **GCS settings** - optional, will be downloaded from a Google Cloud Storage bucket on startup
 
