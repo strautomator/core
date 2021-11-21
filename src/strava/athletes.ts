@@ -287,7 +287,6 @@ export class StravaAthletes {
         }
 
         if (activities && activities.length > 0) {
-            const today = new Date()
             const allRecords = await this.getAthleteRecords(user)
 
             // Iterate the passed activites to check for new records.
@@ -298,9 +297,16 @@ export class StravaAthletes {
                     const movingTime = activity.movingTime || 0
                     let hasNewRecord = false
 
+                    // Activity properties that are tracked for records.
+                    const props = ["distance", "movingTime", "elevationGain", "speedMax", "speedAvg", "hrMax", "hrAvg", "wattsMax", "wattsAvg", "calories"]
+                    if (activity.hasPower) {
+                        props.push("wattsMax")
+                        props.push("wattsAvg")
+                    }
+
                     // Check all of the possible record properties. The "average" records will
                     // consider only activities with at least 20 minutes of moving time.
-                    for (let prop of ["distance", "movingTime", "elevationGain", "speedMax", "speedAvg", "hrMax", "hrAvg", "wattsMax", "wattsAvg", "calories"]) {
+                    for (let prop of props) {
                         const currentValue: number = currentRecords[prop] ? currentRecords[prop].value || 0 : 0
 
                         if (activity[prop] && activity[prop] > currentValue) {
@@ -314,7 +320,7 @@ export class StravaAthletes {
                                 value: activity[prop],
                                 previous: currentValue,
                                 activityId: activity.id,
-                                date: today
+                                date: activity.dateEnd
                             }
 
                             allRecords[activity.type][prop] = details
@@ -362,13 +368,13 @@ export class StravaAthletes {
      */
     setAthleteRecords = async (user: UserData, activity: StravaActivity, records: StravaRecords): Promise<void> => {
         try {
-            const newRecords = {}
+            const newRecords = {id: user.id}
             newRecords[activity.type] = records
 
             const recordsLog = _.map(_.toPairs(records), (r) => `${r[0]}=${r[1].value}`).join(" | ")
             logger.info("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, `${activity.type} ${activity.id} has new records`, recordsLog)
 
-            await database.set("athlete-records", newRecords, user.id)
+            await database.merge("athlete-records", newRecords)
         } catch (ex) {
             logger.error("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, `${activity.type} ${activity.id}`, ex)
         }
