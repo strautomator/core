@@ -43,7 +43,7 @@ export class StravaActivities {
     getActivities = async (user: UserData, query: any, checkRecords?: boolean): Promise<StravaActivity[]> => {
         logger.debug("Strava.getActivities", `User ${user.id} ${user.displayName}`, query)
 
-        const arrLogQuery = Object.entries(query).map((p) => p[0] + "=" + p[1])
+        const arrLogQuery = query ? Object.entries(query).map((p) => p[0] + "=" + p[1]) : ["no query"]
         const logQuery = arrLogQuery.join(", ")
 
         try {

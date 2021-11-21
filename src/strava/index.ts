@@ -90,7 +90,7 @@ export class Strava {
 
         try {
             const counter = await database.delete("activities", ["user.id", "==", user.id])
-            await database.delete("athlete-records", user.id)
+            await this.athletes.deleteAthleteRecords(user)
 
             if (counter > 0) {
                 logger.info("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} Strava activities`)

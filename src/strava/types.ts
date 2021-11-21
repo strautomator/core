@@ -235,7 +235,20 @@ export interface StravaTotals {
 }
 
 /**
- * Strava athlete records by activity type.
+ * Strava athlete's records by sport's type.
+ */
+export type StravaAthleteRecords = {
+    /** Records by each Strava sport. */
+    [sport in StravaSport]?: StravaRecords
+} & {
+    /** Same as the user ID. */
+    id?: string
+    /** Date when records were last refreshed manually. */
+    dateRefreshed?: Date
+}
+
+/**
+ * Strava records for an individual sport.
  */
 export interface StravaRecords {
     /** Longest distance. */
@@ -470,3 +483,8 @@ export enum StravaMapStyle {
     BlackLivesMatter = "black_lives_matter",
     Pride = "pride"
 }
+
+/**
+ * List of activity properties that are trackerd for records.
+ */
+export const StravaTrackedRecords = ["distance", "movingTime", "elevationGain", "speedMax", "speedAvg", "hrMax", "hrAvg", "wattsMax", "wattsAvg", "calories"]

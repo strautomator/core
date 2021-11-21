@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Athletes
 
-import {StravaActivity, StravaRecords, StravaEstimatedFtp, StravaGear, StravaProfile, StravaProfileStats, StravaRecordDetails, StravaSport, StravaTotals, StravaTokens} from "./types"
+import {StravaActivity, StravaRecords, StravaEstimatedFtp, StravaGear, StravaProfile, StravaProfileStats, StravaRecordDetails, StravaSport, StravaTotals, StravaTokens, StravaTrackedRecords, StravaAthleteRecords} from "./types"
 import {toStravaGear, toStravaProfile, toStravaProfileStats} from "./utils"
 import {UserData} from "../users/types"
 import users from "../users"
@@ -276,107 +276,205 @@ export class StravaAthletes {
     // --------------------------------------------------------------------------
 
     /**
-     * Check if activity has broken any of the user personal records.
+     * Check if the passed activities have broken any new records, and return the
+     * records object if any new values were set.
      * @param user The user account.
      * @param activities List of activities to be checked against.
+     * @param doNotSave Optional flag to prevent auto-saving the new records.
      */
-    checkActivityRecords = async (user: UserData, activities: StravaActivity[]) => {
+    checkActivityRecords = async (user: UserData, activities: StravaActivity[], doNotSave?: boolean): Promise<StravaAthleteRecords> => {
         if (user.preferences.privacyMode) {
             logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "User has opted in for privacy mode")
-            return
+            return null
+        }
+        if (!activities || activities.length == 0) {
+            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "No activities to be checked")
+            return null
         }
 
-        if (activities && activities.length > 0) {
-            const allRecords = await this.getAthleteRecords(user)
+        // Only proceed if athlete has the records document initialized.
+        const allRecords = await this.getAthleteRecords(user)
+        if (!allRecords) {
+            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "No previous records found, will not proceed")
+            return null
+        }
 
-            // Iterate the passed activites to check for new records.
-            for (let activity of activities) {
-                try {
-                    const newRecords: StravaRecords = {}
-                    const currentRecords: StravaRecords = allRecords[activity.type] || {}
-                    const movingTime = activity.movingTime || 0
-                    let hasNewRecord = false
+        const result: StravaAthleteRecords = {}
+        const minMovingTime = settings.strava.records.minMovingTimeAvg
+        let hasNewRecord = false
 
-                    // Activity properties that are tracked for records.
-                    const props = ["distance", "movingTime", "elevationGain", "speedMax", "speedAvg", "hrMax", "hrAvg", "wattsMax", "wattsAvg", "calories"]
-                    if (activity.hasPower) {
-                        props.push("wattsMax")
-                        props.push("wattsAvg")
-                    }
-
-                    // Check all of the possible record properties. The "average" records will
-                    // consider only activities with at least 20 minutes of moving time.
-                    for (let prop of props) {
-                        const currentValue: number = currentRecords[prop] ? currentRecords[prop].value || 0 : 0
-
-                        if (activity[prop] && activity[prop] > currentValue) {
-                            if (prop.includes("Avg") && movingTime < settings.strava.records.minMovingTimeAvg) continue
-
-                            // Make sure the records references exist.
-                            if (!allRecords[activity.type]) allRecords[activity.type] = {}
-                            if (!activity.newRecords) activity.newRecords = []
-
-                            const details: StravaRecordDetails = {
-                                value: activity[prop],
-                                previous: currentValue,
-                                activityId: activity.id,
-                                date: activity.dateEnd
-                            }
-
-                            allRecords[activity.type][prop] = details
-                            newRecords[prop] = details
-                            activity.newRecords.push(prop)
-
-                            hasNewRecord = true
-                        }
-                    }
-
-                    // User has broken a personal record? Save it.
-                    if (hasNewRecord) {
-                        await this.setAthleteRecords(user, activity, newRecords)
-                    }
-                } catch (ex) {
-                    logger.error("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+        // Iterate the passed activites to check for new records.
+        for (let activity of activities) {
+            try {
+                if (!allRecords[activity.type]) {
+                    allRecords[activity.type] = {}
                 }
+
+                const currentRecords: StravaRecords = allRecords[activity.type]
+                const movingTime = activity.movingTime || 0
+
+                // If activity had no power meter, exclude the power based records.
+                // Check all of the possible record properties.
+                const props = activity.hasPower ? StravaTrackedRecords : StravaTrackedRecords.filter((r) => !r.includes("watts"))
+                for (let prop of props) {
+                    const currentValue: number = currentRecords[prop] ? currentRecords[prop].value || 0 : 0
+
+                    // Has broken a new record? If an average-based metric, was the
+                    // activity longer than the minMovingTimeAvg setting?
+                    if (activity[prop] && activity[prop] > currentValue) {
+                        if (prop.includes("Avg") && movingTime < minMovingTime) {
+                            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, prop, `Activity ${activity.id} has less than ${minMovingTime}`)
+                            continue
+                        }
+
+                        // Make sure the new records references exist.
+                        if (!result[activity.type]) result[activity.type] = {}
+                        if (!activity.newRecords) activity.newRecords = []
+
+                        const details: StravaRecordDetails = {
+                            value: activity[prop],
+                            previous: currentValue,
+                            activityId: activity.id,
+                            date: activity.dateEnd
+                        }
+
+                        allRecords[activity.type][prop] = details
+                        result[activity.type][prop] = details
+                        activity.newRecords.push(prop)
+
+                        hasNewRecord = true
+                    }
+                }
+            } catch (ex) {
+                logger.error("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
             }
         }
+
+        if (!hasNewRecord) {
+            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `${activities.length} activities`, `No new records`)
+            return null
+        }
+
+        // User has broken a personal record? Save it.
+        if (doNotSave) {
+            logger.info("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `${activities.length} activities`, `New records were NOT saved`)
+        } else {
+            await this.setAthleteRecords(user, result)
+        }
+
+        return result
     }
 
     /**
      * Get the PRs (records) for the specified user.
      * @param user The user account.
      */
-    getAthleteRecords = async (user: UserData): Promise<{[sport: string]: StravaRecords}> => {
+    getAthleteRecords = async (user: UserData): Promise<StravaAthleteRecords> => {
         try {
-            const records = await database.get("athlete-records", user.id)
+            const records: StravaAthleteRecords = await database.get("athlete-records", user.id)
 
-            if (!records) {
+            if (records) {
+                const entries = Object.entries(records).filter((k) => !["id", "dateCreated"].includes(k[0]))
+                const count = _.sum(entries.map((entry) => Object.keys(entry[1]).length))
+
+                if (count > 0) {
+                    logger.info("Strava.getAthleteRecords", `User ${user.id} ${user.displayName}`, `${count} records`)
+                }
+            } else {
                 logger.debug("Strava.getAthleteRecords", `User ${user.id} ${user.displayName} has no records saved`)
             }
 
-            return records || {}
+            return records || null
         } catch (ex) {
             logger.error("Strava.getAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
         }
     }
 
     /**
-     * Save the PRs (records) for the specified user.
+     * Save the personal records for the specified user.
      * @param user The user account.
-     * @param activity The activity that generated a new PR.
      * @param records The new records.
      */
-    setAthleteRecords = async (user: UserData, activity: StravaActivity, records: StravaRecords): Promise<void> => {
+    setAthleteRecords = async (user: UserData, records: StravaAthleteRecords): Promise<void> => {
         try {
-            const newRecords = {id: user.id}
-            newRecords[activity.type] = records
+            if (!records) {
+                logger.info("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, "No new records to be saved")
+                return
+            }
 
-            const recordsLog = _.map(_.toPairs(records), (r) => `${r[0]}=${r[1].value}`).join(" | ")
-            logger.info("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, `${activity.type} ${activity.id} has new records`, recordsLog)
+            const sports = Object.keys(records)
 
-            await database.merge("athlete-records", newRecords)
+            // Log new records by sport.
+            for (let sport of sports) {
+                const recordsLog = _.map(_.toPairs(records[sport]), (r) => `${r[0]}=${r[1]["value"]}`).join(" | ")
+                logger.info("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, sport, recordsLog)
+            }
+
+            // Set document ID and save to the database.
+            records.id = user.id as any
+            await database.merge("athlete-records", records)
         } catch (ex) {
-            logger.error("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, `${activity.type} ${activity.id}`, ex)
+            logger.error("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
+        }
+    }
+
+    /**
+     * Prepare the athlete records using the profile stats / totals as a baseline.
+     * @param user The user account.
+     */
+    prepareAthleteRecords = async (user: UserData): Promise<void> => {
+        try {
+            if (user.preferences.privacyMode) {
+                logger.info("Strava.prepareAthleteRecords", `User ${user.id} ${user.displayName}`, "User has opted in for privacy mode")
+                return
+            }
+
+            const records: StravaAthleteRecords = {id: user.id, dateRefreshed: new Date()}
+
+            // First we get the basic totals from the user's profile.
+            const profileStats = await this.getProfileStats(user)
+            const recentStats = {
+                Ride: profileStats.recentRideTotals,
+                Run: profileStats.recentRunTotals,
+                Swim: profileStats.recentSwimTotals
+            }
+
+            // Crude estimation of maximum distances based on recent activity stats for ride, run and swim.
+            for (let [sport, stats] of Object.entries(recentStats)) {
+                if (stats && stats.count > 0) {
+                    records[sport] = {
+                        distance: {value: stats.distance / stats.count, previous: 0}
+                    }
+                }
+            }
+
+            // Extra ride stats.
+            if (profileStats.allRideTotals && profileStats.allRideTotals.distance > 0) {
+                records.Ride = {
+                    distance: {value: profileStats.biggestRideDistance, previous: 0}
+                }
+            }
+
+            logger.info("Strava.prepareAthleteRecords", `User ${user.id} ${user.displayName}`, `${Object.keys(records).length} baseline records created`)
+
+            // Save base document to the database.
+            await database.set("athlete-records", records, user.id)
+        } catch (ex) {
+            logger.error("Strava.prepareAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
+        }
+    }
+
+    /**
+     * Delete all the saved personal records for the specified user.
+     * @param user The user account.
+     * @param records The new records.
+     */
+    deleteAthleteRecords = async (user: UserData): Promise<void> => {
+        try {
+            const count = await database.delete("athlete-records", user.id)
+            logger.info("Strava.deleteAthleteRecords", `User ${user.id} ${user.displayName}`, `${count ? "Deleted" : "No records to delete"}`)
+        } catch (ex) {
+            logger.error("Strava.deleteAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
         }
     }
 
