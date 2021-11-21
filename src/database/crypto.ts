@@ -26,7 +26,7 @@ export function cryptoProcess(data: any, encrypt: boolean): void {
                 if (encrypt) {
                     data[key] = encryptData(value)
                 } else {
-                    data[key] = decryptData(value)
+                    data[key] = decryptData(key, value)
                 }
             } else if (_.isObject(value)) {
                 cryptoProcess(value, encrypt)
@@ -56,9 +56,10 @@ export function encryptData(value: string): string {
 
 /**
  * Decrypt the passed value. Encrypted values must be prefixed with "enc::".
+ * @param prop The property name of what's being decrypted.
  * @param value Value to be decrypted after document fetching from the database.
  */
-export function decryptData(value: string): string {
+export function decryptData(prop: string, value: string): string {
     try {
         if (value === null) {
             return null
@@ -67,7 +68,7 @@ export function decryptData(value: string): string {
         value = value.toString()
 
         if (value.substring(0, 5) != "enc::") {
-            logger.debug("Database.decrypt", value, "Value does not seem to be encrypted, will return itself")
+            logger.debug("Database.decrypt", prop, value, "Value does not seem to be encrypted, will return itself")
             return value
         }
 
@@ -82,9 +83,9 @@ export function decryptData(value: string): string {
         return decrypted.toString()
     } catch (ex) {
         if (settings.database.readProductionSuffix !== null) {
-            logger.error("Database.decrypt", value, ex)
+            logger.error("Database.decrypt", prop, value, ex)
         } else {
-            logger.error("Database.decrypt", `Likely due to readProductionSuffix set`, ex)
+            logger.error("Database.decrypt", prop, `Likely due to readProductionSuffix set`, ex)
         }
     }
 }
