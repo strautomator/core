@@ -2,7 +2,7 @@
 
 import {recipePropertyList, recipeActionList} from "./lists"
 import {defaultAction, commuteAction, gearAction, hideHomeAction, mapStyleAction, webhookAction, workoutTypeAction} from "./actions"
-import {checkBoolean, checkLocation, checkNumber, checkSportType, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
+import {checkBoolean, checkLocation, checkNewRecords, checkNumber, checkSportType, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
@@ -280,6 +280,12 @@ export class Recipes {
             // Sport type condition.
             else if (prop == "sportType") {
                 const valid = checkSportType(activity, condition)
+                if (!valid) return false
+            }
+
+            // New records?
+            else if (prop == "newRecords") {
+                const valid = checkNewRecords(activity, condition)
                 if (!valid) return false
             }
 

@@ -75,10 +75,11 @@ export const recipePropertyList = [
     {value: "relativeEffort", text: "Relative effort", type: "number", operators: recipeOperatorList.number, min: 0, max: 99999},
     {value: "perceivedExertion", text: "Perceived exertion", type: "number", operators: recipeOperatorList.number, min: 0, max: 10},
     {value: "name", text: "Name", type: "text", operators: recipeOperatorList.text},
-    {value: "device", text: "GPS device name", type: "text", operators: recipeOperatorList.text},
     {value: "hasPhotos", text: "Has photos", type: "boolean", operators: recipeOperatorList.is},
+    {value: "newRecords", text: "Has new personal records", type: "boolean", operators: recipeOperatorList.is},
     {value: "manual", text: "Created manually", type: "boolean", operators: recipeOperatorList.is},
-    {value: "temperature", text: "Device temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
+    {value: "device", text: "GPS device name", type: "text", operators: recipeOperatorList.text},
+    {value: "temperature", text: "GPS device temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.temperature", text: "Weather temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "m/s", impSuffix: "mph"},
     {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100}

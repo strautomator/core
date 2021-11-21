@@ -130,6 +130,23 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
 }
 
 /**
+ * Check if the passed activity has broken new records.
+ * @param activity The Strava activity to be checked.
+ * @param condition The weekday based recipe condition.
+ */
+export const checkNewRecords = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+    const yes = activity.newRecords && activity.newRecords.length > 0
+    const no = !activity.newRecords || activity.newRecords.length == 0
+    const valid = condition.value === true ? yes : no
+
+    if (!valid) {
+        logger.debug("Recipes.checkNewRecords", `Activity ${activity.id}`, condition, `Failed`)
+    }
+
+    return valid
+}
+
+/**
  * Check if the passed date is on the specified week day (0 = Sunday, 6 = Satiurday).
  * @param activity The Strava activity to be checked.
  * @param condition The weekday based recipe condition.
