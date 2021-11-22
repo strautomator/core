@@ -1,7 +1,7 @@
 // Strautomator Core: Maps
 
 import {Client, GeocodeRequest, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
-import {Polyline} from "./polylines"
+import {Polyline} from "./polyline"
 import {MapAddress, MapCoordinates} from "./types"
 import cache = require("bitecache")
 import jaul = require("jaul")
