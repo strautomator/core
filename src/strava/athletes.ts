@@ -433,6 +433,7 @@ export class StravaAthletes {
             }
 
             const records: StravaAthleteRecords = {id: user.id, dateRefreshed: new Date()}
+            let sportCount = 0
 
             // First we get the basic totals from the user's profile.
             const profileStats = await this.getProfileStats(user)
@@ -449,6 +450,7 @@ export class StravaAthletes {
             // Crude estimation of maximum distances based on recent activity stats for ride, run and swim.
             for (let [sport, stats] of Object.entries(recentStats)) {
                 if (stats && stats.count > 0) {
+                    sportCount++
                     records[sport] = {
                         distance: {value: stats.distance / stats.count, previous: 0}
                     }
@@ -462,7 +464,7 @@ export class StravaAthletes {
                 }
             }
 
-            logger.info("Strava.prepareAthleteRecords", `User ${user.id} ${user.displayName}`, `${Object.keys(records).length} baseline records created`)
+            logger.info("Strava.prepareAthleteRecords", `User ${user.id} ${user.displayName}`, `${sportCount || "no"} baseline sports created`)
 
             // Save base document to the database.
             await database.set("athlete-records", records, user.id)
