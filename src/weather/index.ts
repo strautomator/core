@@ -126,7 +126,7 @@ export class Weather {
                 weather.start = await this.getLocationWeather(activity.locationStart, activity.dateStart, preferences)
                 weather.end = await this.getLocationWeather(activity.locationEnd, activity.dateEnd, preferences)
             } catch (ex) {
-                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Failed to get weather`)
+                logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, ex)
             }
 
             // Make sure weather result is valid.
