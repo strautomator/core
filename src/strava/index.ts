@@ -8,7 +8,6 @@ import stravaClubs from "./clubs"
 import stravaRoutes from "./routes"
 import stravaWebhooks from "./webhooks"
 import api from "./api"
-import database from "../database"
 import eventManager from "../eventmanager"
 import logger = require("anyhow")
 const settings = require("setmeup").settings
