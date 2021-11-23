@@ -551,6 +551,7 @@ export class Users {
         user.profile.firstName = _.sample(firstNames)
         user.profile.lastName = _.sample(lastNames)
         user.profile.city = "Atlantis"
+        delete user.profile.urlAvatar
 
         logger.info("Users.anonymize", user.id, `${user.profile.firstName} ${user.profile.lastName}`)
     }
