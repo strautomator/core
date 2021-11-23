@@ -34,6 +34,7 @@ interface LanguageString {
     Calories: string
     Clear: string
     MostlyClear: string
+    PartlyCloudy: string
     Cloudy: string
     MostlyCloudy: string
     Thunderstorm: string
@@ -73,6 +74,7 @@ const languageStrings: {[id: string]: LanguageString} = {
         Calories: "calories",
         Clear: "clear",
         MostlyClear: "mostly clear",
+        PartlyCloudy: "partly cloudy",
         Cloudy: "cloudy",
         MostlyCloudy: "mostly cloudy",
         Thunderstorm: "thunderstorm",
@@ -107,6 +109,7 @@ const languageStrings: {[id: string]: LanguageString} = {
         Calories: "kalorien",
         Clear: "klar",
         MostlyClear: "meist klarer",
+        PartlyCloudy: "meist klarer",
         Cloudy: "bewölkt",
         MostlyCloudy: "meist bewölkt",
         Thunderstorm: "gewitter",
@@ -141,6 +144,7 @@ const languageStrings: {[id: string]: LanguageString} = {
         Calories: "calorías",
         Clear: "claro",
         MostlyClear: "mayormente claro",
+        PartlyCloudy: "mayormente claro",
         Cloudy: "mublado",
         MostlyCloudy: "mayormente nublado",
         Thunderstorm: "tormenta",
@@ -175,6 +179,7 @@ const languageStrings: {[id: string]: LanguageString} = {
         Calories: "calories",
         Clear: "ciel clair",
         MostlyClear: "ciel généralement dégagé",
+        PartlyCloudy: "ciel généralement dégagé",
         Cloudy: "nuageux",
         MostlyCloudy: "plutôt nuageux",
         Thunderstorm: "orage",
@@ -208,7 +213,8 @@ const languageStrings: {[id: string]: LanguageString} = {
         Speed: "velocidade",
         Calories: "calorias",
         Clear: "céu aberto",
-        MostlyClear: "parcialmente nublado",
+        MostlyClear: "parcialmente aberto",
+        PartlyCloudy: "parcialmente nublado",
         Cloudy: "nublado",
         MostlyCloudy: "parcialmente nublado",
         Thunderstorm: "tempestade",
@@ -229,10 +235,17 @@ export const translation = (id: string, preferences: UserPreferences, capitalize
         language = "en"
     }
 
-    const result = languageStrings[language][id]
+    if (!id) {
+        logger.warn("Translations.translation", language, "Translation ID passed as null")
+        return ""
+    }
+
+    const spaceToBigCase = (w) => w.charAt(0).toUpperCase() + w.slice(1)
+    const ref = languageStrings[language]
+    const result = ref[id] || ref[id.split(" ").map(spaceToBigCase).join("")]
 
     if (!result) {
-        logger.warn("Translations.translation", language, `No translation found for: ${id}`)
+        logger.debug("Translations.translation", language, `No translation found for: ${id}`)
         return id
     }
 

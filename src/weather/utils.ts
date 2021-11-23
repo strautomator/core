@@ -142,6 +142,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         if (!extraData.iconText || extraData.iconText.length < 3) {
             let cloudCover = summary.cloudCover as any
             let iconText = "Clear"
+
             if (summary.precipitation == "Snow") iconText = "Snow"
             else if (summary.precipitation == "Rain") iconText = "Rain"
             else if (summary.extraData.mmPrecipitation > 3) iconText = "Rain"
@@ -208,11 +209,12 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
 
         // Summary set? Check if it has a translation. If unset, set one now.
         if (summary.summary) {
-            summary.summary = translation(summary.summary, preferences) || summary.summary
+            summary.summary = translation(summary.summary, preferences)
         } else {
-            const baseSummary = translation(summary.extraData.iconText, preferences) || summary.extraData.iconText
-            summary.summary = `${tempSummary}, ${baseSummary}`
+            summary.summary = tempSummary
 
+            const baseSummary = translation(summary.extraData.iconText, preferences)
+            if (baseSummary) summary.summary += `, ${baseSummary} `
             if (isWindy) summary.summary += `, ${translation("Windy", preferences)}`
         }
 
