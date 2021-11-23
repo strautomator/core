@@ -426,12 +426,12 @@ export class StravaActivities {
             for (let field of activity.updatedFields) {
                 let targetField = field
                 let targetValue = activity[field]
-                let targetLog = `${field}=${activity[field]}`
+                let targetName = null
 
                 if (field == "gear") {
                     targetField = "gear_id"
                     targetValue = activity.gear.id
-                    targetLog = `${field}=${activity.gear.name}`
+                    targetName = activity.gear.name
                 } else if (field == "hideHome") {
                     targetField = "hide_from_home"
                 } else if (field == "workoutType") {
@@ -441,6 +441,8 @@ export class StravaActivities {
                 } else if (field == "mapStyle") {
                     targetField = "selected_polyline_style"
                 }
+
+                let targetLog = `${targetField}=${targetName || activity[targetField]}`
 
                 // Set data and update result log.
                 data[targetField] = targetValue
