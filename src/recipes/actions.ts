@@ -51,6 +51,11 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         // Pre-process activity data and append suffixes to values before processing.
         transformActivityFields(user, activityWithSuffix)
 
+        // Using the activity fortune?
+        if (action.type == RecipeActionType.GenerateName) {
+            processedValue = await getActivityFortune(user, activity)
+        }
+
         // Value has a counter tag? Get recipe stats to increment the counter.
         if (processedValue.indexOf("${counter}") >= 0) {
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
@@ -78,10 +83,8 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             }
         }
 
-        // Using the activity fortune?
-        if (action.type == RecipeActionType.GenerateName) {
-            processedValue = await getActivityFortune(user, activity)
-        } else if (processedValue) {
+        // Replace tags.
+        if (processedValue) {
             processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
         }
 
