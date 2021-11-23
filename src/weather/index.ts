@@ -116,7 +116,7 @@ export class Weather {
             // Stop right here if activity happened too long ago.
             const minDate = dayjs.utc().subtract(this.maxHours, "hours")
             if (minDate.isAfter(activity.dateEnd)) {
-                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Happened before ${minDate.format(settings.dayjs.datetime)}, can't fetch weather`)
+                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Happened before ${minDate.format("YYYY-MM-DD HH:mm")}, can't fetch weather`)
                 return null
             }
 
@@ -155,7 +155,7 @@ export class Weather {
     getLocationWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences, provider?: string): Promise<WeatherSummary> => {
         if (!date || !coordinates || coordinates.length != 2 || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
             const coordinatesLog = coordinates ? coordinates.join(", ") : "no coordinates"
-            const dateLog = date ? dayjs(date).format(settings.dayjs.datetime) : "no date"
+            const dateLog = date ? dayjs(date).format("YYYY-MM-DD HH:mm") : "no date"
             logger.warn("Weather.getLocationWeather", coordinatesLog, dateLog, "Missing coordinates or date, won't fetch")
             return null
         }
@@ -164,7 +164,7 @@ export class Weather {
         let providerModule: WeatherProvider
         let isDefaultProvider: boolean = false
 
-        const logDate = dayjs(date).format(settings.dayjs.datetime)
+        const logDate = dayjs(date).format("YYYY-MM-DD HH:mm")
         const mDate = dayjs.utc()
         const hours = mDate.diff(date, "hours")
         const latlon = coordinates.join(", ")
