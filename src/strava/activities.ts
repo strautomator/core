@@ -697,6 +697,22 @@ export class StravaActivities {
         }
     }
 
+    /**
+     * Delete all saved / processed activities for the specified user.
+     * Returns the number of deleted actvities.
+     * @param user The user account.
+     */
+    deleteProcessedActivities = async (user: UserData): Promise<number> => {
+        try {
+            const count = await database.delete("activities", ["user.id", "==", user.id])
+            logger.info("Strava.deleteProcessedActivities", `User ${user.id} ${user.displayName}`, `Deleted ${count || "no"} activities`)
+            return count
+        } catch (ex) {
+            logger.error("Strava.deleteProcessedActivities", `User ${user.id} ${user.displayName}`, ex)
+            return 0
+        }
+    }
+
     // ACTIVITY HELPERS
     // --------------------------------------------------------------------------
 
