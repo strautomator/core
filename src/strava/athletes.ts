@@ -475,15 +475,18 @@ export class StravaAthletes {
 
     /**
      * Delete all the saved personal records for the specified user.
+     * Returns true if a document was deleted, false otherwise.
      * @param user The user account.
-     * @param records The new records.
      */
-    deleteAthleteRecords = async (user: UserData): Promise<void> => {
+    deleteAthleteRecords = async (user: UserData): Promise<boolean> => {
         try {
             const count = await database.delete("athlete-records", user.id)
             logger.info("Strava.deleteAthleteRecords", `User ${user.id} ${user.displayName}`, `${count ? "Deleted" : "No records to delete"}`)
+
+            return count > 0
         } catch (ex) {
             logger.error("Strava.deleteAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
+            return false
         }
     }
 
