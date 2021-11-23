@@ -144,8 +144,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             let iconText = "Clear"
 
             if (summary.precipitation == "Snow") iconText = "Snow"
-            else if (summary.precipitation == "Rain") iconText = "Rain"
-            else if (summary.extraData.mmPrecipitation > 3) iconText = "Rain"
+            else if (summary.precipitation == "Rain" || extraData.mmPrecipitation > 3) iconText = "Rain"
             else if (summary.visibility <= 1) iconText = "Fog"
             else if (cloudCover > 75) iconText = "Cloudy"
             else if (cloudCover > 40) iconText = "MostlyCloudy"
@@ -158,7 +157,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         let unicode: string = "2601"
         switch (extraData.iconText) {
             case "Clear":
-                if (summary.extraData.timeOfDay == "day") {
+                if (extraData.timeOfDay == "day") {
                     unicode = "2600"
                 } else if (summary.moon == MoonPhase.Full) {
                     unicode = "1F316"
@@ -170,7 +169,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
                 unicode = "1F324"
                 break
             case "MostlyCloudy":
-                if (summary.extraData.timeOfDay == "day") {
+                if (extraData.timeOfDay == "day") {
                     unicode = "26C5"
                 } else {
                     unicode = "1F319"
@@ -211,10 +210,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         if (summary.summary) {
             summary.summary = translation(summary.summary, preferences)
         } else {
-            summary.summary = tempSummary
-
-            const baseSummary = translation(summary.extraData.iconText, preferences)
-            if (baseSummary) summary.summary += `, ${baseSummary} `
+            summary.summary += `${tempSummary}, ${translation(extraData.iconText, preferences)} `
             if (isWindy) summary.summary += `, ${translation("Windy", preferences)}`
         }
 
