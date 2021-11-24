@@ -142,6 +142,19 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         activity.climbingRatio = Math.round(climbingRatio * 100) / 100
     }
 
+    // Check for new PRs and KOMs.
+    if (data.segment_efforts && data.segment_efforts.length > 0) {
+        const pr: any[] = data.segment_efforts.filter((r) => r.pr_rank == 1)
+        const kom: any[] = data.segment_efforts.filter((r) => r.kom_rank == 1)
+
+        if (pr.length > 0) {
+            activity.prSegments = pr.map((r) => r.name)
+        }
+        if (kom.length > 0) {
+            activity.komSegments = kom.map((r) => r.name)
+        }
+    }
+
     // Get activity emoticon.
     activity.icon = getSportIcon(activity)
 

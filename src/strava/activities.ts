@@ -108,6 +108,7 @@ export class StravaActivities {
         try {
             const tokens = user.stravaTokens
             const data = await api.get(tokens, `activities/${id}?include_all_efforts=0`)
+            console.log(JSON.stringify(data, null, 4))
             const activity = toStravaActivity(user, data)
 
             // Activity's gear was set?

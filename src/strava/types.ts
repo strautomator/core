@@ -88,8 +88,12 @@ export interface StravaActivity {
     icon?: string
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
-    /** List of new records. */
+    /** List of new all time activity-property records. */
     newRecords?: string[]
+    /** List of segment personal bests. */
+    prSegments?: string[]
+    /** List of segment KOMs. */
+    komSegments?: string[]
     /** Was a link to Strautomator added to the activity (internal use only)? */
     linkback?: boolean
 }
