@@ -284,7 +284,7 @@ export class Recipes {
             }
 
             // New records?
-            else if (prop == "newRecords") {
+            else if (prop == "newRecords" || prop == "komSegments" || prop == "prSegments") {
                 const valid = checkNewRecords(activity, condition)
                 if (!valid) return false
             }
