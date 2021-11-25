@@ -108,7 +108,6 @@ export class StravaActivities {
         try {
             const tokens = user.stravaTokens
             const data = await api.get(tokens, `activities/${id}?include_all_efforts=0`)
-            console.log(JSON.stringify(data, null, 4))
             const activity = toStravaActivity(user, data)
 
             // Activity's gear was set?
@@ -423,7 +422,7 @@ export class StravaActivities {
                 }
             }
 
-            // Set fields to be updated on the activity.
+            // Set correct fields to be updated on the activity.
             for (let field of activity.updatedFields) {
                 let targetField = field
                 let targetValue = activity[field]
@@ -441,12 +440,21 @@ export class StravaActivities {
                     targetField = "private_note"
                 } else if (field == "mapStyle") {
                     targetField = "selected_polyline_style"
+                } else if (field.substring(0, 8) == "hideStat") {
+                    targetField = ""
+                    targetValue = targetValue === true ? "only_me" : "everyone"
+
+                    if (!data.stats_visibility) data.stats_visibility = []
+                    const arrFieldName = field.replace("hideStat", "").split(/(?=[A-Z])/)
+                    data.stats_visibility.push({type: arrFieldName.join("_").toLowerCase(), visibility: targetValue})
                 }
 
-                let targetLog = `${targetField}=${targetName || activity[targetField]}`
+                let targetLog = `${field}=${targetName || activity[field] || activity[targetField]}`
 
-                // Set data and update result log.
-                data[targetField] = targetValue
+                if (targetField) {
+                    data[targetField] = targetValue
+                }
+
                 logResult.push(targetLog)
             }
 

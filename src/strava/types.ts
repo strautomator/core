@@ -20,6 +20,16 @@ export interface StravaActivity {
     commute?: boolean
     /** Activity hidden on the home feed? */
     hideHome?: boolean
+    /** Hide pace on the activity stats? */
+    hideStatPace?: boolean
+    /** Hide speed on the activity stats? */
+    hideStatSpeed?: boolean
+    /** Hide calories on the activity stats? */
+    hideStatCalories?: boolean
+    /** Hide heart on the activity stats? */
+    hideStatHeartRate?: boolean
+    /** Hide power on the activity stats? */
+    hideStatPower?: boolean
     /** Activity done on a trainer machine? */
     trainer?: boolean
     /** Start date and time, local time. */

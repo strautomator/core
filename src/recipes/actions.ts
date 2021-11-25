@@ -137,35 +137,17 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 }
 
 /**
- * Set an activity as commute or not.
+ * Set a boolean property on the activity.
  * @param user The activity owner.
  * @param activity The Strava activity details.
  * @param recipe The source recipe.
  * @param action The action details.
+ * @param field Field to be updated on the activity.
  */
-export const commuteAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+export const booleanAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        activity.commute = action.value === false ? false : true
-        activity.updatedFields.push("commute")
-
-        return true
-    } catch (ex) {
-        failedAction(user, activity, recipe, action, ex)
-        return false
-    }
-}
-
-/**
- * Hide the activity on home feeds.
- * @param user The activity owner.
- * @param activity The Strava activity details.
- * @param recipe The source recipe.
- * @param action The action details.
- */
-export const hideHomeAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
-    try {
-        activity.hideHome = action.value === false ? false : true
-        activity.updatedFields.push("hideHome")
+        activity[action.type] = action.value === false ? false : true
+        activity.updatedFields.push(action.type)
 
         return true
     } catch (ex) {

@@ -62,6 +62,15 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     if (data.perceived_exertion) {
         activity.perceivedExertion = data.perceived_exertion
     }
+    if (data.stats_visibility && data.stats_visibility.length > 0) {
+        for (let sv of data.stats_visibility) {
+            if (sv.type == "pace") activity.hideStatPace = sv.visibility == "only_me"
+            else if (sv.type == "speed") activity.hideStatSpeed = sv.visibility == "only_me"
+            else if (sv.type == "calories") activity.hideStatCalories = sv.visibility == "only_me"
+            else if (sv.type == "heart_rate") activity.hideStatHeartRate = sv.visibility == "only_me"
+            else if (sv.type == "power") activity.hideStatPower = sv.visibility == "only_me"
+        }
+    }
 
     // Strava returns offset in seconds, but we store in minutes.
     if (activity.utcStartOffset) {
