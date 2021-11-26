@@ -108,7 +108,7 @@ export class PayPalWebhooks {
      * @param data Event data.
      * @event PayPal.subscriptionUpdated
      */
-    processWebhook = async (data): Promise<void> => {
+    processWebhook = async (data: any): Promise<void> => {
         try {
             const resourceDetails = []
             const resource = data.resource
