@@ -342,7 +342,7 @@ export class Recipes {
         }
 
         // Mark activity as commute?
-        if (action.type == RecipeActionType.Commute || action.type.toString().substring(0, 8) == "hideStat") {
+        if (action.type == RecipeActionType.Commute || action.type == RecipeActionType.HideHome || action.type.toString().substring(0, 8) == "hideStat") {
             return booleanAction(user, activity, recipe, action)
         }
 
