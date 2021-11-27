@@ -107,7 +107,7 @@ export const recipeActionList = [
     {value: "hideStatPace", text: "Hide stats - pace"},
     {value: "hideStatSpeed", text: "Hide stats - speed"},
     {value: "hideStatCalories", text: "Hide stats - calories"},
-    {value: "hideStatHeart", text: "Hide stats - heart rate"},
+    {value: "hideStatHeartRate", text: "Hide stats - heart rate"},
     {value: "hideStatPower", text: "Hide stats - power"},
     {value: "webhook", text: "Webhook URL"}
 ]
