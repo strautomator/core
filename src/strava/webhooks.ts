@@ -26,7 +26,7 @@ export class StravaWebhooks {
      */
     get callbackUrl(): string {
         const baseUrl = settings.api.url || `${settings.app.url}api/`
-        return `${baseUrl}strava/${settings.strava.api.urlToken}`
+        return `${baseUrl}strava/webhook/${settings.strava.api.urlToken}`
     }
 
     // GET WEBHOOKS
