@@ -689,6 +689,7 @@ export class StravaActivities {
 
             // Linkback added to activity?
             if (activity.linkback) {
+                logger.info("Strava.linkback", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`)
                 data.linkback = true
             }
 
