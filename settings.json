@@ -307,6 +307,18 @@
         "cacheDuration": 900,
         // Set the default weather providers.
         "defaultProviders": ["stormglass", "tomorrow"],
+        // Open-Meteo API settings.
+        "openmeteo": {
+            "baseUrl": "https://api.open-meteo.com/v1/forecast",
+            // Open-Meteo API rate limits.
+            "rateLimit": {
+                "maxConcurrent": 3,
+                "perHour": 2000,
+                "perDay": 8000
+            },
+            // The Open-Meteo API does not need a secret.
+            "secret": true
+        },
         // OpenWeatherMap API settings.
         "openweathermap": {
             "baseUrl": "https://api.openweathermap.org/data/2.5/weather",

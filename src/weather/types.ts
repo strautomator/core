@@ -73,10 +73,10 @@ export interface WeatherSummary {
     windSpeed: string | number
     /** Wind direction. */
     windDirection: string | number
-    /** Precipitation type (rain, drizzle, snow etc), or none. */
-    precipitation: string
     /** Cloud coverage, percentage. */
     cloudCover: string | number
+    /** Precipitation type (rain, drizzle, snow etc), or none. */
+    precipitation?: string
     /** Visibility distance. */
     visibility?: number
     /** Moon phase (as string). */
