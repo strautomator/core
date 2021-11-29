@@ -9,7 +9,7 @@ import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
- * OpenWeatherMap weather API. Only supports ccurrent weather (no historical data).
+ * OpenWeatherMap weather API. Only supports current weather (no historical data).
  */
 export class OpenWeatherMap implements WeatherProvider {
     private constructor() {}

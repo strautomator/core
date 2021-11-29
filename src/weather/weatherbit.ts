@@ -9,7 +9,7 @@ import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
- * Weatherbit weather API. Only supports ccurrent weather (no historical data).
+ * Weatherbit weather API. Only supports current weather (no historical data).
  */
 export class Weatherbit implements WeatherProvider {
     private constructor() {}
