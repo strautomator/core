@@ -272,7 +272,7 @@ export class Database {
             const snapshot = await filteredTable.get()
             snapshot.forEach((doc) => doc.ref.delete())
 
-            const logQuery = (queryOrId as string[]).join(", ")
+            const logQuery = (queryOrId as string[]).join(" ")
             logger.info("Database.delete", collection, logQuery, `Deleted ${snapshot.size} documents`)
             return snapshot.size
         }

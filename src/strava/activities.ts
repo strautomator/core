@@ -621,7 +621,7 @@ export class StravaActivities {
                 logTo = ` to ${dayjs(dateTo).format("YYYY-MM-DD")}`
             }
             if (limit) {
-                logLimit = `, limit ${logLimit}`
+                logLimit = `, limit ${limit}`
             }
 
             const activities = await database.search("activities", where, ["dateProcessed", "desc"], limit)
