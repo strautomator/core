@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaEstimatedFtp, StravaGear, StravaProcessedActivity} from "./types"
+import {StravaActivity, StravaGear, StravaProcessedActivity} from "./types"
 import {toStravaActivity} from "./utils"
 import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
@@ -713,55 +713,27 @@ export class StravaActivities {
      * Delete all saved / processed activities for the specified user.
      * Returns the number of deleted actvities.
      * @param user The user account.
+     * @param ageDays Optional, activities older than that age (in days) will be deleted.
      */
-    deleteProcessedActivities = async (user: UserData): Promise<number> => {
+    deleteProcessedActivities = async (user: UserData, ageDays?: number): Promise<number> => {
+        if (!ageDays) ageDays = 0
+
         try {
-            const count = await database.delete("activities", ["user.id", "==", user.id])
-            logger.info("Strava.deleteProcessedActivities", `User ${user.id} ${user.displayName}`, `Deleted ${count || "no"} activities`)
+            const maxDate = dayjs().subtract(ageDays, "days")
+            const where = [["user.id", "==", user.id]]
+
+            if (ageDays && ageDays > 0) {
+                where.push(["dateProcessed", "<", maxDate])
+            }
+
+            const count = await database.delete("activities", where)
+            const sinceLog = ageDays > 0 ? ` older than ${ageDays} days` : ""
+            logger.info("Strava.deleteProcessedActivities", `User ${user.id} ${user.displayName}`, `Deleted ${count || "no"} activities${sinceLog}`)
+
             return count
         } catch (ex) {
             logger.error("Strava.deleteProcessedActivities", `User ${user.id} ${user.displayName}`, ex)
             return 0
-        }
-    }
-
-    // ACTIVITY HELPERS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Estimate the user's FTP based on activities from the last few weeks (default 14).
-     * @param user The user to fetch the FTP for.
-     * @param weeks Number of weeks to fetch activites for.
-     */
-    ftpFromActivities = async (user: UserData, weeks?: number): Promise<StravaEstimatedFtp> => {
-        logger.debug("Strava.ftpFromActivities", user.id, `Weeks ${weeks}`)
-
-        try {
-            // Validate weeks parameter.
-            if (!weeks || weeks < 1) weeks = settings.strava.ftp.weeks
-            if (weeks > settings.strava.ftp.maxWeeks) {
-                logger.warn("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `Weeks reduced from ${weeks} to ${settings.strava.ftp.maxWeeks}`)
-                weeks = settings.strava.ftp.maxWeeks
-            }
-
-            // Timestamps for the activities date filter.
-            const dateAfter = dayjs.utc().subtract(weeks, "weeks")
-            const tsAfter = dateAfter.valueOf() / 1000
-            const tsBefore = new Date().valueOf() / 1000
-
-            // Get activities for the passed number of weeks.
-            const activities = await this.getActivities(user, {before: tsBefore, after: tsAfter})
-            const result = await stravaAthletes.estimateFtp(user, activities)
-
-            if (result) {
-                logger.info("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, `Estimated FTP: ${result.ftpWatts}w`)
-            } else {
-                logger.debug("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, "Could not estimate FTP")
-            }
-
-            return result
-        } catch (ex) {
-            logger.error("Strava.ftpFromActivities", `User ${user.id} ${user.displayName}`, `${weeks} weeks`, "Failed to estimate FTP")
         }
     }
 }

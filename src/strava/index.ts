@@ -5,6 +5,7 @@ import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
 import stravaClubs from "./clubs"
+import stravaFtp from "./ftp"
 import stravaRoutes from "./routes"
 import stravaWebhooks from "./webhooks"
 import api from "./api"
@@ -36,6 +37,11 @@ export class Strava {
      * Club methods.
      */
     clubs = stravaClubs
+
+    /**
+     * FTP methods.
+     */
+    ftp = stravaFtp
 
     /**
      * Route methods.
