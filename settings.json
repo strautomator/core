@@ -144,8 +144,8 @@
         "readDeleteAfterDays": 30
     },
     "oauth": {
-        // Alert users after 3 token failures.
-        "tokenFailuresAlert": 3,
+        // Alert users after 2 token failures.
+        "tokenFailuresAlert": 2,
         // Disable users after 10 token failures.
         "tokenFailuresDisable": 10,
         // Token exchange requests times out in 10 seconds. This applies to all
@@ -276,8 +276,6 @@
             "idleLossPerWeek": 0.02,
             // User's FTP will be estimated based on the last 10 weeks.
             "weeks": 10,
-            // Maximum allowed number of weeks when calculating FTP.
-            "maxWeeks": 52,
             // FTP can be updated only once every 24 hours.
             "sinceLastHours": 24
         },
