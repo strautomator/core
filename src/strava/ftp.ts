@@ -26,7 +26,7 @@ export class StravaFtp {
      * @param user The user to estimate the FTP for.
      * @param activities List of activities to be used for the estimation.
      */
-    estimateFtp = async (user: UserData, activities: StravaActivity[]): Promise<StravaEstimatedFtp> => {
+    estimateFtp = async (user: UserData, activities?: StravaActivity[]): Promise<StravaEstimatedFtp> => {
         try {
             if (!activities || activities.length == 0) {
                 const dateAfter = dayjs.utc().subtract(settings.strava.ftp.weeks, "weeks")
