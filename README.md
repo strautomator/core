@@ -79,7 +79,7 @@ Users with expired tokens must have their Strava tokens refreshed regularly. You
 
 #### Users: FTP auto update
 
-The `strava.activities.ftpFromActivities()` should be triggered once a week for all users that have enabled the feature.
+The `strava.ftp.estimateFtp()` should be triggered once a week for all users that have enabled the feature.
 
 ### Users: disable failed recipes
 
