@@ -67,13 +67,11 @@ export class Users {
             // User activated a PRO account or reverted back to the free plan?
             if (subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
-            } else if (subscription.status == "CANCELLED" || subscription.status == "EXPIRED" || subscription.status == "SUSPENDED") {
-                await this.switchToFree(user, subscription)
             } else {
                 user.subscription = {
                     id: subscription.id,
                     source: "paypal",
-                    enabled: true
+                    enabled: subscription.status != "CANCELLED"
                 }
 
                 await this.update(user)
