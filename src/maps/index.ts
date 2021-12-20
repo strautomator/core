@@ -79,7 +79,7 @@ export class Maps {
             // Location stored on cache?
             const cached = cache.get("maps", `${region || "global"}-${addressId}`)
             if (cached) {
-                logger.info("Maps.getGeocode.fromCache", address, region, `${cached.length} results`)
+                logger.debug("Maps.getGeocode.fromCache", address, region, `${cached.length} results`)
                 return cached
             }
 
@@ -151,7 +151,7 @@ export class Maps {
             // Location stored on cache?
             const cached = cache.get("maps", cacheId)
             if (cached) {
-                logger.info("Maps.getReverseGeocode.fromCache", logCoordinates, `${Object.values(cached).join(", ")}`)
+                logger.debug("Maps.getReverseGeocode.fromCache", logCoordinates, `${Object.values(cached).join(", ")}`)
                 return cached
             }
 
