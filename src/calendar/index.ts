@@ -132,15 +132,17 @@ export class Calendar {
             const minDate = nowUtc.hour(0).minute(0).second(0).subtract(pastDays, "days")
             const maxDate = nowUtc.hour(23).minute(59).second(59).add(futureDays, "days")
             const defaultFromDate = nowUtc.subtract(settings.plans.free.pastCalendarDays, "days")
-            const dateFrom = options.dateFrom ? dayjs(options.dateFrom) : defaultFromDate
-            const dateTo = options.dateTo ? dayjs(options.dateTo) : maxDate
+            let dateFrom = options.dateFrom ? dayjs(options.dateFrom) : defaultFromDate
+            let dateTo = options.dateTo ? dayjs(options.dateTo) : maxDate
 
             // Date validation checks.
             if (minDate.isAfter(dateFrom)) {
-                throw new Error(`Minimum accepted date for the calendar is ${minDate.format("l")} (${pastDays} days)`)
+                logger.warn("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `Force setting past days to ${pastDays}`)
+                dateFrom = minDate
             }
             if (maxDate.isAfter(dateTo)) {
-                throw new Error(`Maximum accepted date for the calendar is ${minDate.format("l")} (${futureDays} days)`)
+                logger.warn("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `Force setting future days to ${futureDays}`)
+                dateTo = maxDate
             }
 
             const startTime = dayjs().unix()
