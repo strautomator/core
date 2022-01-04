@@ -719,10 +719,10 @@ export class StravaActivities {
         if (!ageDays) ageDays = 0
 
         try {
-            const maxDate = dayjs().subtract(ageDays, "days").toDate()
             const where: any[] = [["user.id", "==", user.id]]
 
-            if (ageDays && ageDays > 0) {
+            if (ageDays > 0) {
+                const maxDate = dayjs().subtract(ageDays, "days").toDate()
                 where.push(["dateProcessed", "<", maxDate])
             }
 
