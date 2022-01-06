@@ -81,7 +81,7 @@ export const recipePropertyList = [
     {value: "komSegments", text: "Has new segment KOMs", type: "boolean", operators: recipeOperatorList.is},
     {value: "prSegments", text: "Has new segment PRs", type: "boolean", operators: recipeOperatorList.is},
     {value: "manual", text: "Created manually", type: "boolean", operators: recipeOperatorList.is},
-    {value: "device", text: "GPS device name", type: "text", operators: recipeOperatorList.text},
+    {value: "device", text: "GPS device / app name", type: "text", operators: recipeOperatorList.text},
     {value: "temperature", text: "GPS device temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.temperature", text: "Weather temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "m/s", impSuffix: "mph"},
