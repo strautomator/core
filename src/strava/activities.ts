@@ -534,6 +534,11 @@ export class StravaActivities {
                 try {
                     if (await recipes.evaluate(user, recipe.id, activity)) {
                         recipeIds.push(recipe.id)
+
+                        if (recipe.killSwitch) {
+                            logger.debug("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `Recipe ${recipe.id} kill switch`)
+                            break
+                        }
                     }
                 } catch (innerEx) {
                     logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, innerEx)

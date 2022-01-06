@@ -18,6 +18,8 @@ export interface RecipeData {
     order?: number
     /** Default recipe for a specific sport (applies to all incoming activities). */
     defaultFor?: StravaSport
+    /** Stop executing other automations if this one executes. */
+    killSwitch?: boolean
     /** Is the recipe disabled? */
     disabled?: boolean
 }
