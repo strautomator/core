@@ -6,8 +6,9 @@
 export const recipeOperatorList = {
     // Free text.
     text: [
+        {value: "=", text: "is exactly", description: "Text matches the specified value"},
         {value: "like", text: "has", description: "Text contains the specified value"},
-        {value: "=", text: "is exactly", description: "Text matches the specified value"}
+        {value: "notlike", text: "does not have", description: "Text does not contain the specified value"}
     ],
     // Only positive numbers.
     number: [

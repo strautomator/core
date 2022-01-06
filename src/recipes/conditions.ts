@@ -318,13 +318,15 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition):
     }
 
     // Parse condition and activity's lowercased values.
-    const value = condition.value.toString().toLowerCase()
-    const aText = activity[prop].toString().toLowerCase()
+    const value: string = condition.value.toString().toLowerCase()
+    const aText: string = activity[prop].toString().toLowerCase()
     let valid: boolean = true
 
     if (op == RecipeOperator.Equal && aText != value) {
         valid = false
-    } else if (op == RecipeOperator.Like && aText.indexOf(value) < 0) {
+    } else if (op == RecipeOperator.Like && !aText.includes(value)) {
+        valid = false
+    } else if (op == RecipeOperator.NotLike && aText.includes(value)) {
         valid = false
     } else if (op == RecipeOperator.GreaterThan || op == RecipeOperator.LessThan) {
         throw new Error(`Invalid operator ${op} for ${prop}`)
