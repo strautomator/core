@@ -49,7 +49,7 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
         }
     }
 
-    logger.debug("Recipes.checkLocation", `Activity ${activity.id}`, condition, `Failed`)
+    logger.debug("Recipes.checkLocation", `Activity ${activity.id}`, condition, "Failed")
     return false
 }
 
@@ -67,16 +67,21 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         return false
     }
 
-    // Parse activity date, considering the UTC offset for start date.
-    let aDate = dayjs.utc(activity[prop])
-    if (prop == "dateStart" && activity.utcStartOffset) {
-        aDate = aDate.add(activity.utcStartOffset, "minutes")
-    }
-
-    // Parse condition and activity's date.
-    const value = parseInt(condition.value as string)
-    const aTime = aDate.second() + aDate.minute() * 60 + aDate.hour() * 3600
+    let aTime: number = 0
     let valid: boolean = true
+    const value = parseInt(condition.value as string)
+
+    // Parse activity time or date.
+    if (prop.includes("Time")) {
+        aTime = activity[prop]
+    } else {
+        let aDate = dayjs.utc(activity[prop])
+        if (prop == "dateStart" && activity.utcStartOffset) {
+            aDate = aDate.add(activity.utcStartOffset, "minutes")
+        }
+
+        aTime = aDate.second() + aDate.minute() * 60 + aDate.hour() * 3600
+    }
 
     // Check it time is greater, less, within 2 minutes, or around 30 minutes of the condition's time.
     if (op == RecipeOperator.GreaterThan) {
@@ -90,7 +95,7 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
     }
 
     if (!valid) {
-        logger.debug("Recipes.checkTimestamp", `Activity ${activity.id}`, condition, `Failed`)
+        logger.debug("Recipes.checkTimestamp", `Activity ${activity.id}`, condition, "Failed")
     }
 
     return valid
@@ -123,7 +128,7 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
     }
 
     if (!valid) {
-        logger.debug("Recipes.checkSportType", `Activity ${activity.id}`, condition, `Failed`)
+        logger.debug("Recipes.checkSportType", `Activity ${activity.id}`, condition, "Failed")
     }
 
     return valid
@@ -141,7 +146,7 @@ export const checkNewRecords = (activity: StravaActivity, condition: RecipeCondi
     const valid = condition.value === true ? yes : no
 
     if (!valid) {
-        logger.debug("Recipes.checkNewRecords", `Activity ${activity.id}`, condition, `Failed`)
+        logger.debug("Recipes.checkNewRecords", `Activity ${activity.id}`, condition, "Failed")
     }
 
     return valid
@@ -180,7 +185,7 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
     }
 
     if (!valid) {
-        logger.debug("Recipes.checkWeekday", `Activity ${activity.id}`, condition, `Failed`)
+        logger.debug("Recipes.checkWeekday", `Activity ${activity.id}`, condition, "Failed")
     }
 
     return valid
@@ -241,7 +246,7 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
         }
 
         if (!valid) {
-            logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, `Failed`)
+            logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed")
         }
 
         return valid
@@ -281,7 +286,7 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
     }
 
     if (!valid) {
-        logger.debug("Recipes.checkNumber", `Activity ${activity.id}`, condition, `Failed`)
+        logger.debug("Recipes.checkNumber", `Activity ${activity.id}`, condition, "Failed")
     }
 
     return valid
@@ -297,7 +302,7 @@ export const checkBoolean = (activity: StravaActivity, condition: RecipeConditio
     const valid: boolean = (!activity[prop] && condition.value === false) || activity[prop] === condition.value
 
     if (!valid) {
-        logger.debug("Recipes.checkBoolean", `Activity ${activity.id}`, condition, `Failed`)
+        logger.debug("Recipes.checkBoolean", `Activity ${activity.id}`, condition, "Failed")
     }
 
     return valid
@@ -333,7 +338,7 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition):
     }
 
     if (!valid) {
-        logger.debug("Recipes.checkText", `Activity ${activity.id}`, condition, `Failed`)
+        logger.debug("Recipes.checkText", `Activity ${activity.id}`, condition, "Failed")
     }
 
     return valid
