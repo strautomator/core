@@ -662,7 +662,7 @@ export class StravaActivities {
             // Get updated fields.
             for (let field of activity.updatedFields) {
                 if (field == "gear") {
-                    updatedFields[field] = `${activity.gear.name} (${activity.gear.id})`
+                    updatedFields[field] = activity.gear.id == "none" ? "None" : `${activity.gear.name} (${activity.gear.id})`
                 } else {
                     updatedFields[field] = activity[field]
                 }

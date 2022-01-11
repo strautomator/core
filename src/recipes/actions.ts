@@ -3,7 +3,7 @@
 import {RecipeAction, RecipeActionType, RecipeData, RecipeStatsData} from "./types"
 import {recipeActionList} from "./lists"
 import {transformActivityFields} from "../strava/utils"
-import {StravaActivity} from "../strava/types"
+import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {getActivityFortune} from "../fortune"
@@ -188,7 +188,8 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
         const isRun = activity.type == "Run" || activity.type == "VirtualRun" || activity.type == "Walk"
         const bike = _.find(user.profile.bikes, {id: action.value})
         const shoe = _.find(user.profile.shoes, {id: action.value})
-        const gear = bike || shoe
+        const none: StravaGear = action.value === "none" ? {id: "none", name: "None"} : null
+        const gear: StravaGear = bike || shoe || none
 
         // Make sure gear is valid for the correct activity type.
         if (!gear) {
