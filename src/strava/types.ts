@@ -171,9 +171,9 @@ export interface StravaGear {
     /** Model of the gear. */
     model?: string
     /** Is it the primary gear for the user? */
-    primary: boolean
+    primary?: boolean
     /** Total distance (taken from Strava, respecting the user's units). */
-    distance: number
+    distance?: number
 }
 
 /**
