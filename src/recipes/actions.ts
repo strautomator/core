@@ -209,6 +209,25 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
 }
 
 /**
+ * Set the activity / sport type.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param action The action details.
+ */
+export const sportTypeAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+    try {
+        activity.type = action.value
+        activity.updatedFields.push("type")
+
+        return true
+    } catch (ex) {
+        failedAction(user, activity, recipe, action, ex)
+        return false
+    }
+}
+
+/**
  * Set the activity workout type.
  * @param user The activity owner.
  * @param activity The Strava activity details.

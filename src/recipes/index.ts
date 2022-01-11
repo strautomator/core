@@ -1,7 +1,7 @@
 // Strautomator Core: Recipes
 
 import {recipePropertyList, recipeActionList} from "./lists"
-import {defaultAction, booleanAction, gearAction, mapStyleAction, webhookAction, workoutTypeAction} from "./actions"
+import {defaultAction, booleanAction, gearAction, mapStyleAction, sportTypeAction, webhookAction, workoutTypeAction} from "./actions"
 import {checkBoolean, checkLocation, checkNewRecords, checkNumber, checkSportType, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
@@ -349,6 +349,11 @@ export class Recipes {
         // Change activity gear?
         else if (action.type == RecipeActionType.Gear) {
             return gearAction(user, activity, recipe, action)
+        }
+
+        // Change activity / sport type?
+        else if (action.type == RecipeActionType.SportType) {
+            return sportTypeAction(user, activity, recipe, action)
         }
 
         // Change activity workout type?
