@@ -152,7 +152,7 @@ export class PayPalWebhooks {
                 }
 
                 // Save updated subscription on the database, and emit event to update the user.
-                await database.merge("subscriptions", {id: subscription.id, status: subscription.status, dateUpdated: subscription.dateUpdated})
+                await database.merge("subscriptions", {id: subscription.id, userId: subscription.userId, status: subscription.status, dateUpdated: subscription.dateUpdated})
                 eventManager.emit("PayPal.subscriptionUpdated", subscription)
             }
         } catch (ex) {
