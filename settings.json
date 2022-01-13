@@ -80,6 +80,12 @@
         // Remind user if tracking was not reset and current usage has passed 15% of the alert value.
         "reminderThreshold": 1.15
     },
+    "github": {
+        "api": {
+            "baseUrl": "https://api.github.com/",
+            "repo": "strautomator/web"
+        }
+    },
     "mailer": {
         // The default "from" on sent emails should be set on settings.secret.json file
         // or via the SMU_mailer_from environment variable.
