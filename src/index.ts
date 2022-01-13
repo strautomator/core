@@ -47,6 +47,8 @@ import {Database} from "./database"
 export const database: Database = Database.Instance
 import {Mailer} from "./mailer"
 export const mailer: Mailer = Mailer.Instance
+import {GitHub} from "./github"
+export const github: GitHub = GitHub.Instance
 import {Maps} from "./maps"
 export const maps: Maps = Maps.Instance
 import {PayPal} from "./paypal"
@@ -84,6 +86,7 @@ export * from "./users/types"
 export * from "./calendar/types"
 export * from "./notifications/types"
 export * from "./announcements/types"
+export * from "./github/types"
 export * from "./paypal/types"
 export * from "./fortune"
 
@@ -145,7 +148,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq]) {
+    for (let coreModule of [database, github, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 
