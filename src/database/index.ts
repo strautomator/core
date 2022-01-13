@@ -311,15 +311,16 @@ export class Database {
          * Update state.
          * @param id ID of the desired state document.
          * @param data Data to be saved.
+         * @param replace Replace full object instead of merging.
          */
-        set: async (id: string, data: any): Promise<void> => {
+        set: async (id: string, data: any, replace?: boolean): Promise<void> => {
             const collection = "app-state"
             const colname = `${collection}${settings.database.collectionSuffix}`
             const table = this.firestore.collection(colname)
             const doc = table.doc(id)
 
             // Save state data to the database.
-            await doc.set(data, {merge: true})
+            await doc.set(data, {merge: !replace})
         },
         /**
          * Increment a counter on an app state document.
