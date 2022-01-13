@@ -246,7 +246,7 @@ export class StravaAPI {
      * @param body Additional body to be posted with the request.
      * @event Strava.refreshTokenExpired
      */
-    private makeRequest = async (tokens: StravaTokens, method: string, path: string, params?: any, body?: any) => {
+    private makeRequest = async (tokens: StravaTokens, method: string, path: string, params?: any, body?: any): Promise<any> => {
         let token: string = null
 
         try {
