@@ -20,7 +20,7 @@ export const axiosRequest = async (options: any): Promise<any> => {
 
         // Make request, return true if response was a 204 with no body, otherwise return response body.
         const res = await axios(options)
-        return res.status == 204 && !res.data ? true : res.data
+        return res.status == 204 && !res.data ? true : options.returnResponse ? res : res.data
     } catch (ex) {
         const message = `${ex.code} ${ex.message}`.toUpperCase()
         const isTimeout = message.indexOf("ECONNABORTED") >= 0 || message.indexOf("ETIMEDOUT") >= 0 || message.indexOf("TIMEOUT") >= 0
