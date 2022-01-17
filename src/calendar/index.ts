@@ -88,17 +88,17 @@ export class Calendar {
     }
 
     /**
-     * Delete the specified cached calendar from the database.
-     * @param cacheId Cached calendar ID.
+     * Delete the expired calendars from the database.
      */
-    delete = async (cacheId: string): Promise<void> => {
+    deleteExpired = async (): Promise<number> => {
         try {
-            if (!cacheId) throw new Error("Missing cacheId")
+            const minDate = dayjs.utc().add(settings.calendar.maxCacheDuration, "seconds").toDate()
+            const count = await database.delete("calendar", ["dateUpdated", "<", minDate])
 
-            await database.delete("calendar", cacheId)
-            logger.info("Calendar.delete", cacheId)
+            logger.info("Calendar.deleteExpired", `Deleted ${count} expired calendars`)
+            return count
         } catch (ex) {
-            logger.error("Calendar.delete", cacheId, ex)
+            logger.error("Calendar.deleteExpired", ex)
             throw ex
         }
     }
