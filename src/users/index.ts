@@ -151,6 +151,7 @@ export class Users {
             user.reauth++
 
             const updatedUser: Partial<UserData> = {id: user.id, reauth: user.reauth}
+            logger.warn("Strava.onStravaTokenFailure", `User ${user.id} ${user.displayName}`, `Reauth count: ${user.reauth}`)
 
             // User has an email address? Contact asking to connect to Strautomator again,
             // and if it fails too many times, disable the user.
@@ -413,14 +414,13 @@ export class Users {
                     userData.displayName = profile.username || profile.firstName || profile.lastName
                 }
 
-                // Triggered via user login? Force reset the reauth and suspended flag.
+                // Triggered via user login? Force reset the suspended flag.
                 if (login) {
                     if (userData.suspended) {
                         logger.error("Users.upsert", `${userData.id} ${userData.displayName}`, "Reactivated, suspended = false")
                     }
 
                     userData.suspended = false
-                    userData.reauth = 0
                 }
             }
 
