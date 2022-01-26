@@ -560,7 +560,7 @@ export class GearWear {
             const component: GearWearComponent = _.find(config.components, {name: componentName})
 
             if (!component) {
-                throw new Error(`Component not found`)
+                throw new Error(`Component not found in: ${config.components.map((c) => c.name).join(", ")}`)
             }
 
             const currentDistance = component.currentDistance
