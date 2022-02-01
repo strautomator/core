@@ -7,8 +7,7 @@ if (!process.env.NODE_ENV) {
 
 // Logs to the console by default.
 import logger = require("anyhow")
-logger.appName = "Strautomator"
-logger.levelOnConsole = true
+logger.setOptions({appName: "Strautomator", levelOnConsole: true})
 logger.setup("console")
 
 // Defaults to gcp-credentials.json on home directory if no credentials were set for gcloud.
@@ -32,7 +31,7 @@ if (process.env.NODE_ENV == "production" && process.env.JSON_LOGGING) {
     }
 
     logger.info("Strautomator.startup", "Switching to JSON logging now")
-    logger.levelOnConsole = false
+    logger.setOptions({levelOnConsole: false})
     logger.setup(gcloudLogging)
 }
 
