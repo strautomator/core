@@ -267,7 +267,7 @@ export class Database {
             return 1
         } else {
             let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
-            let where: any[] = _.isString(queryOrId[0]) ? [queryOrId] : queryOrId
+            let where: any = _.isString(queryOrId[0]) ? [queryOrId] : queryOrId
 
             for (let query of where) {
                 filteredTable = filteredTable.where(query[0], query[1], query[2])
