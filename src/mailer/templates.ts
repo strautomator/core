@@ -42,9 +42,6 @@ export const EmailTemplates = {
             "</p>" +
             "<p>" +
             'To reset the current tracking, please <a href="${resetLink}">click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component. You can also edit the component and increase the alert threshold, if needed.' +
-            "</p>" +
-            "<p>" +
-            'Need to buy new components? Check the latest <a href="${affiliateLink}" title="Affiliate link">deals on Amazon</a>! (affiliate link)' +
             "</p>"
     },
 
@@ -60,9 +57,6 @@ export const EmailTemplates = {
             "</p>" +
             "<p>" +
             'To reset the current tracking, please <a href="${resetLink}">click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component. You can also edit the component and increase the alert threshold, if needed.' +
-            "</p>" +
-            "<p>" +
-            'Need to buy new components? Check the latest <a href="${affiliateLink}" title="Affiliate link">deals on Amazon</a>! (affiliate link)' +
             "</p>"
     },
 
