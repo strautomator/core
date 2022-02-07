@@ -7,8 +7,12 @@ if (!process.env.NODE_ENV) {
 
 // Logs to the console by default.
 import logger = require("anyhow")
-logger.setOptions({appName: "Strautomator", levelOnConsole: true})
 logger.setup("console")
+logger.setOptions({
+    appName: "Strautomator",
+    levelOnConsole: true,
+    preprocessors: ["friendlyErrors", "maskSecrets"]
+})
 
 // Defaults to gcp-credentials.json on home directory if no credentials were set for gcloud.
 if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
