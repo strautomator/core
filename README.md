@@ -26,13 +26,16 @@ By default Strautomator uses Google Cloud Firestore to store its data. But the [
 
 The following collections are currently used:
 
--   **activities** summary of processed activities
+-   **activities** processed activities
+-   **announcements** website announcements
 -   **app-state** general application state
--   **calendar** cached calendar data
+-   **athlete-records** athlete sports records
+-   **calendar** cached calendars
 -   **faq** help questions and answers
 -   **gearwear** GearWear configurations
+-   **notifications** notifications to users
 -   **recipe-stats** automation recipe stats
--   **subscriptions** subscriptions data
+-   **subscriptions** PRO subscriptions
 -   **users** registered user details
 
 Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
@@ -63,24 +66,29 @@ Please have a look on the provided Makefile for all available commands.
 
 ## Scheduled Tasks
 
-Some of Strautomator's features depend on scheduled tasks that needs to be setup manually.
+Some of Strautomator's features depend on scheduled tasks that needs a manual setup. For instance, using the GCP Cloud Functions + Cloud Scheduler.
 
-#### GearWear: process recent activities
+### Calendar
 
-The function `gearwear.processRecentActivities()` needs to be called once a day to fetch recent activies for all users and update the distance / hours of their GearWear components accordingly.
+-   **calendar.deleteExpired()** - daily, delete expired cached calendars.
 
-#### Notifications: send email reminders
+### GearWear
 
-Users with too many unread notifications should be notified about them via email, using the `notifications.sendEmailReminders()` helper. Only users that have actually entered an email address will get these.
+-   **gearwear.processRecentActivities()** - daily, fetch recent activities and update the GearWear counters.
 
-#### Strava: refresh tokens
+### Notifications
 
-Users with expired tokens must have their Strava tokens refreshed regularly. You can use a mix of `users.getExpired()`, iterating these users and calling `strava.refreshToken()` for each one of them.
+-   **notifications.cleanup()** - weekly, cleanup old notifications.
+-   **notifications.sendEmailReminders()** - monthly, send email reminders to users that have too many unread notifications.
 
-#### Users: FTP auto update
+### Strava
 
-The `strava.ftp.estimateFtp()` should be triggered once a week for all users that have enabled the feature.
+-   **strava.activities.getQueuedActivities()** - daily, iterate (and if necessary remove) failed queued activities.
 
-### Users: disable failed recipes
+### Users
 
-Recipes that keep failing over and over again should be disabled automatically. Failed recipes can be retrieved using the helper `recipes.stats.getFailingRecipes()`.
+-   **users.subscriptions.getDangling()** - weekly, iterate (and if necessary cleanup) dangling PRO subscriptions.
+-   **users.subscriptions.getNonActive()** - weekly, iterate and switch users with an invalid subscription back to Free.
+-   **users.ftp.estimateFtp() + users.ftp.saveFtp()** - weekly, get all PRO users, estimate their FTP and update on Strava if necessary.
+-   **users.getByResetCounter() + recipes.stats.setCounter** - daily, get and reset counters for users matching today's date.
+-   **recipes.stats.getFailingRecipes()** - weekly, iterate (and if necessary disable) recipes that keep failing.
