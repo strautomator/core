@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "22.64.11800",
+    "version": "22.67.12020",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -19,7 +19,7 @@
         "@googlemaps/google-maps-services-js": "^3.3.9",
         "@mapbox/polyline": "^1.1.1",
         "anyhow": "^3.0.1",
-        "axios": "^0.25.0",
+        "axios": "^0.26.0",
         "bitecache": "^1.2.0",
         "bottleneck": "^2.19.5",
         "dayjs": "^1.10.7",
