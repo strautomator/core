@@ -319,12 +319,20 @@ export function getSuntimes(coordinates: [number, number], date: Date, tz?: numb
     const localRise = (utcRise + tzOffset) % 24
     const localSet = (utcSet + tzOffset) % 24
 
-    const sunrise = `${Math.floor(localRise)}:${localRise - Math.floor(localRise) * 60}`
-    const sunset = `${Math.floor(localSet)}:${localRise - Math.floor(localSet) * 60}`
+    let hourSunrise: any = Math.floor(localRise)
+    if (hourSunrise < 10) hourSunrise = `0${hourSunrise}`
+    let hourSunset: any = Math.floor(localSet)
+    if (hourSunset < 10) hourSunset = `0${hourSunset}`
+
+    const sunrise = `${hourSunrise}:${Math.round((localRise - Math.floor(localRise)) * 60)}`
+    const sunset = `${hourSunset}:${Math.round((localSet - Math.floor(localSet)) * 60)}`
     const fDate = dayjs(date).format("HH:mm")
     const timeOfDay = fDate >= sunrise && fDate <= sunset ? "day" : "night"
+    const suntimesResult: Suntimes = {sunrise: sunrise, sunset: sunset, timeOfDay: timeOfDay}
 
-    return {sunrise: sunrise, sunset: sunset, timeOfDay: timeOfDay}
+    logger.debug("Weather.getSuntimes", date, suntimesResult)
+
+    return suntimesResult
 }
 
 /**
