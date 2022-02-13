@@ -320,12 +320,16 @@ export function getSuntimes(coordinates: [number, number], date: Date, tz?: numb
     const localSet = (utcSet + tzOffset) % 24
 
     let hourSunrise: any = Math.floor(localRise)
-    if (hourSunrise < 10) hourSunrise = `0${hourSunrise}`
+    let minuteSunrise: any = Math.round((localRise - Math.floor(localRise)) * 60)
     let hourSunset: any = Math.floor(localSet)
+    let minuteSunset: any = Math.round((localSet - Math.floor(localSet)) * 60)
+    if (hourSunrise < 10) hourSunrise = `0${hourSunrise}`
+    if (minuteSunrise < 10) minuteSunrise = `0${minuteSunrise}`
     if (hourSunset < 10) hourSunset = `0${hourSunset}`
+    if (minuteSunset < 10) minuteSunset = `0${minuteSunset}`
 
-    const sunrise = `${hourSunrise}:${Math.round((localRise - Math.floor(localRise)) * 60)}`
-    const sunset = `${hourSunset}:${Math.round((localSet - Math.floor(localSet)) * 60)}`
+    const sunrise = `${hourSunrise}:${minuteSunrise}`
+    const sunset = `${hourSunset}:${minuteSunset}`
     const fDate = dayjs(date).format("HH:mm")
     const timeOfDay = fDate >= sunrise && fDate <= sunset ? "day" : "night"
     const suntimesResult: Suntimes = {sunrise: sunrise, sunset: sunset, timeOfDay: timeOfDay}
