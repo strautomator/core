@@ -82,6 +82,23 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
 
         summary.precipitation = summary.precipitation.toLowerCase()
 
+        // Set missing icon text.
+        if (!extraData.iconText || extraData.iconText.length < 3) {
+            let lPrecipitation = summary.precipitation ? summary.precipitation.toLowerCase() : ""
+            let lSummary = summary.summary ? summary.summary.toLowerCase() : ""
+            let cloudCover = summary.cloudCover as any
+            let iconText = "Clear"
+
+            if (lPrecipitation == "snow" || lSummary.includes("snow")) iconText = "Snow"
+            else if (lPrecipitation == "rain" || lSummary.includes("rain") || extraData.mmPrecipitation > 3) iconText = "Rain"
+            else if (summary.visibility <= 1 || lSummary.includes("fog")) iconText = "Fog"
+            else if (cloudCover > 70) iconText = "Cloudy"
+            else if (cloudCover > 30) iconText = "MostlyCloudy"
+            else if (cloudCover > 10) iconText = "MostlyClear"
+
+            extraData.iconText = iconText
+        }
+
         // Temperature summary.
         let tempSummary = translation("Cool", preferences)
         if (summary.temperature > 40) tempSummary = translation("ExtremelyWarm", preferences)
@@ -137,21 +154,6 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
 
         // Set moon phase.
         summary.moon = getMoonPhase(date)
-
-        // Set missing icon text.
-        if (!extraData.iconText || extraData.iconText.length < 3) {
-            let cloudCover = summary.cloudCover as any
-            let iconText = "Clear"
-
-            if (summary.precipitation == "Snow") iconText = "Snow"
-            else if (summary.precipitation == "Rain" || extraData.mmPrecipitation > 3) iconText = "Rain"
-            else if (summary.visibility <= 1) iconText = "Fog"
-            else if (cloudCover > 75) iconText = "Cloudy"
-            else if (cloudCover > 40) iconText = "MostlyCloudy"
-            else if (cloudCover > 15) iconText = "MostlyClear"
-
-            extraData.iconText = iconText
-        }
 
         // Select correct weather icon. Defaults to cloudy.
         let unicode: string = "2601"
