@@ -203,7 +203,7 @@ export class StravaAthletes {
             const records: StravaAthleteRecords = await database.get("athlete-records", user.id)
 
             if (records) {
-                const entries = Object.entries(records).filter((k) => !["id", "dateCreated"].includes(k[0]))
+                const entries = Object.entries(records).filter((k) => !["id", "dateCreated", "dateRefreshed"].includes(k[0]))
                 const count = _.sum(entries.map((entry) => Object.keys(entry[1]).length))
 
                 if (count > 0) {
