@@ -1,15 +1,16 @@
 // Strautomator Core: Calendar
 
-import {CachedCalendar, CalendarOptions} from "./types"
+import {CalendarOptions} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
+import {File} from "@google-cloud/storage"
+import {Response} from "express"
 import _ = require("lodash")
 import crypto = require("crypto")
-import database from "../database"
-import eventManager from "../eventmanager"
 import maps from "../maps"
+import storage from "../storage"
 import strava from "../strava"
 import ical, {ICalCalendar} from "ical-generator"
 import jaul = require("jaul")
@@ -45,62 +46,6 @@ export class Calendar {
             logger.error("Calendar.init", ex)
             throw ex
         }
-
-        eventManager.on("Users.delete", this.onUserDelete)
-    }
-
-    /**
-     * Delete user calendars after it gets deleted from the database.
-     * @param user User that was deleted from the database.
-     */
-    private onUserDelete = async (user: UserData): Promise<void> => {
-        try {
-            const counter = await database.delete("calendar", ["userId", "==", user.id])
-
-            if (counter > 0) {
-                logger.info("Calendar.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} calendars`)
-            }
-        } catch (ex) {
-            logger.error("Calendar.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
-        }
-    }
-
-    // DATABASE METHODS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Get list of cached calendars that have expired.
-     */
-    getExpired = async (): Promise<CachedCalendar[]> => {
-        try {
-            const minDate = dayjs.utc().add(settings.calendar.maxCacheDuration, "seconds").toDate()
-            const queries = [["dateUpdated", "<", minDate]]
-
-            const expiredCalendars: CachedCalendar[] = await database.search("calendar", queries)
-            const logDetail = expiredCalendars.length > 0 ? `${expiredCalendars.length} expired calendars` : "No expired calendars"
-
-            logger.info("Calendar.getExpired", logDetail)
-            return expiredCalendars
-        } catch (ex) {
-            logger.error("Calendar.getExpired", ex)
-            throw ex
-        }
-    }
-
-    /**
-     * Delete the expired calendars from the database.
-     */
-    deleteExpired = async (): Promise<number> => {
-        try {
-            const minDate = dayjs.utc().add(settings.calendar.maxCacheDuration, "seconds").toDate()
-            const count = await database.delete("calendar", ["dateUpdated", "<", minDate])
-
-            logger.info("Calendar.deleteExpired", `Deleted ${count} expired calendars`)
-            return count
-        } catch (ex) {
-            logger.error("Calendar.deleteExpired", ex)
-            throw ex
-        }
     }
 
     // GENERATION
@@ -110,10 +55,11 @@ export class Calendar {
      * Generate the Strautomator calendar and return its iCal string representation.
      * @param user The user requesting the calendar.
      * @param options Calendar generation options.
+     * @param res Response object.
      */
-    generate = async (user: UserData, options?: CalendarOptions): Promise<string> => {
+    generate = async (user: UserData, options: CalendarOptions, res: Response): Promise<void> => {
         let optionsLog: string
-        let cachedCalendar: CachedCalendar
+        let cachedFile: File
 
         try {
             if (!options) throw new Error("Missing calendar options")
@@ -149,43 +95,33 @@ export class Calendar {
 
             // Use "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
             const hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 12)
-            const cacheId = `${user.id}-${hash}`
-            const cacheDoc = database.doc("calendar", cacheId)
-            const cacheData = await cacheDoc.get()
+            const cacheId = `calendar-${user.id}-${hash}`
+            const cachedFile = await storage.getFile("cache", cacheId)
 
             // See if cached version of the calendar is still valid.
-            // Check cached calendar expiry date (reversed / backwards) and if user has new activity since the last generated output.
-            if (cacheData.exists) {
+            // Check cached calendar expiry date (reversed / backwards) and if user has
+            // new activity since the last generated output.
+            if (cachedFile) {
                 try {
-                    cachedCalendar = database.transformData(cacheData.data()) as CachedCalendar
+                    const [metadata] = await cachedFile.getMetadata()
+                    const cacheTimestamp = new Date(metadata.timeCreated).valueOf()
+                    const cacheSize = metadata.size
 
+                    // Additional cache validation.
                     const cacheDuration = user.isPro ? settings.calendar.cacheDuration : settings.calendar.cacheDuration * 2
                     const expiryDate = nowUtc.subtract(cacheDuration, "seconds").toDate()
                     const maxExpiryDate = nowUtc.subtract(settings.calendar.maxCacheDuration + cacheDuration, "seconds").toDate()
-                    const updatedTs = cachedCalendar.dateUpdated.valueOf()
-                    const notExpired = expiryDate.valueOf() <= updatedTs
-                    const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() <= updatedTs && maxExpiryDate.valueOf() <= updatedTs
+                    const notExpired = expiryDate.valueOf() <= cacheTimestamp
+                    const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() <= cacheTimestamp && maxExpiryDate.valueOf() <= cacheTimestamp
                     const onlyClubs = options.clubs && !options.activities
 
                     // Return cached calendar if it has not expired, and has not changed
                     // or if calendar is for club events only.
                     if (notExpired && (notChanged || onlyClubs)) {
-                        if (cachedCalendar.shards) {
-                            cachedCalendar.data = ""
-
-                            const shardDocs = await cacheDoc.collection("shards").get()
-                            const shardMap = (s) => s.data()
-                            const shards = _.orderBy(shardDocs.docs.map(shardMap), "index")
-
-                            // If data is stored in shards, rebuild it first.
-                            for (let shard of shards) {
-                                cachedCalendar.data += shard.data().data
-                            }
-                        }
-
-                        const cacheSize = (cachedCalendar.data.length / 1000 / 1024).toFixed(2)
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `${cacheSize} MB`)
-                        return cachedCalendar.data
+                        res.status(200)
+                        cachedFile.createReadStream().pipe(res)
+                        return
                     } else {
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `Cache invalidated, will generate a new calendar`)
                     }
@@ -247,45 +183,23 @@ export class Calendar {
             const output = cal.toString()
             const duration = dayjs().unix() - startTime
             const size = output.length / 1000 / 1024
-            const maxSize = 0.95
 
             // Only save to database if a cacheDuration is set.
             if (settings.calendar.cacheDuration) {
-                cachedCalendar = {
-                    id: cacheId,
-                    userId: user.id,
-                    dateUpdated: dayjs.utc().toDate()
-                }
-
-                // If calendar is smaller than 0.95MB, save it on a single data field,
-                // otherwise split into multiple documents in the "shards" sub-collection.
-                if (size <= maxSize) {
-                    delete cachedCalendar.shards
-                    cachedCalendar.data = output
-
-                    await database.set("calendar", cachedCalendar, cacheId)
-                } else {
-                    delete cachedCalendar.data
-                    const doc = database.doc("calendar", cacheId)
-                    const shardCount = 1 + Math.floor(size / maxSize)
-                    const chunkSize = Math.floor(output.length / shardCount)
-
-                    for (let i = 0; i < shardCount; i++) {
-                        const index = i * chunkSize
-                        const chunk = output.substring(index, index + chunkSize)
-                        doc.collection("shards").add({index: index, data: chunk})
-                    }
-
-                    await doc.set(cachedCalendar)
+                try {
+                    await storage.setFile("cache", cacheId, output)
+                } catch (saveEx) {
+                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache bucket")
                 }
             }
 
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
-            return output
+            res.status(200).send(output)
         } catch (ex) {
-            if (cachedCalendar && cachedCalendar.data) {
+            if (cachedFile) {
                 logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex, "Fallback to cached calendar")
-                return cachedCalendar.data
+                cachedFile.createReadStream().pipe(res)
+                return
             } else {
                 logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
                 throw ex
