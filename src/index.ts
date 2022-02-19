@@ -48,6 +48,8 @@ import cache = require("bitecache")
 // Load Core modules.
 import {Database} from "./database"
 export const database: Database = Database.Instance
+import {Storage} from "./storage"
+export const storage: Storage = Storage.Instance
 import {Mailer} from "./mailer"
 export const mailer: Mailer = Mailer.Instance
 import {GitHub} from "./github"
@@ -126,17 +128,7 @@ export const startup = async (quickStart?: boolean) => {
             const downloadSettings = settings.gcp.downloadSettings
 
             try {
-                const {Storage} = require("@google-cloud/storage")
-                const storageOptions: any = {}
-
-                if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-                    storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
-                }
-
-                // Download settings from GCS.
-                const storage = new Storage(storageOptions)
-                const file = storage.bucket(downloadSettings.bucket).file(downloadSettings.filename)
-                await file.download({destination: "./settings.from-gcp.json"})
+                await storage.downloadFile(downloadSettings.bucket, downloadSettings.filename, `${__dirname}../settings.from-gcp.json`)
 
                 // Load downloaded settings, assuming they're encrypted.
                 const loadOptions = {crypto: true, destroy: true}
@@ -151,7 +143,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, github, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq]) {
+    for (let coreModule of [database, storage, github, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 

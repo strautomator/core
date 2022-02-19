@@ -248,6 +248,10 @@
             "timeout": 5000
         }
     },
+    // Cloud Storage settings.
+    "storage": {
+        "bucketPrefix": "strautomator-"
+    },
     "strava": {
         // Some Strava resources might be cached in memory. Duration in seconds.
         "cacheDuration": {
