@@ -53,11 +53,12 @@ export class Calendar {
 
     /**
      * Generate the Strautomator calendar and return its iCal string representation.
+     * Returns true if calendar was generated, or false if it should come from cache.
      * @param user The user requesting the calendar.
      * @param options Calendar generation options.
      * @param res Response object.
      */
-    generate = async (user: UserData, options: CalendarOptions, res: Response): Promise<void> => {
+    generate = async (user: UserData, options: CalendarOptions, res: Response): Promise<boolean> => {
         let optionsLog: string
         let cachedFile: File
 
@@ -104,7 +105,7 @@ export class Calendar {
             if (cachedFile) {
                 try {
                     const [metadata] = await cachedFile.getMetadata()
-                    const cacheTimestamp = new Date(metadata.timeCreated).valueOf()
+                    const cacheTimestamp = dayjs.utc(metadata.timeCreated).valueOf()
                     const cacheSize = metadata.size
 
                     // Additional cache validation.
@@ -112,7 +113,8 @@ export class Calendar {
                     const expiryDate = nowUtc.subtract(cacheDuration, "seconds").toDate()
                     const maxExpiryDate = nowUtc.subtract(settings.calendar.maxCacheDuration + cacheDuration, "seconds").toDate()
                     const notExpired = expiryDate.valueOf() <= cacheTimestamp
-                    const notChanged = user.dateLastActivity && user.dateLastActivity.valueOf() <= cacheTimestamp && maxExpiryDate.valueOf() <= cacheTimestamp
+                    const lastActivity = user.dateLastActivity ? user.dateLastActivity.valueOf() : 0
+                    const notChanged = lastActivity <= cacheTimestamp && maxExpiryDate.valueOf() <= cacheTimestamp
                     const onlyClubs = options.clubs && !options.activities
 
                     // Return cached calendar if it has not expired, and has not changed
@@ -121,7 +123,7 @@ export class Calendar {
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `${cacheSize} MB`)
                         res.status(200)
                         cachedFile.createReadStream().pipe(res)
-                        return
+                        return false
                     } else {
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `Cache invalidated, will generate a new calendar`)
                     }
@@ -189,17 +191,19 @@ export class Calendar {
                 try {
                     await storage.setFile("cache", cacheId, output)
                 } catch (saveEx) {
-                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache bucket")
+                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache")
                 }
             }
 
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
+
             res.status(200).send(output)
+            return true
         } catch (ex) {
             if (cachedFile) {
                 logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex, "Fallback to cached calendar")
                 cachedFile.createReadStream().pipe(res)
-                return
+                return false
             } else {
                 logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
                 throw ex

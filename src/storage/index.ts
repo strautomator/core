@@ -38,8 +38,6 @@ export class Storage {
 
             if (!quickStart) {
                 const cachedFiles = await this.listFiles("cache")
-                await this.setFile("cache", "startup", new Date().toISOString())
-
                 logger.info("Storage.init", `${cachedFiles.length || "No"} files in the cache bucket`)
             }
         } catch (ex) {
@@ -119,7 +117,7 @@ export class Storage {
      */
     setFile = async (bucket: string, filename: string, data: any): Promise<void> => {
         try {
-            const file = this.client.bucket(bucket).file(filename)
+            const file = this.client.bucket(`${settings.storage.bucketPrefix}${bucket}`).file(filename)
             await file.save(data)
         } catch (ex) {
             logger.error("Storage.setFile", bucket, filename, ex)
