@@ -58,6 +58,12 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
  */
 export function processWeatherSummary(summary: WeatherSummary, date: Date, preferences: UserPreferences): void {
     try {
+        const prcFog = translation("Fog", preferences)
+        const prcDrizzle = translation("Drizzle", preferences)
+        const prcRain = translation("Rain", preferences)
+        const prcSleet = translation("Sleet", preferences)
+        const prcSnow = translation("Snow", preferences)
+
         let extraData = summary.extraData || {}
 
         // No precipitation? Try calculating it based on the precipitation mm (if passed).
@@ -66,10 +72,10 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             const mm = extraData.mmPrecipitation || 0
 
             if (mm > 0) {
-                if (summary.temperature < 1) summary.precipitation = translation("Snow", preferences)
-                else if (summary.temperature < 4) summary.precipitation = translation("Sleet", preferences)
-                else if (mm < 1) summary.precipitation = translation("Drizzle", preferences)
-                else summary.precipitation = translation("Rain", preferences)
+                if (summary.temperature < 1) summary.precipitation = prcSnow
+                else if (summary.temperature < 4) summary.precipitation = prcSleet
+                else if (mm < 1) summary.precipitation = prcDrizzle
+                else summary.precipitation = prcRain
 
                 // Heavy precipitation? Append suffix.
                 if (mm > 20) {
@@ -89,9 +95,9 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             let cloudCover = summary.cloudCover as any
             let iconText = "Clear"
 
-            if (lPrecipitation == "snow" || lSummary.includes("snow")) iconText = "Snow"
-            else if (lPrecipitation == "rain" || lSummary.includes("rain") || extraData.mmPrecipitation > 3) iconText = "Rain"
-            else if (summary.visibility <= 1 || lSummary.includes("fog")) iconText = "Fog"
+            if (lPrecipitation == prcSnow || lSummary.includes(prcSnow)) iconText = "Snow"
+            else if (lPrecipitation == prcRain || lSummary.includes(prcRain) || extraData.mmPrecipitation > 3) iconText = "Rain"
+            else if (summary.visibility <= 1 || lSummary.includes(prcFog)) iconText = "Fog"
             else if (cloudCover > 70) iconText = "Cloudy"
             else if (cloudCover > 30) iconText = "MostlyCloudy"
             else if (cloudCover > 10) iconText = "MostlyClear"
