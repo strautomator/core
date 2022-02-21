@@ -45,6 +45,8 @@ export interface UserData {
     dateLastActivity?: Date
     /** Date of last activity updated by a recipe. */
     dateLastProcessedActivity?: Date
+    /** Date when GearWear usage was last processed. */
+    dateGearWearProcessed?: Date
     /** Date when the user FTP was last updated. */
     dateLastFtpUpdate?: Date
     /** Recipes counter. */
@@ -65,6 +67,8 @@ export interface UserPreferences {
     ftpAutoUpdate?: boolean
     /** Custom "linksOn" value for linkbacks (default is set on settings). */
     linksOn?: number
+    /** How many days to delay the calculations of new GearWeat mileage / hours. */
+    gearwearDelayDays?: number
     /** Add a #strautomator.com hashtag on name of processed activities? */
     activityHashtag?: boolean
     /** Language (code) used for automations and weather tags. */

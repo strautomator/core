@@ -31,8 +31,8 @@ export class GearWear {
      */
     init = async () => {
         try {
-            if (settings.gearwear.previousDays < 1) {
-                throw new Error(`The gearwear.previousDays must be at least 1 (which means yesterday)`)
+            if (settings.gearwear.delayDays < 1) {
+                throw new Error(`The gearwear.delayDays must be at least 1 (which means yesterday)`)
             }
             if (settings.gearwear.reminderThreshold <= 1) {
                 throw new Error(`The gearwear.reminderThreshold setting must be higher than 1`)
@@ -335,11 +335,6 @@ export class GearWear {
             let activityCount = 0
             let userCount = 0
 
-            // Get correct date and timestamps to fetch activities on Strava.
-            const days = settings.gearwear.previousDays
-            const tsAfter = Math.round(dayjs.utc().subtract(days, "day").hour(0).minute(0).second(0).unix())
-            const tsBefore = Math.round(dayjs.utc().subtract(days, "day").hour(23).minute(59).second(59).unix())
-
             // Get all GearWear configurations from the database,
             // and generate an array with all the user IDs.
             const gearwearList = await database.search("gearwear", null, ["userId", "asc"])
@@ -349,17 +344,46 @@ export class GearWear {
             for (let userId of userIds) {
                 try {
                     const user = await users.getById(userId)
-                    const tsLastActivity = dayjs.utc(user.dateLastActivity).unix()
 
                     if (user.suspended) {
                         logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName} is suspended, will not process`)
                         continue
                     }
 
+                    // Get activities timespan.
+                    const days = user.preferences.gearwearDelayDays || settings.gearwear.delayDays
+                    const tsLastActivity = Math.round(dayjs.utc(user.dateLastActivity).unix())
+                    let dateGearWearProcessed = dayjs.utc(user.dateGearWearProcessed)
+                    let dateAfter = dayjs.utc().subtract(days, "day").hour(0).minute(0).second(0)
+                    let dateBefore = dayjs.utc().subtract(days, "day").hour(23).minute(59).second(59)
+                    let tsGearWearProcessed = Math.round(dateGearWearProcessed.unix())
+                    let tsAfter = Math.round(dateAfter.unix())
+                    let tsBefore = Math.round(dateBefore.unix())
+
+                    // Make sure we don't count activities again or skip days if the user
+                    // has recently changed the "gearwearDelayDays" preference.
+                    if (tsAfter < tsGearWearProcessed) {
+                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName}`, `${dateAfter.format("YYYY-MM-DD")} activities already processed`, "Skip processing")
+                        continue
+                    }
+                    if (dateAfter.diff(user.dateGearWearProcessed, "hours") > 1) {
+                        dateAfter = dateGearWearProcessed.add(1, "second")
+                        tsAfter = tsGearWearProcessed + 1
+                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName}`, `Force setting date to ${dateAfter.format("YYYY-MM-DD")}`)
+                    }
+
                     // Recent activities for the user? Proceed.
                     if (tsLastActivity >= tsAfter) {
                         const userGears = _.remove(gearwearList, {userId: userId})
-                        activityCount += await this.processUserActivities(user, userGears, tsAfter, tsBefore)
+                        const userActivityCount = await this.processUserActivities(user, userGears, tsAfter, tsBefore)
+
+                        // Update user's GearWear processed date.
+                        if (userActivityCount > 0) {
+                            await users.update({id: user.id, displayName: user.displayName, dateGearWearProcessed: dateAfter.toDate()})
+                        }
+
+                        // Update counters.
+                        activityCount += userActivityCount
                         userCount++
                     }
                 } catch (userEx) {
