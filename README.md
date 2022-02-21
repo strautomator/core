@@ -30,7 +30,6 @@ The following collections are currently used:
 -   **announcements** website announcements
 -   **app-state** general application state
 -   **athlete-records** athlete sports records
--   **calendar** cached calendars
 -   **faq** help questions and answers
 -   **gearwear** GearWear configurations
 -   **notifications** notifications to users
@@ -67,10 +66,6 @@ Please have a look on the provided Makefile for all available commands.
 ## Scheduled Tasks
 
 Some of Strautomator's features depend on scheduled tasks that needs a manual setup. For instance, using the GCP Cloud Functions + Cloud Scheduler.
-
-### Calendar
-
--   **calendar.deleteExpired()** - daily, delete expired cached calendars.
 
 ### GearWear
 
