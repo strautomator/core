@@ -67,14 +67,14 @@ export interface UserPreferences {
     ftpAutoUpdate?: boolean
     /** Custom "linksOn" value for linkbacks (default is set on settings). */
     linksOn?: number
-    /** How many days to delay the calculations of new GearWeat mileage / hours. */
-    gearwearDelayDays?: number
     /** Add a #strautomator.com hashtag on name of processed activities? */
     activityHashtag?: boolean
     /** Language (code) used for automations and weather tags. */
     language?: "en" | "de" | "es" | "fr" | "pt"
     /** Delay processing activities? */
     delayedProcessing?: boolean
+    /** How many days to delay the calculations of new GearWeat mileage / hours. */
+    gearwearDelayDays?: number
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
     /** Reset recipe counters every year? Set using the format MM-DD, or false to disable. */
