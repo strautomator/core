@@ -354,11 +354,11 @@ export class GearWear {
                     const days = user.preferences.gearwearDelayDays || settings.gearwear.delayDays
                     const tsLastActivity = Math.round(dayjs.utc(user.dateLastActivity).unix())
                     let dateGearWearProcessed = dayjs.utc(user.dateGearWearProcessed)
-                    let dateAfter = dayjs.utc().subtract(days, "day").hour(0).minute(0).second(0)
-                    let dateBefore = dayjs.utc().subtract(days, "day").hour(23).minute(59).second(59)
-                    let tsGearWearProcessed = Math.round(dateGearWearProcessed.unix())
-                    let tsAfter = Math.round(dateAfter.unix())
-                    let tsBefore = Math.round(dateBefore.unix())
+                    let dateAfter = dayjs.utc().subtract(days, "days").hour(0).minute(0).second(0).millisecond(0)
+                    let dateBefore = dayjs.utc().subtract(days, "days").hour(23).minute(59).second(59).millisecond(0)
+                    let tsGearWearProcessed = Math.floor(dateGearWearProcessed.unix())
+                    let tsAfter = Math.floor(dateAfter.unix())
+                    let tsBefore = Math.floor(dateBefore.unix())
 
                     // Make sure we don't count activities again or skip days if the user
                     // has recently changed the "gearwearDelayDays" preference.
@@ -366,9 +366,9 @@ export class GearWear {
                         logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName}`, `${dateAfter.format("YYYY-MM-DD")} activities already processed`, "Skip processing")
                         continue
                     }
-                    if (dateAfter.diff(user.dateGearWearProcessed, "hours") > 1) {
-                        dateAfter = dateGearWearProcessed.add(1, "second")
-                        tsAfter = tsGearWearProcessed + 1
+                    if (dateAfter.diff(user.dateGearWearProcessed, "seconds") > 2) {
+                        dateAfter = dateGearWearProcessed.add(2, "seconds")
+                        tsAfter = tsGearWearProcessed + 2
                         logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName}`, `Force setting date to ${dateAfter.format("YYYY-MM-DD")}`)
                     }
 
