@@ -379,7 +379,7 @@ export class GearWear {
 
                         // Update user's GearWear processed date.
                         if (userActivityCount > 0) {
-                            await users.update({id: user.id, displayName: user.displayName, dateGearWearProcessed: dateAfter.toDate()})
+                            await users.update({id: user.id, displayName: user.displayName, dateGearWearProcessed: dateBefore.toDate()})
                         }
 
                         // Update counters.
