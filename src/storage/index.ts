@@ -37,7 +37,7 @@ export class Storage {
             this.client = new cloudStorage.Storage(options)
 
             if (!quickStart) {
-                const cachedFiles = await this.listFiles("cache")
+                const cachedFiles = await this.listFiles(settings.storage.cacheBucket)
                 logger.info("Storage.init", `${cachedFiles.length || "No"} files in the cache bucket`)
             }
         } catch (ex) {
@@ -55,7 +55,7 @@ export class Storage {
      */
     listFiles = async (bucket: string): Promise<cloudStorage.File[]> => {
         try {
-            const [files] = await this.client.bucket(`${settings.storage.bucketPrefix}${bucket}`).getFiles()
+            const [files] = await this.client.bucket(bucket).getFiles()
             logger.info("Storage.listFiles", bucket, `Got ${files.length} files`)
 
             return files
@@ -72,7 +72,7 @@ export class Storage {
      */
     getFile = async (bucket: string, filename: string): Promise<cloudStorage.File> => {
         try {
-            const file = this.client.bucket(`${settings.storage.bucketPrefix}${bucket}`).file(filename)
+            const file = this.client.bucket(bucket).file(filename)
             const [exists] = await file.exists()
 
             if (!exists) {
@@ -117,7 +117,7 @@ export class Storage {
      */
     setFile = async (bucket: string, filename: string, data: any): Promise<void> => {
         try {
-            const file = this.client.bucket(`${settings.storage.bucketPrefix}${bucket}`).file(filename)
+            const file = this.client.bucket(bucket).file(filename)
             await file.save(data)
         } catch (ex) {
             logger.error("Storage.setFile", bucket, filename, ex)

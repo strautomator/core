@@ -122,13 +122,20 @@ export const startup = async (quickStart?: boolean) => {
             throw new Error("Missing the mandatory app.url setting")
         }
 
+        // Storage client must be initiated before everything else.
+        if (quickStart) {
+            storage.init(quickStart)
+        } else {
+            await storage.init()
+        }
+
         // Get extra settings from Google Cloud Storage? To do so you must set the correct
         // bucket and filename on the settings, or via environment variables.
-        if (setmeup.settings.gcp.downloadSettings.bucket) {
+        if (settings.gcp.downloadSettings && settings.gcp.downloadSettings.bucket) {
             const downloadSettings = settings.gcp.downloadSettings
 
             try {
-                await storage.downloadFile(downloadSettings.bucket, downloadSettings.filename, `${__dirname}../settings.from-gcp.json`)
+                await storage.downloadFile(downloadSettings.bucket, downloadSettings.filename, `${__dirname}/../settings.from-gcp.json`)
 
                 // Load downloaded settings, assuming they're encrypted.
                 const loadOptions = {crypto: true, destroy: true}
@@ -143,7 +150,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, storage, github, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq]) {
+    for (let coreModule of [database, github, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 

@@ -97,7 +97,7 @@ export class Calendar {
             // Use "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
             const hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 12)
             const cacheId = `calendar-${user.id}-${hash}`
-            const cachedFile = await storage.getFile("cache", cacheId)
+            const cachedFile = await storage.getFile(settings.storage.cacheBucket, cacheId)
 
             // See if cached version of the calendar is still valid.
             // Check cached calendar expiry date (reversed / backwards) and if user has
@@ -189,7 +189,7 @@ export class Calendar {
             // Only save to database if a cacheDuration is set.
             if (settings.calendar.cacheDuration) {
                 try {
-                    await storage.setFile("cache", cacheId, output)
+                    await storage.setFile(settings.storage.cacheBucket, cacheId, output)
                 } catch (saveEx) {
                     logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache")
                 }
