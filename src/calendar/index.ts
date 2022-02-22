@@ -120,7 +120,7 @@ export class Calendar {
                     // Return cached calendar if it has not expired, and has not changed
                     // or if calendar is for club events only.
                     if (notExpired && (notChanged || onlyClubs)) {
-                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `${cacheSize} MB`)
+                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `${(cacheSize / 1000 / 1024).toFixed(2)} MB`)
                         res.status(200)
                         cachedFile.createReadStream().pipe(res)
                         return false
