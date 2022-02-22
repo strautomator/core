@@ -107,12 +107,11 @@ export const startup = async (quickStart?: boolean) => {
     process.on("SIGTERM", shutdown)
 
     try {
-        const settings = setmeup.settings
-
-        // Load core settings, them module settings, then from environment variables.
         setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`])
         setmeup.load()
         setmeup.loadFromEnv()
+
+        const settings = setmeup.settings
 
         // Check basic settings.
         if (!settings.gcp.projectId) {
@@ -131,15 +130,17 @@ export const startup = async (quickStart?: boolean) => {
 
         // Get extra settings from Google Cloud Storage? To do so you must set the correct
         // bucket and filename on the settings, or via environment variables.
-        if (settings.gcp.downloadSettings && settings.gcp.downloadSettings.bucket) {
+        if (settings.gcp.downloadSettings.bucket) {
+            const path = require("path")
             const downloadSettings = settings.gcp.downloadSettings
+            const targetFile = path.resolve(path.dirname(require.main.filename), "settings.from-gcp.json")
 
             try {
-                await storage.downloadFile(downloadSettings.bucket, downloadSettings.filename, `${__dirname}/../settings.from-gcp.json`)
+                await storage.downloadFile(downloadSettings.bucket, downloadSettings.filename, targetFile)
 
                 // Load downloaded settings, assuming they're encrypted.
                 const loadOptions = {crypto: true, destroy: true}
-                setmeup.load("./settings.from-gcp.json", loadOptions)
+                setmeup.load(targetFile, loadOptions)
             } catch (ex) {
                 logger.error("Strautomator.startup", `Could not download ${downloadSettings.filename} from GCP bucket ${downloadSettings.bucket}`, ex)
             }
