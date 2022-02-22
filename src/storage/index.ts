@@ -80,6 +80,7 @@ export class Storage {
                 return null
             }
 
+            logger.info("Storage.getFile", bucket, filename)
             return file
         } catch (ex) {
             logger.error("Storage.getFile", bucket, filename, ex)
@@ -99,9 +100,11 @@ export class Storage {
 
             if (file) {
                 await file.download({destination: targetPath})
+                logger.info("Storage.downloadFile", bucket, filename, targetPath)
                 return true
             }
 
+            logger.warn("Storage.downloadFile", bucket, filename, targetPath, "Source file not found")
             return false
         } catch (ex) {
             logger.error("Storage.downloadFile", bucket, filename, targetPath, ex)
@@ -119,6 +122,8 @@ export class Storage {
         try {
             const file = this.client.bucket(bucket).file(filename)
             await file.save(data)
+
+            logger.info("Storage.setFile", bucket, filename)
         } catch (ex) {
             logger.error("Storage.setFile", bucket, filename, ex)
             throw ex
