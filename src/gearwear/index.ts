@@ -6,6 +6,7 @@ import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
+import notifications from "../notifications"
 import strava from "../strava"
 import users from "../users"
 import _ = require("lodash")
@@ -633,12 +634,6 @@ export class GearWear {
         const logDistance = `Distance ${component.alertDistance} / ${component.currentDistance} ${units}`
         const logGear = `Gear ${activity.gear.id} - ${component.name}`
 
-        // Do not proceed if user has no email.
-        if (!user.email) {
-            logger.warn("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, "User has no email, will not alert")
-            return
-        }
-
         try {
             component.dateAlertSent = dayjs.utc().toDate()
 
@@ -653,32 +648,33 @@ export class GearWear {
             if (component.alertDistance > 0) alertDetails.push(`${component.alertDistance} ${units}`)
             if (component.alertTime > 0) alertDetails.push(`${Math.round(component.alertTime / 3600)} hours`)
 
-            // Get affiliate link based on component name (only alphanumeric characters allowed).
-            const affiliateQuery = encodeURI(`${bike ? "bike" : "shoes"} ${component.name}`.replace(/[^\w\s]/gi, ""))
+            // User has email set? Send via email, otherwise create a notification.
+            if (user.email) {
+                const template = reminder ? "GearWearReminder" : "GearWearAlert"
+                const data = {
+                    units: units,
+                    userId: user.id,
+                    gearId: gear.id,
+                    gearName: gear.name,
+                    component: component.name,
+                    currentDistance: component.currentDistance,
+                    currentTime: Math.round(hours * 10) / 10,
+                    alertDetails: alertDetails.join(", "),
+                    resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(component.name)}`
+                }
 
-            // Set correct template and keywords to be replaced.
-            const template = reminder ? "GearWearReminder" : "GearWearAlert"
-            const data = {
-                units: units,
-                userId: user.id,
-                gearId: gear.id,
-                gearName: gear.name,
-                component: component.name,
-                currentDistance: component.currentDistance,
-                currentTime: Math.round(hours * 10) / 10,
-                alertDetails: alertDetails.join(", "),
-                resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(component.name)}`,
-                affiliateLink: `https://links.devv.com/s/${affiliateQuery}`
+                // Dispatch email to user.
+                await mailer.send({
+                    template: template,
+                    data: data,
+                    to: user.email
+                })
+
+                logger.info("GearWear.triggerAlert.email", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, reminder ? "Reminder sent" : "Alert sent")
+            } else if (!reminder) {
+                await notifications.createNotification(user, {gearId: gear.id, gearName: gear.name, component: component.name})
+                logger.info("GearWear.triggerAlert.notification", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, "Notification created")
             }
-
-            // Dispatch email to user.
-            await mailer.send({
-                template: template,
-                data: data,
-                to: user.email
-            })
-
-            logger.info("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, reminder ? "Reminder sent" : "Alert sent")
         } catch (ex) {
             logger.error("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, ex)
         }
