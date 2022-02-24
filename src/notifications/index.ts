@@ -114,6 +114,44 @@ export class Notifications {
     }
 
     /**
+     * Get list of notifications referencing the specified user gear.
+     * @param user The user to get notifications for.
+     * @param gearId The gear ID.
+     * @param all If true, will get also read and expired notifications, default is false.
+     */
+    getForGear = async (user: UserData, gearId: string, all?: boolean): Promise<BaseNotification[]> => {
+        const whichLog = all ? "All" : "Unread only"
+
+        try {
+            const now = new Date()
+            const queries: any[] = [
+                ["userId", "==", user.id],
+                ["gearId", "==", gearId]
+            ]
+
+            // Not all? Filter unread and non-expired notifications.
+            if (!all) {
+                queries.push(["read", "==", false])
+                queries.push(["dateExpiry", ">", now])
+            }
+
+            // Fetch notifications from the database.
+            const result = await database.search("notifications", queries)
+
+            if (result.length > 0) {
+                logger.info("Notifications.getForGear", `User ${user.id} ${user.displayName}`, `Gear ${gearId}`, whichLog, `Got ${result.length} notification(s)`)
+            } else {
+                logger.debug("Notifications.getForGear", `User ${user.id} ${user.displayName}`, `Gear ${gearId}`, whichLog, `Got no notification(s)`)
+            }
+
+            return result
+        } catch (ex) {
+            logger.error("Notifications.getForGear", `User ${user.id} ${user.displayName}`, `Gear ${gearId}`, whichLog, ex)
+            throw ex
+        }
+    }
+
+    /**
      * Create a notification to the speicified user. It will NOT create a new notification
      * if the contents are the same as the last notification created for the user.
      * @param user The user to get notifications for.

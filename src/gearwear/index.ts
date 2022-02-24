@@ -594,7 +594,7 @@ export class GearWear {
 
             // If current distance and time are 0, then do nothing.
             if (currentDistance < 1 && currentTime < 1) {
-                logger.warn("GearWear.resetTracking", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, "Distance and time are 0, will not reset")
+                logger.warn("GearWear.resetTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${componentName}`, "Distance and time are 0, will not reset")
                 return
             }
 
@@ -616,9 +616,22 @@ export class GearWear {
 
             // Save to the database and log.
             await database.set("gearwear", config, config.id)
-            logger.info("GearWear.resetTracking", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, `Resetting distance ${currentDistance} and ${hours} hours`)
+            logger.info("GearWear.resetTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${componentName}`, `Resetting distance ${currentDistance} and ${hours} hours`)
+
+            // Clear pending gear notifications (mark them as read) if user has no email set.
+            if (!user.email) {
+                const gearNotifications = await notifications.getForGear(user, config.id)
+
+                if (gearNotifications.length > 0) {
+                    for (let n of gearNotifications) {
+                        await notifications.markAsRead(user, n.id)
+                    }
+
+                    logger.info("GearWear.resetTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, "Marked pending notifications as read")
+                }
+            }
         } catch (ex) {
-            logger.error("GearWear.resetTracking", `User ${config.userId}`, `Gear ${config.id} - ${componentName}`, ex)
+            logger.error("GearWear.resetTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${componentName}`, ex)
         }
     }
 
@@ -672,7 +685,9 @@ export class GearWear {
 
                 logger.info("GearWear.triggerAlert.email", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, reminder ? "Reminder sent" : "Alert sent")
             } else if (!reminder) {
-                await notifications.createNotification(user, {gearId: gear.id, gearName: gear.name, component: component.name})
+                const nOptions = {gearId: gear.id, gearName: gear.name, component: component.name}
+                await notifications.createNotification(user, nOptions)
+
                 logger.info("GearWear.triggerAlert.notification", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, "Notification created")
             }
         } catch (ex) {
