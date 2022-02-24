@@ -41,6 +41,7 @@ if (process.env.NODE_ENV == "production" && process.env.JSON_LOGGING) {
 
 // Init settings.
 import setmeup = require("setmeup")
+setmeup.readOnly = true
 
 // Init in-memory cache.
 import cache = require("bitecache")
