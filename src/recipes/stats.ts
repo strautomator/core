@@ -111,7 +111,7 @@ export class RecipeStats {
                     counter: 1
                 }
 
-                logger.info("RecipeStats.updateStats", id, "Created new recipe stats")
+                logger.info("RecipeStats.updateStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, "Created new recipe stats")
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
 
@@ -137,16 +137,16 @@ export class RecipeStats {
 
             // Save stats to the database.
             await database.merge("recipe-stats", stats, doc)
-            logger.info("RecipeStats.updateStats", id, `Added activity ${activity.id}`)
+            logger.info("RecipeStats.updateStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `Added activity ${activity.id}`)
         } catch (ex) {
-            logger.error("RecipeStats.updateStats", id, `Activity ${activity.id}`, ex)
+            logger.error("RecipeStats.updateStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `Activity ${activity.id}`, ex)
         }
     }
 
     /**
      * Archive the recipe stats (happens mostly when a user deletes a recipe).
      * @param user The user to have activity count incremented.
-     * @param recipe The recipe which should have its stats archived..
+     * @param recipe The recipe which should have its stats archived.
      */
     archiveStats = async (user: UserData, recipe: RecipeData): Promise<void> => {
         const id = `${user.id}-${recipe.id}`
@@ -159,7 +159,7 @@ export class RecipeStats {
 
             // If not existing, create a new stats object.
             if (!exists) {
-                logger.warn("RecipeStats.archiveStats", id, `Stats not found, can't archive`)
+                logger.warn("RecipeStats.archiveStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `Stats not found, can't archive`)
                 return
             }
 
@@ -168,9 +168,25 @@ export class RecipeStats {
 
             // Save archived stats to the database.
             await database.merge("recipe-stats", stats, doc)
-            logger.info("RecipeStats.archiveStats", id, "Archived")
+            logger.info("RecipeStats.archiveStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, "Archived")
         } catch (ex) {
-            logger.error("RecipeStats.archiveStats", id, ex)
+            logger.error("RecipeStats.archiveStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, ex)
+        }
+    }
+
+    /**
+     * Delete the recipe stats.
+     * @param user The user to have activity count incremented.
+     * @param recipeId The recipe ID.
+     */
+    deleteStats = async (user: UserData, recipeId: string): Promise<void> => {
+        const id = `${user.id}-${recipeId}`
+
+        try {
+            await database.delete("recipe-stats", id)
+            logger.info("RecipeStats.deleteStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipeId}`)
+        } catch (ex) {
+            logger.error("RecipeStats.deleteStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipeId}`, ex)
         }
     }
 
@@ -199,18 +215,18 @@ export class RecipeStats {
                     counter: counter
                 }
 
-                logger.info("RecipeStats.setCounter", id, `Created new recipe stats`)
+                logger.info("RecipeStats.setCounter", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `Created new recipe stats`)
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
                 stats.counter = counter
 
-                logger.info("RecipeStats.setCounter", id, `Counter ${counter ? counter : "reset to 0"}`)
+                logger.info("RecipeStats.setCounter", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `Counter ${counter ? counter : "reset to 0"}`)
             }
 
             // Update the counter on the database.
             await database.merge("recipe-stats", stats, doc)
         } catch (ex) {
-            logger.error("RecipeStats.setCounter", id, `Counter ${counter}`, ex)
+            logger.error("RecipeStats.setCounter", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `Counter ${counter}`, ex)
         }
     }
 }
