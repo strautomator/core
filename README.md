@@ -79,11 +79,11 @@ Some of Strautomator's features depend on scheduled tasks that needs a manual se
 ### Strava
 
 -   **strava.activities.getQueuedActivities()** - daily, iterate (and if necessary remove) failed queued activities.
+-   **strava.ftp.processFtp()** - weekly, iterate PRO users and process their current FTP.
 
 ### Users
 
 -   **users.subscriptions.getDangling()** - weekly, iterate (and if necessary cleanup) dangling PRO subscriptions.
 -   **users.subscriptions.getNonActive()** - weekly, iterate and switch users with an invalid subscription back to Free.
--   **users.ftp.estimateFtp() + users.ftp.saveFtp()** - weekly, get all PRO users, estimate their FTP and update on Strava if necessary.
 -   **users.getByResetCounter() + recipes.stats.setCounter** - daily, get and reset counters for users matching today's date.
 -   **recipes.stats.getFailingRecipes()** - weekly, iterate (and if necessary disable) recipes that keep failing.
