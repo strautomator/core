@@ -685,7 +685,13 @@ export class GearWear {
 
                 logger.info("GearWear.triggerAlert.email", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, reminder ? "Reminder sent" : "Alert sent")
             } else if (!reminder) {
-                const nOptions = {gearId: gear.id, gearName: gear.name, component: component.name}
+                const nOptions = {
+                    title: `Gear alert: ${gear.name} - ${component.name}`,
+                    body: `This component has now passed its target usage: ${alertDetails.join(", ")}`,
+                    href: `/gear/edit?id=${gear.id}`,
+                    gearId: gear.id,
+                    component: component.name
+                }
                 await notifications.createNotification(user, nOptions)
 
                 logger.info("GearWear.triggerAlert.notification", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, "Notification created")

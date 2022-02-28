@@ -40,8 +40,6 @@ export interface FailedRecipeNotification extends BaseNotification {
 export interface GearWearNotification extends BaseNotification {
     /** Reference GearWear ID. */
     gearId: string
-    /** Gear name. */
-    gearName: string
     /** Component name. */
     component: string
 }
