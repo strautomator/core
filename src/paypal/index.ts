@@ -76,9 +76,12 @@ export class PayPal {
 
             // Wait for the setup the product and billing plans on PayPal, if quickStart was not set.
             if (!quickStart) {
-                await api.authenticate()
-                await this.setupProduct()
-                await this.setupBillingPlans()
+                if (await api.authenticate()) {
+                    await this.setupProduct()
+                    await this.setupBillingPlans()
+                } else {
+                    throw new Error("PayPal authentication failed")
+                }
             } else {
                 this.setupBillingPlans()
             }

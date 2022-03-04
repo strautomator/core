@@ -80,7 +80,7 @@ export class PayPalAPI {
     /**
      * Authenticate on PayPal and get a new access token.
      */
-    authenticate = async () => {
+    authenticate = async (): Promise<boolean> => {
         try {
             const options = {
                 method: "POST",
@@ -107,8 +107,10 @@ export class PayPalAPI {
             }
 
             logger.info("PayPal.authenticate", "Got a new token")
+            return true
         } catch (ex) {
             logger.error("PayPal.authenticate", parseResponseError(ex))
+            return false
         }
     }
 
@@ -118,6 +120,10 @@ export class PayPalAPI {
      */
     makeRequest = async (reqOptions: any): Promise<any> => {
         try {
+            if (!this.auth) {
+                throw new Error("Not authenticated to PayPal")
+            }
+
             if (this.auth.expiresAt <= dayjs().unix()) {
                 logger.info("PayPal.makeRequest", reqOptions.url, "Token expired, will fetch a new one")
                 await this.authenticate()
