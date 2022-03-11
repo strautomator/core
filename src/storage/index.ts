@@ -121,7 +121,7 @@ export class Storage {
     setFile = async (bucket: string, filename: string, data: any): Promise<void> => {
         try {
             const file = this.client.bucket(bucket).file(filename)
-            await file.save(data)
+            await file.save(data, {resumable: false})
 
             logger.info("Storage.setFile", bucket, filename)
         } catch (ex) {
