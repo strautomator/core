@@ -117,11 +117,12 @@ export class Storage {
      * @param bucket Name of the storage bucket.
      * @param filename The full filename.
      * @param data File data.
+     * @param contentType MIME type.
      */
-    setFile = async (bucket: string, filename: string, data: any): Promise<void> => {
+    setFile = async (bucket: string, filename: string, data: any, contentType?: string): Promise<void> => {
         try {
             const file = this.client.bucket(bucket).file(filename)
-            await file.save(data, {resumable: false})
+            await file.save(data, {contentType: contentType ? contentType : "auto", resumable: false})
 
             logger.info("Storage.setFile", bucket, filename)
         } catch (ex) {

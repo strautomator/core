@@ -189,7 +189,7 @@ export class Calendar {
             // Only save to database if a cacheDuration is set.
             if (settings.calendar.cacheDuration) {
                 try {
-                    await storage.setFile(settings.storage.cacheBucket, cacheId, output)
+                    await storage.setFile(settings.storage.cacheBucket, cacheId, output, "text/calendar")
                 } catch (saveEx) {
                     logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache")
                 }
