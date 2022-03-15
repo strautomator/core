@@ -495,7 +495,8 @@ export enum StravaMapStyle {
     Temperature = "temperature",
     Time = "time",
     BlackLivesMatter = "black_lives_matter",
-    Pride = "pride"
+    Pride = "pride",
+    SupportUkraine = "ukraine"
 }
 
 /**
