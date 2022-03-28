@@ -12,8 +12,8 @@
         "cacheDuration": 1800
     },
     "axios": {
-        // Retry axios requests afew 5 seconds. Value set in milliseconds.
-        "retryInterval": 5000
+        // Retry axios requests afew 6 seconds. Value set in milliseconds.
+        "retryInterval": 6000
     },
     "calendar": {
         // Default activity fields to be added to event details. Each item is a line, and multiple fields
