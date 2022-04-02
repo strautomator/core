@@ -25,6 +25,14 @@ export interface BaseNotification {
 }
 
 /**
+ * Notification related to authentication.
+ */
+export interface AuthNotification extends BaseNotification {
+    /** Authentication failed? */
+    auth: boolean
+}
+
+/**
  * Notification of a failed automation recipe.
  */
 export interface FailedRecipeNotification extends BaseNotification {

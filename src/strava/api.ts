@@ -293,9 +293,7 @@ export class StravaAPI {
 
             return res
         } catch (ex) {
-            if (token && ex.response && ex.response.status == 401) {
-                eventManager.emit("Strava.tokenFailure", token)
-            }
+            const accessDenied = token && ex.response && ex.response.status == 401
 
             // Has a error response data? Add it to the exception message.
             if (ex.response && ex.response.data) {
@@ -321,6 +319,15 @@ export class StravaAPI {
                 if (ex.response.status && !ex.status) {
                     ex.status = ex.response.status
                 }
+            }
+
+            // Access denied? Dispatch the relevant events.
+            if (accessDenied) {
+                if (ex.message.includes("_permission")) {
+                    eventManager.emit("Strava.missingPermission", token)
+                }
+
+                eventManager.emit("Strava.tokenFailure", token)
             }
 
             logger.debug("Strava.makeRequest", path, method, ex)

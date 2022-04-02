@@ -117,6 +117,7 @@ export class Users {
             // Updated user info.
             const updatedUser: Partial<UserData> = {
                 id: user.id,
+                displayName: user.displayName,
                 stravaTokens: tokens,
                 reauth: 0
             }
@@ -144,13 +145,16 @@ export class Users {
         try {
             const byToken: StravaTokens = refresh ? {refreshToken: token} : {accessToken: token}
             const user = await this.getByToken(byToken)
-            if (!user) return
+            if (!user) {
+                logger.warn("Users.onStravaMissingPermission", `No user found for token ${maskedToken}`)
+                return
+            }
 
             // Increment the reauth counter.
             if (!user.reauth) user.reauth = 0
             user.reauth++
 
-            const updatedUser: Partial<UserData> = {id: user.id, reauth: user.reauth}
+            const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, reauth: user.reauth}
             logger.warn("Strava.onStravaTokenFailure", `User ${user.id} ${user.displayName}`, `Reauth count: ${user.reauth}`)
 
             // User has an email address? Contact asking to connect to Strautomator again,

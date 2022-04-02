@@ -1,6 +1,6 @@
 // Strautomator Core: Notifications
 
-import {BaseNotification, FailedRecipeNotification, GearWearNotification} from "./types"
+import {BaseNotification, AuthNotification, FailedRecipeNotification, GearWearNotification} from "./types"
 import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
@@ -34,10 +34,43 @@ export class Notifications {
             cache.setup("notifications", settings.notifications.cacheDuration)
             logger.info("Notifications.init", `Cache notifications for up to ${duration}`)
 
+            eventManager.on("Strava.missingPermission", this.onStravaMissingPermission)
             eventManager.on("Users.delete", this.onUserDelete)
         } catch (ex) {
             logger.error("Notifications.init", ex)
             throw ex
+        }
+    }
+
+    /**
+     * When user hasn't authorized Strautomator to write to its Strava account.
+     * @param token The expired or invalid Strava auth token.
+     */
+    private onStravaMissingPermission = async (token: string): Promise<void> => {
+        if (!token) {
+            logger.error("Notifications.onStravaMissingPermission", "Missing token")
+            return
+        }
+
+        // Masked token used on warning logs.
+        const maskedToken = `${token.substring(0, 2)}***${token.substring(token.length - 2)}`
+
+        try {
+            const user = await users.getByToken({accessToken: token})
+
+            if (!user) {
+                logger.warn("Notifications.onStravaMissingPermission", `No user found for token ${maskedToken}`)
+                return
+            } else if (user.reauth == 0 || user.reauth == settings.oauth.tokenFailuresAlert * 2) {
+                const title = "Missing Strava permissions"
+                const body = "You haven't authorized Strautomator to read or make changes to your Strava account yet. Please authenticate again."
+                const href = "https://strautomator.com/auth/login"
+                const expiry = dayjs().add(5, "days").toDate()
+
+                await this.createNotification(user, {title: title, body: body, href: href, auth: true, dateExpiry: expiry})
+            }
+        } catch (ex) {
+            logger.error("Notifications.onStravaMissingPermission", `Failed to notify user for token ${maskedToken}`)
         }
     }
 
@@ -157,7 +190,7 @@ export class Notifications {
      * @param user The user to get notifications for.
      * @param notification Notification options and data.
      */
-    createNotification = async (user: UserData, notification: Partial<FailedRecipeNotification> | Partial<GearWearNotification>): Promise<void> => {
+    createNotification = async (user: UserData, notification: Partial<AuthNotification> | Partial<FailedRecipeNotification> | Partial<GearWearNotification>): Promise<void> => {
         try {
             if (!user.id) throw new Error("Invalid user")
             if (!notification.title) throw new Error("Missing notification title")
