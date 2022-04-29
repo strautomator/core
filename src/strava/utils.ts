@@ -96,7 +96,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     }
 
     // Activity laps.
-    const laps: StravaLap[] = data.laps && data.laps.length > 0 ? data.laps : null
+    const laps: StravaLap[] = data.laps && data.laps.length > 0 ? [] : null
     if (laps) {
         for (let lap of data.laps) {
             laps.push({distance: lap.distance, totalTime: lap.elapsed_time, movingTime: lap.moving_time, speed: lap.average_speed})
@@ -154,10 +154,21 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         }
     }
 
-    // Lap summary.
+    // Lap summary. The lap distance is the most common lap distance by number of occurrences,
+    // so if 10 laps of 5km and 2 laps of 7km, the lapDistance will be set as 5km.
     if (laps) {
         activity.lapCount = laps.length
-        activity.lapDistance = parseFloat(_.meanBy(laps, "distance").toFixed(1))
+
+        const lapDistances = _.map(laps, "distance")
+        const lapEntries = _.chain(lapDistances).countBy().entries()
+
+        // If more than 3 different lap distances, use the lap average, otherwise
+        // set the "lapDistance" with the most common lap distance found.
+        if (lapEntries.value().length > 3) {
+            activity.lapDistance = parseFloat(_.mean(lapDistances).toFixed(1))
+        } else {
+            activity.lapDistance = parseFloat(lapEntries.maxBy(_.last).head().value() as any)
+        }
     }
 
     // Get device temperature if available, using the correct weather unit.
