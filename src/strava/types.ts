@@ -96,14 +96,18 @@ export interface StravaActivity {
     mapStyle?: StravaMapStyle
     /** Activity icon (emoticon). */
     icon?: string
-    /** Fields that were updated by Strautomator (internal use only). */
-    updatedFields?: string[]
+    /** Lap count. */
+    lapCount?: number
+    /** Lap distance (average). */
+    lapDistance?: number
     /** List of new all time activity-property records. */
     newRecords?: string[]
     /** List of segment personal bests. */
     prSegments?: string[]
     /** List of segment KOMs. */
     komSegments?: string[]
+    /** Fields that were updated by Strautomator (internal use only). */
+    updatedFields?: string[]
     /** Was a link to Strautomator added to the activity (internal use only)? */
     linkback?: boolean
 }
@@ -174,6 +178,20 @@ export interface StravaGear {
     primary?: boolean
     /** Total distance (taken from Strava, respecting the user's units). */
     distance?: number
+}
+
+/**
+ * Strava activity lap details.
+ */
+export interface StravaLap {
+    /** Lap distance. */
+    distance: number
+    /** Lap total elapsed time. */
+    totalTime: number
+    /** Lap moving time. */
+    movingTime: number
+    /** Average speed. */
+    speed: number
 }
 
 /**

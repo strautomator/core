@@ -264,16 +264,20 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
 export const checkNumber = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
     const op = condition.operator
-
-    // No valid number set? Stop here.
-    if (_.isNil(activity[prop])) {
-        return false
-    }
-
     const value = parseFloat(condition.value as any)
     const diff = value * 0.1
-    const aNumber = activity[prop]
     let valid: boolean = true
+    let aNumber = activity[prop]
+
+    // If target is an array, use its length instead.
+    if (_.isArray(aNumber)) {
+        aNumber = aNumber.length
+    }
+
+    // No valid number set? Stop here.
+    if (_.isNil(aNumber)) {
+        return false
+    }
 
     if (op == RecipeOperator.Like) {
         valid = value < aNumber + diff && value > aNumber - diff

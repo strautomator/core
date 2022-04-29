@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Utils
 
-import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaProfile, StravaRoute, StravaSport} from "./types"
+import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaRoute, StravaSport} from "./types"
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import dayjs from "../dayjs"
@@ -95,14 +95,20 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         activity.polyline = data.map.polyline
     }
 
+    // Activity laps.
+    const laps: StravaLap[] = data.laps && data.laps.length > 0 ? data.laps : null
+    if (laps) {
+        for (let lap of data.laps) {
+            laps.push({distance: lap.distance, totalTime: lap.elapsed_time, movingTime: lap.moving_time, speed: lap.average_speed})
+        }
+    }
+
     // Default climbing ratio multiplier in metric is 19m / 1km.
-    let cRatioMultiplier = 19
+    // Imperial climbing ration multiplier is 100ft / 1mi.
+    let cRatioMultiplier = profile.units == "imperial" ? 100 : 19
 
     // Convert values according to the specified units.
     if (profile.units == "imperial") {
-        // Imperial climbing ration multiplier is 100ft / 1mi
-        cRatioMultiplier = 100
-
         if (data.total_elevation_gain) {
             activity.elevationGain = Math.round(data.total_elevation_gain * rFeet)
         }
@@ -117,6 +123,12 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         }
         if (data.max_speed) {
             activity.speedMax = parseFloat((data.max_speed * 3.6 * rMiles).toFixed(1))
+        }
+        if (laps) {
+            laps.forEach((lap) => {
+                lap.distance = parseFloat(((lap.distance / 1000) * rMiles).toFixed(1))
+                lap.speed = parseFloat((lap.speed * 2.23694).toFixed(1))
+            })
         }
     } else {
         if (data.total_elevation_gain) {
@@ -134,6 +146,18 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         if (data.max_speed) {
             activity.speedMax = parseFloat((data.max_speed * 3.6).toFixed(1))
         }
+        if (laps) {
+            laps.forEach((lap) => {
+                lap.distance = parseFloat((lap.distance / 1000).toFixed(1))
+                lap.speed = parseFloat((lap.speed * 3.6).toFixed(1))
+            })
+        }
+    }
+
+    // Lap summary.
+    if (laps) {
+        activity.lapCount = laps.length
+        activity.lapDistance = parseFloat(_.meanBy(laps, "distance").toFixed(1))
     }
 
     // Get device temperature if available, using the correct weather unit.

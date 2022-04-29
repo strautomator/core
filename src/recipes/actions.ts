@@ -57,13 +57,13 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         }
 
         // Value has a counter tag? Get recipe stats to increment the counter.
-        if (processedValue.indexOf("${counter}") >= 0) {
+        if (processedValue.includes("${counter}")) {
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
             activityWithSuffix.counter = stats && stats.counter ? stats.counter + 1 : 1
         }
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
-        if (processedValue.indexOf("${weather.") >= 0) {
+        if (processedValue.includes("${weather.")) {
             if (activity.hasLocation) {
                 const weatherSummary = await weather.getActivityWeather(activity, user.preferences)
 

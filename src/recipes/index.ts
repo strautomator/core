@@ -228,8 +228,9 @@ export class Recipes {
                 if (!valid) {
                     let conditionProp = condition.property == "polyline" ? null : activity[condition.property]
                     if (_.isDate(conditionProp)) conditionProp = dayjs(conditionProp).format("lll")
+                    else if (_.isArray(conditionProp)) conditionProp = conditionProp.length
 
-                    let logValue = conditionProp ? `Not a match: ${conditionProp}` : "No match"
+                    let logValue = conditionProp ? `Not a match: ${conditionProp}` : "Not a match"
                     logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
                     return false
                 }
