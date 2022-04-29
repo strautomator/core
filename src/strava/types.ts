@@ -98,8 +98,10 @@ export interface StravaActivity {
     icon?: string
     /** Lap count. */
     lapCount?: number
-    /** Lap distance (average). */
+    /** Lap distance (most common or average). */
     lapDistance?: number
+    /** Lap time (most common or average). */
+    lapTime?: number
     /** List of new all time activity-property records. */
     newRecords?: string[]
     /** List of segment personal bests. */

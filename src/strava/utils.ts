@@ -154,20 +154,30 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         }
     }
 
-    // Lap summary. The lap distance is the most common lap distance by number of occurrences,
-    // so if 10 laps of 5km and 2 laps of 7km, the lapDistance will be set as 5km.
+    // Lap summaries.
     if (laps) {
         activity.lapCount = laps.length
 
         const lapDistances = _.map(laps, "distance")
-        const lapEntries = _.chain(lapDistances).countBy().entries()
+        const commonDistance = _.chain(lapDistances).countBy().entries().maxBy(_.last).value()
+        const lapTimes = _.map(laps, (t) => Math.ceil(t.totalTime / 10) * 10)
+        const commonTime = _.chain(lapTimes).countBy().entries().maxBy(_.last).value()
 
-        // If more than 3 different lap distances, use the lap average, otherwise
-        // set the "lapDistance" with the most common lap distance found.
-        if (lapEntries.value().length > 3) {
-            activity.lapDistance = parseFloat(_.mean(lapDistances).toFixed(1))
+        console.dir(lapTimes)
+
+        // If 70% or more of laps have the same distance, use it as the
+        // activity "lapDistance", otherwise calculate the average for all laps.
+        if ((commonTime[1] as number) / laps.length >= 0.7) {
+            activity.lapDistance = parseFloat(commonDistance[0] as string)
         } else {
-            activity.lapDistance = parseFloat(lapEntries.maxBy(_.last).head().value() as any)
+            activity.lapDistance = parseFloat(_.mean(lapDistances).toFixed(1))
+        }
+
+        // Same principle again, but for lap times.
+        if ((commonTime[1] as number) / laps.length >= 0.7) {
+            activity.lapTime = parseFloat(commonTime[0] as string)
+        } else {
+            activity.lapTime = Math.round(_.mean(lapTimes))
         }
     }
 
@@ -518,11 +528,19 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             suffix = prop.fSuffix
         }
 
-        // Make sure times are set using the format "HH:MM".
+        // Make sure times are set using the correct format, depending on the suffix.
         if (prop.type == "time") {
             if (_.isNumber(activity[prop.value])) {
                 const aDuration = dayjs.duration(activity[prop.value], "seconds")
-                activity[prop.value] = aDuration.format("HH:mm")
+
+                if (prop.suffix == "m" && activity[prop.value] < 3600) {
+                    activity[prop.value] = aDuration.format("mm:ss")
+                } else if (prop.suffix == "h") {
+                    activity[prop.value] = aDuration.format("HH:mm")
+                } else {
+                    activity[prop.value] = aDuration.format("HH:mm:ss")
+                    suffix = "h"
+                }
             } else if (_.isDate(activity[prop.value])) {
                 const aDate = dayjs.utc(activity[prop.value]).add(activity.utcStartOffset, "minutes")
                 const format = prop.value.substring(0, 4) == "date" ? "L HH:mm" : "HH:mm"

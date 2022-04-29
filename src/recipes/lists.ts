@@ -79,6 +79,7 @@ export const recipePropertyList = [
     {value: "description", text: "Description", type: "text", operators: recipeOperatorList.text},
     {value: "lapCount", text: "Lap count", type: "number", operators: recipeOperatorList.number},
     {value: "lapDistance", text: "Lap distance", type: "number", operators: recipeOperatorList.number},
+    {value: "lapTime", text: "Lap time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "m"},
     {value: "hasPhotos", text: "Has photos", type: "boolean", operators: recipeOperatorList.is},
     {value: "newRecords", text: "Has new 'all time' records", type: "boolean", operators: recipeOperatorList.is},
     {value: "komSegments", text: "Has new segment KOMs", type: "boolean", operators: recipeOperatorList.is},
