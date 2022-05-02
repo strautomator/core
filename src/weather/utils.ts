@@ -68,7 +68,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
 
         // No precipitation? Try calculating it based on the precipitation mm (if passed).
         // If no precipitation, then set it to "dry".
-        if (!summary.precipitation) {
+        if (!summary.precipitation || !_.isString(summary.precipitation)) {
             const mm = extraData.mmPrecipitation || 0
 
             if (mm > 0) {
