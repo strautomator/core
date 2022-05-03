@@ -70,9 +70,6 @@ export class Weatherbit implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("Weatherbit.toWeatherSummary", data, date, preferences.weatherUnit)
-
-        // Check if received data is valid.
         data = data.data ? data.data[0] : null
         if (!data) return
 

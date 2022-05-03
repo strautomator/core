@@ -77,7 +77,7 @@ export class StormGlass implements WeatherProvider {
      * @param data Data from Storm Glass.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("StormGlass.toWeatherSummary", data, date, preferences.weatherUnit)
+        if (!data) return
 
         // Get correct array from response.
         data = data.hours || data.data

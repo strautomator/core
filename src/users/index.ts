@@ -363,8 +363,6 @@ export class Users {
                 reauth: 0
             }
 
-            logger.debug("Users.upsert", userData.id, userData)
-
             // Fetch or create document on database.
             const doc = database.doc("users", profile.id)
             const docSnapshot = await doc.get()

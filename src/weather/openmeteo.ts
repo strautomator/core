@@ -71,9 +71,6 @@ export class OpenMeteo implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("OpenMeteo.toWeatherSummary", data, date, preferences.weatherUnit)
-
-        // Check if received data is valid.
         if (!data) return
 
         const baseDate = dayjs.utc(date)
@@ -88,8 +85,8 @@ export class OpenMeteo implements WeatherProvider {
             feelsLike: data.hourly.apparent_temperature[index],
             humidity: data.hourly.relativehumidity_2m[index],
             pressure: data.hourly.pressure_msl[index],
-            windSpeed: data.hourly.windspeed_10m[index] ,
-            windDirection:  data.hourly.winddirection_10m[index],
+            windSpeed: data.hourly.windspeed_10m[index],
+            windDirection: data.hourly.winddirection_10m[index],
             cloudCover: data.hourly.cloudcover[index],
             extraData: {
                 timeOfDay: getSuntimes(coordinates, date).timeOfDay,

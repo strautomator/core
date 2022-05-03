@@ -41,8 +41,6 @@ export class StravaActivities {
      * @param checkRecords If true, new records will be checked against the resulting activities.
      */
     getActivities = async (user: UserData, query: any, checkRecords?: boolean): Promise<StravaActivity[]> => {
-        logger.debug("Strava.getActivities", `User ${user.id} ${user.displayName}`, query)
-
         const arrLogQuery = query ? Object.entries(query).map((p) => p[0] + "=" + p[1]) : ["no query"]
         const logQuery = arrLogQuery.join(", ")
 
@@ -103,8 +101,6 @@ export class StravaActivities {
      * @param id The activity ID.
      */
     getActivity = async (user: UserData, id: number | string): Promise<StravaActivity> => {
-        logger.debug("Strava.getActivity", `User ${user.id} ${user.displayName}`, id)
-
         try {
             const tokens = user.stravaTokens
             const data = await api.get(tokens, `activities/${id}?include_all_efforts=0`)
@@ -152,7 +148,9 @@ export class StravaActivities {
             logger.info("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, activity.name, timeStart)
             return activity
         } catch (ex) {
-            if (ex.toString().indexOf("404") > 0) {
+            if (!user) {
+                logger.error("Strava.getActivity", "Missing user", `Activity ${id}`, ex)
+            } else if (ex.toString().indexOf("404") > 0) {
                 logger.warn("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
             } else {
                 logger.error("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
@@ -168,8 +166,6 @@ export class StravaActivities {
      * @param id The activity ID.
      */
     getStream = async (user: UserData, id: number | string): Promise<any> => {
-        logger.debug("Strava.getStream", `User ${user.id} ${user.displayName}`, id)
-
         try {
             const tokens = user.stravaTokens
             const data = await api.get(tokens, `activities/${id}/streams`)
@@ -197,9 +193,6 @@ export class StravaActivities {
      * @param activityId The activity's unique ID.
      */
     queueActivity = async (user: UserData, activityId: number): Promise<void> => {
-        logger.debug("Strava.queueActivity", user.id, activityId)
-
-        // User suspended? Stop here.
         if (user.suspended) {
             logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
             return
@@ -347,8 +340,6 @@ export class StravaActivities {
      * @param activity The ativity data.
      */
     setActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
-        logger.debug("Strava.setActivity", user.id, activity.id)
-
         const data: any = {}
         const logResult = []
         const useHashtag = user.preferences.activityHashtag
@@ -478,8 +469,6 @@ export class StravaActivities {
      * @param queued Was the activity queued to be processed? Defaults to false (real time).
      */
     processActivity = async (user: UserData, activityId: number, queued?: boolean): Promise<StravaProcessedActivity> => {
-        logger.debug("Strava.processActivity", user.id, activityId)
-
         let saveError
         let activity: StravaActivity
 

@@ -75,9 +75,6 @@ export class Tomorrow implements WeatherProvider {
      * @param data Data from Tomorrow.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("Tomorrow.toWeatherSummary", data, date, preferences.weatherUnit)
-
-        // Check if received data is valid.
         data = data.data && data.data.timelines ? data.data.timelines[0].intervals[0].values : null
         if (!data) return
 

@@ -154,8 +154,6 @@ export class StravaFtp {
      * @param force Force update, even if FTP was updated recently or is still the same value.
      */
     saveFtp = async (user: UserData, ftp: number, force?: boolean): Promise<boolean> => {
-        logger.debug("Strava.saveFtp", user.id, ftp)
-
         try {
             if (ftp <= 0) {
                 throw new Error("Invalid FTP, must be higher than 0")
@@ -198,8 +196,6 @@ export class StravaFtp {
      * @param user User data.
      */
     processFtp = async (user: UserData): Promise<void> => {
-        logger.debug("Strava.processFtp", user.id)
-
         try {
             const ftpEstimation = await this.estimateFtp(user)
 

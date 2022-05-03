@@ -27,8 +27,6 @@ export class StravaRoutes {
      * @param id The route ID.
      */
     getRoute = async (user: UserData, id: string): Promise<StravaRoute> => {
-        logger.debug("Strava.getRoute", id)
-
         try {
             const data = await api.get(user.stravaTokens, `routes/${id}`)
             delete data.segments

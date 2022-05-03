@@ -77,7 +77,7 @@ export class VisualCrossing implements WeatherProvider {
      * @param data Data from Visual Crossing.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("VisualCrossing.toWeatherSummary", data, date, preferences.weatherUnit)
+        if (!data) return
 
         // Locate correct hour report from the response.
         if (data.days && data.days.length > 0) {

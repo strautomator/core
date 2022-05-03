@@ -24,8 +24,6 @@ export class StravaClubs {
      * @param user User data.
      */
     getClubs = async (user: UserData): Promise<StravaClub[]> => {
-        logger.debug("Strava.getClubs")
-
         try {
             const data: any[] = await api.get(user.stravaTokens, "athlete/clubs")
             const clubs: StravaClub[] = data.map((d) => toStravaClub(d))
@@ -44,8 +42,6 @@ export class StravaClubs {
      * @param id The club ID.
      */
     getClub = async (user: UserData, id: string): Promise<StravaClub> => {
-        logger.debug("Strava.getClub", id)
-
         try {
             const data = await api.get(user.stravaTokens, `clubs/${id}/group_events`)
             const club = toStravaClub(data)
@@ -64,8 +60,6 @@ export class StravaClubs {
      * @param id The club ID.
      */
     getClubEvents = async (user: UserData, id: string): Promise<StravaClubEvent[]> => {
-        logger.debug("Strava.getClubEvents", id)
-
         try {
             const data = await api.get(user.stravaTokens, `clubs/${id}/group_events`)
             const clubEvents: StravaClubEvent[] = data.map((d) => toStravaClubEvent(d))

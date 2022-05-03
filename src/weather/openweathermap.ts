@@ -70,9 +70,6 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("OpenWeatherMap.toWeatherSummary", data, date, preferences.weatherUnit)
-
-        // Check if received data is valid.
         if (!data) return
 
         const weatherData = data.weather[0]

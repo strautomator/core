@@ -60,8 +60,6 @@ export class Maps {
      * @param region Optional TLD biasing region.
      */
     getGeocode = async (address: string, region?: string): Promise<MapCoordinates[]> => {
-        logger.debug("Maps.getGeocode", address)
-
         try {
             if (!address && address.length < 3) {
                 throw new Error("Invalid or missing address")
@@ -137,8 +135,6 @@ export class Maps {
      * @param coordinates Lat / long coordinates to be queried.
      */
     getReverseGeocode = async (coordinates: [number, number]): Promise<MapAddress> => {
-        logger.debug("Maps.getReverseGeocode", coordinates)
-
         try {
             if (!coordinates && coordinates.length != 2) {
                 throw new Error("Invalid or missing coordinates")

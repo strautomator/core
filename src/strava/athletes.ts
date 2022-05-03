@@ -29,8 +29,6 @@ export class StravaAthletes {
      * @param deauthCheck Is it a check to validate if user is still authorized?
      */
     getAthlete = async (tokens: StravaTokens, deauthCheck?: boolean): Promise<StravaProfile> => {
-        logger.debug("Strava.getAthlete")
-
         try {
             const data = await api.get(tokens, "athlete")
             const profile = toStravaProfile(data)
@@ -56,8 +54,6 @@ export class StravaAthletes {
      * @param user The user to get stats for.
      */
     getProfileStats = async (user: UserData): Promise<StravaProfileStats> => {
-        logger.debug("Strava.getProfileStats", user.id)
-
         try {
             const units = user.profile.units == "imperial" ? "mi" : "km"
             const data = await api.get(user.stravaTokens, `athletes/${user.id}/stats`)

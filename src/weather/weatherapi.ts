@@ -73,8 +73,6 @@ export class WeatherAPI implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        logger.debug("WeatherAPI.toWeatherSummary", data, date, preferences.weatherUnit)
-
         data = this.filterData(data, date)
         if (!data) return
 
