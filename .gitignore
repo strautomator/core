@@ -8,4 +8,5 @@ lib/
 node_modules/
 test/
 settings.secret.json
+settings.test.json
 *.log
