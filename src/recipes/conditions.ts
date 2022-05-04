@@ -20,7 +20,7 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
     const op = condition.operator
 
     // Stop here if activity has no location data.
-    if (!activity[prop] || !activity[prop].length) {
+    if (!activity[prop]) {
         return false
     }
 
@@ -30,14 +30,26 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
     const cLong = parseFloat(arr[1])
 
     // Checking for a point in the activity polyline, or for a single lat / long?
-    let coordinates = prop == "polyline" ? polyline.decode(activity.polyline) : [[activity[prop][0], activity[prop][1]]]
+    let coordinates: [number[]]
     let radius: number
+
+    // Bug with the Strava API not returning the end location, so we use the polyline instead.
+    if (prop == "locationEnd" && activity.polyline && !activity.locationEnd.length) {
+        logger.info("Recipes.checkLocation", `Activity ${activity.id}`, "Using the polyline due to empty locationEnd")
+        coordinates = [polyline.decode(activity.polyline).pop()]
+    } else if (prop == "polyline") {
+        coordinates = polyline.decode(activity.polyline)
+    } else if (activity[prop].length) {
+        coordinates = [[activity[prop][0], activity[prop][1]]]
+    } else {
+        return false
+    }
 
     // When using "equals" use around 60m radius, and "like" use 650m radius.
     if (op == RecipeOperator.Equal) {
-        radius = 0.000555
+        radius = 0.000556
     } else if (op == RecipeOperator.Like) {
-        radius = 0.005925
+        radius = 0.005926
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
