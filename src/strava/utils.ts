@@ -163,8 +163,6 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         const lapTimes = _.map(laps, (t) => Math.ceil(t.totalTime / 10) * 10)
         const commonTime = _.chain(lapTimes).countBy().entries().maxBy(_.last).value()
 
-        console.dir(lapTimes)
-
         // If 70% or more of laps have the same distance, use it as the
         // activity "lapDistance", otherwise calculate the average for all laps.
         if ((commonTime[1] as number) / laps.length >= 0.7) {
