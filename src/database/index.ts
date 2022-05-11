@@ -4,9 +4,11 @@ import {DocumentReference, FieldValue, Firestore, OrderByDirection} from "@googl
 import {cryptoProcess} from "./crypto"
 import _ = require("lodash")
 import cache = require("bitecache")
+import jaul = require("jaul")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
+const deadlineTimeout = 1500
 
 /**
  * Database wrapper.
@@ -90,12 +92,24 @@ export class Database {
         const encryptedData = _.cloneDeep(data)
         cryptoProcess(encryptedData, true)
 
-        const result = await doc.set(encryptedData)
+        // Set the document, save to cache and return it.
+        try {
+            const result = await doc.set(encryptedData)
+            cache.set("database", `${collection}-${id}`, data)
 
-        // Add result to cache if an ID was passed.
-        cache.set("database", `${collection}-${id}`, data)
+            return result.writeTime.seconds
+        } catch (ex) {
+            if (ex.toString().includes("DEADLINE_EXCEEDED")) {
+                await jaul.io.sleep(deadlineTimeout)
 
-        return result.writeTime.seconds
+                const result = await doc.set(encryptedData)
+                cache.set("database", `${collection}-${id}`, data)
+
+                return result.writeTime.seconds
+            } else {
+                throw ex
+            }
+        }
     }
 
     /**
@@ -114,12 +128,24 @@ export class Database {
             doc = table.doc(data.id)
         }
 
-        const result = await doc.set(encryptedData, {merge: true})
+        // Merge the data, save to cache and return it.
+        try {
+            const result = await doc.set(encryptedData, {merge: true})
+            cache.merge("database", `${collection}-${doc.id}`, data)
 
-        // Also merge result on the cache.
-        cache.merge("database", `${collection}-${doc.id}`, data)
+            return result.writeTime.seconds
+        } catch (ex) {
+            if (ex.toString().includes("DEADLINE_EXCEEDED")) {
+                await jaul.io.sleep(deadlineTimeout)
 
-        return result.writeTime.seconds
+                const result = await doc.set(encryptedData, {merge: true})
+                cache.merge("database", `${collection}-${doc.id}`, data)
+
+                return result.writeTime.seconds
+            } else {
+                throw ex
+            }
+        }
     }
 
     /**
@@ -242,7 +268,17 @@ export class Database {
         // Increment field.
         const data: any = {}
         data[field] = FieldValue.increment(value)
-        await doc.update(data)
+
+        try {
+            await doc.update(data)
+        } catch (ex) {
+            if (ex.toString().includes("DEADLINE_EXCEEDED")) {
+                await jaul.io.sleep(deadlineTimeout)
+                await doc.update(data)
+            } else {
+                throw ex
+            }
+        }
     }
 
     /**
