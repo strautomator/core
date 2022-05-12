@@ -2,7 +2,7 @@
 
 import {RecipeCondition, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
-import {UserPreferences} from "../users/types"
+import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
 import weather from "../weather"
 import _ = require("lodash")
@@ -207,9 +207,9 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
  * Check if weather for activity matches the specified condition.
  * @param activity The Strava activity to be checked.
  * @param condition The weather based recipe condition.
- * @param preferences User preferences.
+ * @param user User data.
  */
-export const checkWeather = async (activity: StravaActivity, condition: RecipeCondition, preferences: UserPreferences): Promise<boolean> => {
+export const checkWeather = async (activity: StravaActivity, condition: RecipeCondition, user: UserData): Promise<boolean> => {
     const prop = condition.property
     const op = condition.operator
 
@@ -227,7 +227,7 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
         const weatherProp = prop.split(".")[1]
 
         // Get activity weather.
-        const weatherSummary = await weather.getActivityWeather(activity, preferences)
+        const weatherSummary = await weather.getActivityWeather(activity, user)
         let summary: WeatherSummary
 
         // Weather could not be fetched? Stop here.

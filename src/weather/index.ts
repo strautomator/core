@@ -3,7 +3,7 @@
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
 import {apiRateLimiter} from "./utils"
 import {StravaActivity} from "../strava/types"
-import {UserPreferences} from "../users/types"
+import {UserData} from "../users/types"
 import tomorrow from "./tomorrow"
 import openmeteo from "./openmeteo"
 import openweathermap from "./openweathermap"
@@ -107,27 +107,27 @@ export class Weather {
      * @param activity The Strava activity.
      * @param user The user requesting a weather report.
      */
-    getActivityWeather = async (activity: StravaActivity, preferences: UserPreferences): Promise<ActivityWeather> => {
+    getActivityWeather = async (activity: StravaActivity, user: UserData): Promise<ActivityWeather> => {
         try {
             if (!activity.hasLocation) {
-                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `No start / end location, can't fetch weather`)
+                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, "No start / end location, can't fetch weather")
                 return null
             }
 
             // Stop right here if activity happened too long ago.
             const minDate = dayjs.utc().subtract(this.maxHours, "hours")
             if (minDate.isAfter(activity.dateEnd)) {
-                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `Happened before ${minDate.format("YYYY-MM-DD HH:mm")}, can't fetch weather`)
+                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, `Happened before ${minDate.format("YYYY-MM-DD HH:mm")}, can't fetch weather`)
                 return null
             }
 
             // Fetch weather for the start and end locations of the activity.
             let weather: ActivityWeather = {}
             try {
-                weather.start = await this.getLocationWeather(activity.locationStart, activity.dateStart, preferences)
-                weather.end = await this.getLocationWeather(activity.locationEnd, activity.dateEnd, preferences)
+                weather.start = await this.getLocationWeather(activity.locationStart, activity.dateStart, user)
+                weather.end = await this.getLocationWeather(activity.locationEnd, activity.dateEnd, user)
             } catch (ex) {
-                logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, ex)
+                logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, ex)
             }
 
             // Make sure weather result is valid.
@@ -137,11 +137,11 @@ export class Weather {
 
             const startSummary = weather.start ? `Start: ${weather.start.summary}` : "No weather for start location"
             const endSummary = weather.end ? `End: ${weather.end.summary}` : "No weather for end location"
-            logger.info("Weather.getActivityWeather", `Activity ${activity.id}`, startSummary, endSummary)
+            logger.info("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, startSummary, endSummary)
 
             return weather
         } catch (ex) {
-            logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, ex)
+            logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, ex)
             return null
         }
     }
@@ -153,7 +153,7 @@ export class Weather {
      * @param user THe user requesting the weather.
      * @param provider Optional preferred weather provider.
      */
-    getLocationWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences, provider?: string): Promise<WeatherSummary> => {
+    getLocationWeather = async (coordinates: [number, number], date: Date, user: UserData, provider?: string): Promise<WeatherSummary> => {
         if (!date || !coordinates || coordinates.length != 2 || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
             const coordinatesLog = coordinates ? coordinates.join(", ") : "no coordinates"
             const dateLog = date ? dayjs(date).format("YYYY-MM-DD HH:mm") : "no date"
@@ -165,6 +165,7 @@ export class Weather {
         let providerModule: WeatherProvider
         let isDefaultProvider: boolean = false
 
+        const preferences = user.preferences
         const logDate = dayjs(date).format("YYYY-MM-DD HH:mm")
         const mDate = dayjs.utc()
         const hours = mDate.diff(date, "hours")
@@ -219,7 +220,7 @@ export class Weather {
             const failedProviderName = providerModule.name
 
             if (ex.response && ex.response.status == 402) {
-                providerModule.disabledTillDate = dayjs.utc().endOf("day").toDate()
+                providerModule.disabledTillDate = dayjs.utc().endOf("day").add(1, "hour").toDate()
                 logger.warn("Weather.getLocationWeather", `${failedProviderName} daily quota reached`)
             }
 
@@ -227,14 +228,14 @@ export class Weather {
             if (currentProviders.length > 1) {
                 providerModule = currentProviders[1]
 
-                logger.warn("Weather.getLocationWeather", latlon, logDate, `${failedProviderName} failed, will try ${providerModule.name}`)
+                logger.warn("Weather.getLocationWeather", latlon, logDate, `${failedProviderName} failed, will try ${providerModule.name}`, `User ${user.id} ${user.displayName}`)
 
                 // Try again using another provider. If also failed, log both exceptions.
                 try {
                     result = await providerModule.getWeather(coordinates, date, preferences)
                 } catch (retryEx) {
-                    logger.error("Weather.getLocationWeather", latlon, logDate, failedProviderName, ex)
-                    logger.error("Weather.getLocationWeather", latlon, logDate, providerModule.name, retryEx)
+                    logger.error("Weather.getLocationWeather", latlon, logDate, failedProviderName, `User ${user.id} ${user.displayName}`, ex)
+                    logger.error("Weather.getLocationWeather", latlon, logDate, providerModule.name, `User ${user.id} ${user.displayName}`, retryEx)
                     return null
                 }
             } else {
