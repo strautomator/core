@@ -237,7 +237,7 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
 
         // Check for weather on start and end of the activity.
         for (summary of [weatherSummary.start, weatherSummary.end]) {
-            if (!summary || summary[weatherProp] === null) {
+            if (!summary || _.isNil(summary[weatherProp])) {
                 continue
             }
 
