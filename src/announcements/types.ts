@@ -20,4 +20,8 @@ export interface Announcement {
     readCount?: number
     /** Is it about a new feature? */
     newFeature?: boolean
+    /** Targeting Free users only? */
+    isFree?: boolean
+    /** Targeting PRO users only? */
+    isPro?: boolean
 }
