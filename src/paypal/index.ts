@@ -51,6 +51,13 @@ export class PayPal {
     }
 
     /**
+     * Shortcut to api.legacyBillingPlans.
+     */
+    get legacyBillingPlans(): {[id: string]: PayPalBillingPlan} {
+        return api.legacyBillingPlans
+    }
+
+    /**
      * Shortcut to api.webhookUrl.
      */
     get webhookUrl(): string {
@@ -154,6 +161,7 @@ export class PayPal {
     setupBillingPlans = async () => {
         try {
             api.currentBillingPlans = {}
+            api.legacyBillingPlans = {}
 
             // Make sure the API has a product setup before.
             if (!api.currentProduct) {
@@ -169,10 +177,13 @@ export class PayPal {
 
                 if (plan.price == price) {
                     api.currentBillingPlans[plan.id] = plan
+                } else {
+                    api.legacyBillingPlans[plan.id] = plan
                 }
             }
 
             // Make sure we have a billing plan for each frequency defined on the settings.
+            // Create new plans as needed.
             for (let frequency of frequencies) {
                 const price = settings.plans.pro.price[frequency]
                 const existing = _.find(api.currentBillingPlans, {price: price, frequency: frequency})
@@ -184,6 +195,12 @@ export class PayPal {
             }
 
             logger.info("PayPal.setupBillingPlans", `Active plans: ${Object.keys(api.currentBillingPlans).join(", ")}`)
+
+            // Has legacy plans?
+            const legacy = Object.keys(api.legacyBillingPlans)
+            if (legacy.length > 0) {
+                logger.info("PayPal.setupBillingPlans", `Legacy plans: ${legacy.join(", ")}`)
+            }
         } catch (ex) {
             logger.error("PayPal.setupBillingPlans", ex)
             throw ex
