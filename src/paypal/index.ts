@@ -104,6 +104,7 @@ export class PayPal {
                 const subscription = await paypalSubscriptions.getSubscription(user.subscription.id)
 
                 if (subscription) {
+                    subscription.userId = user.id
                     await paypalSubscriptions.cancelSubscription(subscription)
                 }
             }
