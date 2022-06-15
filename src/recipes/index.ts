@@ -211,7 +211,7 @@ export class Recipes {
 
         // If recipe is default for a sport, check the type.
         if (recipe.defaultFor) {
-            if (activity.type != recipe.defaultFor) {
+            if (activity.sportType != recipe.defaultFor) {
                 return false
             }
         }

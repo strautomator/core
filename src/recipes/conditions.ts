@@ -122,14 +122,14 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
     const prop = condition.property
     const op = condition.operator
 
-    // Activity type not set? Stop here.
-    if (!activity.type) {
+    // Activity sport not set? Stop here.
+    if (!activity.sportType) {
         return false
     }
 
     // Parse condition and activity's date.
     const value = condition.value.toString()
-    const sportType = activity.type.toString()
+    const sportType = activity.sportType.toString()
     let valid: boolean
 
     // Check if activity sport type matches any set on the condition.

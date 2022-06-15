@@ -49,6 +49,10 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         updatedFields: []
     }
 
+    // Never trust the Strava API! The "sport_type" is marked as deprecated, but it's actually used
+    // for newer activity types. So we still use it here, and defaults back to the "type" if missing.
+    activity.sportType = data.sport_type || data.type
+
     // Activity has location data?
     activity.hasLocation = (activity.locationStart && activity.locationStart.length > 0) || (activity.locationEnd && activity.locationEnd.length > 0)
 
@@ -459,6 +463,14 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
  * @param source The relevant Strava activity or club event.
  */
 export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
+    const activity = source as StravaActivity
+
+    switch (activity.sportType) {
+        case "GravelRide":
+        case "MountainBikeRide":
+            return "🚵"
+    }
+
     switch (source.type) {
         case "Run":
         case "VirtualRun":
@@ -468,7 +480,7 @@ export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
         case "Ride":
         case "EBikeRide":
         case "VirtualRide":
-            return "🚲"
+            return "🚴"
         case "Swim":
             return "🏊"
         case "AlpineSki":

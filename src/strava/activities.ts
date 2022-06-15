@@ -419,10 +419,14 @@ export class StravaActivities {
                 let targetValue = activity[field]
                 let targetName = null
 
+                // Fields might need additional processing or transformation, so we handle
+                // each individual case down below.
                 if (field == "gear") {
                     targetField = "gear_id"
                     targetValue = activity.gear.id
                     targetName = activity.gear.name
+                } else if (field == "sportType") {
+                    targetField = "sport_type"
                 } else if (field == "hideHome") {
                     targetField = "hide_from_home"
                 } else if (field == "workoutType") {
@@ -557,7 +561,7 @@ export class StravaActivities {
                             }
 
                             const title = `Failed to process activity ${activity.id}`
-                            const body = `There was an error processing your ${activity.type} "${activity.name}", on ${aDate.format("lll")}. Strava returned an error message.`
+                            const body = `There was an error processing your ${activity.sportType} "${activity.name}", on ${aDate.format("lll")}. Strava returned an error message.`
 
                             await notifications.createNotification(user, {title: title, body: body, activityId: activity.id})
                         } catch (innerEx) {
@@ -671,7 +675,7 @@ export class StravaActivities {
 
             // Extra activity details in case user has not opted for the privacy mode.
             if (!user.preferences.privacyMode) {
-                data.type = activity.type
+                data.sportType = activity.sportType
                 data.name = activity.name
                 data.dateStart = activity.dateStart
                 data.utcStartOffset = activity.utcStartOffset

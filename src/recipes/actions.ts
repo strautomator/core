@@ -3,7 +3,7 @@
 import {RecipeAction, RecipeActionType, RecipeData, RecipeStatsData} from "./types"
 import {recipeActionList} from "./lists"
 import {transformActivityFields} from "../strava/utils"
-import {StravaActivity, StravaGear} from "../strava/types"
+import {StravaActivity, StravaGear, StravaSportRefs} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {getActivityFortune} from "../fortune"
@@ -218,8 +218,16 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
  */
 export const sportTypeAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        activity.type = action.value
+        const activityType = StravaSportRefs[action.value] ? StravaSportRefs[action.value] : action.value
+        activity.type = activityType
         activity.updatedFields.push("type")
+
+        // Some newer sports (GravelRide, TrailRun, etc) are implemented on the sport_type
+        // field instead of the main activity type, so we handle those separately here.
+        if (activityType != action.value) {
+            activity.sportType = action.value
+            activity.updatedFields.push("sportType")
+        }
 
         return true
     } catch (ex) {

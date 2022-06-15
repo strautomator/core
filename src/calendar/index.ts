@@ -236,7 +236,7 @@ export class Calendar {
                 const arrDetails = []
 
                 // Stop here if the activity was excluded on the calendar options.
-                if (options.sportTypes && !options.sportTypes.includes(activity.type)) continue
+                if (options.sportTypes && !options.sportTypes.includes(activity.sportType)) continue
                 if (options.excludeCommutes && activity.commute) continue
 
                 // For whatever reason Strava sometimes returned no dates on activities, so adding this extra check here

@@ -6,8 +6,10 @@
 export interface StravaActivity {
     /** Activity numeric ID. */
     id: number
-    /** Activity type (Ride, Run, etc). */
+    /** Activity basic type (Ride, Run, etc). */
     type: StravaSport
+    /** Activity extended sport type (includes Gravel Ride, Mountain Bike Ride, Trail Run, etc) */
+    sportType?: StravaSport
     /** Workout (ride or run) type. */
     workoutType?: StravaRideType | StravaRunType
     /** Activity name. */
@@ -120,8 +122,8 @@ export interface StravaActivity {
 export interface StravaProcessedActivity {
     /** Activity ID. */
     id: number
-    /** Activity type (Ride, Run, etc). */
-    type?: StravaSport
+    /** Activity extended sport type (includes Gravel Ride, Mountain Bike Ride, Trail Run, etc) */
+    sportType?: StravaSport
     /** Name of the saved activity. */
     name?: string
     /** Start date of the activity. */
@@ -446,9 +448,13 @@ export interface StravaEstimatedFtp {
  */
 export enum StravaSport {
     Ride = "Ride",
+    GravelRide = "GravelRide",
+    MountainBikeRide = "MountainBikeRide",
     EBikeRide = "EBikeRide",
+    EMountainBikeRide = "EMountainBikeRide",
     VirtualRide = "VirtualRide",
     Run = "Run",
+    TrailRun = "TrailRun",
     VirtualRun = "VirtualRun",
     Walk = "Walk",
     Swim = "Swim",
@@ -482,6 +488,17 @@ export enum StravaSport {
     Windsurf = "Windsurf",
     Workout = "Workout",
     Yoga = "Yoga"
+}
+
+/**
+ * Strava sport-specific types, used to match the correct
+ * activity_type and sport_type on activities.
+ */
+export const StravaSportRefs = {
+    GravelRide: "Ride",
+    MountainBikeRide: "Ride",
+    EMountainBikeRide: "EBikeRide",
+    TrailRun: "Run"
 }
 
 /**

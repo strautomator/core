@@ -131,16 +131,16 @@ export class StravaAthletes {
         // Iterate the passed activites to check for new records.
         for (let activity of activities) {
             try {
-                if (!user.isPro && !settings.plans.free.recordSports.includes(activity.type)) {
-                    logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id} ${activity.type} not tracked on free accounts`)
+                if (!user.isPro && !settings.plans.free.recordSports.includes(activity.sportType)) {
+                    logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id} ${activity.sportType} not tracked on free accounts`)
                     continue
                 }
 
-                if (!allRecords[activity.type]) {
-                    allRecords[activity.type] = {}
+                if (!allRecords[activity.sportType]) {
+                    allRecords[activity.sportType] = {}
                 }
 
-                const currentRecords: StravaRecords = allRecords[activity.type]
+                const currentRecords: StravaRecords = allRecords[activity.sportType]
                 const movingTime = activity.movingTime || 0
 
                 // If activity had no power meter, exclude the power based records.
@@ -158,7 +158,7 @@ export class StravaAthletes {
                         }
 
                         // Make sure the new records references exist.
-                        if (!result[activity.type]) result[activity.type] = {}
+                        if (!result[activity.sportType]) result[activity.sportType] = {}
                         if (!activity.newRecords) activity.newRecords = []
 
                         const details: StravaRecordDetails = {
@@ -168,8 +168,8 @@ export class StravaAthletes {
                             date: activity.dateEnd
                         }
 
-                        allRecords[activity.type][prop] = details
-                        result[activity.type][prop] = details
+                        allRecords[activity.sportType][prop] = details
+                        result[activity.sportType][prop] = details
                         activity.newRecords.push(prop)
 
                         hasNewRecord = true
