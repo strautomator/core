@@ -104,7 +104,7 @@ export class StravaFtp {
             // Otherwise get the weighted or current value itself, whatever is the lowest.
             if (currentWatts && currentWatts > maxWatts) {
                 const maxWattsWeight = [maxWatts, 1]
-                const currentWattsWeight = [currentWatts, 1.25]
+                const currentWattsWeight = [currentWatts, 1.35]
                 const ftpWeights = [maxWattsWeight, currentWattsWeight]
                 const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
                 ftpWatts = ftpTotalSum / ftpWeightSum
