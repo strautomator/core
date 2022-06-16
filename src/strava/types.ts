@@ -529,6 +529,7 @@ export enum StravaMapStyle {
     Gradient = "gradient",
     HeartRate = "heartrate",
     Pace = "pace",
+    Power = "power",
     Speed = "speed",
     Temperature = "temperature",
     Time = "time",
