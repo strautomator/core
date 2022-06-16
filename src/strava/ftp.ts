@@ -172,9 +172,9 @@ export class StravaFtp {
                     }
                 }
 
-                // Only update the FTP if it was changed by at least 1%.
+                // Only update the FTP if it was changed by at least 2%.
                 const percentChanged = 100 * Math.abs((ftp - user.profile.ftp) / ((ftp + user.profile.ftp) / 2))
-                if (percentChanged < 1) {
+                if (percentChanged < 2) {
                     logger.warn("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `Only ${percentChanged}% changed, won't update`)
                     return false
                 }
