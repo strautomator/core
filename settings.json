@@ -8,12 +8,12 @@
         "hashtag": "#strautomator.com"
     },
     "announcements": {
-        // Active announcements should be cached for up to 30 minutes.
-        "cacheDuration": 1800
+        // Active announcements should be cached for up to 60 minutes.
+        "cacheDuration": 3600
     },
     "axios": {
-        // Retry axios requests afew 6 seconds. Value set in milliseconds.
-        "retryInterval": 6000
+        // Retry axios requests afew 5 seconds. Value set in milliseconds.
+        "retryInterval": 5000
     },
     "calendar": {
         // Default activity fields to be added to event details. Each item is a line, and multiple fields
@@ -56,7 +56,7 @@
     },
     "faq": {
         // Download questions from the database twice a day by default. Value set in seconds.
-        "refreshInterval": 43200
+        "refreshInterval": 64800
     },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
