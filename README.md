@@ -32,6 +32,7 @@ The following collections are currently used:
 -   **athlete-records** athlete sports records
 -   **faq** help questions and answers
 -   **gearwear** GearWear configurations
+-   **maps** Cached geolocation data
 -   **notifications** notifications to users
 -   **recipe-stats** automation recipe stats
 -   **subscriptions** PRO subscriptions
@@ -70,6 +71,10 @@ Some of Strautomator's features depend on scheduled tasks that needs a manual se
 ### GearWear
 
 -   **gearwear.processRecentActivities()** - daily, fetch recent activities and update the GearWear counters.
+
+### Maps
+
+-   **maps.cleanup()** - weekly, cleanup of cached geolocation data
 
 ### Notifications
 

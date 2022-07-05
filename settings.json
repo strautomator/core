@@ -119,10 +119,12 @@
         }
     },
     "maps": {
-        // Cache geolocation results for 24 hours. Value set in seconds.
-        "cacheDuration": 86400,
         // Geocoded results are cached down to a precision of around 1km (2 decimal digits).
         "cachePrecision": 2,
+        // Cache geolocation results in memory for up to 24 hours. Value set in seconds.
+        "cacheDuration": 86400,
+        // Geolocation will be cached on the database for up to 1 week. Value set in seconds.
+        "maxCacheDuration": 604800,
         // Circle color, will also be used as a fill color with half opacity.
         "circleColor": "0x0066CC",
         // Default marker style and color.

@@ -12,6 +12,8 @@ export interface MapAddress {
     state?: string
     /** Country name. */
     country?: string
+    /** Timestamp when that address was last resolved. */
+    dateCached?: Date
 }
 
 /**

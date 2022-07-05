@@ -3,9 +3,11 @@
 import {Client, GeocodeRequest, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
 import {Polyline} from "./polyline"
 import {MapAddress, MapCoordinates} from "./types"
+import database from "../database"
 import cache = require("bitecache")
 import jaul = require("jaul")
 import logger = require("anyhow")
+import dayjs from "../dayjs"
 const axios = require("axios").default
 const settings = require("setmeup").settings
 
@@ -144,11 +146,18 @@ export class Maps {
             const cacheId = `reverse-${coordinates.map((c) => (Math.round(c * 100) / 100).toFixed(settings.maps.cachePrecision)).join("-")}`
             const logCoordinates = coordinates.join(", ")
 
-            // Location stored on cache?
-            const cached = cache.get("maps", cacheId)
-            if (cached) {
-                logger.debug("Maps.getReverseGeocode.fromCache", logCoordinates, `${Object.values(cached).join(", ")}`)
-                return cached
+            // Location cached in memory?
+            const memCached = cache.get("maps", cacheId)
+            if (memCached) {
+                logger.debug("Maps.getReverseGeocode.fromCache", logCoordinates, `${Object.values(memCached).join(", ")}`)
+                return memCached
+            }
+
+            // Location cached in the database?
+            const dbCached: MapAddress = await database.get("maps", cacheId)
+            if (dbCached && dayjs(dbCached.dateCached).isAfter(dayjs().subtract(settings.maps.maxCacheDuration, "seconds"))) {
+                logger.info("Maps.getReverseGeocode.fromCache", logCoordinates, Object.values(dbCached).join(", "))
+                return dbCached
             }
 
             // Geo request parameters.
@@ -172,13 +181,15 @@ export class Maps {
                 const country = components.find((c) => c.types.includes("country" as any))
 
                 // Build the resulting MapAddress.
-                const address: MapAddress = {}
+                const address: MapAddress = {dateCached: new Date()}
                 if (neighborhood) address.neighborhood = neighborhood.long_name
                 if (city) address.city = city.long_name
                 if (state) address.state = state.long_name
                 if (country) address.country = country.long_name
 
                 cache.set("maps", cacheId, address)
+                database.set("maps", address, cacheId)
+
                 logger.info("Maps.getReverseGeocode", logCoordinates, Object.values(address).join(", "))
 
                 return address
@@ -243,6 +254,30 @@ export class Maps {
             logger.error("Maps.getStaticImage", Object.values(coordinates).join(", "), `Size ${options.size}`, `Circle ${options.circle}`, ex)
         }
     }
+
+    // CLEANUP
+    // --------------------------------------------------------------------------
+
+    /**
+     * Delete cached geolocation data from the database.
+     * @param all If true, all cached data will be deleted, otherwise just the older ones.
+     */
+    cleanup = async (all?: boolean): Promise<void> => {
+        const since = dayjs().subtract(settings.maps.maxCacheDuration, "seconds")
+        const sinceLog = all ? "All" : `Since ${since.format("YYYY-MM-DD HH:mm")}`
+
+        try {
+            const where: any[] = [["dateCached", "<", since.toDate()]]
+            const count = await database.delete("maps", where)
+
+            logger.info("Maps.cleanup", sinceLog, `${count || "Nothing"} deleted`)
+        } catch (ex) {
+            logger.error("Maps.cleanup", sinceLog, ex)
+        }
+    }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
 
     /**
      * Return a path string representing a circle to be draw on a static map image.
