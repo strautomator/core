@@ -149,14 +149,14 @@ export class Maps {
             // Location cached in memory?
             const memCached = cache.get("maps", cacheId)
             if (memCached) {
-                logger.debug("Maps.getReverseGeocode.fromCache", logCoordinates, `${Object.values(memCached).join(", ")}`)
+                logger.debug("Maps.getReverseGeocode.fromCache", logCoordinates, this.getAddressLog(memCached))
                 return memCached
             }
 
             // Location cached in the database?
             const dbCached: MapAddress = await database.get("maps", cacheId)
             if (dbCached && dayjs(dbCached.dateCached).isAfter(dayjs().subtract(settings.maps.maxCacheDuration, "seconds"))) {
-                logger.info("Maps.getReverseGeocode.fromCache", logCoordinates, Object.values(dbCached).join(", "))
+                logger.info("Maps.getReverseGeocode.fromCache", logCoordinates, this.getAddressLog(dbCached))
                 return dbCached
             }
 
@@ -189,8 +189,7 @@ export class Maps {
 
                 cache.set("maps", cacheId, address)
                 database.set("maps", address, cacheId)
-
-                logger.info("Maps.getReverseGeocode", logCoordinates, Object.values(address).join(", "))
+                logger.info("Maps.getReverseGeocode", logCoordinates, this.getAddressLog(address))
 
                 return address
             }
@@ -278,6 +277,21 @@ export class Maps {
 
     // HELPERS
     // --------------------------------------------------------------------------
+
+    /**
+     * Return the log string for the supplied address.
+     * @param address The address data.
+     */
+    private getAddressLog = (address: MapAddress): string => {
+        const result: string[] = []
+
+        if (address.neighborhood) result.push(address.neighborhood)
+        if (address.city) result.push(address.city)
+        if (address.country) result.push(address.country)
+        if (address.dateCached) result.push(dayjs(address.dateCached).format("MMM DD HH:mm"))
+
+        return result.join(", ")
+    }
 
     /**
      * Return a path string representing a circle to be draw on a static map image.
