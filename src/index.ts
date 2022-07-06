@@ -10,6 +10,7 @@ import logger = require("anyhow")
 logger.setup("console")
 logger.setOptions({
     appName: "Strautomator",
+    timestamp: false,
     levelOnConsole: true,
     preprocessors: ["friendlyErrors", "maskSecrets"]
 })
@@ -19,6 +20,8 @@ if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CRED
     const homedir = require("os").homedir()
     const credPath = `${homedir}/gcp-credentials.json`
     process.env.GOOGLE_APPLICATION_CREDENTIALS = credPath
+
+    logger.setOptions({timestamp: true})
     logger.warn("Strautomator.startup", `GOOGLE_APPLICATION_CREDENTIALS defaulting to ${credPath}`)
 }
 
@@ -34,8 +37,8 @@ if (process.env.NODE_ENV == "production" && process.env.JSON_LOGGING) {
         log: consoleLog
     }
 
-    logger.info("Strautomator.startup", "Switching to JSON logging now")
     logger.setOptions({levelOnConsole: false})
+    logger.info("Strautomator.startup", "Switching to JSON logging now")
     logger.setup(gcloudLogging)
 }
 
