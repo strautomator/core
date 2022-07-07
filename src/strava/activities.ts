@@ -540,7 +540,10 @@ export class StravaActivities {
 
             // Activity updated? Save to Strava and increment activity counter.
             if (recipeIds.length > 0) {
-                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`)
+                const actions = []
+                recipeIds.forEach((rid) => user.recipes[rid].actions.forEach((a) => actions.push(a.type)))
+
+                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`, `Actions: ${_.uniq(actions.join(", "))}`)
 
                 // Remove duplicates from list of updated fields.
                 activity.updatedFields = _.uniq(activity.updatedFields)
