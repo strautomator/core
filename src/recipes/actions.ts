@@ -128,6 +128,11 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
             activity.updatedFields.push("description")
         }
+        // Set the activity's private note?
+        else if (action.type == RecipeActionType.PrivateNote) {
+            activity.privateNote = processedValue
+            activity.updatedFields.push("privateNote")
+        }
 
         return true
     } catch (ex) {
