@@ -198,6 +198,13 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         activity.climbingRatio = Math.round(climbingRatio * 100) / 100
     }
 
+    // Calculate TSS if possible.
+    if (user.profile && user.profile.ftp && activity.hasPower && activity.wattsWeighted) {
+        const intensity = activity.wattsWeighted / user.profile.ftp
+        const tss = ((activity.wattsWeighted * intensity * activity.movingTime) / (user.profile.ftp * 3600)) * 100
+        activity.tss = Math.round(tss)
+    }
+
     // Check for new PRs and KOMs.
     if (data.segment_efforts && data.segment_efforts.length > 0) {
         const pr: any[] = data.segment_efforts.filter((r) => r.pr_rank == 1)

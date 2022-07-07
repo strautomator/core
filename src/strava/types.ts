@@ -86,6 +86,8 @@ export interface StravaActivity {
     relativeEffort?: number
     /** Perceived exertion, where 1 is easy and 10 is max effort.  */
     perceivedExertion?: number
+    /** Training sress score. */
+    tss?: number
     /** Average temperature. */
     temperature?: number
     /** Device name. */
