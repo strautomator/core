@@ -384,9 +384,9 @@ export class Calendar {
                         let endDate: Date
 
                         // Upcoming event has a route with estimated time? Use it as the end date,
-                        // otherwise defaults to 10 minutes.
+                        // otherwise defaults to 15 minutes.
                         if (clubEvent.route && clubEvent.route.estimatedTime && eventDate >= today) {
-                            const targetDate = dayjs(eventDate).add(clubEvent.route.estimatedTime * 1.1, "seconds")
+                            const targetDate = dayjs(eventDate).add(clubEvent.route.estimatedTime * 1.15, "seconds")
                             const toQuarter = 15 - (targetDate.minute() % 15)
                             endDate = targetDate.add(toQuarter, "minutes").toDate()
                         } else {
