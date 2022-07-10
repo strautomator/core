@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaGear, StravaProcessedActivity} from "./types"
+import {StravaActivity, StravaActivityStreams, StravaGear, StravaProcessedActivity} from "./types"
 import {toStravaActivity} from "./utils"
 import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
@@ -161,25 +161,20 @@ export class StravaActivities {
     }
 
     /**
-     * Get an activity stream.
+     * Get an activity streams.
      * @param user The owner of the activity.
      * @param id The activity ID.
      */
-    getStream = async (user: UserData, id: number | string): Promise<any> => {
+    getStreams = async (user: UserData, id: number | string): Promise<StravaActivityStreams> => {
         try {
             const tokens = user.stravaTokens
-            const data = await api.get(tokens, `activities/${id}/streams`)
-            let datapoints = 0
+            const data = await api.get(tokens, `activities/${id}/streams?keys=distance,heartrate,time,watts&key_by_type=true`)
+            const keys = Object.keys(data)
 
-            // Count how many stream data points we have for this activity.
-            for (let stream of data) {
-                if (stream.data) datapoints += stream.data.length
-            }
-
-            logger.info("Strava.getStream", `User ${user.id} ${user.displayName}`, `Activity ${id}`, `${datapoints} data points`)
+            logger.info("Strava.getStreams", `User ${user.id} ${user.displayName}`, `Activity ${id}`, keys.join(", "))
             return data
         } catch (ex) {
-            logger.error("Strava.getStream", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
+            logger.error("Strava.getStreams", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
             throw ex
         }
     }

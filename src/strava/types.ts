@@ -119,6 +119,34 @@ export interface StravaActivity {
 }
 
 /**
+ * A summary of the activity performance.
+ */
+export interface StravaActivityPerformance {
+    /** Maximum average 1 minute power. */
+    power1min?: number
+    /** Maximum average 5 minutes power. */
+    power5min?: number
+    /** Maximum average 20 minutes power. */
+    power20min?: number
+    /** Maximum average 60 minutes power. */
+    power60min?: number
+}
+
+/**
+ * Combined activity streams.
+ */
+export interface StravaActivityStreams {
+    /** Distance data points. */
+    distance?: StravaStream
+    /** Heart rate data points. */
+    heartrate?: StravaStream
+    /** Time data points. */
+    time?: StravaStream
+    /** Power data points. */
+    watts?: StravaStream
+}
+
+/**
  * Processed or queued activity details to be saved on the database.
  */
 export interface StravaProcessedActivity {
@@ -252,6 +280,18 @@ export interface StravaProfileStats {
     allRunTotals?: StravaTotals
     /** All time swim total stats. */
     allSwimTotals?: StravaTotals
+}
+
+/**
+ * Represents an activity stream with data points.
+ */
+export interface StravaStream {
+    /** Stream type. */
+    type?: "distance" | "heartrate" | "time" | "watts"
+    /** Stream resolution. */
+    resolution?: "high" | "medium" | "low"
+    /** Data points, usually indexed by seconds. */
+    data?: number[]
 }
 
 /**

@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaEstimatedFtp, StravaSport} from "./types"
+import {StravaActivity, StravaActivityPerformance, StravaEstimatedFtp, StravaSport} from "./types"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
@@ -42,7 +42,6 @@ export class StravaFtp {
             let currentWatts: number = 0
             let bestActivity: StravaActivity
             let lastActivityDate = new Date("2000-01-01")
-            let adjusted: boolean = false
 
             // Iterate activities to get the highest FTP possible.
             for (let a of activities) {
@@ -61,16 +60,33 @@ export class StravaFtp {
                 let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
                 let power: number
 
-                // FTP ranges from 95% to 100% from 20 minutes to 1 hour, and then
-                // 104% for each extra hour of activity time.
+                // FTP ranges from 94% to 100% from 20 minutes to 1 hour, and then
+                // 103% for each extra hour of activity time.
                 if (totalTime <= 3600) {
-                    const perc = ((3600 - totalTime) / 60 / 8) * 0.01
+                    const perc = ((3600 - totalTime) / 60 / 8) * 0.011
                     power = Math.round(watts * (1 - perc))
                 } else {
                     const extraHours = Math.floor(totalTime / 3600) - 1
-                    const fraction = 1 + 0.04 * ((totalTime % 3600) / 60 / 60)
-                    const factor = 1.04 ** extraHours * fraction
+                    const fraction = 1 + 0.03 * ((totalTime % 3600) / 60 / 60)
+                    const factor = 1.03 ** extraHours * fraction
                     power = watts * factor
+                }
+
+                // PRO users also get the best power splits.
+                if (user.isPro) {
+                    const pIntervals = await this.getPowerIntervals(user, a)
+
+                    if (pIntervals) {
+                        pIntervals.power1min = Math.round((pIntervals.power1min || 0) * 0.69)
+                        pIntervals.power5min = Math.round((pIntervals.power5min || 0) * 0.84)
+                        pIntervals.power20min = Math.round((pIntervals.power20min || 0) * 0.94)
+                        pIntervals.power60min = pIntervals.power60min || 0
+
+                        if (pIntervals.power1min > maxWatts) power = pIntervals.power1min
+                        if (pIntervals.power5min > maxWatts) power = pIntervals.power5min
+                        if (pIntervals.power20min > maxWatts) power = pIntervals.power20min
+                        if (pIntervals.power60min > maxWatts) power = pIntervals.power60min
+                    }
                 }
 
                 // New best power?
@@ -123,14 +139,13 @@ export class StravaFtp {
             // Adjusted loss per week off the bike.
             const weeks = Math.floor(dayjs().diff(lastActivityDate, "d") / 7)
             if (weeks > 0) {
-                adjusted = true
                 ftpWatts -= ftpWatts * (weeks * settings.strava.ftp.idleLossPerWeek)
             }
 
             // Round FTP.
             ftpWatts = Math.round(ftpWatts)
 
-            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP from ${activities.length} activities: ${ftpWatts}w${adjusted ? " (adjusted)" : ""}, current ${currentWatts}w, highest effort ${maxWatts}w`)
+            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP from ${activities.length} activities: ${ftpWatts}w, current ${currentWatts}w, best ${maxWatts}w on activity ${bestActivity.id}`)
 
             return {
                 ftpWatts: ftpWatts,
@@ -142,7 +157,7 @@ export class StravaFtp {
                 recentlyUpdated: recentlyUpdated
             }
         } catch (ex) {
-            logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `${activities ? activities.length : "No"} activities`, ex)
             throw ex
         }
     }
@@ -208,6 +223,70 @@ export class StravaFtp {
             }
         } catch (ex) {
             logger.error("Strava.processFtp", `User ${user.id} ${user.displayName}`, ex)
+        }
+    }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * The the power intervals (1min, 5min, 20min and 1 hour) for the specified activity.
+     * @param user User data.
+     * @param activity The Strava activity.
+     */
+    getPowerIntervals = async (user: UserData, activity: StravaActivity): Promise<StravaActivityPerformance> => {
+        try {
+            if (activity.movingTime < 60) {
+                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Abort, activity is too short")
+                return null
+            }
+
+            const streams = await stravaActivities.getStreams(user, activity.id)
+
+            // Missing or not enough power data points? Stop here.
+            if (!streams.watts || !streams.watts.data || streams.watts.data.length < 60) {
+                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Abort, not enough data points`)
+                return null
+            }
+
+            const result: StravaActivityPerformance = {}
+
+            const watts = streams.watts.data
+            const intervals: StravaActivityPerformance = {
+                power1min: 60,
+                power5min: 300,
+                power20min: 1200,
+                power60min: 3600
+            }
+
+            // Iterate intervals and then the watts data points to get the
+            // highest sum for each interval. This could be improved in the
+            // future to iterate the array only once and get the intervals
+            // all in a single pass.
+            for (let [key, interval] of Object.entries(intervals)) {
+                if (watts.length < interval) {
+                    continue
+                }
+
+                let best = 0
+
+                for (let i = 0; i < watts.length - interval; i++) {
+                    const sum = _.sum(watts.slice(i, i + interval))
+
+                    if (sum > best) {
+                        best = sum
+                    }
+                }
+
+                result[key] = Math.round(best / interval)
+            }
+
+            const logResult = Object.entries(result).map((r) => `${r[0].replace("power", "")}: ${r[1]}`)
+            logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, logResult.join(", "))
+
+            return result
+        } catch (ex) {
+            logger.error("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
         }
     }
 }
