@@ -35,6 +35,9 @@ export class StravaFtp {
                 activities = await stravaActivities.getActivities(user, {before: tsBefore, after: tsAfter})
             }
 
+            const now = dayjs()
+            const weekAgo = now.subtract(7, "days")
+
             let listWatts: number[] = []
             let avgWatts: number = 0
             let maxWatts: number = 0
@@ -45,10 +48,11 @@ export class StravaFtp {
 
             // Iterate activities to get the highest FTP possible.
             for (let a of activities) {
+                const dateEnd = dayjs(a.dateEnd)
                 const totalTime = a.movingTime || a.totalTime
 
                 // Date of the last activity.
-                if (dayjs(a.dateEnd).isAfter(lastActivityDate)) {
+                if (dateEnd.isAfter(lastActivityDate)) {
                     lastActivityDate = a.dateEnd
                 }
 
@@ -87,6 +91,11 @@ export class StravaFtp {
                         if (pIntervals.power20min > maxWatts) power = pIntervals.power20min
                         if (pIntervals.power60min > maxWatts) power = pIntervals.power60min
                     }
+                }
+
+                // Small power drop for activities older than 1 week.
+                if (dateEnd.isBefore(weekAgo)) {
+                    power -= power * (weekAgo.diff(dateEnd, "days") * 0.001)
                 }
 
                 // New best power?
@@ -145,7 +154,7 @@ export class StravaFtp {
             // Round FTP, looks nicer.
             ftpWatts = Math.round(ftpWatts)
 
-            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP from ${activities.length} activities: ${ftpWatts}w, current ${currentWatts}w, best ${maxWatts}w on activity ${bestActivity.id}`)
+            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP from ${activities.length} activities: ${ftpWatts}w, current ${currentWatts}w, best activity ${bestActivity.id}`)
 
             return {
                 ftpWatts: ftpWatts,
