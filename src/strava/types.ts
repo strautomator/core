@@ -122,8 +122,6 @@ export interface StravaActivity {
  * A summary of the activity performance.
  */
 export interface StravaActivityPerformance {
-    /** Maximum average 1 minute power. */
-    power1min?: number
     /** Maximum average 5 minutes power. */
     power5min?: number
     /** Maximum average 20 minutes power. */

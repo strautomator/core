@@ -53,36 +53,36 @@ export class StravaFtp {
                 }
 
                 // Ignore cycling activities with no power meter or that lasted less than 20 minutes.
-                if (a.type != StravaSport.Ride && a.type != StravaSport.VirtualRide) continue
-                if (totalTime < 60 * 20) continue
+                if (![StravaSport.Ride, StravaSport.GravelRide, StravaSport.MountainBikeRide, StravaSport.VirtualRide].includes(a.type)) continue
                 if (!a.hasPower) continue
+                if (totalTime < 60 * 5) continue
 
                 let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
                 let power: number
 
                 // FTP ranges from 94% to 100% from 20 minutes to 1 hour, and then
                 // 103% for each extra hour of activity time.
-                if (totalTime <= 3600) {
-                    const perc = ((3600 - totalTime) / 60 / 8) * 0.011
-                    power = Math.round(watts * (1 - perc))
-                } else {
-                    const extraHours = Math.floor(totalTime / 3600) - 1
-                    const fraction = 1 + 0.03 * ((totalTime % 3600) / 60 / 60)
-                    const factor = 1.03 ** extraHours * fraction
-                    power = watts * factor
+                if (totalTime > 1200) {
+                    if (totalTime <= 3600) {
+                        const perc = ((3600 - totalTime) / 60 / 8) * 0.011
+                        power = Math.round(watts * (1 - perc))
+                    } else {
+                        const extraHours = Math.floor(totalTime / 3600) - 1
+                        const fraction = 1 + 0.03 * ((totalTime % 3600) / 60 / 60)
+                        const factor = 1.03 ** extraHours * fraction
+                        power = watts * factor
+                    }
                 }
 
-                // PRO users also get the best power splits.
+                // PRO users also get the best power splits from 5 / 20 / 60 min intervals.
                 if (user.isPro) {
                     const pIntervals = await this.getPowerIntervals(user, a)
 
                     if (pIntervals) {
-                        pIntervals.power1min = Math.round((pIntervals.power1min || 0) * 0.69)
-                        pIntervals.power5min = Math.round((pIntervals.power5min || 0) * 0.84)
+                        pIntervals.power5min = Math.round((pIntervals.power5min || 0) * 0.79)
                         pIntervals.power20min = Math.round((pIntervals.power20min || 0) * 0.94)
                         pIntervals.power60min = pIntervals.power60min || 0
 
-                        if (pIntervals.power1min > maxWatts) power = pIntervals.power1min
                         if (pIntervals.power5min > maxWatts) power = pIntervals.power5min
                         if (pIntervals.power20min > maxWatts) power = pIntervals.power20min
                         if (pIntervals.power60min > maxWatts) power = pIntervals.power60min
@@ -142,7 +142,7 @@ export class StravaFtp {
                 ftpWatts -= ftpWatts * (weeks * settings.strava.ftp.idleLossPerWeek)
             }
 
-            // Round FTP.
+            // Round FTP, looks nicer.
             ftpWatts = Math.round(ftpWatts)
 
             logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP from ${activities.length} activities: ${ftpWatts}w, current ${currentWatts}w, best ${maxWatts}w on activity ${bestActivity.id}`)
@@ -248,12 +248,15 @@ export class StravaFtp {
                 logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Abort, not enough data points`)
                 return null
             }
+            if (streams.watts.resolution == "low" || streams.watts.data.length < activity.movingTime * 0.8) {
+                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Abort, resolution not good enough`)
+                return null
+            }
 
             const result: StravaActivityPerformance = {}
 
             const watts = streams.watts.data
             const intervals: StravaActivityPerformance = {
-                power1min: 60,
                 power5min: 300,
                 power20min: 1200,
                 power60min: 3600

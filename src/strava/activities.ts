@@ -161,14 +161,14 @@ export class StravaActivities {
     }
 
     /**
-     * Get an activity streams.
+     * Get an activity streams. At the moment only the "watts" stream is relevant.
      * @param user The owner of the activity.
      * @param id The activity ID.
      */
     getStreams = async (user: UserData, id: number | string): Promise<StravaActivityStreams> => {
         try {
             const tokens = user.stravaTokens
-            const data = await api.get(tokens, `activities/${id}/streams?keys=distance,heartrate,time,watts&key_by_type=true`)
+            const data = await api.get(tokens, `activities/${id}/streams?keys=watts&key_by_type=true`)
             const keys = Object.keys(data)
 
             logger.info("Strava.getStreams", `User ${user.id} ${user.displayName}`, `Activity ${id}`, keys.join(", "))
