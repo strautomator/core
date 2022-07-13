@@ -216,19 +216,15 @@ export class StravaFtp {
     }
 
     /**
-     * Process the user's FTP, and save only if it has changed by more than 1%.
+     * Estimate and save the user's FTP if necessary.
      * @param user User data.
      */
     processFtp = async (user: UserData): Promise<void> => {
         try {
             const ftpEstimation = await this.estimateFtp(user)
 
-            if (ftpEstimation) {
-                const threshold = ftpEstimation.ftpCurrentWatts * 0.01
-
-                if (!ftpEstimation.recentlyUpdated && Math.abs(ftpEstimation.ftpWatts - ftpEstimation.ftpCurrentWatts) > threshold) {
-                    await this.saveFtp(user, ftpEstimation.ftpWatts)
-                }
+            if (ftpEstimation && !ftpEstimation.recentlyUpdated) {
+                await this.saveFtp(user, ftpEstimation.ftpWatts)
             }
         } catch (ex) {
             logger.error("Strava.processFtp", `User ${user.id} ${user.displayName}`, ex)
