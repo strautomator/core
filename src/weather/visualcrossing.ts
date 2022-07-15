@@ -22,7 +22,7 @@ export class VisualCrossing implements WeatherProvider {
 
     name: string = "visualcrossing"
     title: string = "Visual Crossing"
-    maxHours: number = 1560
+    maxHours: number = 8760
 
     // METHODS
     // --------------------------------------------------------------------------

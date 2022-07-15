@@ -22,7 +22,7 @@ export class OpenMeteo implements WeatherProvider {
 
     name: string = "openmeteo"
     title: string = "Open-Meteo"
-    maxHours: number = 48
+    maxHours: number = 2160
 
     // METHODS
     // --------------------------------------------------------------------------
