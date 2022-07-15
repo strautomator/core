@@ -3,6 +3,7 @@
 import {StravaTokens} from "./types"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
+import stravaActivityProcessing from "./activityprocessing"
 import stravaAthletes from "./athletes"
 import stravaClubs from "./clubs"
 import stravaFtp from "./ftp"
@@ -27,6 +28,11 @@ export class Strava {
      * Activity methods.
      */
     activities = stravaActivities
+
+    /**
+     * Activity processing methods.
+     */
+    activityProcessing = stravaActivityProcessing
 
     /**
      * Atlhete methods.
@@ -94,7 +100,7 @@ export class Strava {
         }
 
         try {
-            await this.activities.deleteProcessedActivities(user)
+            await this.activityProcessing.deleteProcessedActivities(user)
             await this.athletes.deleteAthleteRecords(user)
         } catch (ex) {
             logger.error("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)

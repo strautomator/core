@@ -64,15 +64,9 @@ export class StravaAPI {
                 reservoirRefreshInterval: 1000 * 60
             })
 
-            // Catch errors.
-            this.limiter.on("error", (err) => {
-                logger.error("Strava.limiter", err)
-            })
-
-            // Rate limiting warnings
-            this.limiter.on("depleted", () => {
-                logger.warn("Strava.limiter", "Rate limited")
-            })
+            // Rate limiter events.
+            this.limiter.on("error", (err) => logger.error("Strava.limiter", err))
+            this.limiter.on("depleted", () => logger.warn("Strava.limiter", "Rate limited"))
 
             // Setup bitecache.
             for (let [key, duration] of Object.entries(settings.strava.cacheDuration)) {
