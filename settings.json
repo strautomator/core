@@ -207,6 +207,8 @@
             // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
+            // Free accounts can trigger batch automations for activities up to 30 days old.
+            "batchDays": 30,
             // Free accounts limited to 6 months of previous calendar events up to tomorrow.
             "pastCalendarDays": 180,
             "futureCalendarDays": 2,
@@ -216,13 +218,15 @@
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"]
         },
         "pro": {
-            // Pro accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
+            // PRO accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
-            // Pro accounts limited to 10 years of previous calendar events up to 1 year in the future.
+            // PRO accounts can trigger batch automations for activities up to 2 years old.
+            "batchDays": 730,
+            // PRO accounts limited to 10 years of previous calendar events up to 1 year in the future.
             "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
-            // No links on Pro accounts processed activities.
+            // No links on PRO accounts processed activities.
             "linksOn": false,
             // Subscription prices on PayPal to get a PRO account.
             "price": {
@@ -297,6 +301,8 @@
         },
         // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
         "delayedProcessingInterval": 600,
+        // Default batch size when processing queued activities.
+        "queueBatchSize": 10,
         // How long can activities stayed queued for processing? Value set in seconds.
         "maxQueueAge": 43200
     },
