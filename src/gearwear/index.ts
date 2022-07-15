@@ -431,6 +431,7 @@ export class GearWear {
             for (let config of configs) {
                 const gearActivities = _.remove(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
                 await this.updateTracking(user, config, gearActivities)
+                count += gearActivities.length
             }
         } catch (ex) {
             logger.error("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, ex)
