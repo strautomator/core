@@ -99,6 +99,9 @@ export * from "./github/types"
 export * from "./paypal/types"
 export * from "./fortune"
 
+// Import the custom dayjs implementation.
+import dayjs from "./dayjs"
+
 // Flag if the server is shutting down.
 let terminating = false
 
@@ -172,6 +175,32 @@ export const startup = async (quickStart?: boolean) => {
             logger.error("Strautomator.startup", "Failed to start a core module, will exit...")
             return process.exit(1)
         }
+    }
+
+    // Running locally? Setup the necessary cron jobs which are
+    // otherwise defined as Cloud Functions in production.
+    if (process.env.NODE_ENV == "development") {
+        logger.warn("Strautomator.startup", "Setting up cron jobs, running in dev mode")
+
+        // Process queued activities every 5 minutes.
+        const processQueuedActivities = async () => {
+            await strava.activityProcessing.processQueuedActivities()
+        }
+        setInterval(processQueuedActivities, 1000 * 60 * 5)
+
+        // Cleanup olded queued activities every 1 hour.
+        const cleanupQueuedActivities = async () => {
+            const beforeDate = dayjs().subtract(setmeup.settings.strava.maxQueueAge, "seconds").toDate()
+            const activities = await strava.activityProcessing.getQueuedActivities(beforeDate)
+
+            for (let activity of activities) {
+                await strava.activityProcessing.deleteQueuedActivity(activity)
+            }
+        }
+        setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
+
+        // Process GearWear configurations right away.
+        gearwear.processRecentActivities()
     }
 }
 
