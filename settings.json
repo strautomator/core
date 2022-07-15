@@ -301,6 +301,8 @@
         },
         // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
         "delayedProcessingInterval": 600,
+        // Only a single batch operation per user every 24 hours.
+        "queueBatchPerHours": 24,
         // Default batch size when processing queued activities.
         "queueBatchSize": 10,
         // How long can activities stayed queued for processing? Value set in seconds.

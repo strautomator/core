@@ -18,6 +18,8 @@ export interface StravaActivity {
     description?: string
     /** Private note (visible to the owner only). */
     privateNote?: string
+    /** Is the activity private? */
+    private?: boolean
     /** Marked as coomute? */
     commute?: boolean
     /** Activity hidden on the home feed? */
@@ -186,6 +188,8 @@ export interface StravaProcessedActivity {
     error?: string
     /** Is the activity queued to be processed? */
     queued?: boolean
+    /** Is the (old) activity part of a batch processing? */
+    batch?: boolean
     /** List of new records. */
     newRecords?: string[]
     /** Queued date. */
@@ -481,6 +485,20 @@ export interface StravaEstimatedFtp {
     activityWattsAvg: number
     /** Was the user's FTP recently updated? Use this to avoid back-to-back updates. */
     recentlyUpdated: boolean
+}
+
+/**
+ * Strava activity filters (for instance when batch processing).
+ */
+export interface StravaActivityFilter {
+    /** Just private activities if true, only public if false, otherwise all. */
+    private?: boolean
+    /** Just commutes if true, not commutes if false, otherwise all. */
+    commute?: boolean
+    /** Just races if true, not races if false, otherwise all. */
+    race?: boolean
+    /** Specific sport type, otherwise all. */
+    sportType?: StravaSport
 }
 
 /**

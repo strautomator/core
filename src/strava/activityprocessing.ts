@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaProcessedActivity} from "./types"
+import {StravaActivity, StravaActivityFilter, StravaProcessedActivity, StravaRideType, StravaRunType} from "./types"
 import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
@@ -38,9 +38,14 @@ export class StravaActivities {
      * activities for the specified range to the processing queue.
      * @param user The activities owner (user).
      * @param dateFrom Activities since (from that date).
-     * @param dateTo Activities up to (till that date).
+     * @param dateTo Activities up to (till that date), if not passed will use today.
+     * @param filter Additional activity filters.
      */
-    batchProcessActivities = async (user: UserData, dateFrom: Date, dateTo: Date): Promise<number> => {
+    batchProcessActivities = async (user: UserData, dateFrom: Date, dateTo?: Date, filter?: StravaActivityFilter): Promise<number> => {
+        if (!dateTo) dateTo = new Date()
+        if (!filter) filter = {}
+
+        let activityCount = 0
         const dateLog = `${dayjs(dateFrom).format("YYYY-MM-DD HH:mm")} to ${dayjs(dateTo).format("YYYY-MM-DD HH:mm")}`
         const tsAfter = dateFrom.valueOf() / 1000
         const tsBefore = dateTo.valueOf() / 1000
@@ -67,18 +72,35 @@ export class StravaActivities {
                 return 0
             }
 
-            // Add each of the user's activities to the processing queue.
+            // Add each of the user's activities to the processing queue, but only if they are valid
+            // according to the (optional) passed filters.
             for (let activity of activities) {
                 try {
-                    await this.queueActivity(user, activity.id)
+                    let valid = true
+                    if (filter.private === true && !activity.private) valid = false
+                    if (filter.private === false && activity.private) valid = false
+                    if (filter.commute === true && !activity.commute) valid = false
+                    if (filter.commute === false && activity.commute) valid = false
+                    if (filter.race === true && activity.workoutType != StravaRideType.Race && activity.workoutType != StravaRunType.Race) valid = false
+                    if (filter.race === false && (activity.workoutType == StravaRideType.Race || activity.workoutType == StravaRunType.Race)) valid = false
+                    if (filter.sportType && activity.sportType != filter.sportType) valid = false
+
+                    // Passed the activity filters? Proceed and queue.
+                    if (valid) {
+                        await this.queueActivity(user, activity.id, true)
+                        activityCount++
+                    }
                 } catch (innerEx) {
                     logger.error("Strava.batchProcessActivities", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
                 }
             }
 
+            // Update user with the current date.
+            await users.update({id: user.id, displayName: user.displayName, dateLastBatchProcessing: now.toDate()})
+
             logger.info("Strava.batchProcessActivities", `User ${user.id} ${user.displayName}`, dateLog, `Queued ${activities.length} activities`)
 
-            return activities.length
+            return activityCount
         } catch (ex) {
             logger.error("Strava.batchProcessActivities", `User ${user.id} ${user.displayName}`, dateLog, ex)
             throw ex
@@ -162,7 +184,7 @@ export class StravaActivities {
                 const actions = []
                 recipeIds.forEach((rid) => user.recipes[rid].actions.forEach((a) => actions.push(a.type)))
 
-                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`, `Actions: ${_.uniq(actions.join(", "))}`)
+                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`, `Actions: ${_.uniq(actions).join(", ")}`)
 
                 // Remove duplicates from list of updated fields.
                 activity.updatedFields = _.uniq(activity.updatedFields)
@@ -245,7 +267,7 @@ export class StravaActivities {
             }
 
             const activities = await database.search("activities", where, ["dateProcessed", "desc"], limit)
-            logger.info("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, `Got ${activities.length} activities${logFrom}${logTo}${logLimit}`)
+            logger.info("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
 
             return activities
         } catch (ex) {
@@ -364,8 +386,9 @@ export class StravaActivities {
      * Add activity to the collection of activities to be processed later.
      * @param user The activity's owner (user).
      * @param activityId The activity's unique ID.
+     * @param batch Queued as part of a batch processing for old activities?
      */
-    queueActivity = async (user: UserData, activityId: number): Promise<void> => {
+    queueActivity = async (user: UserData, activityId: number, batch?: boolean): Promise<void> => {
         if (user.suspended) {
             logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
             return
@@ -374,17 +397,22 @@ export class StravaActivities {
         // Add the activity to the queue to be processed on the next batch.
         // If the activity was already queued then keep the original dateQueued.
         try {
-            const existing: Partial<StravaProcessedActivity> = await database.get("activities", activityId.toString())
-            const activity: Partial<StravaProcessedActivity> = {
-                id: activityId,
-                dateQueued: existing ? existing.dateQueued : new Date(),
-                user: {id: user.id, displayName: user.displayName}
+            let activity: Partial<StravaProcessedActivity> = await database.get("activities", activityId.toString())
+            let existing = activity ? true : false
+
+            activity.id = activityId
+            activity.user = {id: user.id, displayName: user.displayName}
+            activity.dateQueued = activity.dateQueued || new Date()
+
+            // Part of a batch processing? Flag it.
+            if (batch) {
+                activity.batch = true
             }
 
             await database.set("activities", activity, activityId.toString())
 
             if (existing) {
-                logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} already queued`)
+                logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} already queued or processed`)
             } else {
                 logger.info("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} queued`)
 
@@ -428,9 +456,19 @@ export class StravaActivities {
             const where = [["dateQueued", "<=", beforeDate]]
             const activities: StravaProcessedActivity[] = await database.search("activities", where, "dateQueued", batchSize)
 
-            logger.info("Strava.getQueuedActivities", logDate, `Batch size: ${batchSize}`, `Got ${activities.length || "no"} queued activities`)
+            if (activities.length > 0) {
+                logger.info("Strava.getQueuedActivities", logDate, `Batch size: ${batchSize}`, `Got ${activities.length} queued activities`)
+                return activities
+            }
 
-            return activities
+            // If no recent activities were returned, check if we have older activities as part of batch processing?
+            const batchWhere = [["batch", "==", true]]
+            const batchActivities = await database.search("activities", batchWhere, "dateQueued", batchSize)
+
+            const batchLog = batchActivities.length > 0 ? `${batchActivities.length} batch activities` : "no queued or batch activities"
+            logger.info("Strava.getQueuedActivities", logDate, `Batch size: ${batchSize}`, `Got ${batchLog}`)
+
+            return batchActivities
         } catch (ex) {
             logger.error("Strava.getQueuedActivities", logDate, `Batch size: ${batchSize}`, ex)
         }
