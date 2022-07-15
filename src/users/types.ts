@@ -49,6 +49,8 @@ export interface UserData {
     dateGearWearProcessed?: Date
     /** Date when the user FTP was last updated. */
     dateLastFtpUpdate?: Date
+    /** Date when the user last triggered a batch processing. */
+    dateLastBatchProcessing?: Date
     /** Recipes counter. */
     recipeCount?: number
     /** Processed activities counter. */

@@ -25,6 +25,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         type: data.type,
         name: data.name,
         description: data.description,
+        private: data.private ? true : false,
         commute: data.commute ? true : false,
         hideHome: data.hide_from_home ? true : false,
         trainer: data.trainer ? true : false,
