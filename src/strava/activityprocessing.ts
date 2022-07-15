@@ -463,7 +463,7 @@ export class StravaActivities {
 
             // If no recent activities were returned, check if we have older activities as part of batch processing?
             const batchWhere = [["batch", "==", true]]
-            const batchActivities = await database.search("activities", batchWhere, "dateQueued", batchSize)
+            const batchActivities = await database.search("activities", batchWhere, null, batchSize)
 
             const batchLog = batchActivities.length > 0 ? `${batchActivities.length} batch activities` : "no queued or batch activities"
             logger.info("Strava.getQueuedActivities", logDate, `Batch size: ${batchSize}`, `Got ${batchLog}`)
