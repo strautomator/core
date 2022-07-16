@@ -46,7 +46,7 @@ export class StravaActivities {
         if (!filter) filter = {}
 
         let activityCount = 0
-        const dateLog = `${dayjs(dateFrom).format("YYYY-MM-DD HH:mm")} to ${dayjs(dateTo).format("YYYY-MM-DD HH:mm")}`
+        const dateLog = `${dayjs(dateFrom).format("YY-MM-DD HH:mm")} to ${dayjs(dateTo).format("YY-MM-DD HH:mm")}`
         const tsAfter = dateFrom.valueOf() / 1000
         const tsBefore = dateTo.valueOf() / 1000
         const now = dayjs()
@@ -256,11 +256,11 @@ export class StravaActivities {
 
             if (dateFrom) {
                 where.push(["dateProcessed", ">=", dateFrom])
-                logFrom = ` from ${dayjs(dateFrom).format("YYYY-MM-DD")}`
+                logFrom = ` from ${dayjs(dateFrom).format("YY-MM-DD")}`
             }
             if (dateTo) {
                 where.push(["dateProcessed", "<=", dateTo])
-                logTo = ` to ${dayjs(dateTo).format("YYYY-MM-DD")}`
+                logTo = ` to ${dayjs(dateTo).format("YY-MM-DD")}`
             }
             if (limit) {
                 logLimit = `, limit ${limit}`
@@ -448,7 +448,7 @@ export class StravaActivities {
      * @param batchSize Optional batch size, otherwise use the default from settings (10 activities).
      */
     getQueuedActivities = async (beforeDate: Date, batchSize?: number): Promise<StravaProcessedActivity[]> => {
-        const logDate = `Before ${dayjs(beforeDate).format("YYYY-MM-DD HH:mm:ss")}`
+        const logDate = `Before ${dayjs(beforeDate).format("YY-MM-DD HH:mm:ss")}`
         if (!batchSize) batchSize = settings.strava.queueBatchSize
 
         // Get queued activities from the database.

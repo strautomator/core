@@ -364,7 +364,7 @@ export class GearWear {
                     // Make sure we don't count activities again if the user
                     // has recently changed the "gearwearDelayDays" preference.
                     if (tsAfter < tsGearWearProcessed) {
-                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName}`, `${dateAfter.format("YYYY-MM-DD")} activities already processed`, "Skip processing")
+                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName}`, `${dateAfter.format("YY-MM-DD")} activities already processed`, "Skip processing")
                         continue
                     }
 

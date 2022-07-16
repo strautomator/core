@@ -117,7 +117,7 @@ export class Weather {
             // Stop right here if activity happened too long ago.
             const minDate = dayjs.utc().subtract(this.maxHours, "hours")
             if (minDate.isAfter(activity.dateEnd)) {
-                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, `Happened before ${minDate.format("YYYY-MM-DD HH:mm")}, can't fetch weather`)
+                logger.warn("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, `Happened before ${minDate.format("YY-MM-DD HH:mm")}, can't fetch weather`)
                 return null
             }
 

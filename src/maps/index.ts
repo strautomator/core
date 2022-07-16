@@ -263,7 +263,7 @@ export class Maps {
      */
     cleanup = async (all?: boolean): Promise<void> => {
         const since = dayjs().subtract(settings.maps.maxCacheDuration, "seconds")
-        const sinceLog = all ? "All" : `Since ${since.format("YYYY-MM-DD HH:mm")}`
+        const sinceLog = all ? "All" : `Since ${since.format("YY-MM-DD HH:mm")}`
 
         try {
             const where: any[] = [["dateCached", "<", since.toDate()]]

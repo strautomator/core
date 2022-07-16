@@ -218,8 +218,8 @@ export class Calendar {
      * @param cal The ical instance.
      */
     private buildActivities = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
-        const fromLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
-        const toLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
+        const fromLog = dayjs(options.dateFrom).format("YY-MM-DD")
+        const toLog = dayjs(options.dateFrom).format("YY-MM-DD")
         const optionsLog = `From ${fromLog} to ${toLog}`
         let eventCount = 0
 
@@ -344,8 +344,8 @@ export class Calendar {
      */
     private buildClubs = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
         const today = dayjs().hour(0).toDate()
-        const fromLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
-        const toLog = dayjs(options.dateFrom).format("YYYY-MM-DD")
+        const fromLog = dayjs(options.dateFrom).format("YY-MM-DD")
+        const toLog = dayjs(options.dateFrom).format("YY-MM-DD")
         const optionsLog = `From ${fromLog} to ${toLog}`
         const tOrganizer = translation("Organizer", user.preferences, true)
         let eventCount = 0
