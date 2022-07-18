@@ -25,10 +25,8 @@
         "name": "Strava",
         // Default event duration in minutes (ie. for past club events).
         "defaultDurationMinutes": 15,
-        // Calendars are cached on aveage for up to 4 hours.
-        "cacheDuration": 14400,
-        // Calendars are cached for a maximum of 4 days, even if there were no new activities. Value in seconds.
-        "maxCacheDuration": 345600
+        // Calendars are cached for a maximum of 5 days, even if there were no new activities. Value in seconds.
+        "maxCacheDuration": 432000
     },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
@@ -212,6 +210,8 @@
             // Free accounts limited to 6 months of previous calendar events up to tomorrow.
             "pastCalendarDays": 180,
             "futureCalendarDays": 2,
+            // Free calendars are cached for up to 4 hours.
+            "calendarCacheDuration": 14400,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5,
             // Track personal records for which sports?
@@ -226,6 +226,8 @@
             // PRO accounts limited to 10 years of previous calendar events up to 1 year in the future.
             "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
+            // PRO calendars are cached for up to 8 hours.
+            "calendarCacheDuration": 28800,
             // No links on PRO accounts processed activities.
             "linksOn": false,
             // Subscription prices on PayPal to get a PRO account.

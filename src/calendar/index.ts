@@ -36,12 +36,9 @@ export class Calendar {
      */
     init = async (): Promise<void> => {
         try {
-            if (!settings.calendar.cacheDuration) {
-                logger.warn("Calendar.init", "No cacheDuration set, calendars output will NOT be cached")
-            } else {
-                const duration = dayjs.duration(settings.calendar.cacheDuration, "seconds").humanize()
-                logger.info("Calendar.init", `Calendars base cache duration: ${duration}`)
-            }
+            const durationFree = dayjs.duration(settings.plans.free.calendarCacheDuration, "seconds").humanize()
+            const durationPro = dayjs.duration(settings.plans.pro.calendarCacheDuration, "seconds").humanize()
+            logger.info("Calendar.init", `Cache durations: Free ${durationFree}, PRO ${durationPro}`)
         } catch (ex) {
             logger.error("Calendar.init", ex)
             throw ex
@@ -109,7 +106,7 @@ export class Calendar {
                     const cacheSize = metadata.size
 
                     // Additional cache validation.
-                    const cacheDuration = user.isPro ? settings.calendar.cacheDuration : settings.calendar.cacheDuration * 2
+                    const cacheDuration = user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
                     const expiryDate = nowUtc.subtract(cacheDuration, "seconds").toDate()
                     const maxExpiryDate = nowUtc.subtract(settings.calendar.maxCacheDuration + cacheDuration, "seconds").toDate()
                     const notExpired = expiryDate.valueOf() <= cacheTimestamp
@@ -151,7 +148,7 @@ export class Calendar {
                 domain: domain,
                 prodId: prodId,
                 url: calUrl,
-                ttl: settings.calendar.cacheDuration
+                ttl: user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
             }
             const cal = ical(icalOptions)
 
@@ -186,13 +183,10 @@ export class Calendar {
             const duration = dayjs().unix() - startTime
             const size = output.length / 1000 / 1024
 
-            // Only save to database if a cacheDuration is set.
-            if (settings.calendar.cacheDuration) {
-                try {
-                    await storage.setFile(settings.storage.cacheBucket, cacheId, output, "text/calendar")
-                } catch (saveEx) {
-                    logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache")
-                }
+            try {
+                await storage.setFile(settings.storage.cacheBucket, cacheId, output, "text/calendar")
+            } catch (saveEx) {
+                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache")
             }
 
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
