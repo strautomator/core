@@ -400,6 +400,8 @@ export class StravaActivities {
             let activity: Partial<StravaProcessedActivity> = await database.get("activities", activityId.toString())
             let existing = activity ? true : false
 
+            // Set processed activity defaults.
+            if (!activity) activity = {}
             activity.id = activityId
             activity.user = {id: user.id, displayName: user.displayName}
             activity.dateQueued = activity.dateQueued || new Date()
