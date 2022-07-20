@@ -217,7 +217,7 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         if (summary.summary) {
             summary.summary = translation(summary.summary, preferences)
         } else {
-            summary.summary = `${tempSummary}, ${translation(extraData.iconText, preferences)} `
+            summary.summary = `${tempSummary}, ${translation(extraData.iconText, preferences)}`
             if (isWindy) summary.summary += `, ${translation("Windy", preferences)}`
         }
 
