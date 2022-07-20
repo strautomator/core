@@ -221,8 +221,8 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
             if (isWindy) summary.summary += `, ${translation("Windy", preferences)}`
         }
 
-        // Final summary should be always Capital cased.
-        summary.summary = summary.summary.charAt(0).toUpperCase() + summary.summary.slice(1)
+        // Final trimmed summary should be always Capital cased.
+        summary.summary = (summary.summary.charAt(0).toUpperCase() + summary.summary.slice(1)).trim()
 
         // Extra data not needed any longer.
         delete summary.extraData
