@@ -109,6 +109,7 @@ export class StravaFtp {
 
             // No activities with power? Stop here.
             if (listWatts.length == 0) {
+                logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "No recent activities with power, can't estimate")
                 return null
             }
 
@@ -117,7 +118,7 @@ export class StravaFtp {
                 const athlete = await stravaAthletes.getAthlete(user.stravaTokens)
                 user.profile.ftp = athlete.ftp
             } catch (athleteEx) {
-                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "Could not get latest athlete data, will use the current one")
+                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "Could not get latest athlete data, will use the cache")
             }
 
             avgWatts = Math.round(_.mean(listWatts))
@@ -223,8 +224,12 @@ export class StravaFtp {
         try {
             const ftpEstimation = await this.estimateFtp(user)
 
-            if (ftpEstimation && !ftpEstimation.recentlyUpdated) {
-                await this.saveFtp(user, ftpEstimation.ftpWatts)
+            if (ftpEstimation) {
+                if (!ftpEstimation.recentlyUpdated) {
+                    await this.saveFtp(user, ftpEstimation.ftpWatts)
+                } else {
+                    logger.warn("Strava.processFtp", `User ${user.id} ${user.displayName}`, "FTP already updated recently")
+                }
             }
         } catch (ex) {
             logger.error("Strava.processFtp", `User ${user.id} ${user.displayName}`, ex)
