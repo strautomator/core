@@ -354,19 +354,10 @@ export class GearWear {
                     // Get activities timespan.
                     const days = isNaN(user.preferences.gearwearDelayDays) ? settings.gearwear.delayDays : user.preferences.gearwearDelayDays
                     const tsLastActivity = Math.floor(dayjs.utc(user.dateLastActivity).unix())
-                    let dateGearWearProcessed = dayjs.utc(user.dateGearWearProcessed)
                     let dateAfter = dayjs.utc().subtract(days, "days").hour(0).minute(0).second(0).millisecond(0)
                     let dateBefore = dayjs.utc().subtract(days, "days").hour(23).minute(59).second(59).millisecond(0)
-                    let tsGearWearProcessed = Math.floor(dateGearWearProcessed.unix())
                     let tsAfter = Math.floor(dateAfter.unix())
                     let tsBefore = Math.floor(dateBefore.unix())
-
-                    // Make sure we don't count activities again if the user
-                    // has recently changed the "gearwearDelayDays" preference.
-                    if (tsAfter < tsGearWearProcessed) {
-                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName}`, `${dateAfter.format("YY-MM-DD")} activities already processed`, "Skip processing")
-                        continue
-                    }
 
                     // Recent activities for the user? Proceed.
                     if (tsLastActivity >= tsAfter) {
@@ -375,7 +366,7 @@ export class GearWear {
 
                         // Update user's GearWear processed date.
                         if (userActivityCount > 0) {
-                            await users.update({id: user.id, displayName: user.displayName, dateGearWearProcessed: dateBefore.toDate()})
+                            await users.update({id: user.id, displayName: user.displayName})
                         }
 
                         // Update counters.
@@ -483,7 +474,16 @@ export class GearWear {
                     const elapsedTime = activity.movingTime || activity.totalTime
 
                     // Stop here if activity has no valid distance and time.
-                    if (!distance && !elapsedTime) continue
+                    if (!distance && !elapsedTime) {
+                        logger.warn("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Activity ${activity.id} nas no distance or time`)
+                        continue
+                    }
+
+                    // Make sure we don't process the same activity again in case the user has changed the delay preference.
+                    if (config.lastUpdate && config.lastUpdate.activities.includes(activity.id)) {
+                        logger.warn("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Activity ${activity.id} was already processed`)
+                        continue
+                    }
 
                     activityIds.push(activity.id)
 
