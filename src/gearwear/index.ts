@@ -359,17 +359,11 @@ export class GearWear {
                     let tsAfter = Math.floor(dateAfter.unix())
                     let tsBefore = Math.floor(dateBefore.unix())
 
-                    // Recent activities for the user? Proceed.
+                    // Recent activities for the user? Update counters.
                     if (tsLastActivity >= tsAfter) {
                         const userGears = _.remove(gearwearList, {userId: userId})
                         const userActivityCount = await this.processUserActivities(user, userGears, tsAfter, tsBefore)
 
-                        // Update user's GearWear processed date.
-                        if (userActivityCount > 0) {
-                            await users.update({id: user.id, displayName: user.displayName})
-                        }
-
-                        // Update counters.
                         activityCount += userActivityCount
                         userCount++
                     }
