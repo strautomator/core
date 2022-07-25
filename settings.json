@@ -276,8 +276,8 @@
             "scopes": "read,profile:read_all,profile:write,activity:read_all,activity:write",
             // Maximum concurrent requests per instance.
             "maxConcurrent": 4,
-            // Maximum requests per minute per instance is around 40 on Strava.
-            "maxPerMinute": 40,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 45,
             // Default page size is the max of 200.
             "pageSize": 200,
             // Token to be appended to the URL of Strava webhooks, for
