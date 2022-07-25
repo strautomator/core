@@ -45,8 +45,6 @@ export interface UserData {
     dateLastActivity?: Date
     /** Date of last activity updated by a recipe. */
     dateLastProcessedActivity?: Date
-    /** Date when GearWear usage was last processed. */
-    dateGearWearProcessed?: Date
     /** Date when the user FTP was last updated. */
     dateLastFtpUpdate?: Date
     /** Date when the user last triggered a batch processing. */
