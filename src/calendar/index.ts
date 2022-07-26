@@ -286,6 +286,7 @@ export class Calendar {
 
                     // Add activity to the calendar as an event.
                     const event = cal.createEvent({
+                        id: `activity-${activity.id}`,
                         start: startDate,
                         end: endDate,
                         summary: summary,
@@ -401,6 +402,7 @@ export class Calendar {
                         arrDescription.push(eventLink)
 
                         const event = cal.createEvent({
+                            id: `club-${clubEvent.id}`,
                             start: eventDate,
                             end: endDate,
                             summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
