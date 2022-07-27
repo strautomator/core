@@ -156,7 +156,7 @@ export class PayPal {
 
     /**
      * Get and / or create the necessary billing plans on PayPal. Only the last created billing
-     * plans will be marked as enabled (one for each frequency).
+     * plans will be marked as enabled (one for each currency + frequency).
      */
     setupBillingPlans = async () => {
         try {
@@ -171,30 +171,35 @@ export class PayPal {
             const billingPlans = await paypalSubscriptions.getBillingPlans()
             const frequencies = Object.keys(settings.plans.pro.price)
 
-            // Match existing plans by looking for the frequency and price.
+            // Match existing plans by looking for the currency / frequency and price.
             for (let plan of billingPlans) {
                 const price = settings.plans.pro.price[plan.frequency]
 
-                if (plan.price == price) {
+                if (plan.price == price && settings.paypal.billingPlan.currency.includes(plan.currency)) {
                     api.currentBillingPlans[plan.id] = plan
                 } else {
                     api.legacyBillingPlans[plan.id] = plan
                 }
             }
 
-            // Make sure we have a billing plan for each frequency defined on the settings.
+            // Make sure we have a billing plan for each currency / frequency defined on the settings.
             // Create new plans as needed.
             for (let frequency of frequencies) {
                 const price = settings.plans.pro.price[frequency]
-                const existing = _.find(api.currentBillingPlans, {price: price, frequency: frequency})
 
-                if (!existing) {
-                    const newPlan = await paypalSubscriptions.createBillingPlan(api.currentProduct.id, frequency)
-                    api.currentBillingPlans[newPlan.id] = newPlan
+                for (let currency of settings.paypal.billingPlan.currency) {
+                    const existing = _.find(api.currentBillingPlans, {price: price, currency: currency, frequency: frequency})
+
+                    if (!existing) {
+                        const newPlan = await paypalSubscriptions.createBillingPlan(api.currentProduct.id, currency, frequency)
+                        api.currentBillingPlans[newPlan.id] = newPlan
+
+                        logger.info("PayPal.setupBillingPlans", newPlan.id, newPlan.name, "New!")
+                    } else {
+                        logger.info("PayPal.setupBillingPlans", existing.id, existing.name)
+                    }
                 }
             }
-
-            logger.info("PayPal.setupBillingPlans", `Active plans: ${Object.keys(api.currentBillingPlans).join(", ")}`)
 
             // Has legacy plans?
             const legacy = Object.keys(api.legacyBillingPlans)

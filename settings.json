@@ -190,8 +190,8 @@
             ]
         },
         "billingPlan": {
-            // Default currency is USD.
-            "currency": "USD",
+            // Accept payments in USD, EUR and GBP.
+            "currency": ["USD", "EUR", "GBP"],
             // Names and descriptions used on PayPal billing plans.
             "name": "Strautomator Pro subscription",
             "productName": "Strautomator Pro account",

@@ -721,6 +721,12 @@ export class Users {
                 enabled: true
             }
 
+            // Extract the payment currency (if any).
+            const currency = subscription.billingPlan ? subscription.billingPlan.currency : subscription.lastPayment ? subscription.lastPayment.currency : null
+            if (currency) {
+                user.subscription.currency = currency
+            }
+
             // Email passed with the subscription and was not set for that user? Set it now.
             if (!existingUser.email && subscription && subscription.email) {
                 user.email = subscription.email

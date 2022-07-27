@@ -96,6 +96,7 @@ export class PayPalSubscriptions {
                 name: res.name,
                 dateCreated: dayjs.utc(res.create_time).toDate(),
                 price: parseFloat(res.billing_cycles[0].pricing_scheme.fixed_price.value),
+                currency: res.billing_cycles[0].pricing_scheme.fixed_price.currency_code,
                 frequency: res.billing_cycles[0].frequency.interval_unit.toLowerCase(),
                 enabled: false
             }
@@ -118,11 +119,12 @@ export class PayPalSubscriptions {
     /**
      * Create a new billing plan on PayPal. Returns the created billing plan object.
      * @param productId The corresponding product ID.
+     * @param currency The billing currency (EUR, USD, GBP).
      * @param frequency The billing frequency (by default, month or year).
      */
-    createBillingPlan = async (productId: string, frequency: string): Promise<PayPalBillingPlan> => {
+    createBillingPlan = async (productId: string, currency: string, frequency: string): Promise<PayPalBillingPlan> => {
         const price = settings.plans.pro.price[frequency].toFixed(2)
-        const planName = `${settings.paypal.billingPlan.name} (${price} / ${frequency})`
+        const planName = `${settings.paypal.billingPlan.name} (${price} ${currency} / ${frequency})`
 
         try {
             const options = {
@@ -146,7 +148,7 @@ export class PayPalSubscriptions {
                             pricing_scheme: {
                                 fixed_price: {
                                     value: price,
-                                    currency_code: settings.paypal.billingPlan.currency
+                                    currency_code: currency
                                 }
                             }
                         }
@@ -165,7 +167,7 @@ export class PayPalSubscriptions {
                 throw new Error("Invalid response from PayPal")
             }
 
-            logger.info("PayPal.createBillingPlan", `Product ${productId}, ${price} / ${frequency}`, `New billing plan ID: ${res.id}`)
+            logger.info("PayPal.createBillingPlan", `Product ${productId}, ${price} ${currency} / ${frequency}`, `New billing plan ID: ${res.id}`)
 
             // Return the created plan.
             return {
@@ -174,11 +176,12 @@ export class PayPalSubscriptions {
                 name: res.name,
                 dateCreated: dayjs.utc(res.create_time).toDate(),
                 price: price,
+                currency: currency,
                 frequency: frequency,
                 enabled: true
             }
         } catch (ex) {
-            logger.error("PayPal.createBillingPlan", `Could not create billing plans for product ${productId}, ${price} / ${frequency}`)
+            logger.error("PayPal.createBillingPlan", `Could not create billing plans for product ${productId}, ${price} ${currency} / ${frequency}`)
             throw ex
         }
     }
