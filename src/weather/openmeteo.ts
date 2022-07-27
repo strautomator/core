@@ -71,7 +71,7 @@ export class OpenMeteo implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        if (!data) return
+        if (!data || !data.hourly) return
 
         const baseDate = dayjs.utc(date)
         const hour = baseDate.minute() < 30 ? baseDate.hour() : baseDate.hour() + 1

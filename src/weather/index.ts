@@ -213,8 +213,12 @@ export class Weather {
             }
 
             providerModule = currentProviders[0]
-
             result = await providerModule.getWeather(coordinates, date, preferences)
+
+            if (!result) {
+                throw new Error("No weather summary returned")
+            }
+
             providerModule.disabledTillDate = null
         } catch (ex) {
             const failedProviderName = providerModule.name
