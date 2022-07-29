@@ -592,6 +592,7 @@ export class Users {
             // Save new email address.
             const data: Partial<UserData> = {
                 id: user.id,
+                displayName: user.displayName,
                 email: email
             }
             await database.merge("users", data)
@@ -615,7 +616,7 @@ export class Users {
     setActivityCount = async (user: UserData): Promise<void> => {
         try {
             await database.increment("users", user.id, "activityCount")
-            logger.info("Users.setActivityCount", user.id, `Activity count: ${user.activityCount + 1}`)
+            logger.info("Users.setActivityCount", user.id, user.displayName, `Activity count: ${user.activityCount + 1}`)
         } catch (ex) {
             logger.error("Users.setActivityCount", user.id, user.displayName, ex)
         }
@@ -653,7 +654,32 @@ export class Users {
             logger.error("Users.setRecipesOrder", user.id, user.displayName, ex)
             throw ex
         }
-    } // VALIDATION
+    }
+
+    /**
+     * Create a new URL token for the user.
+     * @param user The user.
+     */
+    setUrlToken = async (user: UserData): Promise<string> => {
+        try {
+            const oldToken = user.urlToken
+            const newToken = require("crypto").randomBytes(12).toString("hex")
+            const data: Partial<UserData> = {
+                id: user.id,
+                displayName: user.displayName,
+                urlToken: newToken
+            }
+
+            await database.merge("users", data)
+            logger.info("Users.setUrlToken", user.id, user.displayName, "New token generated", `Old token: ${oldToken}`)
+
+            return newToken
+        } catch (ex) {
+            logger.error("Users.setUrlToken", user.id, user.displayName, ex)
+        }
+    }
+
+    // VALIDATION
     // --------------------------------------------------------------------------
 
     /**
