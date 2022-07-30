@@ -36,7 +36,7 @@ export class StravaFtp {
             }
 
             const now = dayjs()
-            const weekAgo = now.subtract(7, "days")
+            const weeksAgo = now.subtract(14, "days")
 
             let listWatts: number[] = []
             let avgWatts: number = 0
@@ -93,9 +93,9 @@ export class StravaFtp {
                     }
                 }
 
-                // Small power drop for activities older than 1 week.
-                if (dateEnd.isBefore(weekAgo)) {
-                    power -= power * (weekAgo.diff(dateEnd, "days") * 0.001)
+                // Small power drop for activities older than 2 weeks.
+                if (dateEnd.isBefore(weeksAgo)) {
+                    power -= power * (weeksAgo.diff(dateEnd, "days") * 0.001)
                 }
 
                 // New best power?
@@ -206,7 +206,7 @@ export class StravaFtp {
             }
 
             // All good? Update FTP on Strava and save date to the database.
-            await api.put(user.stravaTokens, `athlete`, {ftp: ftp})
+            await api.put(user.stravaTokens, "athlete", {ftp: ftp})
             await users.update({id: user.id, displayName: user.displayName, dateLastFtpUpdate: new Date()})
             logger.info("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`)
 
