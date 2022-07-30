@@ -83,6 +83,8 @@ export interface UserPreferences {
     weatherProvider?: "tomorrow" | "openweathermap" | "stormglass" | "visualcrossing" | "weatherbit" | "weatherapi"
     /** Weather temperature unit. */
     weatherUnit?: "c" | "f"
+    /** Wind speed unit. */
+    windSpeedUnit?: "m/s" | "kph" | "mph"
     /** Privacy mode: do not save processed activities and records. */
     privacyMode?: boolean
 }

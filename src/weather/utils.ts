@@ -142,9 +142,9 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
 
         // Wind speed.
         if (!_.isNil(summary.windSpeed)) {
-            const windUnit = preferences.weatherUnit == "f" ? "mph" : "kph"
-            const windSpeed = windUnit == "mph" ? msToMph(summary.windSpeed as number) : msToKph(summary.windSpeed as number)
-            summary.windSpeed = `${Math.round(windSpeed)} ${windUnit}`
+            const windUnit = preferences.windSpeedUnit ? preferences.windSpeedUnit : preferences.weatherUnit == "f" ? "mph" : "kph"
+            const windSpeed = windUnit == "m/s" ? summary.windSpeed : windUnit == "mph" ? msToMph(summary.windSpeed as number) : msToKph(summary.windSpeed as number)
+            summary.windSpeed = `${Math.round(windSpeed as number)} ${windUnit}`
         }
 
         // Wind direction.
