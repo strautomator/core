@@ -109,9 +109,9 @@ export class Calendar {
                     const cacheDuration = user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
                     const expiryDate = nowUtc.subtract(cacheDuration, "seconds").toDate()
                     const maxExpiryDate = nowUtc.subtract(settings.calendar.maxCacheDuration + cacheDuration, "seconds").toDate()
-                    const notExpired = expiryDate.valueOf() <= cacheTimestamp
+                    const notExpired = expiryDate.valueOf() < cacheTimestamp
                     const lastActivity = user.dateLastActivity ? user.dateLastActivity.valueOf() : 0
-                    const notChanged = lastActivity <= cacheTimestamp && maxExpiryDate.valueOf() <= cacheTimestamp
+                    const notChanged = lastActivity < cacheTimestamp && maxExpiryDate.valueOf() <= cacheTimestamp
                     const onlyClubs = options.clubs && !options.activities
 
                     // Return cached calendar if it has not expired, and has not changed

@@ -210,8 +210,8 @@
             // Free accounts limited to 6 months of previous calendar events up to tomorrow.
             "pastCalendarDays": 180,
             "futureCalendarDays": 2,
-            // Free calendars are cached for up to 4 hours.
-            "calendarCacheDuration": 14400,
+            // Free calendars are cached for up to 14 hours.
+            "calendarCacheDuration": 50400,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5,
             // Track personal records for which sports?
@@ -226,8 +226,8 @@
             // PRO accounts limited to 10 years of previous calendar events up to 1 year in the future.
             "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
-            // PRO calendars are cached for up to 8 hours.
-            "calendarCacheDuration": 28800,
+            // PRO calendars are cached for up to 6 hours.
+            "calendarCacheDuration": 21600,
             // No links on PRO accounts processed activities.
             "linksOn": false,
             // Subscription prices on PayPal to get a PRO account.
