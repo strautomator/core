@@ -395,6 +395,8 @@ export interface StravaClub {
     url: string
     /** Club type. */
     type?: string
+    /** The club profile icon. */
+    icon?: string
     /** Cover photo. */
     photo?: string
     /** Club location city. */
@@ -411,7 +413,7 @@ export interface StravaClub {
  * A scheduled Strava event.
  */
 export interface StravaClubEvent {
-    /** The club ID. */
+    /** The event ID. */
     id: string
     /** Event title. */
     title: string
@@ -427,6 +429,8 @@ export interface StravaClubEvent {
     private: boolean
     /** Women only? */
     womenOnly: boolean
+    /** The club ID and name. */
+    club?: Partial<StravaClub>
     /** The organizer. */
     organizer?: Partial<StravaProfile>
     /** Start location. */
@@ -441,6 +445,8 @@ export interface StravaClubEvent {
 export interface StravaRoute {
     /** ID of the route. */
     id: string
+    /** URL ID of the route. */
+    urlId?: string
     /** Name of the route. */
     name?: string
     /** Description of the route. */
@@ -453,6 +459,8 @@ export interface StravaRoute {
     elevationGain?: number
     /** Estimated moving time in seconds. */
     estimatedTime?: number
+    /** Route encoded polyline. */
+    polyline?: string
 }
 
 /**
@@ -499,6 +507,20 @@ export interface StravaActivityFilter {
     race?: boolean
     /** Specific sport type, otherwise all. */
     sportType?: StravaSport
+}
+
+/**
+ * Strava cached response (saved on the database).
+ */
+export interface StravaCachedResponse {
+    /** The unique cache ID. */
+    id: string
+    /** Resource type (based on cache key). */
+    resourceType: string
+    /** The cached data. */
+    data: any
+    /** Date when it was cached. */
+    dateCached: Date
 }
 
 /**
