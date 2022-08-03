@@ -188,7 +188,7 @@ export const startup = async (quickStart?: boolean) => {
         }
         setInterval(processQueuedActivities, 1000 * 60 * 5)
 
-        // Cleanup olded queued activities every 1 hour.
+        // Cleanup old queued activities every hour.
         const cleanupQueuedActivities = async () => {
             const beforeDate = dayjs().subtract(setmeup.settings.strava.maxQueueAge, "seconds").toDate()
             const activities = await strava.activityProcessing.getQueuedActivities(beforeDate)
@@ -198,6 +198,9 @@ export const startup = async (quickStart?: boolean) => {
             }
         }
         setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
+
+        // Cleanup cached Strava responses right away.
+        strava.cleanupCache()
 
         // Process GearWear configurations right away.
         gearwear.processRecentActivities()

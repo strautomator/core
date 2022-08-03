@@ -10,7 +10,9 @@ import stravaFtp from "./ftp"
 import stravaRoutes from "./routes"
 import stravaWebhooks from "./webhooks"
 import api from "./api"
+import database from "../database"
 import eventManager from "../eventmanager"
+import dayjs from "../dayjs"
 import logger = require("anyhow")
 const settings = require("setmeup").settings
 
@@ -149,6 +151,41 @@ export class Strava {
      */
     revokeToken = async (userId: string, accessToken: string, refreshToken?: string): Promise<void> => {
         return await api.revokeToken(userId, accessToken, refreshToken)
+    }
+
+    // CACHE
+    // --------------------------------------------------------------------------
+
+    /**
+     * Deleted cached Strava responses from the database.
+     * @param everything If true, will delete also non-expired documents.
+     */
+    cleanupCache = async (everything?: boolean): Promise<void> => {
+        try {
+            const now = dayjs()
+
+            // Delete all documents if the everything flag was passed.
+            if (everything) {
+                const count = await database.delete("strava-cache", [["dateCached", "<", now.toDate()]])
+                logger.info("Strava.cleanupCache", `Removed all ${count} cached responses`)
+                return
+            }
+
+            // Otherwise, delete documents based on the resource type (cacheKey / durations).
+            const entries = Object.entries(settings.strava.cacheDuration)
+            for (let [cacheKey, duration] of entries) {
+                const maxDate = now.subtract(duration as number, "seconds").toDate()
+                const where: any[] = [
+                    ["resourceType", "==", cacheKey],
+                    ["dateCached", "<", maxDate]
+                ]
+
+                const count = await database.delete("strava-cache", where)
+                logger.info("Strava.cleanupCache", cacheKey, `Removed ${count} cached responses`)
+            }
+        } catch (ex) {
+            logger.error("Strava.cleanupCache", `Everything: ${everything}`, ex)
+        }
     }
 }
 

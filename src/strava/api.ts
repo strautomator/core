@@ -1,12 +1,13 @@
 // Strautomator Core: Strava API
 
-import {StravaTokens} from "./types"
+import {StravaCachedResponse, StravaTokens} from "./types"
 import {axiosRequest} from "../axios"
 import {URLSearchParams} from "url"
+import database from "../database"
 import eventManager from "../eventmanager"
 import Bottleneck from "bottleneck"
-import cache = require("bitecache")
 import _ = require("lodash")
+import crypto = require("crypto")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
@@ -67,11 +68,6 @@ export class StravaAPI {
             // Rate limiter events.
             this.limiter.on("error", (err) => logger.error("Strava.limiter", err))
             this.limiter.on("depleted", () => logger.warn("Strava.limiter", "Rate limited"))
-
-            // Setup bitecache.
-            for (let [key, duration] of Object.entries(settings.strava.cacheDuration)) {
-                cache.setup(`strava-${key}`, duration as number)
-            }
 
             logger.info("Strava.init", `Max concurrent: ${settings.strava.api.maxConcurrent}, per minute: ${settings.strava.api.maxPerMinute}`)
         } catch (ex) {
@@ -337,34 +333,34 @@ export class StravaAPI {
      */
     get = async (tokens: StravaTokens, path: string, params?: any) => {
         try {
+            const now = new Date()
             const arrPath = path.split("/")
 
-            // The cache key is composed by the first, or first and third parts
-            // of the requested path.
-            const cacheKey = arrPath.length < 3 ? arrPath[0] : `${arrPath[0]}-${arrPath[2]}`
-            const shouldCache = settings.strava.cacheDuration[cacheKey] && tokens && tokens.accessToken
+            // The cache key is composed by the first, or first and third parts of the requested path.
+            const cacheKey = (arrPath.length < 3 ? arrPath[0] : `${arrPath[0]}-${arrPath[2]}`).replace("_", "-")
+            const cacheDuration = settings.strava.cacheDuration[cacheKey]
+            const shouldCache = cacheDuration && tokens && tokens.accessToken
             let cacheId: string
-            let fromCache: any
 
-            // Resource might be available on the cache?
+            // Resource might be cached in the database?
             if (shouldCache) {
                 let resourceId = arrPath.join("-")
                 if (params) resourceId += `-${_.map(_.toPairs(params), (p) => p.join("-"))}`
-                cacheId = `${resourceId}-${tokens.accessToken.substring(5, 20)}`
+                cacheId = `${resourceId.replace("_", "-")}-${crypto.createHash("sha1").update(tokens.accessToken).digest("hex")}`
 
-                fromCache = cache.get(`strava-${cacheKey}`, cacheId)
-
-                if (fromCache) {
+                const fromCache: StravaCachedResponse = await database.get("strava-cache", cacheId)
+                if (fromCache && dayjs(fromCache.dateCached).add(cacheDuration, "seconds").isAfter(now)) {
                     logger.info("Strava.get.fromCache", resourceId)
-                    return fromCache
+                    return fromCache.data
                 }
             }
 
             const result = await this.makeRequest(tokens, "GET", path, params)
 
             // Respons should be cached?
-            if (shouldCache) {
-                cache.set(`strava-${cacheKey}`, cacheId, result)
+            if (shouldCache && result) {
+                const cacheData: StravaCachedResponse = {id: cacheId, resourceType: cacheKey, data: result, dateCached: now}
+                await database.set("strava-cache", cacheData, cacheId)
             }
 
             return result
