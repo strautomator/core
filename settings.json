@@ -264,8 +264,9 @@
         // Some Strava resources might be cached in memory. Duration in seconds.
         "cacheDuration": {
             "athletes-stats": 60,
-            "clubs": 600,
-            "routes": 600
+            "clubs": 1800,
+            "clubs-group-events": 600,
+            "routes": 1800
         },
         // API endpoints and credentials from Strava.
         "api": {
