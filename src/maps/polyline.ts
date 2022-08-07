@@ -1,12 +1,12 @@
 // Strautomator Core: Polyline
-// Based on @mapbox/linematch
+// Based on the original @mapbox/linematch
 
 import Flatbush from "flatbush"
 import polyline = require("@mapbox/polyline")
 import logger = require("anyhow")
 
 /**
- * Google Maps wrapper.
+ * Polyline helper class.
  */
 export class Polyline {
     private constructor() {}
