@@ -364,7 +364,7 @@ export class Calendar {
                     // Check if event has future dates.
                     const hasFutureDate = clubEvent.dates.find((d) => d > today)
 
-                    // Club has a route set? Fetch its details.
+                    // Club has a route set? Fetch the full route details.
                     if (hasFutureDate && clubEvent.route && clubEvent.route.id) {
                         try {
                             clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.id)
@@ -379,9 +379,14 @@ export class Calendar {
                         let endDate: Date
 
                         // Upcoming event has a route with estimated time? Use it as the end date,
-                        // otherwise defaults to 15 minutes.
-                        if (clubEvent.route && clubEvent.route.estimatedTime && eventDate >= today) {
-                            const targetDate = dayjs(eventDate).add(clubEvent.route.estimatedTime * 1.15, "seconds")
+                        // with some added time for breaks / stops. Otherwise defaults to 15 minutes.
+                        if (clubEvent.route && clubEvent.route.estimatedTime && eventDate > today) {
+                            const secondsEstimated = clubEvent.route.estimatedTime * 1.1
+                            const secondsExtraBrakes = Math.floor(clubEvent.route.estimatedTime / 7200) * 60 * 20
+                            const totalAddedSeconds = clubEvent.type == "Ride" ? secondsEstimated + secondsExtraBrakes : secondsEstimated + 300
+                            const targetDate = dayjs(eventDate).add(totalAddedSeconds, "seconds")
+
+                            // Round to 15min.
                             const toQuarter = 15 - (targetDate.minute() % 15)
                             endDate = targetDate.add(toQuarter, "minutes").toDate()
                         } else {
