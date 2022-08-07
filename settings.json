@@ -302,6 +302,10 @@
             // For "average" records, consider only the activities that have at least 20 minutes of moving time.
             "minMovingTimeAvg": 1200
         },
+        "routes": {
+            // A maximum of 15 routes can be zipped for downloading.
+            "zipLimit": 15
+        },
         // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
         "delayedProcessingInterval": 600,
         // Only a single batch operation per user every 24 hours.
