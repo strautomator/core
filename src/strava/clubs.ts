@@ -101,8 +101,8 @@ export class StravaClubs {
                     if (event.dates.length > 0) {
                         result.push(event)
 
-                        // We need the full route details.
-                        if (event.route && event.route.id && !event.route.polyline) {
+                        // We need the full route details, including distance and polyline.
+                        if (event.route && event.route.id && (!event.route.distance || !event.route.polyline)) {
                             event.route = await stravaRoutes.getRoute(user, event.route.id)
                         }
                     }
