@@ -474,7 +474,7 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
         urlId: data.id_str,
         name: data.name,
         description: data.description,
-        distance: distance,
+        distance: Math.round(distance),
         elevationGain: elevationGain,
         polyline: data.map.polyline || data.map.summary_polyline,
         type: data.type == 1 ? StravaSport.Ride : StravaSport.Run
