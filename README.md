@@ -32,10 +32,11 @@ The following collections are currently used:
 -   **athlete-records** athlete sports records
 -   **faq** help questions and answers
 -   **gearwear** GearWear configurations
--   **maps** Cached geolocation data
+-   **maps** cached geolocation data
 -   **notifications** notifications to users
 -   **recipe-stats** automation recipe stats
 -   **subscriptions** PRO subscriptions
+-   **strava-cache** cached responses from Strava
 -   **users** registered user details
 
 Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
@@ -74,7 +75,7 @@ Some of Strautomator's features depend on scheduled tasks that needs a manual se
 
 ### Maps
 
--   **maps.cleanup()** - weekly, cleanup of cached geolocation data
+-   **maps.cleanup()** - weekly, cleanup of cached geolocation data.
 
 ### Notifications
 
@@ -83,6 +84,7 @@ Some of Strautomator's features depend on scheduled tasks that needs a manual se
 
 ### Strava
 
+-   **strava.cleanupCache()** - daily, optional (if cache is enabled), delete expired cached Strava responses.
 -   **strava.activities.getQueuedActivities()** - daily, iterate (and if necessary remove) failed queued activities.
 -   **strava.ftp.processFtp()** - weekly, iterate PRO users and process their current FTP.
 
