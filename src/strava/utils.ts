@@ -396,6 +396,7 @@ export function toStravaClub(data: any): StravaClub {
         url: data.url,
         sport: data.sport_type,
         type: data.club_type,
+        icon: data.profile_medium,
         photo: data.cover_photo,
         city: data.city,
         country: data.country,
@@ -423,18 +424,35 @@ export function toStravaClubEvent(data: any): StravaClubEvent {
         address: data.address
     }
 
-    if (data.organizing_athlete) {
-        clubEvent.organizer = toStravaProfile(data.organizing_athlete)
-    }
-
     if (data.upcoming_occurrences && data.upcoming_occurrences.length > 0) {
         clubEvent.dates = data.upcoming_occurrences.map((d) => dayjs(d).toDate())
     }
 
-    // Club event has a route defined? Set the base route ID, which can then be used
-    // to fetch the full route details.
+    // Fill in the club's ID and name right away. Further details can then be
+    // fetched using the club ID later on.
+    if (data.club) {
+        clubEvent.club = {
+            id: data.club.id,
+            name: data.club.name
+        }
+    }
+
+    // Club event has a route defined? Set the base route details. Further details
+    // can be fetched using the route ID later on.
     if (data.route && data.route.id_str) {
-        clubEvent.route = {id: data.route.id_str}
+        clubEvent.route = {
+            id: data.route.id,
+            urlId: data.route.id_str,
+            name: data.route.name
+        }
+        if (data.route.map) {
+            clubEvent.route.polyline = data.route.map.polyline || data.route.map.summary_polyline
+        }
+    }
+
+    // Who's organizing it?
+    if (data.organizing_athlete) {
+        clubEvent.organizer = toStravaProfile(data.organizing_athlete)
     }
 
     return clubEvent
@@ -442,23 +460,27 @@ export function toStravaClubEvent(data: any): StravaClubEvent {
 
 /**
  * Helper to transform data from the API to a StravaRoute interface.
+ * @param user The user.
  * @param data Input data.
  */
 export function toStravaRoute(user: UserData, data: any): StravaRoute {
     const multDistance = user.profile.units == "imperial" ? 0.621371 : 1
     const multFeet = user.profile.units == "imperial" ? 3.28084 : 1
-    const distance = parseFloat(((data.distance / 1000) * multDistance).toFixed(1))
-    const elevationGain = Math.round(data.elevation_gain * multFeet)
+    const distance = parseFloat((((data.distance || 0) / 1000) * multDistance).toFixed(1))
+    const elevationGain = Math.round((data.elevation_gain || 0) * multFeet)
 
     const route: StravaRoute = {
         id: data.id,
+        urlId: data.id_str,
         name: data.name,
         description: data.description,
-        type: data.type == 1 ? StravaSport.Ride : StravaSport.Run,
         distance: distance,
-        elevationGain: elevationGain
+        elevationGain: elevationGain,
+        polyline: data.map.polyline || data.map.summary_polyline,
+        type: data.type == 1 ? StravaSport.Ride : StravaSport.Run
     }
 
+    // Estimated moving time available?
     if (data.estimated_moving_time) {
         route.estimatedTime = data.estimated_moving_time
     }
