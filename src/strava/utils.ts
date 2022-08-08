@@ -485,6 +485,11 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
         route.estimatedTime = data.estimated_moving_time
     }
 
+    // Terrain type available?
+    if (data.terrain) {
+        route.terrain = data.terrain
+    }
+
     return route
 }
 

@@ -461,6 +461,8 @@ export interface StravaRoute {
     estimatedTime?: number
     /** Route encoded polyline. */
     polyline?: string
+    /** Terrain type. */
+    terrain?: StravaRouteTerrain
 }
 
 /**
@@ -596,6 +598,15 @@ export enum StravaRunType {
     Race = 1,
     LongRun = 2,
     Workout = 3
+}
+
+/**
+ * Strava route terrain types.
+ */
+export enum StravaRouteTerrain {
+    MostlyFlat = 0,
+    RollingHills = 1,
+    KillerClimbs = 2
 }
 
 /**
