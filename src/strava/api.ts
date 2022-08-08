@@ -360,6 +360,7 @@ export class StravaAPI {
             // Respons should be cached?
             if (shouldCache && result) {
                 const cacheData: StravaCachedResponse = {id: cacheId, resourceType: cacheKey, data: result, dateCached: now}
+                Object.keys(cacheData).forEach((k) => cacheData[k] === null && delete cacheData[k])
                 await database.set("strava-cache", cacheData, cacheId)
             }
 
