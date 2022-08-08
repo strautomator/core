@@ -3,7 +3,9 @@
 import {StravaClub, StravaClubEvent} from "./types"
 import {toStravaClub, toStravaClubEvent} from "./utils"
 import {UserData} from "../users/types"
+import stravaRoutes from "./routes"
 import api from "./api"
+import dayjs from "../dayjs"
 import logger = require("anyhow")
 
 /**
@@ -62,12 +64,55 @@ export class StravaClubs {
     getClubEvents = async (user: UserData, id: string): Promise<StravaClubEvent[]> => {
         try {
             const data = await api.get(user.stravaTokens, `clubs/${id}/group_events`)
+            if (!data) return []
+
             const clubEvents: StravaClubEvent[] = data.map((d) => toStravaClubEvent(d))
 
             logger.info("Strava.getClubEvents", `User ${user.id} ${user.displayName}`, `Club ${id} has ${clubEvents.length} events`)
             return clubEvents
         } catch (ex) {
             logger.error("Strava.getClubEvents", `User ${user.id} ${user.displayName}`, id, ex)
+            throw ex
+        }
+    }
+
+    // HELPER METHODS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Get upcoming club events for the specified user.
+     * @param user User data.
+     * @param days Return events for that many days ahead, where 0 = only today.
+     */
+    getUpcomingClubEvents = async (user: UserData, days: number): Promise<StravaClubEvent[]> => {
+        try {
+            const today = dayjs()
+            const maxDate = dayjs().add(days, "days").endOf("day")
+            const result: StravaClubEvent[] = []
+
+            // Iterate clubs to get the upcoming events.
+            const clubs = await this.getClubs(user)
+            for (let club of clubs) {
+                const events = await this.getClubEvents(user, club.id)
+
+                for (let event of events) {
+                    event.dates = event.dates.filter((eDate) => today.isBefore(eDate) && maxDate.isAfter(eDate))
+
+                    if (event.dates.length > 0) {
+                        result.push(event)
+
+                        // We need the full route details.
+                        if (event.route && event.route.id && !event.route.polyline) {
+                            event.route = await stravaRoutes.getRoute(user, event.route.id)
+                        }
+                    }
+                }
+            }
+
+            logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, `${result.length || "No"} upcoming events`)
+            return result
+        } catch (ex) {
+            logger.error("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, ex)
             throw ex
         }
     }
