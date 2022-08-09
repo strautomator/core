@@ -21,9 +21,7 @@ export class StravaRoutes {
     // --------------------------------------------------------------------------
 
     /**
-     * Get detailed route info from Strava. As routes might be switched to private
-     * at any time, this method is not considered fail-safe and will never log
-     * exceptions as errors, but as warnings instead.
+     * Get detailed route info from Strava.
      * @param user User data.
      * @param id The route ID.
      */
@@ -37,8 +35,8 @@ export class StravaRoutes {
             logger.info("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${id}: ${route.name}`)
             return route
         } catch (ex) {
-            logger.warn("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${id}`, ex)
-            return null
+            logger.error("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${id}`, ex)
+            throw ex
         }
     }
 
@@ -83,8 +81,10 @@ export class StravaRoutes {
             // Add the individual routes to the ZIP file.
             const zip = new JSZip()
             for (let id of routeIds) {
+                const route = await this.getRoute(user, id)
                 const gpx = await this.getGPX(user, id)
-                zip.file(`${id}.gpx`, gpx)
+                const filename = route.name.replace(/\s\s+/g, " ").replace(/'/gi, "").replace(/\"/gi, "").replace(/\W/gi, "-").replace(/--/gi, "-")
+                zip.file(`${filename}.gpx`, gpx)
             }
 
             const result = zip.generateNodeStream({type: "nodebuffer", streamFiles: true})
