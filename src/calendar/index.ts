@@ -367,9 +367,9 @@ export class Calendar {
                     // Club has a route set? Fetch the full route details.
                     if (hasFutureDate && clubEvent.route && clubEvent.route.id) {
                         try {
-                            clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.id)
+                            clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.urlId)
                         } catch (routeEx) {
-                            logger.debug("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Failed to fetch route for event ${clubEvent.id}`)
+                            logger.warn("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Failed to fetch route for event ${clubEvent.id}`)
                         }
                     }
 
