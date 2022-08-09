@@ -313,7 +313,7 @@ export class Database {
             const snapshot = await filteredTable.get()
             snapshot.forEach((doc) => doc.ref.delete())
 
-            const logQuery = _.flatten(where).join(" Resumindo")
+            const logQuery = _.flatten(where).join(" ")
             logger.info("Database.delete", collection, logQuery, `Deleted ${snapshot.size} documents`)
             return snapshot.size
         }
