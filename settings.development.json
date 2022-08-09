@@ -61,6 +61,13 @@
             // This SHOULD be overriden by a secret token set via secret settings
             // or via the SMU_strava_api_verifyToken environment variable.
             "verifyToken": "strautotoken-for-the-winner"
+        },
+        // Shorter cache durations on dev.
+        "cacheDuration": {
+            "athletes-stats": 30,
+            "clubs": 180,
+            "clubs-group-events": 180,
+            "routes": 180
         }
     }
 }

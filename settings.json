@@ -261,13 +261,6 @@
         "cacheBucket": "strautomator-cache"
     },
     "strava": {
-        // Some Strava resources might be cached in memory. Duration in seconds.
-        "cacheDuration": {
-            "athletes-stats": 60,
-            "clubs": 1800,
-            "clubs-group-events": 600,
-            "routes": 1800
-        },
         // API endpoints and credentials from Strava.
         "api": {
             "baseUrl": "https://www.strava.com/api/v3/",
@@ -289,6 +282,13 @@
             // Default verification token to be sent by Strava on subcriptions, MUST be set
             // via secret settings or the SMU_strava_api_verifyToken environment variable.
             "verifyToken": null
+        },
+        // Some Strava resources might be cached in memory. Duration in seconds.
+        "cacheDuration": {
+            "athletes-stats": 60,
+            "clubs": 1800,
+            "clubs-group-events": 600,
+            "routes": 1800
         },
         "ftp": {
             // Estimated FTP will go down by 1.5% for each week of no activities.
