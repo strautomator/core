@@ -48,6 +48,8 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
     // When using "equals" use around 60m radius, and "like" use 650m radius.
     if (op == RecipeOperator.Equal) {
         radius = 0.000556
+    } else if (op == RecipeOperator.Approximate) {
+        radius = 0.002735
     } else if (op == RecipeOperator.Like) {
         radius = 0.005926
     } else {
@@ -102,6 +104,8 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         valid = aTime < value
     } else if (op == RecipeOperator.Equal) {
         valid = aTime >= value - 120 && aTime <= value + 120
+    } else if (op == RecipeOperator.Approximate) {
+        valid = aTime >= value - 600 && aTime <= value + 600
     } else if (op == RecipeOperator.Like) {
         valid = aTime >= value - 1800 && aTime <= value + 1800
     }

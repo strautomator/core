@@ -26,12 +26,14 @@ export const recipeOperatorList = {
     ],
     // Location coordinates.
     location: [
-        {value: "like", text: "within 650m of", description: "Location within 650m (0.4 miles)"},
-        {value: "=", text: "within 60m of", description: "Location within 60m (196 foot)"}
+        {value: "like", text: "within 650m of", description: "Location within 650m (710 yards)"},
+        {value: "approx", text: "within 300m of", description: "Location within 300m (328 yards)"},
+        {value: "=", text: "within 60m of", description: "Location within 60m (65 yards)"}
     ],
     // Time.
     time: [
         {value: "like", text: "at around (± 30min)", description: "Within 30 minutes of the specified time"},
+        {value: "approx", text: "at around (± 10min)", description: "Within 10 minutes of the specified time"},
         {value: "=", text: "at (± 2min)", description: "Within 2 minutes of the specified time"},
         {value: "<", text: "is before", description: "Time is before"},
         {value: ">", text: "is after", description: "Time is after"}
@@ -39,6 +41,7 @@ export const recipeOperatorList = {
     // Elapsed time.
     elapsedTime: [
         {value: "like", text: "is around (± 30min)", description: "Elapsed time within 30 minutes of the specified value"},
+        {value: "approx", text: "is around (± 10min)", description: "Elapsed time within 10 minutes of the specified value"},
         {value: "=", text: "is (± 2min)", description: "Elapsed time within 2 minutes of the specified value"},
         {value: "<", text: "is less than", description: "Elapsed time is less than"},
         {value: ">", text: "is more than", description: "Elapsed time is more than"}

@@ -106,6 +106,7 @@ export enum RecipeOperator {
     NotEqual = "!=",
     Like = "like",
     NotLike = "notlike",
+    Approximate = "approx",
     GreaterThan = ">",
     LessThan = "<"
 }
