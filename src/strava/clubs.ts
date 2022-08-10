@@ -6,7 +6,9 @@ import {UserData} from "../users/types"
 import stravaRoutes from "./routes"
 import api from "./api"
 import dayjs from "../dayjs"
+import _ = require("lodash")
 import logger = require("anyhow")
+const settings = require("setmeup").settings
 
 /**
  * Strava clubs manager.
@@ -90,9 +92,8 @@ export class StravaClubs {
             const maxDate = dayjs().add(days, "days").endOf("day")
             const result: StravaClubEvent[] = []
 
-            // Iterate clubs to get the upcoming events.
-            const clubs = await this.getClubs(user)
-            for (let club of clubs) {
+            // Helper function to get club events.
+            const getEvents = async (club: StravaClub) => {
                 const events = await this.getClubEvents(user, club.id)
 
                 for (let event of events) {
@@ -100,6 +101,9 @@ export class StravaClubs {
 
                     if (event.dates.length > 0) {
                         result.push(event)
+
+                        // Sort event dates, as Strava sometimes return messed up dates.
+                        event.dates.sort()
 
                         // We need the full route details, including distance and polyline.
                         if (event.route && event.route.id && (!event.route.distance || !event.route.polyline)) {
@@ -113,8 +117,15 @@ export class StravaClubs {
                 }
             }
 
+            // Iterate clubs to get the upcoming events.
+            const clubs = await this.getClubs(user)
+            const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
+            while (clubs.length) {
+                await Promise.all(clubs.splice(0, batchSize).map(getEvents))
+            }
+
             logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, `${result.length || "No"} upcoming events`)
-            return result
+            return _.sortBy(result, (r) => r.dates[0])
         } catch (ex) {
             logger.error("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, ex)
             throw ex

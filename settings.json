@@ -202,6 +202,7 @@
     },
     "plans": {
         "free": {
+            "apiConcurrency": 2,
             // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
@@ -218,6 +219,7 @@
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"]
         },
         "pro": {
+            "apiConcurrency": 6,
             // PRO accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,

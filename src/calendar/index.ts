@@ -3,6 +3,7 @@
 import {CalendarOptions} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
+import {StravaClub} from "../strava/types"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
 import {File} from "@google-cloud/storage"
@@ -343,16 +344,15 @@ export class Calendar {
         const toLog = dayjs(options.dateFrom).format("YY-MM-DD")
         const optionsLog = `From ${fromLog} to ${toLog}`
         const tOrganizer = translation("Organizer", user.preferences, true)
-        let eventCount = 0
 
         try {
-            const clubs = await strava.clubs.getClubs(user)
+            let eventCount = 0
 
-            // Iterate user's clubs to get their events and push to the calendar.
-            for (let club of clubs) {
+            // Helper to process club events.
+            const getEvents = async (club: StravaClub) => {
                 if (!options.includeAllCountries && club.country != user.profile.country) {
                     logger.debug("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Club ${club.id} from another country (${club.country}), skip it`)
-                    continue
+                    return
                 }
 
                 const clubEvents = await strava.clubs.getClubEvents(user, club.id)
@@ -423,6 +423,13 @@ export class Calendar {
                         eventCount++
                     }
                 }
+            }
+
+            // Iterate user's clubs to get their events and push to the calendar.
+            const clubs = await strava.clubs.getClubs(user)
+            const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
+            while (clubs.length) {
+                await Promise.all(clubs.splice(0, batchSize).map(getEvents))
             }
 
             logger.debug("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, optionsLog, `Got ${eventCount} club events`)
