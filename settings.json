@@ -271,7 +271,7 @@
             "tokenUrl": "https://www.strava.com/oauth/token",
             "scopes": "read,profile:read_all,profile:write,activity:read_all,activity:write",
             // Maximum concurrent requests per instance.
-            "maxConcurrent": 4,
+            "maxConcurrent": 6,
             // Maximum requests per minute per instance.
             "maxPerMinute": 45,
             // Default page size is the max of 200.
