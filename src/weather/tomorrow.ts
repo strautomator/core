@@ -93,7 +93,6 @@ export class Tomorrow implements WeatherProvider {
             pressure: data.pressureSurfaceLevel,
             windSpeed: data.windSpeed,
             windDirection: data.windDirection,
-            precipitation: translation(precipitation, preferences),
             cloudCover: data.cloudCover,
             visibility: data.visibility,
             extraData: {
@@ -101,6 +100,10 @@ export class Tomorrow implements WeatherProvider {
                 iconText: summary,
                 mmPrecipitation: data.precipitationIntensity
             }
+        }
+
+        if (precipitation) {
+            result.precipitation = translation(precipitation, preferences)
         }
 
         // Process and return weather summary.
