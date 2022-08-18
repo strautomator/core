@@ -82,6 +82,8 @@ import {Calendar} from "./calendar"
 export const calendar: Calendar = Calendar.Instance
 import {FAQ} from "./faq"
 export const faq: FAQ = FAQ.Instance
+import {GDPR} from "./gdpr"
+export const gdpr: GDPR = GDPR.Instance
 
 // Export event manager.
 import {EventManager} from "./eventmanager"
@@ -158,7 +160,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, github, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq]) {
+    for (let coreModule of [database, github, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 
@@ -199,8 +201,10 @@ export const startup = async (quickStart?: boolean) => {
         }
         setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
 
-        // Cleanup cached Strava responses right away.
+        // Cleanup cached Strava responses, notifications and GDPR archives right away.
         strava.cleanupCache()
+        notifications.cleanup()
+        gdpr.clearArchives()
 
         // Process GearWear configurations right away.
         gearwear.processRecentActivities()
