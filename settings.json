@@ -60,11 +60,13 @@
         // The project ID on Google Cloud must be set on the settings.secret.json file
         // or via the SMU_gcp_projectId environment variable.
         "projectId": null,
+        // Default GCP location when creating resources on-the-fly.
+        "location": "europe-west4",
+        // If you wish the app to download settings from Google Cloud Storage on startup, please
+        // specify the bucket name and filename below on your secret settings or via the
+        // SMU_gcp_downloadSettings_bucket and SMU_gcp_downloadSettings_filename environment
+        // variables. We HIGHLY recommend you to have the settings file encrypted there.
         "downloadSettings": {
-            // If you wish the app to download settings from Google Cloud Storage on startup, please
-            // specify the bucket name and filename below on your secret settings or via the
-            // SMU_gcp_downloadSettings_bucket and SMU_gcp_downloadSettings_filename environment
-            // variables. We HIGHLY recommend you to have the settings file encrypted there.
             "bucket": null,
             "filename": "settings.secret.json"
         }
@@ -258,9 +260,15 @@
             "timeout": 5000
         }
     },
-    // Cloud Storage buckets.
+    // Cloud Storage buckets, with optional TTLs (in seconds). If you wish to specify the bucket location,
+    // please add a "location" parameter. Otherwise the default will be taken from "gcp.location".
     "storage": {
-        "cacheBucket": "strautomator-cache"
+        "buckets": {
+            "calendar": {"name": "bucket-calendar.strautomator.com", "ttlDays": 7},
+            "gdpr": {"name": "bucket-gdpr.strautomator.com", "ttlDays": 15}
+        },
+        // Storage buckets are configured as CNAME in production.
+        "cname": true
     },
     "strava": {
         // API endpoints and credentials from Strava.
@@ -327,7 +335,9 @@
         // Consider users dormant (no recipes, no gearwear, no activites) after 90 days.
         "dormantDays": 90,
         // Consider user subscriptions dangling (pending approval) after 5 days.
-        "danglingDays": 5
+        "danglingDays": 5,
+        // Users can request an archive download once every 2 weeks.
+        "archiveDownloadDays": 14
     },
     "weather": {
         // Cache weather results for 15 minutes. Value set in seconds.
