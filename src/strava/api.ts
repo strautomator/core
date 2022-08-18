@@ -333,7 +333,7 @@ export class StravaAPI {
      */
     get = async (tokens: StravaTokens, path: string, params?: any) => {
         try {
-            const now = new Date()
+            const now = dayjs()
             const arrPath = path.split("/")
 
             // The cache key is composed by the first, or first and third parts of the requested path.
@@ -357,9 +357,16 @@ export class StravaAPI {
 
             const result = await this.makeRequest(tokens, "GET", path, params)
 
-            // Respons should be cached?
+            // Response should be cached?
             if (shouldCache && result) {
-                const cacheData: StravaCachedResponse = {id: cacheId, resourceType: cacheKey, data: result, dateCached: now}
+                const cacheData: StravaCachedResponse = {
+                    id: cacheId,
+                    resourceType: cacheKey,
+                    data: result,
+                    dateCached: now.toDate(),
+                    dateExpiry: now.add(cacheDuration, "seconds").toDate()
+                }
+
                 Object.keys(cacheData).forEach((k) => cacheData[k] === null && delete cacheData[k])
                 await database.set("strava-cache", cacheData, cacheId)
             }

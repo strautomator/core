@@ -523,6 +523,8 @@ export interface StravaCachedResponse {
     data: any
     /** Date when it was cached. */
     dateCached: Date
+    /** Date when it should expire (used for the Firestore TTL). */
+    dateExpiry?: Date
 }
 
 /**

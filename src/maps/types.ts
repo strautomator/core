@@ -14,6 +14,8 @@ export interface MapAddress {
     country?: string
     /** Timestamp when that address was last resolved. */
     dateCached?: Date
+    /** Expiry date (used as TTL in Firestore). */
+    dateExpiry?: Date
 }
 
 /**

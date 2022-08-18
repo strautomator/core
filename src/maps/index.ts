@@ -142,6 +142,8 @@ export class Maps {
                 throw new Error("Invalid or missing coordinates")
             }
 
+            const now = dayjs()
+
             // Cache coordinates with a precision of 1km.
             const cacheId = `reverse-${coordinates.map((c) => (Math.round(c * 100) / 100).toFixed(settings.maps.cachePrecision)).join("-")}`
             const logCoordinates = coordinates.join(", ")
@@ -155,7 +157,7 @@ export class Maps {
 
             // Location cached in the database?
             const dbCached: MapAddress = await database.get("maps", cacheId)
-            if (dbCached && dayjs(dbCached.dateCached).isAfter(dayjs().subtract(settings.maps.maxCacheDuration, "seconds"))) {
+            if (dbCached && dayjs(dbCached.dateCached).isAfter(now.subtract(settings.maps.maxCacheDuration, "seconds"))) {
                 logger.info("Maps.getReverseGeocode.fromCache", logCoordinates, this.getAddressLog(dbCached, true))
                 return dbCached
             }
@@ -181,7 +183,7 @@ export class Maps {
                 const country = components.find((c) => c.types.includes("country" as any))
 
                 // Build the resulting MapAddress.
-                const address: MapAddress = {dateCached: new Date()}
+                const address: MapAddress = {dateCached: now.toDate(), dateExpiry: now.add(settings.maps.maxCacheDuration, "seconds").toDate()}
                 if (neighborhood) address.neighborhood = neighborhood.long_name
                 if (city) address.city = city.long_name
                 if (state) address.state = state.long_name
