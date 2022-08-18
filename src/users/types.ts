@@ -49,6 +49,8 @@ export interface UserData {
     dateLastFtpUpdate?: Date
     /** Date when the user last triggered a batch processing. */
     dateLastBatchProcessing?: Date
+    /** Date when the last GDPR archive download was requested. */
+    dateLastArchiveGenerated?: Date
     /** Recipes counter. */
     recipeCount?: number
     /** Processed activities counter. */
