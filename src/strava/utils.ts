@@ -442,7 +442,7 @@ export function toStravaClubEvent(data: any): StravaClubEvent {
     if (data.route && data.route.id_str) {
         clubEvent.route = {
             id: data.route.id,
-            urlId: data.route.id_str,
+            idString: data.route.id_str,
             name: data.route.name
         }
         if (data.route.map) {
@@ -471,7 +471,7 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
 
     const route: StravaRoute = {
         id: data.id,
-        urlId: data.id_str,
+        idString: data.id_str,
         name: data.name,
         description: data.description,
         distance: Math.round(distance),

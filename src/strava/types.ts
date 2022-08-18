@@ -445,8 +445,8 @@ export interface StravaClubEvent {
 export interface StravaRoute {
     /** ID of the route. */
     id: string
-    /** URL ID of the route. */
-    urlId?: string
+    /** String version of the route ID, must be used on the API endpoints. */
+    idString?: string
     /** Name of the route. */
     name?: string
     /** Description of the route. */

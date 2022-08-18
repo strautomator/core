@@ -23,19 +23,19 @@ export class StravaRoutes {
     /**
      * Get detailed route info from Strava.
      * @param user User data.
-     * @param id The route ID.
+     * @param idString The route URL ID (for whatever reason, Strava doesn't accept the route ID).
      */
-    getRoute = async (user: UserData, id: string): Promise<StravaRoute> => {
+    getRoute = async (user: UserData, idString: string): Promise<StravaRoute> => {
         try {
-            const data = await api.get(user.stravaTokens, `routes/${id}`)
+            const data = await api.get(user.stravaTokens, `routes/${idString}`)
             delete data.segments
 
             const route = toStravaRoute(user, data)
 
-            logger.info("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${id}: ${route.name}`)
+            logger.info("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${idString}: ${route.name}`)
             return route
         } catch (ex) {
-            logger.error("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${id}`, ex)
+            logger.error("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${idString}`, ex)
             throw ex
         }
     }
@@ -43,21 +43,21 @@ export class StravaRoutes {
     /**
      * Get the GPX representation of the specified route.
      * @param user User data.
-     * @param id The route ID.
+     * @param idString The route ID.
      */
-    getGPX = async (user: UserData, id: string): Promise<any> => {
+    getGPX = async (user: UserData, idString: string): Promise<any> => {
         try {
-            const data = await api.get(user.stravaTokens, `routes/${id}/export_gpx`)
+            const data = await api.get(user.stravaTokens, `routes/${idString}/export_gpx`)
 
             if (!data) {
-                logger.info("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${id}: no GPX`)
+                logger.info("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${idString}: no GPX`)
                 return null
             }
 
-            logger.info("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${id}: length ${data.toString().length}`)
+            logger.info("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${idString}: length ${data.toString().length}`)
             return data
         } catch (ex) {
-            logger.error("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${id}`, ex)
+            logger.error("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${idString}`, ex)
             throw ex
         }
     }
@@ -65,7 +65,7 @@ export class StravaRoutes {
     /**
      * Generate a ZIP file with the specified GPX routes.
      * @param user User data.
-     * @param ids The route IDs as an array.
+     * @param ids The route IDs (idString) as an array.
      */
     zipGPX = async (user: UserData, routeIds: string[]): Promise<NodeJS.ReadableStream> => {
         try {
@@ -83,8 +83,8 @@ export class StravaRoutes {
             for (let id of routeIds) {
                 const route = await this.getRoute(user, id)
                 const gpx = await this.getGPX(user, id)
-                const filename = route.name.replace(/\s\s+/g, " ").replace(/'/gi, "").replace(/\"/gi, "").replace(/\W/gi, "-").replace(/--/gi, "-")
-                zip.file(`${filename}.gpx`, gpx)
+                const filename = route.name.replace(/\s\s+/g, " ").replace(/'/gi, "").replace(/\"/gi, "").replace(/\W/gi, "-").replace(/--+/g, "-")
+                await zip.file(`${filename.toLowerCase()}.gpx`, gpx)
             }
 
             const result = zip.generateNodeStream({type: "nodebuffer", streamFiles: true})
