@@ -109,7 +109,7 @@ export class FAQ {
                         id = id.replace(" " + word + " ", " ")
                     }
 
-                    id = id.replace(/'/gi, "").replace(/\W/gi, "-").replace(/--/gi, "-")
+                    id = id.replace(/'/gi, "").replace(/\W/gi, "-").replace(/--+/g, "-")
                     id = id.substring(0, id.length - 1)
                     question.id = id
                 }
