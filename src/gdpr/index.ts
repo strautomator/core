@@ -100,12 +100,14 @@ export class GDPR {
             delete jsonData["user"].stravaTokens
 
             // Iterate and zip database contents for the specified user.
-            for (let [filename, data] of Object.entries(jsonData)) {
+            let key: string
+            let data: any
+            for ([key, data] of Object.entries(jsonData)) {
                 if (!data) continue
 
                 if ((_.isArray(data) && data.length > 0) || Object.values(data).length > 0) {
                     const dataStr = JSON.stringify(data)
-                    await zip.file(`${filename}.json`, dataStr)
+                    await zip.file(`${key}.json`, dataStr)
                     size += dataStr.length
                 }
             }
