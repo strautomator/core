@@ -50,6 +50,15 @@
             "startMinutes": 60
         }
     },
+    // Cloud Storage development buckets have a -dev suffix appended and are
+    // not available via CNAME records.
+    "storage": {
+        "buckets": {
+            "calendar": {"name": "bucket-calendar-dev", "ttlDays": 2},
+            "gdpr": {"name": "bucket-gdpr-dev", "ttlDays": 2}
+        },
+        "cname": false
+    },
     "strava": {
         "api": {
             // Token to be appended to the URL of Strava webhooks, for
