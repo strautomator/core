@@ -7,7 +7,6 @@ import {StravaClub} from "../strava/types"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
 import {File} from "@google-cloud/storage"
-import {Response} from "express"
 import _ = require("lodash")
 import crypto = require("crypto")
 import maps from "../maps"
@@ -51,13 +50,14 @@ export class Calendar {
 
     /**
      * Generate the Strautomator calendar and return its iCal string representation.
-     * Returns true if calendar was generated, or false if it should come from cache.
+     * Returns the URL to the generated calendar.
      * @param user The user requesting the calendar.
      * @param options Calendar generation options.
      * @param res Response object.
      */
-    generate = async (user: UserData, options: CalendarOptions, res: Response): Promise<boolean> => {
+    generate = async (user: UserData, options: CalendarOptions): Promise<string> => {
         let optionsLog: string
+        let cacheId: string
         let cachedFile: File
 
         try {
@@ -94,8 +94,8 @@ export class Calendar {
 
             // Use "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
             const hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 12)
-            const cacheId = `calendar-${user.id}-${hash}`
-            const cachedFile = await storage.getFile(settings.storage.cacheBucket, cacheId)
+            cacheId = `${user.id}/${user.urlToken}-${hash}.ics`
+            cachedFile = await storage.getFile("calendar", cacheId)
 
             // See if cached version of the calendar is still valid.
             // Check cached calendar expiry date (reversed / backwards) and if user has
@@ -119,9 +119,7 @@ export class Calendar {
                     // or if calendar is for club events only.
                     if (notExpired && (notChanged || onlyClubs)) {
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `${(cacheSize / 1000 / 1024).toFixed(2)} MB`)
-                        res.status(200)
-                        cachedFile.createReadStream().pipe(res)
-                        return false
+                        return storage.getUrl("calendar", cacheId)
                     } else {
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `Cache invalidated, will generate a new calendar`)
                     }
@@ -185,20 +183,18 @@ export class Calendar {
             const size = output.length / 1000 / 1024
 
             try {
-                await storage.setFile(settings.storage.cacheBucket, cacheId, output, "text/calendar")
+                await storage.setFile("calendar", cacheId, output, "text/calendar")
             } catch (saveEx) {
                 logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache")
             }
 
             logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
 
-            res.status(200).send(output)
-            return true
+            return storage.getUrl("calendar", cacheId)
         } catch (ex) {
             if (cachedFile) {
                 logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex, "Fallback to cached calendar")
-                cachedFile.createReadStream().pipe(res)
-                return false
+                return storage.getUrl("calendar", cacheId)
             } else {
                 logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
                 throw ex
@@ -367,7 +363,7 @@ export class Calendar {
                     // Club has a route set? Fetch the full route details.
                     if (hasFutureDate && clubEvent.route && clubEvent.route.id) {
                         try {
-                            clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.urlId)
+                            clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.idString)
                         } catch (routeEx) {
                             logger.warn("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Failed to fetch route for event ${clubEvent.id}`)
                         }
