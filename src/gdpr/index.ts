@@ -2,6 +2,7 @@
 
 import {UserData} from "../users/types"
 import database from "../database"
+import eventManager from "../eventmanager"
 import storage from "../storage"
 import users from "../users"
 import dayjs from "../dayjs"
@@ -26,10 +27,32 @@ export class GDPR {
     init = async (): Promise<void> => {
         try {
             logger.info("GDPR.init", `Archives expiration: ${settings.users.archiveDownloadDays} days`)
+            eventManager.on("Users.delete", this.onUserDelete)
         } catch (ex) {
             logger.error("GDPR.init", ex)
         }
     }
+
+    /**
+     * Delete archives when an user account is deleted.
+     * @param user User that was deleted from the database.
+     */
+    private onUserDelete = async (user: UserData): Promise<void> => {
+        try {
+            const filename = `${user.id}-${user.urlToken}.zip`
+            const file = await storage.getFile("gdpr", filename)
+
+            if (file) {
+                await file.delete()
+                logger.info("GDPR.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted archive: ${filename}`)
+            }
+        } catch (ex) {
+            logger.error("GDPR.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
+        }
+    }
+
+    // ARCHIVES
+    // --------------------------------------------------------------------------
 
     /**
      * User can request a download of all their Strautomator data, archived into

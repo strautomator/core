@@ -98,7 +98,7 @@ export class Strava {
             const tokens = user.stravaTokens
             await this.revokeToken(user.id, tokens.accessToken, tokens.refreshToken)
         } catch (ex) {
-            logger.error("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, `Failed to revoke Strava token`)
+            logger.error("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, "Failed to revoke Strava token")
         }
 
         try {

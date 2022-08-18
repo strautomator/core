@@ -9,6 +9,7 @@ import {translation} from "../translations"
 import {File} from "@google-cloud/storage"
 import _ = require("lodash")
 import crypto = require("crypto")
+import eventManager from "../eventmanager"
 import maps from "../maps"
 import storage from "../storage"
 import strava from "../strava"
@@ -38,10 +39,34 @@ export class Calendar {
         try {
             const durationFree = dayjs.duration(settings.plans.free.calendarCacheDuration, "seconds").humanize()
             const durationPro = dayjs.duration(settings.plans.pro.calendarCacheDuration, "seconds").humanize()
+
             logger.info("Calendar.init", `Cache durations: Free ${durationFree}, PRO ${durationPro}`)
+            eventManager.on("Users.delete", this.onUserDelete)
         } catch (ex) {
             logger.error("Calendar.init", ex)
             throw ex
+        }
+    }
+
+    /**
+     * Delete cached calendars when an user account is deleted.
+     * @param user User that was deleted from the database.
+     */
+    private onUserDelete = async (user: UserData): Promise<void> => {
+        try {
+            const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
+
+            if (calendarFiles.length > 0) {
+                const count = calendarFiles.length
+
+                for (let file of calendarFiles) {
+                    await file.delete()
+                }
+
+                logger.info("Calendar.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${count} cached calendars`)
+            }
+        } catch (ex) {
+            logger.error("Calendar.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
         }
     }
 
