@@ -4,6 +4,24 @@ This is the core module of Strautomator, containing most of its business logic. 
 
 ## Getting started
 
+Some main points to know before you start:
+
+-   Code is mostly TypeScript
+-   Should run on Node 14+
+-   Optimized for Google Cloud Platform
+
+You'll also have to register an account and get the necessary credentials for the 3rd party integrations:
+
+-   Google Cloud Platform (service account and API credentials)
+-   Strava API
+-   PayPal API
+-   Twitter API
+-   Weather providers (Tomorrow.io, Storm Glass etc...)
+
+Please note that some of these services might (and will!) charge you.
+
+If you need help getting any of those, or have questions, just open a [new issue](https://github.com/strautomator/core/issues/new) and I'll be glad to help.
+
 ### Settings
 
 Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its [docs](https://setmeup.devv.com). The settings are split as follows:
@@ -18,7 +36,7 @@ Additionally, you can also define settings via environment variables, prefixed b
 
 If you want to download settings from Google Cloud Storage, you must define the `gcp.downloadSettings.bucket` (or via the `$SMU_gcp_downloadSettings_bucket` env variable). The default filename is `settings.secret.json`, but you can change that as well. The settings file downloaded from GCS will NOT persist on the disk.
 
-Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same procedure, same naming convention.
+Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same procedure, same logic.
 
 ### Database
 
@@ -41,17 +59,20 @@ The following collections are currently used:
 
 Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
 
-### 3rd party integrations
+### Storage
 
-You'll have to register an account and get the necessary credentials for the 3rd party integrations:
+Strautomator will store some files on Google Cloud Storage buckets:
 
--   Google Cloud Platform
--   Strava API
--   PayPal API
--   Twitter API
--   Weather providers (Tomorrow.io, Storm Glass etc...)
+-   **calendar** cached calendar outputs, default name is `bucket-calendar.strautomator.com`
+-   **gdpr** ZIP archives requested by users, default name is `bucket-gdpr.strautomator.com`
 
-If you need help getting any of those, or have questions, just open a [new issue](https://github.com/strautomator/core/issues/new) and I'll be glad to help.
+Buckets can have an optional TTL (days) policy, also defined on the settings as "ttlDays". If a bucket does not exist, it will be created during startup. If no "location" is set directly on the bucket settings, then the default is taken from the setting `gcp.location`.
+
+By default, buckets in production are created as CNAME records. This can be disabled by setting the `settings.storage.cname` flag to false.
+
+#### IAM policy
+
+Please make sure that the service account being used has full permissions to read and write to your GCP project Storage buckets. Otherwise you'll have to create the buckets manually via the GCP Console.
 
 ### Make
 
@@ -64,6 +85,10 @@ Or to do a "dry run" and test the startup routine with the current settings:
     $ make dry-run
 
 Please have a look on the provided Makefile for all available commands.
+
+### Hosting on GCP
+
+Strautomator is currently optimized to run on Google Cloud Platform. It makes use of Firestore, Cloud Storage, and various other Google APIs to get things working. There are no plans to port the code to make it work on other ecosystems, but as all the code is wrapped in its own specific set of modules, such tasks should be more or less trouble-free.
 
 ## Scheduled Tasks
 
