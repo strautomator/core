@@ -1,5 +1,7 @@
 // Strautomator Core: Strava types
 
+import {KomootRoute} from "../komoot/types"
+
 /**
  * An activity on Strava.
  */
@@ -435,8 +437,10 @@ export interface StravaClubEvent {
     organizer?: Partial<StravaProfile>
     /** Start location. */
     address?: string
-    /** Attached route. */
+    /** Attached Strava route. */
     route?: StravaRoute
+    /** Extracted Komoot route. */
+    komootRoute?: KomootRoute
 }
 
 /**

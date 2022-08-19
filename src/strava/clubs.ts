@@ -5,6 +5,7 @@ import {toStravaClub, toStravaClubEvent} from "./utils"
 import {UserData} from "../users/types"
 import stravaRoutes from "./routes"
 import api from "./api"
+import komoot from "../komoot"
 import dayjs from "../dayjs"
 import _ = require("lodash")
 import logger = require("anyhow")
@@ -111,6 +112,19 @@ export class StravaClubs {
                                 event.route = await stravaRoutes.getRoute(user, event.route.idString)
                             } catch (routeEx) {
                                 logger.warn("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Event ${event.title}`, "Failed to get route details")
+                            }
+                        }
+                        // PRO users also get Komoot route parsing.
+                        else if (user.isPro && event.description && event.description.length > 30) {
+                            const url = komoot.extractRouteUrl(event.description)
+
+                            if (url) {
+                                const kRoute = await komoot.getRoute(user, url)
+
+                                if (kRoute) {
+                                    logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Event ${event.title}`, `Komoot route: ${kRoute.id}`)
+                                    event.komootRoute = kRoute
+                                }
                             }
                         }
                     }
