@@ -25,9 +25,15 @@ export const axiosRequest = async (options: any): Promise<any> => {
         const message = `${ex.code} ${ex.message}`.toUpperCase()
         const isTimeout = message.includes("ECONNRESET") || message.includes("ECONNABORTED") || message.includes("ETIMEDOUT") || message.includes("TIMEOUT") || message.includes("REQUEST_ABORTED") || message.includes("ERR_BAD_REQUEST")
         const isRetryable = ex.response && [429, 500, 502, 503, 504, 520, 597].includes(ex.response.status)
+        const accessDenied = ex.response && [401, 403].includes(ex.response.status)
+
+        // Abort if the stopStatus is set.
+        if (options.abortStatus && options.abortStatus.includes(ex.response.status)) {
+            return null
+        }
 
         // Retry the request if it failed due to timeout, rate limiting or server errors.
-        if (isTimeout || isRetryable) {
+        if ((isTimeout || isRetryable) && !accessDenied) {
             const urlInfo = new url.URL(options.url)
 
             try {
