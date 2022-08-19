@@ -64,6 +64,8 @@ import {PayPal} from "./paypal"
 export const paypal: PayPal = PayPal.Instance
 import {Strava} from "./strava"
 export const strava: Strava = Strava.Instance
+import {Komoot} from "./komoot"
+export const komoot: Komoot = Komoot.Instance
 import {Twitter} from "./twitter"
 export const twitter: Twitter = Twitter.Instance
 import {Weather} from "./weather"
@@ -160,7 +162,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, github, mailer, maps, paypal, strava, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
+    for (let coreModule of [database, github, mailer, maps, paypal, strava, komoot, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 
