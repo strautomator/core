@@ -12,6 +12,8 @@
         "cacheDuration": 3600
     },
     "axios": {
+        // User agent used to emulate a browser.
+        "uaBrowser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
         // Retry axios requests afew 5 seconds. Value set in milliseconds.
         "retryInterval": 5000
     },
@@ -85,6 +87,11 @@
             "baseUrl": "https://api.github.com/",
             "repo": "strautomator/web"
         }
+    },
+    "komoot": {
+        "baseUrl": "https://www.komoot.com/",
+        // Route details are cached for 7 days. Value set in seconds.
+        "cacheDuration": 604800
     },
     "mailer": {
         // The default "from" on sent emails should be set on settings.secret.json file
