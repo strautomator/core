@@ -5,6 +5,7 @@ import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import database from "../database"
 import dayjs from "../dayjs"
+import cache = require("bitecache")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
 
@@ -25,11 +26,8 @@ export class Komoot {
      * Init the Komoot wrapper.
      */
     init = async (): Promise<void> => {
-        if (settings.komoot.disabled) {
-            logger.warn("Komoot.init", "Route parsing is disabled")
-        } else {
-            logger.warn("Komoot.init", "Route parsing enabled")
-        }
+        cache.setup("komoot-invalid", settings.komoot.cacheDuration)
+        logger.info("Komoot.init", `Routes will be cached for up to ${dayjs.duration(settings.komoot.maxCacheDuration, "seconds").humanize()}`)
     }
 
     /**
@@ -60,15 +58,15 @@ export class Komoot {
     /**
      * Ge route details from Komoot. No exeception will be thrown if the URL is invalid.
      * @param user The user requesting the route details.
-     * @param url The Komoot route URL.
+     * @param routeUrl The Komoot route URL.
      */
-    getRoute = async (user: UserData, url: string): Promise<KomootRoute> => {
+    getRoute = async (user: UserData, routeUrl: string): Promise<KomootRoute> => {
         try {
-            if (!url || !url.includes("/tour/")) {
+            if (!routeUrl || !routeUrl.includes("/tour/")) {
                 throw new Error("Invalid tour URL")
             }
 
-            const tourId: any = url.substring(url.indexOf("tour/")).split("/")[1].split("?")[0]
+            const tourId: any = routeUrl.substring(routeUrl.indexOf("tour/")).split("/")[1].split("?")[0]
 
             if (isNaN(tourId)) {
                 throw new Error("Invalid tour URL")
@@ -77,9 +75,16 @@ export class Komoot {
             const now = dayjs()
             const multDistance = user.profile.units == "imperial" ? 0.621371 : 1
 
+            // Check if that URL was already scraped unsuccessfully.
+            const invalidCache = cache.get("komoot-invalid", routeUrl)
+            if (invalidCache) {
+                logger.info("Komoot.getRoute", tourId || routeUrl, `Marked as invalid, won't fetch`)
+                return null
+            }
+
             // Check if route details are available in the database cache first.
             const fromCache = await database.get("komoot", tourId)
-            if (fromCache && dayjs(fromCache.dateCached).add(settings.komoot.cacheDuration, "seconds").isAfter(now)) {
+            if (fromCache && dayjs(fromCache.dateCached).add(settings.komoot.maxCacheDuration, "seconds").isAfter(now)) {
                 logger.info("Komoot.getRoute.fromCache", tourId, `Distance: ${fromCache.distance}km`, `Duration: ${fromCache.estimatedTime}s`)
                 return fromCache
             }
@@ -87,14 +92,14 @@ export class Komoot {
             // Check if the tour was recently cached
             const result: KomootRoute = {
                 id: tourId,
-                dateCached: now.toDate(),
-                dateExpiry: now.add(settings.komoot.cacheDuration, "seconds").toDate()
+                dateCached: now.toDate()
             }
 
-            const html = await this.makeRequest(`tour/${tourId}`)
+            const iQuery = routeUrl.indexOf("?")
+            const query = iQuery > 0 ? routeUrl.substring(iQuery) : ""
+            const html = await this.makeRequest(`tour/${tourId}${query}`)
             if (!html) {
-                logger.warn("Komoot.getRoute", tourId, "Could not fetch route, likely is private")
-                return null
+                throw new Error(`Could not fetch tour ${tourId}, likely is private`)
             }
 
             // Try parsing the distance.
@@ -113,19 +118,26 @@ export class Komoot {
                 result.estimatedTime = parseInt(arrDuration[0]) * 60 * 60 + parseInt(arrDuration[1]) * 60
             }
 
+            if (result.distance || result.estimatedTime) {
+                result.dateExpiry = now.add(settings.komoot.maxCacheDuration, "seconds").toDate()
+            } else {
+                result.dateExpiry = now.add(settings.komoot.cacheDuration, "seconds").toDate()
+            }
+
             await database.set("komoot", result, result.id)
-            logger.info("Komoot.getRoute", tourId, `Distance: ${result.distance}km`, `Duration: ${result.estimatedTime}s`)
+            logger.info("Komoot.getRoute", tourId, `Distance: ${result.distance || "?"} km`, `Duration: ${result.estimatedTime || "?"} s`)
 
             return result
         } catch (ex) {
-            logger.warn("Komoot.getRoute", url, ex)
+            logger.warn("Komoot.getRoute", routeUrl, ex, `Added to the invalid cache`)
+            cache.set("komoot-invalid", routeUrl, true)
             return null
         }
     }
 
     /**
      * Try extracting a Komoot route URL from the passed string. Returns null if nothing found.
-     * @param data String where a Komoot URL should be extracted from.
+     * @param data String where a Komoot tour URL should be extracted from.
      */
     extractRouteUrl = (data: string): string => {
         try {
@@ -133,10 +145,10 @@ export class Komoot {
             if (index < 0) return null
 
             const separatorIndex = data.substring(index + 12, index + 100).search(/[\s\n]/g)
-            const url = data.substring(index, index + separatorIndex + 12)
+            const routeUrl = separatorIndex > 0 ? data.substring(index, index + separatorIndex + 12) : data.substring(index)
 
-            if (url.includes("/tour/")) {
-                return url
+            if (routeUrl.includes("/tour/")) {
+                return routeUrl.trim()
             }
 
             return null
