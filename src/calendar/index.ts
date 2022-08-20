@@ -10,6 +10,7 @@ import {File} from "@google-cloud/storage"
 import _ = require("lodash")
 import crypto = require("crypto")
 import eventManager from "../eventmanager"
+import komoot from "../komoot"
 import maps from "../maps"
 import storage from "../storage"
 import strava from "../strava"
@@ -387,12 +388,26 @@ export class Calendar {
                     // Check if event has future dates.
                     const hasFutureDate = clubEvent.dates.find((d) => d > today)
 
-                    // Club has a route set? Fetch the full route details.
-                    if (hasFutureDate && clubEvent.route && clubEvent.route.id) {
-                        try {
-                            clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.idString)
-                        } catch (routeEx) {
-                            logger.warn("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Failed to fetch route for event ${clubEvent.id}`)
+                    // Club has a route set? Fetch the full route details. PRO users will also
+                    // get distance and times from Komoot routes.
+                    if (hasFutureDate) {
+                        if (clubEvent.route && clubEvent.route.id) {
+                            try {
+                                clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.idString)
+                            } catch (routeEx) {
+                                logger.warn("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Failed to fetch route for event ${clubEvent.id}`)
+                            }
+                        } else if (user.isPro && clubEvent.description && clubEvent.description.length > 30) {
+                            const url = komoot.extractRouteUrl(clubEvent.description)
+
+                            if (url) {
+                                const kRoute = await komoot.getRoute(user, url)
+
+                                if (kRoute) {
+                                    logger.info("Strava.buildClubs", `User ${user.id} ${user.displayName}`, `Event ${clubEvent.title}`, `Komoot route: ${kRoute.id}`)
+                                    clubEvent.komootRoute = kRoute
+                                }
+                            }
                         }
                     }
 
@@ -401,11 +416,13 @@ export class Calendar {
                         if (options.dateFrom > eventDate || options.dateTo < eventDate) continue
                         let endDate: Date
 
+                        const estimatedTime = clubEvent.route ? clubEvent.route.estimatedTime : clubEvent.komootRoute ? clubEvent.komootRoute.estimatedTime : 0
+
                         // Upcoming event has a route with estimated time? Use it as the end date,
                         // with some added time for breaks / stops. Otherwise defaults to 15 minutes.
-                        if (clubEvent.route && clubEvent.route.estimatedTime && eventDate > today) {
-                            const secondsEstimated = clubEvent.route.estimatedTime * 1.1
-                            const secondsExtraBrakes = Math.floor(clubEvent.route.estimatedTime / 7200) * 60 * 20
+                        if (clubEvent.route && eventDate > today && estimatedTime > 0) {
+                            const secondsEstimated = estimatedTime * 1.1
+                            const secondsExtraBrakes = Math.floor(estimatedTime / 7200) * 60 * 20
                             const totalAddedSeconds = clubEvent.type == "Ride" ? secondsEstimated + secondsExtraBrakes : secondsEstimated + 300
                             const targetDate = dayjs(eventDate).add(totalAddedSeconds, "seconds")
 
