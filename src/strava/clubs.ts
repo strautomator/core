@@ -86,8 +86,9 @@ export class StravaClubs {
      * Get upcoming club events for the specified user.
      * @param user User data.
      * @param days Return events for that many days ahead, where 0 = only today.
+     * @param countries List of countries to get the events for (as full country names).
      */
-    getUpcomingClubEvents = async (user: UserData, days: number): Promise<StravaClubEvent[]> => {
+    getUpcomingClubEvents = async (user: UserData, days: number, countries: string[]): Promise<StravaClubEvent[]> => {
         try {
             const today = dayjs()
             const maxDate = dayjs().add(days, "days").endOf("day")
@@ -131,17 +132,20 @@ export class StravaClubs {
                 }
             }
 
+            // Filter clubs for the specified countries.
+            const allClubs = await this.getClubs(user)
+            const clubs = allClubs.filter((c) => countries.includes(c.country))
+
             // Iterate clubs to get the upcoming events.
-            const clubs = await this.getClubs(user)
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
             while (clubs.length) {
                 await Promise.all(clubs.splice(0, batchSize).map(getEvents))
             }
 
-            logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, `${result.length || "No"} upcoming events`)
+            logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, countries.join(", "), `${result.length || "No"} upcoming events`)
             return _.sortBy(result, (r) => r.dates[0])
         } catch (ex) {
-            logger.error("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, ex)
+            logger.error("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, countries.join(", "), ex)
             throw ex
         }
     }
