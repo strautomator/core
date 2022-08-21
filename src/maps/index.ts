@@ -3,6 +3,8 @@
 import {Client, GeocodeRequest, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
 import {Polyline} from "./polyline"
 import {MapAddress, MapCoordinates} from "./types"
+import {axiosRequest} from "../axios"
+import Bottleneck from "bottleneck"
 import database from "../database"
 import cache = require("bitecache")
 import jaul = require("jaul")
@@ -10,6 +12,7 @@ import logger = require("anyhow")
 import dayjs from "../dayjs"
 const axios = require("axios").default
 const settings = require("setmeup").settings
+const packageVersion = require("../../package.json").version
 
 /**
  * Google Maps wrapper.
@@ -22,9 +25,14 @@ export class Maps {
     }
 
     /**
-     * Google Maps client.
+     * Google Maps and geocoding client.
      */
-    private client: Client = null
+    private googleClient: Client = null
+
+    /**
+     * LocationIQ limiter module.
+     */
+    private lociqLimiter: Bottleneck
 
     /**
      * Polyline processor.
@@ -43,7 +51,23 @@ export class Maps {
                 throw new Error("Missing the mandatory maps.api.key setting")
             }
 
-            this.client = new Client()
+            // LocationIQ is optional.
+            if (!settings.locationiq.token) {
+                logger.warn("Maps.init", "Missing the LocationIQ token, locationiq provider will not work")
+            } else {
+                this.lociqLimiter = new Bottleneck({
+                    maxConcurrent: settings.locationiq.maxConcurrent,
+                    reservoir: settings.locationiq.maxPerMinute,
+                    reservoirRefreshAmount: settings.locationiq.maxPerMinute,
+                    reservoirRefreshInterval: 1000 * 60
+                })
+
+                // Rate limiter events.
+                this.lociqLimiter.on("error", (err) => logger.error("LocationIQ.limiter", err))
+                this.lociqLimiter.on("depleted", () => logger.warn("LocationIQ.limiter", "Rate limited"))
+            }
+
+            this.googleClient = new Client()
 
             cache.setup("maps", settings.maps.cacheDuration)
             logger.info("Maps.init", `Default style: ${settings.maps.defaultStyle}`, `Size ${settings.maps.defaultSize}`, `Zoom ${settings.maps.defaultZoom}`)
@@ -53,15 +77,18 @@ export class Maps {
         }
     }
 
-    // METHODS
+    // GEOCODING
     // --------------------------------------------------------------------------
 
     /**
      * Get the geocode data for the specified address.
      * @param address Address to query the coordinates for.
      * @param region Optional TLD biasing region.
+     * @param provider Optional provider, defaults to Google.
      */
-    getGeocode = async (address: string, region?: string): Promise<MapCoordinates[]> => {
+    getGeocode = async (address: string, region?: string, provider?: "google" | "locationiq"): Promise<MapCoordinates[]> => {
+        if (!provider) provider = "google"
+
         try {
             if (!address && address.length < 3) {
                 throw new Error("Invalid or missing address")
@@ -83,40 +110,53 @@ export class Maps {
                 return cached
             }
 
-            // Geo request parameters.
+            // Get geocoded result fromn the specified provider.
+            const results = provider == "google" ? await this.getGeocode_Google(address, region) : await this.getGeocode_LocationIQ(address, region)
+            if (results) {
+                cache.set("maps", `${region}-${addressId}`, results)
+                logger.info("Maps.getGeocode", provider, address, region, `${results.length} result(s)`)
+                return results
+            }
+
+            logger.info("Maps.getGeocode", provider, address, region, `No results`)
+            return []
+        } catch (ex) {
+            logger.error("Maps.getGeocode", provider, address, region, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get the geocode data using Google.
+     * @param address Address to query the coordinates for.
+     * @param region Optional TLD biasing region.
+     */
+    private getGeocode_Google = async (address: string, region?: string): Promise<MapCoordinates[]> => {
+        try {
             const geoRequest: GeocodeRequest = {
                 params: {
                     address: address,
-                    region: region,
                     key: settings.maps.api.key
                 }
             }
 
-            // A region was specified?
+            // A region was specified? Append to the request parameters.
             if (region) {
                 region = region.toLowerCase()
                 geoRequest.params.region = region
             }
 
             // Get geocode from Google Maps.
-            const res = await this.client.geocode(geoRequest)
-
+            const res = await this.googleClient.geocode(geoRequest)
             if (res.data && res.data.results && res.data.results.length > 0) {
-                const results = []
-
-                // Iterate results from Google and populate coordinates.
-                for (let r of res.data.results) {
-                    results.push({
+                return res.data.results.map((r) => {
+                    return {
                         address: r.formatted_address,
                         latitude: r.geometry.location.lat,
                         longitude: r.geometry.location.lng,
                         placeId: r.place_id
-                    })
-                }
-
-                cache.set("maps", `${region}-${addressId}`, results)
-                logger.info("Maps.getGeocode", address, region, `${results.length} result(s)`)
-                return results
+                    }
+                })
             }
 
             // Error returned by the Maps API?
@@ -124,10 +164,51 @@ export class Maps {
                 throw new Error(res.data.error_message)
             }
 
-            logger.info("Maps.getGeocode", address, region, `No results for: ${address}`)
+            // No results?
             return []
         } catch (ex) {
-            logger.error("Maps.getGeocode", address, region, ex)
+            logger.debug("Maps.getGeocode_Google", address, region, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get the geocode data using LocationIQ.
+     * @param address Address to query the coordinates for.
+     * @param region Optional TLD biasing region.
+     */
+    private getGeocode_LocationIQ = async (address: string, region?: string): Promise<MapCoordinates[]> => {
+        try {
+            if (region && address.indexOf(region) < address.length / 1.2) {
+                address = `${address} ${region}`
+            }
+
+            const baseUrl = settings.locationiq.baseUrl
+            const token = settings.locationiq.token
+            const options: any = {
+                method: "GET",
+                returnResponse: true,
+                url: `${baseUrl}search?zoom=14&format=json&key=${token}&q=${address}`,
+                headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`}
+            }
+
+            // Fetch geocode result from LocationIQ.
+            const res: any = await this.lociqLimiter.schedule({id: address.replace(/\s/g, "")}, () => axiosRequest(options))
+            if (res.data && res.data.length > 0) {
+                return res.data.map((a) => {
+                    return {
+                        address: a.display_name,
+                        latitude: parseFloat(a.lat),
+                        longitude: parseFloat(a.lon),
+                        placeId: a.place_id
+                    }
+                })
+            }
+
+            // No results?
+            return []
+        } catch (ex) {
+            logger.debug("Maps.getGeocode_LocationIQ", address, region, ex)
             throw ex
         }
     }
@@ -135,8 +216,11 @@ export class Maps {
     /**
      * Get the reverse geocode data for the specified coordinates.
      * @param coordinates Lat / long coordinates to be queried.
+     * @param provider The geocoding provider, defaults to Google if omitted.
      */
-    getReverseGeocode = async (coordinates: [number, number]): Promise<MapAddress> => {
+    getReverseGeocode = async (coordinates: [number, number], provider?: "google" | "locationiq"): Promise<MapAddress> => {
+        if (!provider) provider = "google"
+
         try {
             if (!coordinates && coordinates.length != 2) {
                 throw new Error("Invalid or missing coordinates")
@@ -162,7 +246,33 @@ export class Maps {
                 return dbCached
             }
 
-            // Geo request parameters.
+            // Get address from the specified provider.
+            const address: MapAddress = provider == "google" ? await this.getReverseGeocode_Google(coordinates) : await this.getReverseGeocode_LocationIQ(coordinates)
+            if (address) {
+                address.dateCached = now.toDate()
+                address.dateExpiry = now.add(settings.maps.maxCacheDuration, "seconds").toDate()
+
+                cache.set("maps", cacheId, address)
+                database.set("maps", address, cacheId)
+
+                logger.info("Maps.getReverseGeocode", provider, coordinates.join(", "), this.getAddressLog(address))
+                return address
+            }
+
+            logger.info("Maps.getReverseGeocode", provider, `No results for ${coordinates.join(", ")}`)
+            return null
+        } catch (ex) {
+            logger.error("Maps.getReverseGeocode", provider, coordinates, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get the reverse geocode data using Google.
+     * @param coordinates Lat / long coordinates to be queried.
+     */
+    private getReverseGeocode_Google = async (coordinates: [number, number]): Promise<MapAddress> => {
+        try {
             const geoRequest: ReverseGeocodeRequest = {
                 params: {
                     latlng: coordinates,
@@ -170,9 +280,8 @@ export class Maps {
                 }
             }
 
-            // Get geocode from Google Maps.
-            const res = await this.client.reverseGeocode(geoRequest)
-
+            // Fetch geocode result from Google.
+            const res = await this.googleClient.reverseGeocode(geoRequest)
             if (res.data && res.data.results && res.data.results.length > 0) {
                 const components = res.data.results[0].address_components
 
@@ -183,15 +292,11 @@ export class Maps {
                 const country = components.find((c) => c.types.includes("country" as any))
 
                 // Build the resulting MapAddress.
-                const address: MapAddress = {dateCached: now.toDate(), dateExpiry: now.add(settings.maps.maxCacheDuration, "seconds").toDate()}
+                const address: MapAddress = {}
                 if (neighborhood) address.neighborhood = neighborhood.long_name
                 if (city) address.city = city.long_name
                 if (state) address.state = state.long_name
                 if (country) address.country = country.long_name
-
-                cache.set("maps", cacheId, address)
-                database.set("maps", address, cacheId)
-                logger.info("Maps.getReverseGeocode", logCoordinates, this.getAddressLog(address))
 
                 return address
             }
@@ -201,14 +306,56 @@ export class Maps {
                 throw new Error(res.data.error_message)
             }
 
-            logger.info("Maps.getReverseGeocode", logCoordinates, `No results for: ${logCoordinates}`)
             return null
         } catch (ex) {
-            const logCoordinates = coordinates ? coordinates.join(", ") : "[]"
-            logger.error("Maps.getReverseGeocode", logCoordinates, ex)
+            logger.debug("Maps.getReverseGeocode_Google", coordinates.join(", "), "Failed", ex)
             throw ex
         }
     }
+
+    /**
+     * Get the reverse geocode data using LocationIQ.
+     * @param coordinates Lat / long coordinates to be queried.
+     */
+    private getReverseGeocode_LocationIQ = async (coordinates: [number, number]): Promise<MapAddress> => {
+        try {
+            const baseUrl = settings.locationiq.baseUrl
+            const token = settings.locationiq.token
+
+            const options: any = {
+                method: "GET",
+                returnResponse: true,
+                url: `${baseUrl}reverse?zoom=14&format=json&key=${token}&lat=${coordinates[0]}&lon=${coordinates[1]}`,
+                headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`}
+            }
+
+            // Fetch geocode result from LocationIQ.
+            const res: any = await this.lociqLimiter.schedule({id: coordinates.join("-")}, () => axiosRequest(options))
+            if (res.data && res.data.address) {
+                const addressInfo = res.data.address
+                const address: MapAddress = {}
+
+                // Append only the available / relevant data.
+                if (addressInfo.neighbourhood) address.neighborhood = addressInfo.neighbourhood
+                else if (addressInfo.suburb) address.neighborhood = addressInfo.suburb
+                if (addressInfo.city) address.city = addressInfo.city
+                else if (addressInfo.town) address.city = addressInfo.town
+                if (addressInfo.state) address.state = addressInfo.state
+                else if (addressInfo.county) address.state = addressInfo.county
+                if (addressInfo.country) address.country = addressInfo.country
+
+                return address
+            }
+
+            return null
+        } catch (ex) {
+            logger.debug("Maps.getReverseGeocode_LocationIQ", coordinates.join(", "), "Failed", ex)
+            throw ex
+        }
+    }
+
+    // IMAGES
+    // --------------------------------------------------------------------------
 
     /**
      * Download a static PNG image representing a map for the specified coordinates.

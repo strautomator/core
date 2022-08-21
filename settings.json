@@ -90,8 +90,19 @@
     },
     "komoot": {
         "baseUrl": "https://www.komoot.com/",
-        // Route details are cached for 7 days. Value set in seconds.
-        "cacheDuration": 604800
+        // Route details are cached in memory for up to 24 hours. Value set in seconds.
+        "cacheDuration": 86400,
+        // Route details are cached in the database for up to 7 days. Value set in seconds.
+        "maxCacheDuration": 604800
+    },
+    "locationiq": {
+        "baseUrl": "https://eu1.locationiq.com/v1/",
+        // The token must be set via secret settings or via the SMU_locationiq_token environment variable.
+        "token": null,
+        // Maximum concurrent requests and requests per minute, per instance.
+        "maxConcurrent": 1,
+        "maxPerMinute": 100,
+        "minTime": 500
     },
     "mailer": {
         // The default "from" on sent emails should be set on settings.secret.json file
@@ -278,7 +289,8 @@
         "cname": true
     },
     "strava": {
-        // API endpoints and credentials from Strava.
+        // API endpoints and credentials from Strava. The "clientId" and "clientSecret" must be set via secret
+        // settings or via the SMU_strava_api_clientId and SMU_strava_api_clientSecret environment variables.
         "api": {
             "baseUrl": "https://www.strava.com/api/v3/",
             "authUrl": "https://www.strava.com/oauth/authorize",
@@ -299,6 +311,7 @@
             // Default verification token to be sent by Strava on subcriptions, MUST be set
             // via secret settings or the SMU_strava_api_verifyToken environment variable.
             "verifyToken": null
+            // The clientId and clientSecret must be set
         },
         // Some Strava resources might be cached in memory. Duration in seconds.
         "cacheDuration": {

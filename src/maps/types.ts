@@ -28,6 +28,6 @@ export interface MapCoordinates {
     latitude: number
     /** Longitude as number. */
     longitude: number
-    /** Place ID on Google Maps. */
+    /** Place ID on the geocoding provider. */
     placeId?: string
 }
