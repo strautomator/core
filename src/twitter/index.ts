@@ -86,24 +86,27 @@ export class Twitter {
 
             // Parameters to decide if the ride was "impressive" or not.
             const imperial: boolean = user.profile.units == "imperial"
-            const rideDistance: number = imperial ? 130 : 200
-            const rideSpeed: number = imperial ? 26 : 42
-            const runDistance: number = imperial ? 26 : 42
+            const rideDistance: number = imperial ? 100 : 160
+            const rideSpeed: number = imperial ? 25 : 40
+            const runDistance: number = imperial ? 25 : 40
+            const runSpeed: number = imperial ? 11 : 18
             let messageTemplates: string[] = null
 
             // Rides.
             if (activity.type == "Ride") {
-                if (activity.distance > rideDistance) {
+                if (activity.distance >= rideDistance) {
                     messageTemplates = messages.RideLongDistance
-                } else if (activity.speedAvg > rideSpeed) {
+                } else if (activity.speedAvg >= rideSpeed && activity.distance >= 20) {
                     messageTemplates = messages.RideFast
                 }
             }
 
             // Runs.
             else if (activity.type == "Run") {
-                if (activity.distance > runDistance) {
+                if (activity.distance >= runDistance) {
                     messageTemplates = messages.RunLongDistance
+                } else if (activity.speedAvg >= runSpeed && activity.distance >= 5) {
+                    messageTemplates = messages.RunFast
                 }
             }
 
@@ -161,19 +164,20 @@ export class Twitter {
     /**
      * Shortcut to postStatus() with the activity details as the status message.
      * @param user The owner of the activity.
-     * @param activity The Strava activity.
+     * @param sourceActivity The source Strava activity.
      * @param message Template message to be used.
      */
-    postActivity = async (user: UserData, activity: StravaActivity, message: string): Promise<void> => {
+    postActivity = async (user: UserData, sourceActivity: StravaActivity, message: string): Promise<void> => {
         try {
+            const activity = _.cloneDeep(sourceActivity)
             transformActivityFields(user, activity)
 
-            message = jaul.data.replaceTags(message, {user: user.displayName})
+            message = jaul.data.replaceTags(message, {user: user.displayName || user.id})
             message = jaul.data.replaceTags(message, activity)
 
             await this.postStatus(`${message} https://strava.com/activities/${activity.id}`)
         } catch (ex) {
-            logger.error("Twitter.postActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Twitter.postActivity", `User ${user.id} ${user.displayName}`, `Activity ${sourceActivity.id}`, ex)
         }
     }
 }
