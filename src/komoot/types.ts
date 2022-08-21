@@ -6,6 +6,8 @@
 export interface KomootRoute {
     /** ID of the route. */
     id: string
+    /** Starting location as coordinates. */
+    locationStart?: [number, number]
     /** Total distance. */
     distance?: number
     /** Expected duration. */

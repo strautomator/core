@@ -102,6 +102,22 @@ export class Komoot {
                 throw new Error(`Could not fetch tour ${tourId}, likely is private`)
             }
 
+            // Try parsing the start location.
+            const startPoint = html.indexOf(`\\"start_point\\"`, html.length / 3)
+            if (startPoint) {
+                const iLat = html.indexOf(`\\"lat\\":`, startPoint) + 8
+                const iLng = html.indexOf(`\\"lng\\":`, startPoint) + 8
+
+                if (iLat > 6 && iLng > 6) {
+                    const lat: any = html.substring(iLat, html.indexOf(`,`, iLat))
+                    const lng: any = html.substring(iLng, html.indexOf(`,`, iLng))
+
+                    if (!isNaN(lng) && !isNaN(lng)) {
+                        result.locationStart = [parseFloat(lat), parseFloat(lng)]
+                    }
+                }
+            }
+
             // Try parsing the distance.
             const iDistance = html.indexOf("Distance: ") + 10
             if (iDistance > 10) {
