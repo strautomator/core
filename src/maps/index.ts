@@ -59,7 +59,8 @@ export class Maps {
                     maxConcurrent: settings.locationiq.maxConcurrent,
                     reservoir: settings.locationiq.maxPerMinute,
                     reservoirRefreshAmount: settings.locationiq.maxPerMinute,
-                    reservoirRefreshInterval: 1000 * 60
+                    reservoirRefreshInterval: 1000 * 60,
+                    minTime: 500
                 })
 
                 // Rate limiter events.
