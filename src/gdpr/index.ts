@@ -98,6 +98,7 @@ export class GDPR {
 
             // Remove sensitive data.
             delete jsonData["user"].stravaTokens
+            delete jsonData["user"].urlToken
 
             // Iterate and zip database contents for the specified user.
             let key: string
