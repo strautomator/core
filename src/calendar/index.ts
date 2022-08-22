@@ -421,7 +421,7 @@ export class Calendar {
                         // Upcoming event has a route with estimated time? Use it as the end date,
                         // with some added time for breaks / stops. Otherwise defaults to 15 minutes.
                         if (clubEvent.route && eventDate > today && estimatedTime > 0) {
-                            const secondsEstimated = estimatedTime * 1.1
+                            const secondsEstimated = estimatedTime * 1.05
                             const secondsExtraBrakes = Math.floor(estimatedTime / 7200) * 60 * 20
                             const totalAddedSeconds = clubEvent.type == "Ride" ? secondsEstimated + secondsExtraBrakes : secondsEstimated + 300
                             const targetDate = dayjs(eventDate).add(totalAddedSeconds, "seconds")
