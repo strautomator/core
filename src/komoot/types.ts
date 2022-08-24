@@ -6,12 +6,16 @@
 export interface KomootRoute {
     /** ID of the route. */
     id: string
-    /** Starting location as coordinates. */
-    locationStart?: [number, number]
     /** Total distance. */
     distance?: number
     /** Expected duration. */
     estimatedTime?: number
+    /** Starting location as coordinates. */
+    locationStart?: [number, number]
+    /** Starting location as coordinates. */
+    locationEnd?: [number, number]
+    /** Mid point location as coordinates. */
+    locationMid?: [number, number]
     /** Date when it was cached. */
     dateCached?: Date
     /** Date when it should expire (used for the Firestore TTL). */
