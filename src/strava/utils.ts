@@ -1,11 +1,11 @@
 // Strautomator Core: Strava Utils
 
-import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaRoute, StravaSport} from "./types"
+import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaProfileStats, StravaRoute, StravaSport, StravaTotals} from "./types"
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
+import maps from "../maps"
 import dayjs from "../dayjs"
 import _ = require("lodash")
-import {StravaProfileStats, StravaTotals} from "src"
 
 // Feet and miles ratio.
 const rFeet = 3.28084
@@ -476,7 +476,7 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
         description: data.description,
         distance: Math.round(distance),
         elevationGain: elevationGain,
-        polyline: data.map.polyline || data.map.summary_polyline,
+        polyline: data.map.polyline || data.map.summary_polyline || null,
         type: data.type == 1 ? StravaSport.Ride : StravaSport.Run
     }
 
@@ -488,6 +488,14 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
     // Terrain type available?
     if (data.terrain) {
         route.terrain = data.terrain
+    }
+
+    // Has polyline set? Get the start / mid / end coordinates.
+    if (route.polyline) {
+        const coordinates = maps.polylines.decode(route.polyline)
+        route.locationStart = coordinates[0] as [number, number]
+        route.locationMid = coordinates[Math.floor(coordinates.length / 2)] as [number, number]
+        route.locationEnd = coordinates[coordinates.length - 1] as [number, number]
     }
 
     return route

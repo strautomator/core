@@ -435,7 +435,7 @@ export interface StravaClubEvent {
     club?: Partial<StravaClub>
     /** The organizer. */
     organizer?: Partial<StravaProfile>
-    /** Start location. */
+    /** Start location (address). */
     address?: string
     /** Attached Strava route. */
     route?: StravaRoute
@@ -465,6 +465,12 @@ export interface StravaRoute {
     estimatedTime?: number
     /** Route encoded polyline. */
     polyline?: string
+    /** Starting location as coordinates. */
+    locationStart?: [number, number]
+    /** Starting location as coordinates. */
+    locationEnd?: [number, number]
+    /** Mid point location as coordinates. */
+    locationMid?: [number, number]
     /** Terrain type. */
     terrain?: StravaRouteTerrain
 }
