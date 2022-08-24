@@ -35,7 +35,12 @@ export class Storage {
     init = async (quickStart?: boolean): Promise<void> => {
         try {
             const existingBuckets: string[] = []
-            const options: any = {}
+            const options: cloudStorage.StorageOptions = {
+                retryOptions: {
+                    autoRetry: true,
+                    maxRetries: 3
+                }
+            }
 
             if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
                 options.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
