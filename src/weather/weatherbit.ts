@@ -22,7 +22,8 @@ export class Weatherbit implements WeatherProvider {
 
     name: string = "weatherbit"
     title: string = "Weatherbit"
-    maxHours: number = 1
+    hoursPast: number = 1
+    hoursFuture: number = 0
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -36,15 +37,19 @@ export class Weatherbit implements WeatherProvider {
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = date.toISOString()
+        const today = dayjs.utc()
+        const diffHours = Math.abs(today.diff(date, "hours"))
+        const isFuture = today.isBefore(date)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
             if (!preferences) preferences = {}
-            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.weatherbit.baseUrl
             const secret = settings.weather.weatherbit.secret
             const lang = preferences.language || "en"
-            const weatherUrl = `${baseUrl}?lat=${coordinates[0]}&lon=${coordinates[1]}&tz=local&lang=${lang}&units=M&key=${secret}`
+            const weatherUrl = `${baseUrl}current?lat=${coordinates[0]}&lon=${coordinates[1]}&tz=local&lang=${lang}&units=M&key=${secret}`
 
             // Fetch weather data.
             logger.debug("Weatherbit.getWeather", weatherUrl)
@@ -70,7 +75,15 @@ export class Weatherbit implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
-        data = data.data ? data.data[0] : null
+        data = data.data ? data.data : null
+        if (!data) return
+
+        if (data.length > 1) {
+            data = data.find((d) => d.datetime == dayjs.utc(date).format("YYYY-MM-DD:HH"))
+        } else {
+            data = data[0]
+        }
+
         if (!data) return
 
         const code = data.weather.code.toString().substring(1)

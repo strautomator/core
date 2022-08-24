@@ -23,7 +23,8 @@ export class Tomorrow implements WeatherProvider {
 
     name: string = "tomorrow"
     title: string = "Tomorrow.io"
-    maxHours: number = 5
+    hoursPast: number = 5
+    hoursFuture: number = 168
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -37,10 +38,14 @@ export class Tomorrow implements WeatherProvider {
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = date.toISOString()
+        const today = dayjs.utc()
+        const diffHours = Math.abs(today.diff(date, "hours"))
+        const isFuture = today.isBefore(date)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
             if (!preferences) preferences = {}
-            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.tomorrow.baseUrl
             const secret = settings.weather.tomorrow.secret

@@ -23,7 +23,8 @@ export class WeatherAPI implements WeatherProvider {
 
     name: string = "weatherapi"
     title: string = "WeatherAPI.com"
-    maxHours: number = 1
+    hoursPast: number = 1
+    hoursFuture: number = 108
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -37,16 +38,21 @@ export class WeatherAPI implements WeatherProvider {
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = date.toISOString()
+        const today = dayjs.utc()
+        const diffHours = Math.abs(today.diff(date, "hours"))
+        const isFuture = today.isBefore(date)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
             if (!preferences) preferences = {}
-            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.weatherapi.baseUrl
             const secret = settings.weather.weatherapi.secret
             const startTime = dayjs.utc(date).unix()
             const lang = preferences.language || "en"
-            const weatherUrl = `${baseUrl}current.json?key=${secret}&lang=${lang}&q=${coordinates.join(",")}&unixdt=${startTime}`
+            const basePath = isFuture ? "forecast" : "current"
+            const weatherUrl = `${baseUrl}${basePath}.json?key=${secret}&lang=${lang}&q=${coordinates.join(",")}&unixdt=${startTime}`
 
             // Fetch weather data.
             logger.debug("WeatherAPI.getWeather", weatherUrl)
@@ -77,7 +83,7 @@ export class WeatherAPI implements WeatherProvider {
         if (!data) return
 
         // Set wind speed.
-        let wind = data.wind_kph || data.maxwind_kph || null
+        let windSpeed = data.wind_kph || data.maxwind_kph || null
 
         // Make sure we don't have sunny at night :-)
         let summary = data.condition && data.condition.text ? data.condition.text.toLowerCase() : null
@@ -93,8 +99,8 @@ export class WeatherAPI implements WeatherProvider {
             feelsLike: data.feelslike_c,
             humidity: data.humidity || data.avghumidity || null,
             pressure: data.pressure_mb || null,
-            windSpeed: wind ? parseFloat(wind) / 3.6 : null,
-            windDirection: data.wind_degree ? data.wind_degree : null,
+            windSpeed: windSpeed ? parseFloat(windSpeed) / 3.6 : null,
+            windDirection: data.wind_degree || null,
             precipitation: null,
             cloudCover: data.cloud,
             visibility: data.avgvis_km || data.vis_km || 99,
@@ -127,9 +133,9 @@ export class WeatherAPI implements WeatherProvider {
 
             // Try finding the particular hour.
             if (result) {
-                let hourData = _.find(result.hour, {date: mDate.format(hourFormat)})
-                if (!hourData) hourData = _.find(result.hour, {date: mDate.subtract(1, "h").format(hourFormat)})
-                if (!hourData) hourData = _.find(result.hour, {date: mDate.add(1, "h").format(hourFormat)})
+                let hourData = _.find(result.hour, {time: mDate.format(hourFormat)})
+                if (!hourData) hourData = _.find(result.hour, {time: mDate.subtract(1, "h").format(hourFormat)})
+                if (!hourData) hourData = _.find(result.hour, {time: mDate.add(1, "h").format(hourFormat)})
                 result = hourData || result.day
             }
         } else {

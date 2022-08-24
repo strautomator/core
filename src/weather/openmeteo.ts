@@ -22,7 +22,8 @@ export class OpenMeteo implements WeatherProvider {
 
     name: string = "openmeteo"
     title: string = "Open-Meteo"
-    maxHours: number = 2160
+    hoursPast: number = 2160
+    hoursFuture: number = 160
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -37,15 +38,18 @@ export class OpenMeteo implements WeatherProvider {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = date.toISOString()
         const today = dayjs.utc()
-        const diffHours = today.diff(date, "hours")
+        const diffHours = Math.abs(today.diff(date, "hours"))
+        const isFuture = today.isBefore(date)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
             if (!preferences) preferences = {}
-            if (diffHours > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.openmeteo.baseUrl
-            const pastDays = today.dayOfYear() - today.subtract(diffHours, "hours").dayOfYear()
-            const weatherUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&past_days=${pastDays}&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,pressure_msl,precipitation,weathercode,snow_depth,cloudcover,windspeed_10m,winddirection_10m,windgusts_10m&current_weather=true`
+            const dateFormat = dayjs.utc(date).format("YYYY-MM-DD")
+            const daysQuery = isFuture ? `start_date=${dateFormat}&end_date=${dateFormat}` : `past_days=${today.dayOfYear() - today.subtract(diffHours, "hours").dayOfYear()}`
+            const weatherUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,pressure_msl,precipitation,weathercode,snow_depth,cloudcover,windspeed_10m,winddirection_10m,windgusts_10m&current_weather=true`
 
             // Fetch weather data.
             logger.debug("OpenMeteo.getWeather", weatherUrl)

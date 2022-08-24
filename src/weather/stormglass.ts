@@ -22,7 +22,8 @@ export class StormGlass implements WeatherProvider {
 
     name: string = "stormglass"
     title: string = "Storm Glass"
-    maxHours: number = 168
+    hoursPast: number = 168
+    hoursFuture: number = 0
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -36,10 +37,14 @@ export class StormGlass implements WeatherProvider {
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = date.toISOString()
+        const today = dayjs.utc()
+        const diffHours = Math.abs(today.diff(date, "hours"))
+        const isFuture = today.isBefore(date)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
             if (!preferences) preferences = {}
-            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.stormglass.baseUrl
             const secret = settings.weather.stormglass.secret

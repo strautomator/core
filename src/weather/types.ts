@@ -3,12 +3,14 @@
 import Bottleneck from "bottleneck"
 
 /**
- * Activity weather summaries (start and end).
+ * Activity or club event weather summaries (start, mid and end).
  */
 export interface ActivityWeather {
-    /** Weather at the activity start. */
+    /** Weather at the start. */
     start?: WeatherSummary
-    /** Weather at the activity end. */
+    /** Weather at the mid location. */
+    mid?: WeatherSummary
+    /** Weather at the end. */
     end?: WeatherSummary
 }
 
@@ -42,7 +44,9 @@ export interface WeatherProvider {
     /** Title of the provider (shown to users). */
     title: string
     /** How many hours back in time can the weather provider go? */
-    maxHours: number
+    hoursPast: number
+    /** How many days ahead for forecasts? */
+    hoursFuture: number
     /** Get the weather for the specified location and date. */
     getWeather: Function
     /** API rate limiter, instantiated by the Weather Manager. */

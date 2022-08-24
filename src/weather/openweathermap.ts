@@ -22,7 +22,8 @@ export class OpenWeatherMap implements WeatherProvider {
 
     name: string = "openweathermap"
     title: string = "OpenWeatherMap"
-    maxHours: number = 1
+    hoursPast: number = 1
+    hoursFuture: number = 108
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -36,15 +37,20 @@ export class OpenWeatherMap implements WeatherProvider {
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = date.toISOString()
+        const today = dayjs.utc()
+        const diffHours = Math.abs(today.diff(date, "hours"))
+        const isFuture = today.isBefore(date)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
             if (!preferences) preferences = {}
-            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.openweathermap.baseUrl
             const secret = settings.weather.openweathermap.secret
             const lang = preferences.language || "en"
-            const weatherUrl = `${baseUrl}?appid=${secret}&units=metric&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}`
+            const basePath = isFuture ? "forecast" : "weather"
+            const weatherUrl = `${baseUrl}${basePath}?appid=${secret}&units=metric&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}`
 
             // Fetch weather data.
             logger.debug("OpenWeatherMap.getWeather", weatherUrl)
@@ -70,6 +76,10 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param preferences User preferences.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
+        if (!data) return
+        if (data.list) {
+            data = data.list.find((d) => d.dt > dayjs.utc(date).unix())
+        }
         if (!data) return
 
         const weatherData = data.weather[0]

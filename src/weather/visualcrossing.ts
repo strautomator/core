@@ -22,7 +22,8 @@ export class VisualCrossing implements WeatherProvider {
 
     name: string = "visualcrossing"
     title: string = "Visual Crossing"
-    maxHours: number = 8760
+    hoursPast: number = 8760
+    hoursFuture: number = 24
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -36,10 +37,14 @@ export class VisualCrossing implements WeatherProvider {
     getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = date.toISOString()
+        const today = dayjs.utc()
+        const diffHours = Math.abs(today.diff(date, "hours"))
+        const isFuture = today.isBefore(date)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
             if (!preferences) preferences = {}
-            if (dayjs.utc().diff(date, "hours") > this.maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.visualcrossing.baseUrl
             const secret = settings.weather.visualcrossing.secret
@@ -113,6 +118,11 @@ export class VisualCrossing implements WeatherProvider {
                 timeOfDay: getSuntimes(coordinates, date).timeOfDay,
                 mmPrecipitation: snowDepth || precipLevel
             }
+        }
+
+        // Incomplete data returned? Discard it.
+        if (result.temperature == 0 && result.humidity === null && result.pressure === null && result.windSpeed === null) {
+            return
         }
 
         // Process and return weather summary.
