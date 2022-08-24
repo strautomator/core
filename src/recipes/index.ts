@@ -268,7 +268,7 @@ export class Recipes {
 
             // Weather conditions.
             if (prop.indexOf("weather") >= 0) {
-                const valid = await checkWeather(activity, condition, user)
+                const valid = await checkWeather(user, activity, condition)
                 if (!valid) return false
             }
 

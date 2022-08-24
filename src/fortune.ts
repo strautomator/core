@@ -233,7 +233,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         preferences.language = "en"
 
         // Fetch weather summary for activity.
-        const weatherSummary = await weather.getActivityWeather(activity, user)
+        const weatherSummary = await weather.getActivityWeather(user, activity)
         if (weatherSummary) {
             let wPrefixes: string[] = []
 

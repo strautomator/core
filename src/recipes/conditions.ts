@@ -209,11 +209,11 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
 
 /**
  * Check if weather for activity matches the specified condition.
+ * @param user User data.
  * @param activity The Strava activity to be checked.
  * @param condition The weather based recipe condition.
- * @param user User data.
  */
-export const checkWeather = async (activity: StravaActivity, condition: RecipeCondition, user: UserData): Promise<boolean> => {
+export const checkWeather = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
     const prop = condition.property
     const op = condition.operator
 
@@ -231,7 +231,7 @@ export const checkWeather = async (activity: StravaActivity, condition: RecipeCo
         const weatherProp = prop.split(".")[1]
 
         // Get activity weather.
-        const weatherSummary = await weather.getActivityWeather(activity, user)
+        const weatherSummary = await weather.getActivityWeather(user, activity)
         let summary: WeatherSummary
 
         // Weather could not be fetched? Stop here.

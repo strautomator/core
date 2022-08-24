@@ -105,10 +105,10 @@ export class Announcements {
 
     /**
      * Increment the read count for the specified announcement ID.
-     * @param id The announcement ID.
      * @param user The user who read this announcement.
+     * @param id The announcement ID.
      */
-    setReadCount = async (id: string, user: UserData): Promise<void> => {
+    setReadCount = async (user: UserData, id: string): Promise<void> => {
         try {
             if (!id) throw new Error("Missing announcement ID")
             if (!user || !user.id) throw new Error("Missing or invalid user")
