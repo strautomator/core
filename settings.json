@@ -378,7 +378,7 @@
         },
         // OpenWeatherMap API settings.
         "openweathermap": {
-            "baseUrl": "https://api.openweathermap.org/data/2.5/weather",
+            "baseUrl": "https://api.openweathermap.org/data/2.5/",
             // OpenWeatherMap API rate limits.
             "rateLimit": {
                 "maxConcurrent": 3,
@@ -443,7 +443,7 @@
         },
         // Weatherbit API settings.
         "weatherbit": {
-            "baseUrl": "https://api.weatherbit.io/v2.0/current",
+            "baseUrl": "https://api.weatherbit.io/v2.0/",
             // OpenWeathWeatherbiterMap API rate limits.
             "rateLimit": {
                 "maxConcurrent": 3,
