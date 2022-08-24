@@ -101,6 +101,7 @@ export * from "./notifications/types"
 export * from "./announcements/types"
 export * from "./github/types"
 export * from "./paypal/types"
+export * from "./weather/types"
 export * from "./fortune"
 
 // Import the custom dayjs implementation.
@@ -183,8 +184,8 @@ export const startup = async (quickStart?: boolean) => {
 
     // Running locally? Setup the necessary cron jobs which are
     // otherwise defined as Cloud Functions in production.
-    if (process.env.NODE_ENV == "development") {
-        logger.warn("Strautomator.startup", "Setting up cron jobs, running in dev mode")
+    if (process.env.NODE_ENV == "development" && process.env.STRAUTOMATOR_CRON) {
+        logger.warn("Strautomator.startup", "Setting up cron jobs directly")
 
         // Process queued activities every 5 minutes.
         const processQueuedActivities = async () => {
