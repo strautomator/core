@@ -1,9 +1,11 @@
 // Strautomator Core: GitHub
 
-import {GitHubChangelog} from "./types"
+import {GitHubChangelog, GitHubSubscription} from "./types"
 import {axiosRequest} from "../axios"
 import database from "../database"
 import dayjs from "../dayjs"
+import eventManager from "../eventmanager"
+import users from "../users"
 import _ = require("lodash")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
@@ -108,7 +110,7 @@ export class GitHub {
         }
     }
 
-    // HELPERS
+    // CHANGELOG
     // --------------------------------------------------------------------------
 
     /**
@@ -139,6 +141,72 @@ export class GitHub {
             await database.appState.set("changelog", changelog, true)
         } catch (ex) {
             logger.error("GitHub.buildChangelog", ex)
+        }
+    }
+
+    // WEBHOOKS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Process a webhook event dispatched by GitHub.
+     * @param data Event data.
+     * @event GitHub.subscriptionUpdated
+     */
+    processWebhook = async (data: any): Promise<void> => {
+        const details = []
+
+        try {
+            if (!data) {
+                details.push(data.event_type)
+                logger.warn("GitHub.processWebhook", "Missing webhook body")
+                return
+            }
+
+            const now = new Date()
+
+            // Log request body.
+            if (data.action) details.push(`Action: ${data.action}`)
+            if (data.sender) details.push(`Sender: ${data.sender.login}`)
+            if (data.hook) details.push(`Hook: ${data.hook.type}`)
+            if (data.sponsorship) {
+                details.push(`Sponsor: ${data.sponsorship.sponsor.login}`)
+                details.push(`Tier: ${data.sponsorship.tier.name}`)
+                details.push(`Amount: ${data.sponsorship.tier.monthly_price_in_dollars} USD`)
+            }
+
+            // Abort here if sponsorship webhook is missing crutial data.
+            if (!data.action || !data.sponsorship) {
+                logger.warn("GitHub.processWebhook", "Missing sponsorship details", details.join(", "))
+                return
+            }
+
+            const username = data.sponsorship.sponsor.login
+            const subId = `GH-${username}`
+
+            // Check if the subscription data already exists, and if not, create one.
+            let subscription: GitHubSubscription = await database.get("subscriptions", subId)
+            if (!subscription) {
+                const user = await users.getByUsername(username)
+
+                // Can't create subscription if a user with a similar username was not found.
+                if (!user) {
+                    logger.warn("GitHub.processWebhook", details.join(", "), "User not found, won't create subscription")
+                    return
+                }
+
+                subscription = {id: subId, userId: user.id, dateCreated: now, dateUpdated: now}
+            }
+
+            subscription.status = data.action == "create" ? "ACTIVE" : "CANCELLED"
+            subscription.monthlyPrice = data.sponsorship.tier.monthly_price_in_dollars
+
+            logger.info("GitHub.processWebhook", details.join(", "))
+
+            // Save updated subscription on the database, and emit event to update the user.
+            await database.merge("subscriptions", subscription)
+            eventManager.emit("GitHub.subscriptionUpdated", subscription)
+        } catch (ex) {
+            logger.error("GitHub.processWebhook", `ID ${data.id}`, details.join(", "), ex)
         }
     }
 }

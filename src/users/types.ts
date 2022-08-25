@@ -108,7 +108,7 @@ export interface UserSubscriptionRef {
     /** Subscription ID. */
     id: string
     /** Subscription source. */
-    source: "paypal" | "github" | "friend" | "revolut"
+    source?: "paypal" | "github" | "friend" | "revolut"
     /** Subscription currency. */
     currency?: string
     /** Enabled? */

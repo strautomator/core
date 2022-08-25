@@ -2,6 +2,7 @@
 
 import {UserData} from "./types"
 import {PayPalSubscription} from "../paypal/types"
+import {GitHubSubscription} from "../github/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 import {encryptData} from "../database/crypto"
 import userSubscriptions from "./subscriptions"
@@ -40,9 +41,10 @@ export class Users {
             settings.users.idleDays = 7
         }
 
-        // PayPal events.
+        // PayPal and GitHub events.
         eventManager.on("PayPal.subscriptionCreated", this.onPayPalSubscription)
         eventManager.on("PayPal.subscriptionUpdated", this.onPayPalSubscription)
+        eventManager.on("GitHub.subscriptionUpdated", this.onGitHubSubscription)
 
         // Strava events.
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
@@ -51,7 +53,7 @@ export class Users {
 
     /**
      * Set user isPro status when a PayPal subscription status changes.
-     * @param subscription The PayPal ssubscription details.
+     * @param subscription The PayPal subscription details.
      */
     private onPayPalSubscription = async (subscription: PayPalSubscription): Promise<void> => {
         if (!subscription) {
@@ -62,20 +64,56 @@ export class Users {
         logger.info("Users.onPayPalSubscription", `User ${subscription.userId}`, subscription.id, subscription.status)
 
         try {
-            const user: Partial<UserData> = {id: subscription.userId}
+            const user: Partial<UserData> = {
+                id: subscription.userId,
+                subscription: {
+                    id: subscription.id,
+                    source: "paypal",
+                    enabled: subscription.status != "CANCELLED"
+                }
+            }
 
             // User activated a PRO account or reverted back to the free plan?
             if (subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
             } else {
-                user.subscription = {
-                    id: subscription.id,
-                    source: "paypal",
-                    enabled: subscription.status != "CANCELLED"
-                }
-
                 await this.update(user)
             }
+        } catch (ex) {
+            logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
+        }
+    }
+
+    /**
+     * Set user isPro status when a GitHub sponsorship gets updated.
+     * @param subscription The GitHub subscription details.
+     */
+    private onGitHubSubscription = async (subscription: PayPalSubscription): Promise<void> => {
+        if (!subscription) {
+            logger.error("Users.onGitHubSubscription", "Missing subscription data")
+            return
+        }
+
+        logger.info("Users.onGitHubSubscription", `User ${subscription.userId}`, subscription.id, subscription.status)
+
+        try {
+            const user: Partial<UserData> = {
+                id: subscription.userId,
+                subscription: {
+                    id: subscription.id,
+                    source: "github",
+                    enabled: subscription.status != "CANCELLED"
+                }
+            }
+
+            // Switch to PRO if subscription is active, otherwise back to free.
+            if (subscription.status == "ACTIVE") {
+                await this.switchToPro(user, subscription)
+            } else {
+                await this.switchToFree(user, subscription)
+            }
+
+            await this.update(user)
         } catch (ex) {
             logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
         }
@@ -260,6 +298,28 @@ export class Users {
             return await database.get("users", id)
         } catch (ex) {
             logger.error("Users.getById", id, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get the user by username.
+     * @param username The user's profile username.
+     */
+    getByUsername = async (username: string): Promise<UserData> => {
+        try {
+            const users = await database.search("users", ["profile.username", "==", username])
+            const userData = users.length > 0 ? users[0] : null
+
+            if (userData) {
+                logger.info("Users.getByUsername", username, userData.id, userData.displayName)
+            } else {
+                logger.warn("Users.getByUsername", username, "Not found")
+            }
+
+            return userData
+        } catch (ex) {
+            logger.error("Users.getByUsername", username, ex)
             throw ex
         }
     }
@@ -734,36 +794,46 @@ export class Users {
      * @param user Data for the user that should be updated.
      * @param subscription Optional subscription that was created, otherwise default to a "friend" subscription.
      */
-    switchToPro = async (user: Partial<UserData>, subscription?: PayPalSubscription): Promise<void> => {
+    switchToPro = async (user: Partial<UserData>, subscription?: PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
             const existingUser = await this.getById(user.id)
 
-            // Set PRO flag and subscription details.
-            user.displayName = existingUser.displayName
+            // Set PRO flag force set the display name.
             user.isPro = true
-            user.subscription = {
-                id: subscription ? subscription.id : `F-${dayjs().unix()}`,
-                source: subscription ? "paypal" : "friend",
-                enabled: true
+            user.displayName = existingUser.displayName
+
+            // Create subscription reference, if not there yet.
+            if (!user.subscription) {
+                user.subscription = {id: user.id, enabled: true}
             }
 
-            // Extract the payment currency (if any).
-            const currency = subscription.billingPlan ? subscription.billingPlan.currency : subscription.lastPayment ? subscription.lastPayment.currency : null
-            if (currency) {
-                user.subscription.currency = currency
-            }
+            // Friend or PayPal subscription? GitHub needs no additional processing.
+            if (!subscription) {
+                user.subscription = {
+                    id: `F-${dayjs().unix()}`,
+                    source: "friend",
+                    enabled: true
+                }
+            } else if (subscription.id.substring(0, 2) != "GH") {
+                const paypalSub = subscription as PayPalSubscription
 
-            // Email passed with the subscription and was not set for that user? Set it now.
-            if (!existingUser.email && subscription && subscription.email) {
-                user.email = subscription.email
+                // Extract the payment currency (if any).
+                const currency = paypalSub.billingPlan ? paypalSub.billingPlan.currency : paypalSub.lastPayment ? paypalSub.lastPayment.currency : null
+                if (currency) {
+                    user.subscription.currency = currency
+                }
+
+                // Email passed with the subscription and was not set for that user? Set it now.
+                if (!existingUser.email && paypalSub.email) {
+                    user.email = paypalSub.email
+                }
             }
 
             // Update user on the database.
             await this.update(user)
 
-            const email = user.email || existingUser.email
-
             // User was on the free plan before? Send a thanks email.
+            const email = user.email || existingUser.email
             if (email && !existingUser.isPro) {
                 const data = {
                     userId: user.id,
@@ -793,7 +863,7 @@ export class Users {
      * @param user Data for the user that should be updated.
      * @param subscription Optional subscription that was deactivated.
      */
-    switchToFree = async (user: Partial<UserData>, subscription?: PayPalSubscription): Promise<void> => {
+    switchToFree = async (user: Partial<UserData>, subscription?: PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
             const existingUser = await this.getById(user.id)
 
