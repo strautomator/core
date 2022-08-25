@@ -37,7 +37,7 @@ export class Database {
                 throw new Error("Missing the mandatory database.crypto.key setting")
             }
 
-            const options: any = {projectId: settings.gcp.projectId}
+            const options: FirebaseFirestore.Settings = {projectId: settings.gcp.projectId}
             if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
                 options.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
             }

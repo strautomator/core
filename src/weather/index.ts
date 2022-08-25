@@ -153,7 +153,7 @@ export class Weather {
 
     /**
      * Gets the weather for a given location and date.
-     * @param user THe user requesting the weather.
+     * @param user The user requesting the weather.
      * @param coordinates Array with lat / long coordinates.
      * @param date The weather date.
      * @param provider Optional preferred weather provider.
@@ -237,7 +237,7 @@ export class Weather {
             if (currentProviders.length > 1) {
                 providerModule = currentProviders[1]
 
-                logger.warn("Weather.getLocationWeather", latlon, logDate, `${failedProviderName} failed, will try ${providerModule.name}`, `User ${user.id} ${user.displayName}`)
+                logger.warn("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, `${failedProviderName} failed, will try ${providerModule.name}`)
 
                 // Try again using another provider. If also failed, log both exceptions.
                 try {

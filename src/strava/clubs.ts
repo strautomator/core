@@ -100,32 +100,31 @@ export class StravaClubs {
 
                 for (let event of events) {
                     event.dates = event.dates.filter((eDate) => today.isBefore(eDate) && maxDate.isAfter(eDate))
+                    if (event.dates.length == 0) continue
 
-                    if (event.dates.length > 0) {
-                        result.push(event)
+                    result.push(event)
 
-                        // Sort event dates, as Strava sometimes return messed up dates.
-                        event.dates.sort()
+                    // Sort event dates, as Strava sometimes return messed up dates.
+                    event.dates.sort()
 
-                        // We need the full route details, including distance and polyline.
-                        if (event.route && event.route.id && (!event.route.distance || !event.route.polyline)) {
-                            try {
-                                event.route = await stravaRoutes.getRoute(user, event.route.idString)
-                            } catch (routeEx) {
-                                logger.warn("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Event ${event.title}`, "Failed to get route details")
-                            }
+                    // We need the full route details, including distance and polyline.
+                    if (event.route && event.route.id && (!event.route.distance || !event.route.polyline)) {
+                        try {
+                            event.route = await stravaRoutes.getRoute(user, event.route.idString)
+                        } catch (routeEx) {
+                            logger.warn("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Event ${event.title}`, "Failed to get route details")
                         }
-                        // PRO users also get Komoot route parsing.
-                        else if (user.isPro && event.description && event.description.length > 30) {
-                            const url = komoot.extractRouteUrl(event.description)
+                    }
+                    // PRO users also get Komoot route parsing.
+                    else if (user.isPro && event.description && event.description.length > 30) {
+                        const url = komoot.extractRouteUrl(event.description)
 
-                            if (url) {
-                                const kRoute = await komoot.getRoute(user, url)
+                        if (url) {
+                            const kRoute = await komoot.getRoute(user, url)
 
-                                if (kRoute) {
-                                    logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Event ${event.title}`, `Komoot route: ${kRoute.id}`)
-                                    event.komootRoute = kRoute
-                                }
+                            if (kRoute) {
+                                logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Event ${event.title}`, `Komoot route: ${kRoute.id}`)
+                                event.komootRoute = kRoute
                             }
                         }
                     }
