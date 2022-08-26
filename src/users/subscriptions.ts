@@ -1,6 +1,7 @@
 // Strautomator Core: User Subscriptions
 
 import {UserData} from "./types"
+import {GitHubSubscription} from "../github/types"
 import {PayPalSubscription} from "../paypal/types"
 import database from "../database"
 import logger = require("anyhow")
@@ -21,9 +22,22 @@ export class UserSubscriptions {
     // --------------------------------------------------------------------------
 
     /**
+     * Get a subscription by its ID.
+     * @param id The user's ID.
+     */
+    getById = async (id: string): Promise<PayPalSubscription | GitHubSubscription> => {
+        try {
+            return await database.get("subscriptions", id)
+        } catch (ex) {
+            logger.error("UserSubscriptions.getById", id, ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get non-active subscriptions.
      */
-    getNonActive = async (): Promise<PayPalSubscription[]> => {
+    getNonActive = async (): Promise<PayPalSubscription[] | GitHubSubscription[]> => {
         try {
             const where = [["status", "in", ["SUSPENDED", "CANCELLED", "EXPIRED"]]]
             const subscriptions: PayPalSubscription[] = await database.search("subscriptions", where)
@@ -39,7 +53,7 @@ export class UserSubscriptions {
     /**
      * Get all dangling user subscriptions (user clicked to subscribed but never finished the process).
      */
-    getDangling = async (): Promise<PayPalSubscription[]> => {
+    getDangling = async (): Promise<PayPalSubscription[] | GitHubSubscription[]> => {
         try {
             const minDate = dayjs.utc().add(settings.users.danglingDays, "days").toDate()
             const queries = [
@@ -64,7 +78,7 @@ export class UserSubscriptions {
      * Delete the specified subscription. This method always resolves, as it's not considered critical.
      * @param subscription The subscription to be deleted.
      */
-    delete = async (subscription: PayPalSubscription): Promise<void> => {
+    delete = async (subscription: PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
             const user: UserData = await database.get("users", subscription.userId)
 
