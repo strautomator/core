@@ -106,11 +106,9 @@ export class Users {
                 }
             }
 
-            // Switch to PRO if subscription is active, otherwise back to free.
+            // Switch to PRO if subscription is active.
             if (subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
-            } else {
-                await this.switchToFree(user, subscription)
             }
 
             await this.update(user)
