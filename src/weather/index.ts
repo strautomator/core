@@ -194,6 +194,7 @@ export class Weather {
         // Get providers that accept the given date and are under the daily usage quota.
         const availableProviders = this.providers.filter((p) => {
             if (p.hoursPast < hours) return false
+            if (p.hoursFuture > hours) return false
             if (p.disabledTillDate && mDate.isBefore(p.disabledTillDate)) return false
             return p.stats.requestCount < settings.weather[p.name].rateLimit.perDay || mDate.diff(p.stats.lastRequest, "hours") > 16
         })
