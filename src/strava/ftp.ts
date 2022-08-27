@@ -27,6 +27,8 @@ export class StravaFtp {
      * @param activities List of activities to be used for the estimation.
      */
     estimateFtp = async (user: UserData, activities?: StravaActivity[]): Promise<StravaEstimatedFtp> => {
+        let activityCount: number = 0
+
         try {
             if (!activities || activities.length == 0) {
                 const dateAfter = dayjs.utc().subtract(settings.strava.ftp.weeks, "weeks")
@@ -34,6 +36,7 @@ export class StravaFtp {
                 const tsBefore = new Date().valueOf() / 1000
                 activities = await stravaActivities.getActivities(user, {before: tsBefore, after: tsAfter})
             }
+            activityCount = activities.length
 
             const now = dayjs()
             const weeksAgo = now.subtract(14, "days")
@@ -46,65 +49,76 @@ export class StravaFtp {
             let bestActivity: StravaActivity
             let lastActivityDate = new Date("2000-01-01")
 
-            // Iterate activities to get the highest FTP possible.
-            for (let a of activities) {
-                const dateEnd = dayjs(a.dateEnd)
-                const totalTime = a.movingTime || a.totalTime
+            // Helper to process the activity and get power stats.
+            const processActivity = async (a: StravaActivity) => {
+                try {
+                    const dateEnd = dayjs(a.dateEnd)
+                    const totalTime = a.movingTime || a.totalTime
 
-                // Date of the last activity.
-                if (dateEnd.isAfter(lastActivityDate)) {
-                    lastActivityDate = a.dateEnd
-                }
-
-                // Ignore cycling activities with no power meter or that lasted less than 20 minutes.
-                if (![StravaSport.Ride, StravaSport.GravelRide, StravaSport.MountainBikeRide, StravaSport.VirtualRide].includes(a.type)) continue
-                if (!a.hasPower) continue
-                if (totalTime < 60 * 5) continue
-
-                let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
-                let power: number
-
-                // FTP ranges from 94% to 100% from 20 minutes to 1 hour, and then
-                // 103% for each extra hour of activity time.
-                if (totalTime > 1200) {
-                    if (totalTime <= 3600) {
-                        const perc = ((3600 - totalTime) / 60 / 8) * 0.011
-                        power = Math.round(watts * (1 - perc))
-                    } else {
-                        const extraHours = Math.floor(totalTime / 3600) - 1
-                        const fraction = 1 + 0.03 * ((totalTime % 3600) / 60 / 60)
-                        const factor = 1.03 ** extraHours * fraction
-                        power = watts * factor
+                    // Date of the last activity.
+                    if (dateEnd.isAfter(lastActivityDate)) {
+                        lastActivityDate = a.dateEnd
                     }
-                }
 
-                // PRO users also get the best power splits from 5 / 20 / 60 min intervals.
-                if (user.isPro) {
-                    const pIntervals = await this.getPowerIntervals(user, a)
+                    // Ignore cycling activities with no power meter or that lasted less than 20 minutes.
+                    const bikeTypes = [StravaSport.Ride, StravaSport.GravelRide, StravaSport.MountainBikeRide, StravaSport.VirtualRide]
+                    if (!bikeTypes.includes(a.type)) return
+                    if (!a.hasPower) return
+                    if (totalTime < 60 * 5) return
 
-                    if (pIntervals) {
-                        pIntervals.power5min = Math.round((pIntervals.power5min || 0) * 0.79)
-                        pIntervals.power20min = Math.round((pIntervals.power20min || 0) * 0.94)
-                        pIntervals.power60min = pIntervals.power60min || 0
+                    let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
+                    let power: number
 
-                        if (pIntervals.power5min > maxWatts) power = pIntervals.power5min
-                        if (pIntervals.power20min > maxWatts) power = pIntervals.power20min
-                        if (pIntervals.power60min > maxWatts) power = pIntervals.power60min
+                    // FTP ranges from 94% to 100% from 20 minutes to 1 hour, and then
+                    // 103% for each extra hour of activity time.
+                    if (totalTime > 1200) {
+                        if (totalTime <= 3600) {
+                            const perc = ((3600 - totalTime) / 60 / 8) * 0.011
+                            power = Math.round(watts * (1 - perc))
+                        } else {
+                            const extraHours = Math.floor(totalTime / 3600) - 1
+                            const fraction = 1 + 0.03 * ((totalTime % 3600) / 60 / 60)
+                            const factor = 1.03 ** extraHours * fraction
+                            power = watts * factor
+                        }
                     }
-                }
 
-                // Small power drop for activities older than 2 weeks.
-                if (dateEnd.isBefore(weeksAgo)) {
-                    power -= power * (weeksAgo.diff(dateEnd, "days") * 0.001)
-                }
+                    // PRO users also get the best power splits from 5 / 20 / 60 min intervals.
+                    if (user.isPro) {
+                        const pIntervals = await this.getPowerIntervals(user, a)
 
-                // New best power?
-                if (power > maxWatts) {
-                    maxWatts = power
-                    bestActivity = a
-                }
+                        if (pIntervals) {
+                            pIntervals.power5min = Math.round((pIntervals.power5min || 0) * 0.79)
+                            pIntervals.power20min = Math.round((pIntervals.power20min || 0) * 0.94)
+                            pIntervals.power60min = pIntervals.power60min || 0
 
-                listWatts.push(power)
+                            if (pIntervals.power5min > maxWatts) power = pIntervals.power5min
+                            if (pIntervals.power20min > maxWatts) power = pIntervals.power20min
+                            if (pIntervals.power60min > maxWatts) power = pIntervals.power60min
+                        }
+                    }
+
+                    // Small power drop for activities older than 2 weeks.
+                    if (dateEnd.isBefore(weeksAgo)) {
+                        power -= power * (weeksAgo.diff(dateEnd, "days") * 0.001)
+                    }
+
+                    // New best power?
+                    if (power > maxWatts) {
+                        maxWatts = power
+                        bestActivity = a
+                    }
+
+                    listWatts.push(power)
+                } catch (activityEx) {
+                    logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Activity ${a.id}`, activityEx)
+                }
+            }
+
+            // Extract and process power data from activities.
+            const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
+            while (activities.length) {
+                await Promise.all(activities.splice(0, batchSize).map(processActivity))
             }
 
             // No activities with power? Stop here.
@@ -155,7 +169,7 @@ export class StravaFtp {
             // Round FTP, looks nicer.
             ftpWatts = Math.round(ftpWatts)
 
-            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP from ${activities.length} activities: ${ftpWatts}w, current ${currentWatts}w, best activity ${bestActivity.id}`)
+            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP from ${activityCount} activities: ${ftpWatts}w, current ${currentWatts}w, best activity ${bestActivity.id}`)
 
             return {
                 ftpWatts: ftpWatts,
@@ -167,7 +181,7 @@ export class StravaFtp {
                 recentlyUpdated: recentlyUpdated
             }
         } catch (ex) {
-            logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `${activities ? activities.length : "No"} activities`, ex)
+            logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `${activityCount} activities`, ex)
             throw ex
         }
     }
