@@ -166,8 +166,8 @@
         "defaultExpireDays": 90,
         // Send notifications via email if unread notifications hits a certain count.
         "emailReminderCount": 10,
-        // Delete read user messages after 30 days.
-        "readDeleteAfterDays": 30
+        // Delete read user messages after 60 days.
+        "readDeleteAfterDays": 60
     },
     "oauth": {
         // Alert users after 2 token failures.
@@ -315,6 +315,7 @@
         },
         // Some Strava resources might be cached in memory. Duration in seconds.
         "cacheDuration": {
+            "activities-streams": 600,
             "athletes-stats": 60,
             "clubs": 1800,
             "clubs-group-events": 600,
