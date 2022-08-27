@@ -749,6 +749,21 @@ export class Users {
             const fields = []
             const weatherKeys = Object.keys(settings.weather)
 
+            // Make sure numeric properties are using the expected type.
+            if (!_.isNil(user.preferences.linksOn)) {
+                if (isNaN(user.preferences.linksOn)) throw new Error("Invalid preference: linksOn")
+                if (typeof user.preferences.linksOn != "number") {
+                    user.preferences.linksOn = parseInt(user.preferences.linksOn)
+                }
+            }
+            if (!_.isNil(user.preferences.gearwearDelayDays)) {
+                if (isNaN(user.preferences.gearwearDelayDays)) throw new Error("Invalid preference: gearwearDelayDays")
+                if (typeof user.preferences.gearwearDelayDays != "number") {
+                    user.preferences.gearwearDelayDays = parseInt(user.preferences.gearwearDelayDays)
+                }
+            }
+
+            // PRO only features.
             if (!user.isPro) {
                 if (!_.isNil(user.preferences.linksOn) && (user.preferences.linksOn < 1 || user.preferences.linksOn > 10)) {
                     fields.push(`linksOn: ${user.preferences.linksOn}`)
