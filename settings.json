@@ -315,7 +315,6 @@
         },
         // Some Strava resources might be cached in memory. Duration in seconds.
         "cacheDuration": {
-            "activities-streams": 600,
             "athletes-stats": 60,
             "clubs": 1800,
             "clubs-group-events": 600,
