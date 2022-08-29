@@ -228,9 +228,9 @@
             "maxGearWear": 2,
             // Free accounts can trigger batch automations for activities up to 30 days old.
             "batchDays": 30,
-            // Free accounts limited to 6 months of previous calendar events up to tomorrow.
+            // Free accounts limited to 6 months in the past and up to 5 days in the future.
             "pastCalendarDays": 180,
-            "futureCalendarDays": 2,
+            "futureCalendarDays": 5,
             // Free calendars are cached for up to 14 hours.
             "calendarCacheDuration": 50400,
             // Links on 1 out of 5 processed activities on free accounts by default.
@@ -245,7 +245,7 @@
             "maxGearWear": 999,
             // PRO accounts can trigger batch automations for activities up to 2 years old.
             "batchDays": 730,
-            // PRO accounts limited to 10 years of previous calendar events up to 1 year in the future.
+            // PRO accounts limited to 10 years in the past and up to 1 year in the future.
             "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
             // PRO calendars are cached for up to 6 hours.
