@@ -97,7 +97,7 @@ export class StravaActivities {
     getActivity = async (user: UserData, id: number | string): Promise<StravaActivity> => {
         try {
             const tokens = user.stravaTokens
-            const data = await api.get(tokens, `activities/${id}?include_all_efforts=0`)
+            const data = await api.get(tokens, `activities/${id}`, {include_all_efforts: 0})
             const activity = toStravaActivity(user, data)
 
             // Activity's gear was set?
@@ -162,7 +162,7 @@ export class StravaActivities {
     getStreams = async (user: UserData, id: number | string): Promise<StravaActivityStreams> => {
         try {
             const tokens = user.stravaTokens
-            const data = await api.get(tokens, `activities/${id}/streams?keys=watts&key_by_type=true`)
+            const data = await api.get(tokens, `activities/${id}/streams`, {keys: "watts", key_by_type: true})
             const keys = Object.keys(data)
 
             logger.info("Strava.getStreams", `User ${user.id} ${user.displayName}`, `Activity ${id}`, keys.join(", "))
