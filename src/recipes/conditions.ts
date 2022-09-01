@@ -131,7 +131,7 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
         return false
     }
 
-    // Parse condition and activity's date.
+    // Parse condition values.
     const value = condition.value.toString()
     const sportType = activity.sportType.toString()
     let valid: boolean
@@ -145,6 +145,39 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
 
     if (!valid) {
         logger.debug("Recipes.checkSportType", `Activity ${activity.id}`, condition, "Failed")
+    }
+
+    return valid
+}
+
+/**
+ * Check if the passed activity was made with the specified gear.
+ * @param activity The Strava activity to be checked.
+ * @param condition The gear recipe condition.
+ */
+export const checkGear = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+    const prop = condition.property
+    const op = condition.operator
+
+    // Activity sport not set? Stop here.
+    if (!activity.gear) {
+        return false
+    }
+
+    // Parse condition values.
+    const value = condition.value.toString()
+    const gear = activity.gear.id
+    let valid: boolean
+
+    // Check if gear matches any set on the condition.
+    if (op == RecipeOperator.Equal) {
+        valid = value == gear || value.split(",").indexOf(gear) >= 0
+    } else {
+        throw new Error(`Invalid operator ${op} for ${prop}`)
+    }
+
+    if (!valid) {
+        logger.debug("Recipes.checkGear", `Activity ${activity.id}`, condition, "Failed")
     }
 
     return valid
