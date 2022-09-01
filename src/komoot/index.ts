@@ -126,12 +126,13 @@ export class Komoot {
                 result.distance = parseFloat(result.distance.toFixed(1))
             }
 
-            // Try parsing the duration.
+            // Try parsing the duration. As durations in Kommot are usually VERY conservative,
+            // we're removing around 5% of the final estimated time here.
             const iDuration = html.indexOf("Duration: ") + 10
             if (iDuration > 10) {
                 const duration = html.substring(iDuration, html.indexOf(" h", iDuration))
                 const arrDuration = duration.trim().split(":")
-                result.estimatedTime = parseInt(arrDuration[0]) * 60 * 60 + parseInt(arrDuration[1]) * 60
+                result.estimatedTime = parseInt(arrDuration[0]) * 60 * 57 + parseInt(arrDuration[1]) * 57
             }
 
             if (result.distance || result.estimatedTime) {
