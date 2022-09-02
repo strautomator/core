@@ -2,7 +2,7 @@
 
 import {recipePropertyList, recipeActionList} from "./lists"
 import {defaultAction, booleanAction, gearAction, mapStyleAction, sportTypeAction, webhookAction, workoutTypeAction} from "./actions"
-import {checkBoolean, checkLocation, checkNewRecords, checkNumber, checkSportType, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
+import {checkBoolean, checkGear, checkLocation, checkNewRecords, checkNumber, checkSportType, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
@@ -143,7 +143,7 @@ export class Recipes {
                     // Check for non-schema fields.
                     const keys = Object.keys(condition)
                     for (let key of keys) {
-                        if (["property", "operator", "value", "friendlyValue"].indexOf(key) < 0) {
+                        if (!["property", "operator", "value", "friendlyValue"].includes(key)) {
                             throw new Error(`Invalid field: ${key}`)
                         }
                     }
@@ -178,7 +178,7 @@ export class Recipes {
                 // Check for non-schema fields.
                 const keys = Object.keys(action)
                 for (let key of keys) {
-                    if (["type", "value", "friendlyValue"].indexOf(key) < 0) {
+                    if (!["type", "value", "friendlyValue"].includes(key)) {
                         throw new Error(`Invalid field: ${key}`)
                     }
                 }
@@ -267,7 +267,7 @@ export class Recipes {
             const prop = condition.property
 
             // Weather conditions.
-            if (prop.indexOf("weather") >= 0) {
+            if (prop.includes("weather")) {
                 const valid = await checkWeather(user, activity, condition)
                 if (!valid) return false
             }
@@ -281,6 +281,12 @@ export class Recipes {
             // Sport type condition.
             else if (prop == "sportType") {
                 const valid = checkSportType(activity, condition)
+                if (!valid) return false
+            }
+
+            // Gear condition.
+            else if (prop == "gear") {
+                const valid = checkGear(activity, condition)
                 if (!valid) return false
             }
 
