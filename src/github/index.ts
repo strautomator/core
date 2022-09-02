@@ -197,7 +197,7 @@ export class GitHub {
                 subscription = {id: subId, userId: user.id, dateCreated: now, dateUpdated: now}
             }
 
-            subscription.status = data.action == "create" ? "ACTIVE" : "CANCELLED"
+            subscription.status = data.action == "cancelled" ? "CANCELLED" : "ACTIVE"
             subscription.monthlyPrice = data.sponsorship.tier.monthly_price_in_dollars
 
             logger.info("GitHub.processWebhook", details.join(", "))
