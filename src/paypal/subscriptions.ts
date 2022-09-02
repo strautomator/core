@@ -365,7 +365,7 @@ export class PayPalSubscriptions {
             subscription.status = data.status
             subscription.dateUpdated = data.dateUpdated
         } catch (ex) {
-            if (ex.message && ex.message.indexOf("SUBSCRIPTION_STATUS_INVALID") > 0) {
+            if (ex.message && ex.message.includes("SUBSCRIPTION_STATUS_INVALID")) {
                 logger.warn("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Subscription not active, can't cancel`)
             } else {
                 logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Could not cancel`)

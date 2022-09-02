@@ -177,7 +177,7 @@ export class StravaAPI {
         } catch (ex) {
             this.extractTokenError(ex)
 
-            if (ex.friendlyMessage && ex.friendlyMessage.indexOf("RefreshToken") >= 0) {
+            if (ex.friendlyMessage && ex.friendlyMessage.includes("RefreshToken")) {
                 eventManager.emit("Strava.tokenFailure", refreshToken, true)
             }
 

@@ -134,7 +134,7 @@ export class GearWear {
                 // Remove non-relevant fields.
                 const compFields = Object.keys(comp)
                 for (let key of compFields) {
-                    if (validCompFields.indexOf(key) < 0) {
+                    if (!validCompFields.includes(key)) {
                         logger.error("GearWear.validate", `User ${user.id} ${user.displayName}`, `Gear ${gearwear.id} - ${comp.name}`, `Removed invalid field: ${key}`)
                         delete comp[key]
                     }

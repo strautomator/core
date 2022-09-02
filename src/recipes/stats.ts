@@ -115,7 +115,7 @@ export class RecipeStats {
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
 
-                if (stats.activities.indexOf(activity.id) < 0) {
+                if (!stats.activities.includes(activity.id)) {
                     stats.activities.push(activity.id)
                 }
 

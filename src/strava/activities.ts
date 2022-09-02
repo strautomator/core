@@ -144,7 +144,7 @@ export class StravaActivities {
         } catch (ex) {
             if (!user) {
                 logger.error("Strava.getActivity", "Missing user", `Activity ${id}`, ex)
-            } else if (ex.toString().indexOf("404") > 0) {
+            } else if (ex.toString().includes("404")) {
                 logger.warn("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
             } else {
                 logger.error("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
@@ -212,7 +212,7 @@ export class StravaActivities {
                     }
 
                     // Only proceed if a linkback was not previously added.
-                    const alreadyLinked = activity.description ? activity.description.indexOf(appUrl) >= 0 : false
+                    const alreadyLinked = activity.description ? activity.description.includes(appUrl) : false
                     if (!alreadyLinked) {
                         const linkTexts = settings.recipes.linksTexts
                         let text = _.sample(linkTexts)
@@ -227,7 +227,7 @@ export class StravaActivities {
                         // Update description with link-back and add to list of updated fields.
                         activity.description += `${text} ${appUrl}`
 
-                        if (activity.updatedFields.indexOf("description") < 0) {
+                        if (!activity.updatedFields.includes("description")) {
                             activity.updatedFields.push("description")
                         }
                     } else {
@@ -238,7 +238,7 @@ export class StravaActivities {
                 // User has set the hashtag preference? Add it to the name of the activity instead, but
                 // only if no hashtag was previously set on the activity.
                 else {
-                    const alreadyLinked = activity.name ? activity.name.indexOf(settings.app.hashtag) >= 0 : false
+                    const alreadyLinked = activity.name ? activity.name.includes(settings.app.hashtag) : false
                     if (!alreadyLinked) {
                         if (!activity.name) {
                             activity.name = ""
@@ -246,7 +246,7 @@ export class StravaActivities {
 
                         activity.name += ` ${settings.app.hashtag}`
 
-                        if (activity.updatedFields.indexOf("name") < 0) {
+                        if (!activity.updatedFields.includes("name")) {
                             activity.updatedFields.push("name")
                         }
                     } else {

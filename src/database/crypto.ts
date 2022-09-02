@@ -22,7 +22,7 @@ export function cryptoProcess(data: any, encrypt: boolean): void {
         }
     } else {
         for ([key, value] of Object.entries(data)) {
-            if (_.isString(value) && settings.database.crypto.fields.indexOf(key) >= 0) {
+            if (_.isString(value) && settings.database.crypto.fields.includes(key)) {
                 if (encrypt) {
                     data[key] = encryptData(value)
                 } else {

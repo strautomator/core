@@ -138,7 +138,7 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
 
     // Check if activity sport type matches any set on the condition.
     if (op == RecipeOperator.Equal) {
-        valid = value == sportType || value.split(",").indexOf(sportType) >= 0
+        valid = value == sportType || value.split(",").includes(sportType)
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
@@ -171,7 +171,7 @@ export const checkGear = (activity: StravaActivity, condition: RecipeCondition):
 
     // Check if gear matches any set on the condition.
     if (op == RecipeOperator.Equal) {
-        valid = value == gear || value.split(",").indexOf(gear) >= 0
+        valid = value == gear || value.split(",").includes(gear)
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
@@ -228,7 +228,7 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
 
     // Check if current week day is selected on the condition.
     if (op == RecipeOperator.Equal) {
-        valid = value == weekday || value.split(",").indexOf(weekday) >= 0
+        valid = value == weekday || value.split(",").includes(weekday)
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }

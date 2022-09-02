@@ -96,7 +96,7 @@ export class OpenWeatherMap implements WeatherProvider {
                 iconText = "Rain"
                 break
             case "6":
-                iconText = ["610", "611"].indexOf(weatherData.id) < 0 ? "Snow" : "Sleet"
+                iconText = !["610", "611"].includes(weatherData.id) ? "Snow" : "Sleet"
                 break
             case "7":
                 iconText = "Fog"

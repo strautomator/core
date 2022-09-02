@@ -89,7 +89,7 @@ export class StormGlass implements WeatherProvider {
 
         // Locate weather details for the correct time.
         const timeFilter = dayjs.utc(date).format("YYYY-MM-DDTHH")
-        const timeData = data.find((r) => r.time.indexOf(timeFilter) >= 0)
+        const timeData = data.find((r) => r.time.includes(timeFilter))
 
         // Data for the specified time not found? Stop here.
         if (!timeData) return

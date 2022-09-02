@@ -99,7 +99,7 @@ export class Weatherbit implements WeatherProvider {
                 iconText = "Rain"
                 break
             case "6":
-                iconText = ["610", "611"].indexOf(data.weather.code) < 0 ? "Snow" : "Sleet"
+                iconText = !["610", "611"].includes(data.weather.code) ? "Snow" : "Sleet"
                 break
             case "7":
                 iconText = "Fog"
