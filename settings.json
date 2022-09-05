@@ -226,8 +226,8 @@
             // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
-            // Free accounts can trigger batch automations for activities up to 30 days old.
-            "batchDays": 30,
+            // Free accounts can trigger batch automations for activities up to 60 days old.
+            "batchDays": 60,
             // Free accounts limited to 6 months in the past and up to 5 days in the future.
             "pastCalendarDays": 180,
             "futureCalendarDays": 5,
@@ -243,8 +243,8 @@
             // PRO accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
-            // PRO accounts can trigger batch automations for activities up to 2 years old.
-            "batchDays": 730,
+            // PRO accounts can trigger batch automations for activities up to 3 years old.
+            "batchDays": 1095,
             // PRO accounts limited to 10 years in the past and up to 1 year in the future.
             "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
@@ -341,7 +341,7 @@
         // Only a single batch operation per user every 24 hours.
         "queueBatchPerHours": 24,
         // Default batch size when processing queued activities.
-        "queueBatchSize": 10,
+        "queueBatchSize": 30,
         // How long can activities stayed queued for processing? Value set in seconds.
         "maxQueueAge": 43200
     },
