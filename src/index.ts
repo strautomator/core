@@ -15,10 +15,10 @@ logger.setOptions({
     preprocessors: ["friendlyErrors", "maskSecrets"]
 })
 
-// Defaults to gcp-credentials.json on home directory if no credentials were set for gcloud.
+// Defaults to gcp-strautomator.json on home directory if no credentials were set for gcloud.
 if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     const homedir = require("os").homedir()
-    const credPath = `${homedir}/gcp-credentials.json`
+    const credPath = `${homedir}/gcp-strautomator.json`
     process.env.GOOGLE_APPLICATION_CREDENTIALS = credPath
 
     logger.setOptions({timestamp: true})
