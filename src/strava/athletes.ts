@@ -33,6 +33,11 @@ export class StravaAthletes {
             const data = await api.get(tokens, "athlete")
             const profile = toStravaProfile(data)
 
+            // Username should be always lowercased.
+            if (profile.username) {
+                profile.username = profile.username.toLowerCase()
+            }
+
             logger.info("Strava.getAthlete", `ID ${profile.id}`, profile.username || profile.firstName || profile.lastName)
             return profile
         } catch (ex) {

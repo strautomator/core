@@ -306,7 +306,7 @@ export class Users {
      */
     getByUsername = async (username: string): Promise<UserData> => {
         try {
-            const users = await database.search("users", ["profile.username", "==", username])
+            const users = await database.search("users", ["profile.username", "==", username.toLowerCase()])
             const userData = users.length > 0 ? users[0] : null
 
             if (userData) {
