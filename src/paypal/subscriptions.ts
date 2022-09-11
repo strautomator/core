@@ -155,7 +155,7 @@ export class PayPalSubscriptions {
                     ],
                     payment_preferences: {
                         auto_bill_outstanding: true,
-                        payment_failure_threshold: 2
+                        payment_failure_threshold: 0
                     }
                 }
             }
