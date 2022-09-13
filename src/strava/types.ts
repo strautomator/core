@@ -636,6 +636,7 @@ export enum StravaMapStyle {
     Speed = "speed",
     Temperature = "temperature",
     Time = "time",
+    Heatmap = "heatmap",
     StravaMetro = "metro",
     BlackLivesMatter = "black_lives_matter",
     Pride = "pride",
