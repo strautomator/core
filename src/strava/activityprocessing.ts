@@ -447,7 +447,7 @@ export class StravaActivities {
     /**
      * Get queued activities, with an optional minimum interval.
      * @param beforeDate Only get activities that were queued before that specified date.
-     * @param batchSize Optional batch size, otherwise use the default from settings (10 activities).
+     * @param batchSize Optional batch size, otherwise use the default from settings.
      */
     getQueuedActivities = async (beforeDate: Date, batchSize?: number): Promise<StravaProcessedActivity[]> => {
         const logDate = `Before ${dayjs(beforeDate).format("YY-MM-DD HH:mm:ss")}`

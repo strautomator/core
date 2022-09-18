@@ -68,8 +68,13 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
                 const weatherSummary = await weather.getActivityWeather(user, activity)
 
                 if (weatherSummary) {
-                    const weatherDetails = weatherSummary.end && weatherSummary.end.icon ? weatherSummary.end : weatherSummary.start
-                    processedValue = jaul.data.replaceTags(processedValue, weatherDetails, "weather.")
+                    if (processedValue.includes("${weather.start.")) {
+                        processedValue = jaul.data.replaceTags(processedValue, weatherSummary.start || weather.emptySummary, "weather.start.")
+                    } else if (processedValue.includes("${weather.end.")) {
+                        processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || weather.emptySummary, "weather.end.")
+                    } else {
+                        processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || weatherSummary.start || weather.emptySummary, "weather.")
+                    }
                 } else {
                     processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
                 }
