@@ -341,9 +341,9 @@
         // Only a single batch operation per user every 24 hours.
         "queueBatchPerHours": 24,
         // Default batch size when processing queued activities.
-        "queueBatchSize": 30,
+        "queueBatchSize": 40,
         // How long can activities stayed queued for processing? Value set in seconds.
-        "maxQueueAge": 43200
+        "maxQueueAge": 86400
     },
     "twitter": {
         // Around 85% chances of posting interesting activities on Twitter for users that have opted in.
@@ -369,7 +369,7 @@
             "baseUrl": "https://api.open-meteo.com/v1/forecast",
             // Open-Meteo API rate limits.
             "rateLimit": {
-                "maxConcurrent": 3,
+                "maxConcurrent": 4,
                 "perHour": 2000,
                 "perDay": 8000
             },
@@ -381,7 +381,7 @@
             "baseUrl": "https://api.openweathermap.org/data/2.5/",
             // OpenWeatherMap API rate limits.
             "rateLimit": {
-                "maxConcurrent": 3,
+                "maxConcurrent": 4,
                 "perHour": 300,
                 "perDay": 5000
             },
@@ -394,8 +394,8 @@
             "baseUrl": "https://api.stormglass.io/v2/",
             /// Storm Glass API rate limits.
             "rateLimit": {
-                "maxConcurrent": 3,
-                "perHour": 20,
+                "maxConcurrent": 2,
+                "perHour": 15,
                 "perDay": 35
             },
             // The Storm Glass API secret MUST be set via secret settings or
@@ -407,7 +407,7 @@
             "baseUrl": "https://api.tomorrow.io/v4/",
             // Tomorrow API rate limits.
             "rateLimit": {
-                "maxConcurrent": 3,
+                "maxConcurrent": 2,
                 "perHour": 20,
                 "perDay": 450
             },
@@ -420,7 +420,7 @@
             "baseUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/",
             /// Visual Crossing API rate limits.
             "rateLimit": {
-                "maxConcurrent": 3,
+                "maxConcurrent": 4,
                 "perHour": 450,
                 "perDay": 900
             },
@@ -433,7 +433,7 @@
             "baseUrl": "https://api.weatherapi.com/v1/",
             // OpenWeathWeatherbiterMap API rate limits.
             "rateLimit": {
-                "maxConcurrent": 3,
+                "maxConcurrent": 4,
                 "perHour": 2000,
                 "perDay": 5000
             },
@@ -446,7 +446,7 @@
             "baseUrl": "https://api.weatherbit.io/v2.0/",
             // OpenWeathWeatherbiterMap API rate limits.
             "rateLimit": {
-                "maxConcurrent": 3,
+                "maxConcurrent": 4,
                 "perHour": 350,
                 "perDay": 450
             },
