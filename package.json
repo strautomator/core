@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "22.404.11921",
+    "version": "22.404.11933",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -23,7 +23,7 @@
         "bitecache": "^1.2.1",
         "bottleneck": "^2.19.5",
         "dayjs": "^1.11.5",
-        "flatbush": "^4.0.0",
+        "flatbush": "^3.3.1",
         "ical-generator": "3.5.2",
         "jaul": "^1.6.1",
         "jszip": "^3.10.1",
