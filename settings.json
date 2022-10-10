@@ -56,7 +56,7 @@
     },
     "faq": {
         // Download questions from the database twice a day by default. Value set in seconds.
-        "refreshInterval": 64800
+        "refreshInterval": 43200
     },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
@@ -141,8 +141,8 @@
         "cachePrecision": 2,
         // Cache geolocation results in memory for up to 24 hours. Value set in seconds.
         "cacheDuration": 86400,
-        // Geolocation will be cached on the database for up to 1 week. Value set in seconds.
-        "maxCacheDuration": 604800,
+        // Geolocation will be cached on the database for up to 10 days. Value set in seconds.
+        "maxCacheDuration": 864000,
         // Circle color, will also be used as a fill color with half opacity.
         "circleColor": "0x0066CC",
         // Default marker style and color.
@@ -270,8 +270,8 @@
         // Max length for specific properties.
         "maxLength": {
             "title": 40,
-            "conditionValue": 600,
-            "actionValue": 600
+            "conditionValue": 800,
+            "actionValue": 800
         },
         // Webhook timeout is set to 5 seconds by default. Value in milliseconds.
         "webhook": {
@@ -341,7 +341,7 @@
         // Only a single batch operation per user every 24 hours.
         "queueBatchPerHours": 24,
         // Default batch size when processing queued activities.
-        "queueBatchSize": 40,
+        "queueBatchSize": 45,
         // How long can activities stayed queued for processing? Value set in seconds.
         "maxQueueAge": 86400
     },
@@ -356,8 +356,8 @@
         "dormantDays": 90,
         // Consider user subscriptions dangling (pending approval) after 5 days.
         "danglingDays": 5,
-        // Users can request an archive download once every 2 weeks.
-        "archiveDownloadDays": 14
+        // Users can request an archive download once every 10 days.
+        "archiveDownloadDays": 10
     },
     "weather": {
         // Cache weather results for 15 minutes. Value set in seconds.
