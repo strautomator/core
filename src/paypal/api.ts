@@ -5,7 +5,6 @@ import {axiosRequest} from "../axios"
 import _ = require("lodash")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
-import querystring = require("querystring")
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
 
@@ -98,7 +97,7 @@ export class PayPalAPI {
                     username: settings.paypal.api.clientId,
                     password: settings.paypal.api.clientSecret
                 },
-                data: querystring.stringify({grant_type: "client_credentials"})
+                data: new URLSearchParams({grant_type: "client_credentials"})
             }
 
             // Try fetching a new token from PayPal.
