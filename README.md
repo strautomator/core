@@ -16,6 +16,7 @@ You'll also have to register an account and get the necessary credentials for th
 -   Strava API
 -   PayPal API
 -   Twitter API
+-   Spotify API
 -   Weather providers (Tomorrow.io, Storm Glass etc...)
 
 Please note that some of these services might (and will!) charge you.
