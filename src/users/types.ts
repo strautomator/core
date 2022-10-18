@@ -1,6 +1,7 @@
 // Strautomator Core: User types
 
 import {RecipeData} from "../recipes/types"
+import {SpotifyProfile} from "../spotify/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 
 /**
@@ -35,6 +36,10 @@ export interface UserData {
     calendarTemplate?: UserCalendarTemplate
     /** Subscription details (for PRO accounts). */
     subscription?: UserSubscriptionRef
+    /** Linked Spotify account. */
+    spotify?: SpotifyProfile
+    /** Spotify authentication state. */
+    spotifyAuthState?: string
     /** Custom URL token used to get the calendar. */
     urlToken?: string
     /** Last login date (UTC). */

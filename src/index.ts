@@ -66,6 +66,8 @@ import {Strava} from "./strava"
 export const strava: Strava = Strava.Instance
 import {Komoot} from "./komoot"
 export const komoot: Komoot = Komoot.Instance
+import {Spotify} from "./spotify"
+export const spotify: Spotify = Spotify.Instance
 import {Twitter} from "./twitter"
 export const twitter: Twitter = Twitter.Instance
 import {Weather} from "./weather"
@@ -95,6 +97,8 @@ export const events: EventManager = EventManager.Instance
 export * from "./gearwear/types"
 export * from "./recipes/types"
 export * from "./strava/types"
+export * from "./komoot/types"
+export * from "./spotify/types"
 export * from "./users/types"
 export * from "./calendar/types"
 export * from "./notifications/types"
@@ -163,7 +167,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Try starting individual modules now.
-    for (let coreModule of [database, github, mailer, maps, paypal, strava, komoot, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
+    for (let coreModule of [database, github, mailer, maps, paypal, strava, komoot, spotify, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
         try {
             const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
 
