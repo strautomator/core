@@ -9,8 +9,9 @@ import userSubscriptions from "./subscriptions"
 import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
-import _ = require("lodash")
-import logger = require("anyhow")
+import _ from "lodash"
+import crypto from "crypto"
+import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -434,7 +435,7 @@ export class Users {
                 userData.recipes = {}
                 userData.recipeCount = 0
                 userData.activityCount = 0
-                userData.urlToken = require("crypto").randomBytes(12).toString("hex")
+                userData.urlToken = crypto.randomBytes(12).toString("hex")
             }
             // If user exists, update recipe count and gear details.
             else {
@@ -505,7 +506,7 @@ export class Users {
     /**
      * Update the specified user on the database.
      * @param user User to be updated.
-     * @param merge Set to true to fully replace data instead of merging, default is false.
+     * @param replace Set to true to fully replace data instead of merging, default is false.
      */
     update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
         const username = user.displayName ? `${user.id} ${user.displayName}` : user.id
@@ -547,6 +548,9 @@ export class Users {
                 }
                 if (user.preferences) {
                     logs.push(_.toPairs(user.preferences).join(" | ").replace(/\,/gi, "="))
+                }
+                if (user.spotify) {
+                    logs.push("Spotify")
                 }
             } else {
                 await database.set("users", user, user.id)
@@ -721,7 +725,7 @@ export class Users {
     setUrlToken = async (user: UserData): Promise<string> => {
         try {
             const oldToken = user.urlToken
-            const newToken = require("crypto").randomBytes(12).toString("hex")
+            const newToken = crypto.randomBytes(12).toString("hex")
             const data: Partial<UserData> = {
                 id: user.id,
                 displayName: user.displayName,

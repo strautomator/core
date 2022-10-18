@@ -379,7 +379,7 @@ export interface StravaTokens {
     previousAccessToken?: string
     /** The OAuth2 refresh token. */
     refreshToken?: string
-    /** Access token expiry date. */
+    /** Access token expiry timestamp (in seconds). */
     expiresAt?: number
 }
 
