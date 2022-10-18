@@ -1,7 +1,7 @@
 // Strautomator Core: Strava API
 
 import {StravaCachedResponse, StravaTokens} from "./types"
-import {axiosRequest} from "../axios"
+import {AxiosConfig, axiosRequest} from "../axios"
 import {URLSearchParams} from "url"
 import database from "../database"
 import eventManager from "../eventmanager"
@@ -106,7 +106,7 @@ export class StravaAPI {
                 throw new Error("Invalid token response")
             }
 
-            // Save new tokens to database.
+            // New token details.
             const tokens: StravaTokens = {
                 accessToken: res.access_token,
                 refreshToken: res.refresh_token,
@@ -150,7 +150,7 @@ export class StravaAPI {
 
             // Post auth data to Strava.
             const urlParams = new URLSearchParams(qs)
-            const reqOptions = {
+            const reqOptions: AxiosConfig = {
                 method: "POST",
                 url: `${settings.strava.api.tokenUrl}?${urlParams.toString()}`,
                 timeout: settings.oauth.tokenTimeout
@@ -200,7 +200,7 @@ export class StravaAPI {
 
             // Post auth data to Strava.
             const urlParams = new URLSearchParams(qs)
-            const reqOptions = {
+            const reqOptions: AxiosConfig = {
                 method: "POST",
                 url: `${settings.strava.api.deauthUrl}?${urlParams.toString()}`,
                 timeout: settings.oauth.tokenTimeout
@@ -240,7 +240,7 @@ export class StravaAPI {
         let token: string = null
 
         try {
-            const options: any = {
+            const options: AxiosConfig = {
                 url: `${settings.strava.api.baseUrl}${path}`,
                 method: method,
                 headers: {}

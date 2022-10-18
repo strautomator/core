@@ -1,5 +1,6 @@
 // Strautomator Core: Axios
 
+import {AxiosRequestConfig} from "axios"
 import jaul = require("jaul")
 import logger = require("anyhow")
 import url = require("url")
@@ -8,15 +9,29 @@ const settings = require("setmeup").settings
 const packageVersion = require("../package.json").version
 
 /**
+ * Custom axios configuration.
+ */
+export interface AxiosConfig extends AxiosRequestConfig {
+    /** Set to true to return the full response object. */
+    returnResponse?: boolean
+    /** Abort request if the response has any of these status codes. */
+    abortStatus?: number[]
+    /** Path part of the URL. */
+    path?: string
+}
+
+/**
  * Make a request using axios. Will retry once if it times out.
  * @param options Options to be passed to axios.
  */
-export const axiosRequest = async (options: any): Promise<any> => {
+export const axiosRequest = async (options: AxiosConfig): Promise<any> => {
     try {
         if (!options.headers) options.headers = {}
 
         // User agent defaults to app title and version.
-        options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
+        if (!options.headers["User-Agent"]) {
+            options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
+        }
 
         // Make request, return true if response was a 204 with no body, otherwise return response body.
         const res = await axios(options)
