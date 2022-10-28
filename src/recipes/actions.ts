@@ -1,6 +1,6 @@
 // Strautomator Core: Recipe Action methods
 
-import {RecipeAction, RecipeActionType, RecipeData, RecipeStatsData} from "./types"
+import {RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStatsData} from "./types"
 import {recipeActionList} from "./lists"
 import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaGear, StravaSportRefs} from "../strava/types"
@@ -9,6 +9,7 @@ import {axiosRequest} from "../axios"
 import {getActivityFortune} from "../fortune"
 import recipeStats from "./stats"
 import notifications from "../notifications"
+import spotify from "../spotify"
 import weather from "../weather"
 import _ = require("lodash")
 import jaul = require("jaul")
@@ -64,32 +65,12 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
         if (processedValue.includes("${weather.")) {
-            if (activity.hasLocation) {
-                const weatherSummary = await weather.getActivityWeather(user, activity)
+            processedValue = await addWeatherTags(user, activity, recipe, processedValue)
+        }
 
-                if (weatherSummary) {
-                    if (processedValue.includes("${weather.start.")) {
-                        processedValue = jaul.data.replaceTags(processedValue, weatherSummary.start || weather.emptySummary, "weather.start.")
-                    }
-                    if (processedValue.includes("${weather.end.")) {
-                        processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || weather.emptySummary, "weather.end.")
-                    }
-                    if (processedValue.includes("${weather.")) {
-                        processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || weatherSummary.start || weather.emptySummary, "weather.")
-                    }
-                } else {
-                    processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.start")
-                    processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.end")
-                    processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
-                }
-
-                if (processedValue == "") {
-                    logger.warn("Recipes.defaultAction.weather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "Got no valid activity weather")
-                }
-            } else {
-                logger.warn("Recipes.defaultAction.weather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "No location data on activity")
-                processedValue = jaul.data.replaceTags(processedValue, weather.emptySummary, "weather.")
-            }
+        // Music tags on the value? Fetch from Spotify if the user has an account linked.
+        if (processedValue.includes("${spotify.")) {
+            processedValue = await addSpotifyTags(user, activity, recipe, processedValue)
         }
 
         // Replace tags.
@@ -148,6 +129,72 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         failedAction(user, activity, recipe, action, ex)
         return false
     }
+}
+
+/**
+ * Default action to add weather tags to the activity name or description.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param processedValue The action's processed value.
+ */
+export const addWeatherTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    try {
+        const weatherSummary = await weather.getActivityWeather(user, activity)
+
+        if (!weatherSummary) {
+            logger.warn("Recipes.addWeatherTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "Got no valid activity weather")
+            processedValue = jaul.data.replaceTags(processedValue, "", "weather.start")
+            processedValue = jaul.data.replaceTags(processedValue, "", "weather.end")
+            processedValue = jaul.data.replaceTags(processedValue, "", "weather.")
+            return processedValue
+        }
+
+        if (processedValue.includes("${weather.start.")) {
+            processedValue = jaul.data.replaceTags(processedValue, weatherSummary.start || "", "weather.start.")
+        }
+        if (processedValue.includes("${weather.end.")) {
+            processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || "", "weather.end.")
+        }
+        if (processedValue.includes("${weather.")) {
+            processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || weatherSummary.start || "", "weather.")
+        }
+    } catch (ex) {
+        logger.warn("Recipes.addWeatherTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, ex)
+    }
+
+    return processedValue
+}
+
+/**
+ * Default action to add music tags to the activity name or description.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param processedValue The action's processed value.
+ */
+export const addSpotifyTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    try {
+        const tracks = await spotify.getActivityTracks(user, activity)
+
+        if (!tracks) {
+            logger.warn("Recipes.addSpotifyTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "No Spotify tracks returned for the activity")
+            processedValue = jaul.data.replaceTags(processedValue, "", "spotify.")
+            return processedValue
+        }
+
+        const musicTags: RecipeMusicTags = {
+            trackStart: tracks && tracks.length > 0 ? tracks[0].title : "",
+            trackEnd: tracks && tracks.length > 0 ? tracks[tracks.length - 1].title : "",
+            trackList: tracks && tracks.length > 0 ? tracks.map((t) => t.title).join("\n") : ""
+        }
+
+        processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.")
+    } catch (ex) {
+        logger.warn("Recipes.addSpotifyTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, ex)
+    }
+
+    return processedValue
 }
 
 /**
