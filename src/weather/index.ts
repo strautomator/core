@@ -42,25 +42,6 @@ export class Weather {
      */
     maxHoursFuture: number = 0
 
-    /**
-     * Helper property to return an empty summary.
-     */
-    get emptySummary(): WeatherSummary {
-        return {
-            summary: "",
-            icon: "",
-            temperature: "",
-            feelsLike: "",
-            humidity: "",
-            pressure: "",
-            windSpeed: "",
-            windDirection: "" as any,
-            precipitation: "",
-            cloudCover: "",
-            moon: "" as any
-        }
-    }
-
     // INIT
     // --------------------------------------------------------------------------
 
@@ -109,6 +90,7 @@ export class Weather {
 
     /**
      * Return the weather for the specified activity.
+     * Exceptions won't be thrown, will return null instead.
      * @param user The user requesting a weather report.
      * @param activity The Strava activity.
      */
