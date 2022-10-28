@@ -401,6 +401,22 @@ export class Users {
         }
     }
 
+    /**
+     * Get list of users with a linked Spotify account.
+     */
+    getWithSpotify = async (): Promise<UserData[]> => {
+        try {
+            const where = [["spotify.tokens.accessToken", "!=", ""]]
+            const users = await database.search("users", where)
+
+            logger.info("Users.getWithSpotify", `Got ${users.length || "no"} users with Spotify`)
+            return users
+        } catch (ex) {
+            logger.error("Users.getWithSpotify", ex)
+            throw ex
+        }
+    }
+
     // UPDATE USERS
     // --------------------------------------------------------------------------
 
