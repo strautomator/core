@@ -73,6 +73,18 @@ export interface RecipeStatsData {
 }
 
 /**
+ * Helper interface used for music tags.
+ */
+export interface RecipeMusicTags {
+    /** Music track on the start of an activity. */
+    trackStart: string
+    /** Music track on the end of an activity. */
+    trackEnd: string
+    /** Full track list for the activity. */
+    trackList: string
+}
+
+/**
  * Types of recipe actions.
  */
 export enum RecipeActionType {
