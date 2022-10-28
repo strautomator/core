@@ -119,12 +119,9 @@ export class Spotify {
 
             const tokens = await this.getToken(user, req.query.code as string)
             const profile = await this.getProfile(user, tokens)
+            await this.saveProfile(user, profile)
 
-            // Update user data with the new Spotify profile.
-            user = await users.getById(userId)
-            user.spotify = profile
             delete user.spotifyAuthState
-            await users.update(user, true)
 
             return profile
         } catch (ex) {
@@ -174,7 +171,7 @@ export class Spotify {
                 tokens.refreshToken = res.refresh_token
             }
 
-            logger.info("Spotify.getToken", `User ${user.id} ${user.displayName}`, `Got new token`)
+            logger.info("Spotify.getToken", `User ${user.id} ${user.displayName}`, "Got new tokens")
             return tokens
         } catch (ex) {
             logger.error("Spotify.getToken", user ? `User ${user.id} ${user.displayName}` : "Unknown user", ex)
@@ -185,11 +182,16 @@ export class Spotify {
     /**
      * Refresh OAuth2 tokens from Spotify.
      * @param user The user.
-     * @param refreshToken The refresh token for the user / client.
+     * @param refreshToken Optional new refresh token for the user, otherwise use existing one.
      */
-    refreshToken = async (user: UserData, refreshToken: string): Promise<SpotifyTokens> => {
+    refreshToken = async (user: UserData, refreshToken?: string): Promise<SpotifyTokens> => {
         try {
-            const qs: any = {
+            if (!refreshToken) {
+                refreshToken = user.spotify.tokens.refreshToken
+            }
+
+            const now = dayjs()
+            const qs = {
                 grant_type: "refresh_token",
                 refresh_token: refreshToken
             }
@@ -205,7 +207,7 @@ export class Spotify {
                 data: postData
             }
 
-            // Post auth data to Spotify.
+            // Post auth refresh data to Spotify.
             const res = await axiosRequest(reqOptions)
             if (!res) {
                 throw new Error("Invalid token response")
@@ -214,18 +216,40 @@ export class Spotify {
             // New token details.
             const tokens: SpotifyTokens = {
                 accessToken: res.access_token,
-                expiresAt: res.expires_at
+                expiresAt: now.add(res.expires_in - 120, "seconds").unix()
             }
             if (res.refresh_token) {
                 tokens.refreshToken = res.refresh_token
             }
 
-            logger.info("Spotify.refreshToken", `User ${user.id}`, `Got new token`)
+            logger.info("Spotify.refreshToken", `User ${user.id} ${user.displayName}`, "Refreshed tokens")
             return tokens
         } catch (ex) {
-            logger.error("Spotify.refreshToken", `User ${user.id}`, ex)
+            logger.error("Spotify.refreshToken", `User ${user.id} ${user.displayName}`, ex)
             throw ex
         }
+    }
+
+    /**
+     * Make sure the user tokens are valid, and if necessary refresh them.
+     * @param user The user.
+     * @param tokens Optional tokens, if not passed will use the existing ones.
+     */
+    validateTokens = async (user: UserData, tokens?: SpotifyTokens): Promise<SpotifyTokens> => {
+        try {
+            if (!tokens) tokens = user.spotify.tokens
+
+            if (tokens.expiresAt <= dayjs().unix()) {
+                tokens = await this.refreshToken(user)
+                user.spotify.tokens = tokens
+
+                await this.saveProfile(user, user.spotify)
+            }
+        } catch (ex) {
+            logger.error("Spotify.validateTokens", `User ${user.id}`, ex)
+        }
+
+        return tokens
     }
 
     // METHODS
@@ -239,6 +263,7 @@ export class Spotify {
     getProfile = async (user: UserData, tokens?: SpotifyTokens): Promise<SpotifyProfile> => {
         try {
             if (!tokens) tokens = user.spotify.tokens
+            tokens = await this.validateTokens(user, tokens)
 
             const res = await this.makeRequest(tokens, "me")
             const profile: SpotifyProfile = {
@@ -257,6 +282,7 @@ export class Spotify {
 
     /**
      * Get list of played tracks for the specified user activity.
+     * Exceptions won't be thrown, will return null instead.
      * @param user The user.
      * @param activity The Strava activity.
      */
@@ -265,6 +291,8 @@ export class Spotify {
             if (!user.spotify) {
                 throw new Error("User has no Spotify account linked")
             }
+
+            user.spotify.tokens = await this.validateTokens(user)
 
             const addedBuffer = settings.spotify.dateBufferSeconds * 1000
             const tsFrom = activity.dateStart.valueOf() - addedBuffer
@@ -287,7 +315,24 @@ export class Spotify {
             return tracks
         } catch (ex) {
             logger.error("Spotify.makeRequest", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
-            throw ex
+            return null
+        }
+    }
+
+    // DATABASE
+    // --------------------------------------------------------------------------
+
+    /**
+     * Save the Spotify profile to the specified user account.
+     * @param user The user.
+     * @param profile The Spotify profile with tokens.
+     */
+    saveProfile = async (user: UserData, profile: SpotifyProfile): Promise<void> => {
+        try {
+            user.spotify = profile
+            await users.update({id: user.id, displayName: user.displayName, spotify: profile})
+        } catch (ex) {
+            logger.error("Spotify.saveProfile", `User ${user.id} ${user.displayName}`, `ID ${profile.id}`, ex)
         }
     }
 }
