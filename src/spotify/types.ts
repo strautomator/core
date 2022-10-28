@@ -27,16 +27,6 @@ export interface SpotifyTokens {
 }
 
 /**
- * Represents an artist on Spotify
- */
-export interface SpotifyArtist {
-    /** ID of the artist. */
-    id: string
-    /** Artist name. */
-    name: string
-}
-
-/**
  * Represents a track / music on Spotify
  */
 export interface SpotifyTrack {
@@ -45,5 +35,11 @@ export interface SpotifyTrack {
     /** Track name. */
     name: string
     /** Track artists. */
-    artists: SpotifyArtist[]
+    artists: string[]
+    /** Track title (combination of artits + track name). */
+    title: string
+    /** Track duration string. */
+    duration: string
+    /** Played date. */
+    datePlayed?: Date
 }

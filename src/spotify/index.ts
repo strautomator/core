@@ -1,6 +1,7 @@
 // Strautomator Core: Spotify
 
 import {SpotifyProfile, SpotifyTokens, SpotifyTrack} from "./types"
+import {toSpotifyTrack} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
@@ -247,7 +248,7 @@ export class Spotify {
             }
 
             logger.info("Spotify.getProfile", `User ${user.id} ${user.displayName}`, `ID ${profile.id}`)
-            return res
+            return profile
         } catch (ex) {
             logger.error("Spotify.getProfile", `User ${user.id} ${user.displayName}`, ex)
             throw ex
@@ -270,23 +271,22 @@ export class Spotify {
             const tsTo = activity.dateEnd.valueOf() + addedBuffer
 
             const tokens = user.spotify.tokens
-            const res = await this.makeRequest(tokens, `me/player/recently-played?after=${tsFrom}&before=${tsTo}&limit=50`)
+            const res = await this.makeRequest(tokens, `me/player/recently-played?after=${tsFrom}&limit=${settings.spotify.trackLimit}`)
             const tracks: SpotifyTrack[] = []
 
-            logger.info("Spotify.getProfile", `User ${user.id} ${user.displayName}`, `Got ${res.items.length || "no"} tracks`)
+            logger.info("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Got ${res.items.length || "no"} tracks`)
 
-            // Iterate and populate track results.
+            // Iterate and populate matching track results.
             for (let i of res.items) {
-                tracks.push({
-                    id: i.id,
-                    name: i.name,
-                    artists: i.artists.map((a) => a.name)
-                })
+                const track = toSpotifyTrack(i)
+                if (track.datePlayed.valueOf() < tsTo) {
+                    tracks.push(track)
+                }
             }
 
             return tracks
         } catch (ex) {
-            logger.error("Spotify.makeRequest", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Spotify.makeRequest", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
             throw ex
         }
     }

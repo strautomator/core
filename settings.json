@@ -289,8 +289,10 @@
         },
         // Cache recently played tracks for up to 2 minutes.
         "cacheDuration": 120,
-        // Include tracks that started / ended within a minute of the activity dates.
-        "dateBufferSeconds": 60
+        // Include tracks that started / ended within a minute of the activity date.
+        "dateBufferSeconds": 60,
+        // Maximum number of tracks returned.
+        "trackLimit": 50
     },
     // Cloud Storage buckets, with optional TTLs (in seconds). If you wish to specify the bucket location,
     // please add a "location" parameter. Otherwise the default will be taken from "gcp.location".
