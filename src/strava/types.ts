@@ -76,6 +76,8 @@ export interface StravaActivity {
     wattsWeighted?: number
     /** Max watts. */
     wattsMax?: number
+    /** Watts per kilo. */
+    wattsKg?: number
     /** Watts comes from a power meter? */
     hasPower?: boolean
     /** Average heart rate. */
@@ -262,6 +264,8 @@ export interface StravaProfile {
     units?: "metric" | "imperial"
     /** User's cycling FTP. */
     ftp?: number
+    /** User's weight (in kg). */
+    weight?: number
 }
 
 /**

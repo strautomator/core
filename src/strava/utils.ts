@@ -39,6 +39,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         wattsAvg: data.average_watts ? Math.round(data.average_watts) : null,
         wattsWeighted: data.weighted_average_watts ? Math.round(data.weighted_average_watts) : null,
         wattsMax: data.max_watts ? Math.round(data.max_watts) : null,
+        wattsKg: data.average_watts && user.profile.weight ? parseFloat((data.average_watts / user.profile.weight).toFixed(1)) : null,
         hrAvg: data.average_heartrate ? Math.round(data.average_heartrate) : null,
         hrMax: data.max_heartrate ? Math.round(data.max_heartrate) : null,
         cadenceAvg: data.average_cadence || null,
@@ -273,6 +274,7 @@ export function toStravaProfile(data: any): StravaProfile {
         dateUpdated: dayjs.utc(data.updated_at).toDate(),
         units: data.measurement_preference == "feet" ? "imperial" : "metric",
         ftp: data.ftp || null,
+        weight: data.weight || null,
         bikes: [],
         shoes: []
     }
