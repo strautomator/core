@@ -286,7 +286,7 @@ export class StravaActivities {
                     data.stats_visibility.push({type: arrFieldName.join("_").toLowerCase(), visibility: targetValue})
                 }
 
-                let targetLog = `${field}=${targetName || activity[field] || activity[targetField]}`
+                let targetLog = `${field}=${targetName || (activity[field] || activity[targetField]).replace(/\n/, " ")}`
 
                 if (targetField) {
                     data[targetField] = targetValue
