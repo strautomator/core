@@ -302,8 +302,6 @@ export class Spotify {
             const res = await this.makeRequest(tokens, `me/player/recently-played?after=${tsFrom}&limit=${settings.spotify.trackLimit}`)
             const tracks: SpotifyTrack[] = []
 
-            logger.info("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Got ${res.items.length || "no"} tracks`)
-
             // Iterate and populate matching track results.
             for (let i of res.items) {
                 const track = toSpotifyTrack(i)
@@ -311,6 +309,8 @@ export class Spotify {
                     tracks.push(track)
                 }
             }
+
+            logger.info("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Got ${tracks.length || "no"} tracks`)
 
             return tracks
         } catch (ex) {
