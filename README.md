@@ -119,4 +119,5 @@ Some of Strautomator's features depend on scheduled tasks that needs a manual se
 -   **users.subscriptions.getDangling()** - weekly, iterate (and if necessary cleanup) dangling PRO subscriptions.
 -   **users.subscriptions.getNonActive()** - weekly, iterate and switch users with an invalid subscription back to Free.
 -   **users.getByResetCounter() + recipes.stats.setCounter** - daily, get and reset counters for users matching today's date.
+-   **users.getWithSpotify() + spotify.refreshToken()** - weekly, refresh expired Spotify tokens.
 -   **recipes.stats.getFailingRecipes()** - weekly, iterate (and if necessary disable) recipes that keep failing.
