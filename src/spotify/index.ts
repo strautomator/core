@@ -38,7 +38,7 @@ export class Spotify {
                 throw new Error("Missing the spotify.api.clientSecret setting")
             }
 
-            cache.setup("spotify-tracks", settings.spotify.cacheDuration)
+            cache.setup("spotify", settings.spotify.cacheDuration)
         } catch (ex) {
             logger.error("Spotify.init", ex)
             throw ex
@@ -262,9 +262,17 @@ export class Spotify {
      */
     getProfile = async (user: UserData, tokens?: SpotifyTokens): Promise<SpotifyProfile> => {
         try {
+            const cacheId = `profile-${user.id}`
+            const cached: SpotifyProfile = cache.get("spotify", cacheId)
+            if (cached) {
+                logger.info("Spotify.getProfile", `User ${user.id} ${user.displayName}`, `ID ${cached.id}`, "From cache")
+                return cached
+            }
+
             if (!tokens) tokens = user.spotify.tokens
             tokens = await this.validateTokens(user, tokens)
 
+            // Make request to fetch profile.
             const res = await this.makeRequest(tokens, "me")
             const profile: SpotifyProfile = {
                 id: res.id,
@@ -272,6 +280,8 @@ export class Spotify {
                 tokens: tokens
             }
 
+            // Save to cache and return the user profile.
+            cache.set("spotify", cacheId, profile)
             logger.info("Spotify.getProfile", `User ${user.id} ${user.displayName}`, `ID ${profile.id}`)
             return profile
         } catch (ex) {
@@ -292,17 +302,24 @@ export class Spotify {
                 throw new Error("User has no Spotify account linked")
             }
 
+            const cacheId = `tracks-${activity.id}`
+            const cached: SpotifyTrack[] = cache.get("spotify", cacheId)
+            if (cached) {
+                logger.info("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Got ${cached.length || "no"} tracks`, "From cache")
+                return cached
+            }
+
             user.spotify.tokens = await this.validateTokens(user)
 
             const addedBuffer = settings.spotify.dateBufferSeconds * 1000
             const tsFrom = activity.dateStart.valueOf() - addedBuffer
             const tsTo = activity.dateEnd.valueOf() + addedBuffer
-
             const tokens = user.spotify.tokens
+
+            // Make request to fetch list of recent tracks, and iterate results
+            // to populate the list of matching tracks for the activity timespan.
             const res = await this.makeRequest(tokens, `me/player/recently-played?after=${tsFrom}&limit=${settings.spotify.trackLimit}`)
             const tracks: SpotifyTrack[] = []
-
-            // Iterate and populate matching track results.
             for (let i of res.items) {
                 const track = toSpotifyTrack(i)
                 if (track.datePlayed.valueOf() < tsTo) {
@@ -310,11 +327,12 @@ export class Spotify {
                 }
             }
 
+            // Save to cache and return list of activity tracks.
+            cache.set("spotify", cacheId, tracks)
             logger.info("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Got ${tracks.length || "no"} tracks`)
-
             return tracks
         } catch (ex) {
-            logger.error("Spotify.makeRequest", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
             return null
         }
     }
