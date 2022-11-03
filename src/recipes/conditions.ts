@@ -4,6 +4,7 @@ import {RecipeCondition, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
+import spotify from "../spotify"
 import weather from "../weather"
 import _ = require("lodash")
 import logger = require("anyhow")
@@ -241,71 +242,6 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
 }
 
 /**
- * Check if weather for activity matches the specified condition.
- * @param user User data.
- * @param activity The Strava activity to be checked.
- * @param condition The weather based recipe condition.
- */
-export const checkWeather = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
-    const prop = condition.property
-    const op = condition.operator
-
-    // If activity has no valid location data, stop right here.
-    if (!activity.hasLocation) {
-        return false
-    }
-
-    try {
-        let valid: boolean = false
-
-        // Parse condition value and weather property.
-        const value = parseInt(condition.value as string)
-        const diff = value * 0.1
-        const weatherProp = prop.split(".")[1]
-
-        // Get activity weather.
-        const weatherSummary = await weather.getActivityWeather(user, activity)
-        let summary: WeatherSummary
-
-        // Weather could not be fetched? Stop here.
-        if (!weatherSummary) {
-            return false
-        }
-
-        // Check for weather on start and end of the activity.
-        for (summary of [weatherSummary.start, weatherSummary.end]) {
-            if (!summary || _.isNil(summary[weatherProp])) {
-                continue
-            }
-
-            let weatherPropValue = summary[weatherProp].replace(/[^\d.-]/g, "")
-            if (!isNaN(weatherPropValue)) weatherPropValue = parseFloat(weatherPropValue)
-
-            if (op == RecipeOperator.Equal) {
-                valid = valid || weatherPropValue == value
-            } else if (op == RecipeOperator.Like) {
-                valid = value < weatherPropValue + diff && value > weatherPropValue - diff
-            } else if (op == RecipeOperator.GreaterThan) {
-                valid = valid || weatherPropValue > value
-            } else if (op == RecipeOperator.LessThan) {
-                valid = valid || weatherPropValue < value
-            } else {
-                throw new Error(`Invalid operator ${op} for ${prop}`)
-            }
-        }
-
-        if (!valid) {
-            logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed")
-        }
-
-        return valid
-    } catch (ex) {
-        logger.error("Recipes.checkWeather", `Activity ${activity.id}`, condition, ex)
-        return false
-    }
-}
-
-/**
  * Check if the passed number based condition is valid.
  * @param activity The Strava activity to be checked.
  * @param condition The number based recipe condition.
@@ -395,4 +331,125 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition):
     }
 
     return valid
+}
+
+/**
+ * Check if weather for activity matches the specified condition.
+ * @param user User data.
+ * @param activity The Strava activity to be checked.
+ * @param condition The weather based recipe condition.
+ */
+export const checkWeather = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+    const prop = condition.property
+    const op = condition.operator
+
+    // If activity has no valid location data, stop right here.
+    if (!activity.hasLocation) {
+        return false
+    }
+
+    try {
+        let valid: boolean = false
+
+        // Parse condition value and weather property.
+        const value = parseInt(condition.value as string)
+        const diff = value * 0.1
+        const weatherProp = prop.split(".")[1]
+
+        // Get activity weather.
+        const weatherSummary = await weather.getActivityWeather(user, activity)
+        let summary: WeatherSummary
+
+        // Weather could not be fetched? Stop here.
+        if (!weatherSummary) {
+            return false
+        }
+
+        // Check for weather on start and end of the activity.
+        for (summary of [weatherSummary.start, weatherSummary.end]) {
+            if (!summary || _.isNil(summary[weatherProp])) {
+                continue
+            }
+
+            let weatherPropValue = summary[weatherProp].replace(/[^\d.-]/g, "")
+            if (!isNaN(weatherPropValue)) weatherPropValue = parseFloat(weatherPropValue)
+
+            if (op == RecipeOperator.Equal) {
+                valid = valid || weatherPropValue == value
+            } else if (op == RecipeOperator.Like) {
+                valid = value < weatherPropValue + diff && value > weatherPropValue - diff
+            } else if (op == RecipeOperator.GreaterThan) {
+                valid = valid || weatherPropValue > value
+            } else if (op == RecipeOperator.LessThan) {
+                valid = valid || weatherPropValue < value
+            } else {
+                throw new Error(`Invalid operator ${op} for ${prop}`)
+            }
+        }
+
+        if (!valid) {
+            logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed")
+        }
+
+        return valid
+    } catch (ex) {
+        logger.error("Recipes.checkWeather", `Activity ${activity.id}`, condition, ex)
+        return false
+    }
+}
+
+/**
+ * Check if a spotify track during the the activity matches the specified condition.
+ * @param user User data.
+ * @param activity The Strava activity to be checked.
+ * @param condition The Spotify based recipe condition.
+ */
+export const checkSpotify = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+    const prop = condition.property
+    const op = condition.operator
+
+    // If user has no Spotify account linked, stop here.
+    if (!user.spotify) {
+        return false
+    }
+
+    try {
+        let valid: boolean = false
+
+        // Validated already if user has no Spotify and condition is "not like".
+        if (!user.spotify && op == RecipeOperator.NotLike) {
+            valid = true
+        } else {
+            const trackName = condition.value ? condition.value.toString().toLowerCase() : ""
+
+            // Fetch recent played tracks from Spotify.
+            const tracks = (await spotify.getActivityTracks(user, activity)) || []
+            const trackTitles = tracks.map((t) => t.title.toLowerCase())
+
+            // Set as valid if user has tracks and either no specific track name was set,
+            // or a track name was set and it matches one of the played tracks.
+            if (tracks.length > 0) {
+                if (op == RecipeOperator.Equal) {
+                    valid = trackTitles.filter((t) => t == trackName).length > 0
+                } else if (op == RecipeOperator.Like) {
+                    valid = trackTitles.join(" | ").includes(trackName)
+                } else if (op == RecipeOperator.NotLike) {
+                    valid = !trackTitles.join(" | ").includes(trackName)
+                } else {
+                    throw new Error(`Invalid operator ${op} for ${prop}`)
+                }
+            } else if (op == RecipeOperator.NotLike) {
+                valid = true
+            }
+        }
+
+        if (!valid) {
+            logger.debug("Recipes.checkSpotify", `Activity ${activity.id}`, condition, "Failed")
+        }
+
+        return valid
+    } catch (ex) {
+        logger.error("Recipes.checkSpotify", `Activity ${activity.id}`, condition, ex)
+        return false
+    }
 }

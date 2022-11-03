@@ -94,7 +94,8 @@ export const recipePropertyList = [
     {value: "manual", text: "Created manually", type: "boolean", operators: recipeOperatorList.is},
     {value: "weather.temperature", text: "Weather temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "kph", impSuffix: "mph"},
-    {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100}
+    {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100},
+    {value: "spotify.track", text: "Listened Spotify track name", type: "text", operators: recipeOperatorList.text}
 ]
 
 /**
