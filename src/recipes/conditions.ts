@@ -345,6 +345,7 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
 
     // If activity has no valid location data, stop right here.
     if (!activity.hasLocation) {
+        logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Activity has no location data")
         return false
     }
 
@@ -410,6 +411,7 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
 
     // If user has no Spotify account linked, stop here.
     if (!user.spotify) {
+        logger.debug("Recipes.checkSpotify", `Activity ${activity.id}`, condition, "Skipped, user has no Spotify")
         return false
     }
 
