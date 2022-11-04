@@ -2,7 +2,7 @@
 
 import {recipePropertyList, recipeActionList} from "./lists"
 import {defaultAction, booleanAction, gearAction, mapStyleAction, sportTypeAction, webhookAction, workoutTypeAction} from "./actions"
-import {checkBoolean, checkGear, checkLocation, checkNewRecords, checkNumber, checkSportType, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
+import {checkBoolean, checkGear, checkLocation, checkNewRecords, checkNumber, checkSportType, checkSpotify, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
@@ -269,6 +269,12 @@ export class Recipes {
             // Weather conditions.
             if (prop.includes("weather")) {
                 const valid = await checkWeather(user, activity, condition)
+                if (!valid) return false
+            }
+
+            // Spotify conditions.
+            else if (prop.includes("spotify")) {
+                const valid = await checkSpotify(user, activity, condition)
                 if (!valid) return false
             }
 
