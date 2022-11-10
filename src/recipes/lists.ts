@@ -51,7 +51,7 @@ export const recipeOperatorList = {
 }
 
 /**
- * List of possible recipe properties, with descriptions and operators.
+ * List of possible recipe properties (conditions), with descriptions and operators.
  */
 export const recipePropertyList = [
     {value: "sportType", text: "Sport type", type: "sportType", operators: recipeOperatorList.is},
@@ -95,7 +95,8 @@ export const recipePropertyList = [
     {value: "weather.temperature", text: "Weather temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "kph", impSuffix: "mph"},
     {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100},
-    {value: "spotify.track", text: "Listened Spotify track name", type: "text", operators: recipeOperatorList.text}
+    {value: "spotify.track", text: "Listened Spotify track name", type: "text", operators: recipeOperatorList.text},
+    {value: "firstOfDay", text: "Is today's first activity", type: "boolean", operators: recipeOperatorList.is}
 ]
 
 /**

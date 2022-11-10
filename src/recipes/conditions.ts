@@ -5,6 +5,7 @@ import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
 import spotify from "../spotify"
+import strava from "../strava"
 import weather from "../weather"
 import _ = require("lodash")
 import logger = require("anyhow")
@@ -363,6 +364,7 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
 
         // Weather could not be fetched? Stop here.
         if (!weatherSummary) {
+            logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed to fetch weather")
             return false
         }
 
@@ -452,6 +454,55 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
         return valid
     } catch (ex) {
         logger.error("Recipes.checkSpotify", `Activity ${activity.id}`, condition, ex)
+        return false
+    }
+}
+
+/**
+ * Check if the activity is today's first for the user.
+ * @param user User data.
+ * @param activity The Strava activity to be checked.
+ * @param condition The recipe condition.
+ */
+export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+    const prop = condition.property
+    const op = condition.operator
+    const value = condition.value as boolean
+
+    try {
+        if (op != RecipeOperator.Equal) {
+            throw new Error(`Invalid operator ${op} for ${prop}`)
+        }
+
+        const now = dayjs()
+        const lastActivityDate = dayjs(user.dateLastActivity || user.dateRegistered)
+        const activityDate = dayjs(activity.dateStart)
+        let isFirst = activityDate.dayOfYear() > lastActivityDate.dayOfYear() || activityDate.year() > lastActivityDate.year()
+        let valid: boolean = false
+
+        // Processing an older activity? Fetch activities for the same date to check if it's the first one.
+        if (!isFirst && lastActivityDate.isAfter(activityDate)) {
+            const query: any = {after: activityDate.startOf("day").valueOf()}
+            if (now.dayOfYear() != activityDate.dayOfYear()) {
+                query.before = activityDate.endOf("day").valueOf()
+            }
+
+            const activities = _.sortBy(await strava.activities.getActivities(user, query), "dateStart")
+
+            if (activities.length == 0 || activities[0].id == activity.id) {
+                isFirst = true
+            }
+        }
+
+        valid = (isFirst && value) || (!isFirst && !value)
+
+        if (!valid) {
+            logger.debug("Recipes.checkFirstOfDay", `Activity ${activity.id}`, condition, "Failed")
+        }
+
+        return valid
+    } catch (ex) {
+        logger.error("Recipes.checkFirstOfDay", `Activity ${activity.id}`, condition, ex)
         return false
     }
 }
