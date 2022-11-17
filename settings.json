@@ -90,10 +90,10 @@
     },
     "komoot": {
         "baseUrl": "https://www.komoot.com/",
-        // Route details are cached in memory for up to 24 hours. Value set in seconds.
-        "cacheDuration": 86400,
-        // Route details are cached in the database for up to 7 days. Value set in seconds.
-        "maxCacheDuration": 604800
+        // Route details are cached in memory for up to 12 hours. Value set in seconds.
+        "cacheDuration": 43200,
+        // Route details are cached in the database for up to 4 days. Value set in seconds.
+        "maxCacheDuration": 345600
     },
     "locationiq": {
         "baseUrl": "https://eu1.locationiq.com/v1/",
