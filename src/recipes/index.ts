@@ -267,20 +267,20 @@ export class Recipes {
             const prop = condition.property
 
             // Weather conditions.
-            if (prop.includes("weather")) {
+            if (prop.indexOf("weather") == 0) {
                 const valid = await checkWeather(user, activity, condition)
                 if (!valid) return false
             }
 
             // Spotify conditions.
-            else if (prop.includes("spotify")) {
+            else if (prop.indexOf("spotify") == 0) {
                 const valid = await checkSpotify(user, activity, condition)
                 if (!valid) return false
             }
 
             // First activity of the day condition.
-            else if (prop == "firstOfDay") {
-                const valid = await checkFirstOfDay(user, activity, condition)
+            else if (prop.indexOf("firstOfDay") == 0) {
+                const valid = await checkFirstOfDay(user, activity, condition, prop.includes(".same"))
                 if (!valid) return false
             }
 
