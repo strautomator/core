@@ -477,17 +477,17 @@ export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, 
         }
 
         const now = dayjs()
-        const lastActivityDate = dayjs(user.dateLastActivity || user.dateRegistered)
-        const activityDate = dayjs(activity.dateStart)
+        const lastActivityDate = dayjs(user.dateLastActivity || user.dateRegistered).utc()
+        const activityDate = dayjs(activity.dateStart).utc()
         let isFirst = activityDate.dayOfYear() > lastActivityDate.dayOfYear() || activityDate.year() > lastActivityDate.year()
         let valid: boolean = false
 
         // Processing an older activity, or filtering by same sport?
         // Fetch activities for the same date to check if it's the first one.
         if (!isFirst && (sameSport || lastActivityDate.isAfter(activityDate))) {
-            const query: any = {after: activityDate.startOf("day").valueOf()}
+            const query: any = {after: activityDate.startOf("day").valueOf() / 1000}
             if (now.dayOfYear() != activityDate.dayOfYear()) {
-                query.before = activityDate.endOf("day").valueOf()
+                query.before = activityDate.endOf("day").valueOf() / 1000
             }
 
             const dayActivities = await strava.activities.getActivities(user, query)
