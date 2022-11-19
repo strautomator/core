@@ -359,16 +359,20 @@ export class StravaAPI {
 
             // Response should be cached?
             if (shouldCache && result) {
-                const cacheData: StravaCachedResponse = {
-                    id: cacheId,
-                    resourceType: cacheKey,
-                    data: result,
-                    dateCached: now.toDate(),
-                    dateExpiry: now.add(cacheDuration, "seconds").toDate()
-                }
+                try {
+                    const cacheData: StravaCachedResponse = {
+                        id: cacheId,
+                        resourceType: cacheKey,
+                        data: result,
+                        dateCached: now.toDate(),
+                        dateExpiry: now.add(cacheDuration, "seconds").toDate()
+                    }
 
-                Object.keys(cacheData).forEach((k) => cacheData[k] === null && delete cacheData[k])
-                await database.set("strava-cache", cacheData, cacheId)
+                    Object.keys(cacheData).forEach((k) => cacheData[k] === null && delete cacheData[k])
+                    await database.set("strava-cache", cacheData, cacheId)
+                } catch (cacheEx) {
+                    logger.error("Strava.get", `Failed to save to cache: ${cacheId}`, cacheEx)
+                }
             }
 
             return result
