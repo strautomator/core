@@ -456,19 +456,6 @@
             // The WeatherAPI.com secret MUST be set via secret settings or
             // via the SMU_weather_weatherapi_secret environment variable.
             "secret": null
-        },
-        // Weatherbit API settings.
-        "weatherbit": {
-            "baseUrl": "https://api.weatherbit.io/v2.0/",
-            // OpenWeathWeatherbiterMap API rate limits.
-            "rateLimit": {
-                "maxConcurrent": 4,
-                "perHour": 350,
-                "perDay": 450
-            },
-            // The Weatherbit API secret MUST be set via secret settings or
-            // via the SMU_weather_weatherbit_secret environment variable.
-            "secret": null
         }
     }
 }
