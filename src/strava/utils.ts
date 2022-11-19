@@ -6,6 +6,7 @@ import {recipePropertyList} from "../recipes/lists"
 import maps from "../maps"
 import dayjs from "../dayjs"
 import _ = require("lodash")
+import polyline = require("@mapbox/polyline")
 
 // Feet and miles ratio.
 const rFeet = 3.28084
@@ -57,6 +58,14 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
 
     // Activity has location data?
     activity.hasLocation = (activity.locationStart && activity.locationStart.length > 0) || (activity.locationEnd && activity.locationEnd.length > 0)
+
+    // Calculate activity mid point.
+    if (activity.polyline) {
+        const coordinates = polyline.decode(activity.polyline)
+        if (coordinates.length > 0) {
+            activity.locationMid = coordinates[Math.round(coordinates.length / 2)]
+        }
+    }
 
     // Extra optional fields.
     if (data.workout_type && data.workout_type != 0 && data.workout_type != 10) {

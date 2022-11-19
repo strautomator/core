@@ -62,6 +62,8 @@ export interface StravaActivity {
     locationStart?: [number, number]
     /** End location (latitude and longitude). */
     locationEnd?: [number, number]
+    /** Falh-time location (latitude and longitude). */
+    locationMid?: [number, number]
     /** Map encoded as polyline. */
     polyline?: string
     /** Gear used. */
