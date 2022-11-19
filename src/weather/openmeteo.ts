@@ -59,7 +59,7 @@ export class OpenMeteo implements WeatherProvider {
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.debug("OpenMeteo.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
+                logger.info("OpenMeteo.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
             }
 
             return result
