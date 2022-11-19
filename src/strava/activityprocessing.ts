@@ -46,7 +46,7 @@ export class StravaActivities {
         if (!filter) filter = {}
 
         let activityCount = 0
-        const dateLog = `${dayjs(dateFrom).format("YY-MM-DD HH:mm")} to ${dayjs(dateTo).format("YY-MM-DD HH:mm")}`
+        const dateLog = `${dayjs(dateFrom).format("lll")} to ${dayjs(dateTo).format("lll")}`
         const tsAfter = dateFrom.valueOf() / 1000
         const tsBefore = dateTo.valueOf() / 1000
         const now = dayjs()
@@ -61,7 +61,7 @@ export class StravaActivities {
             const maxDays = user.isPro ? settings.plans.pro.batchDays : settings.plans.free.batchDays
             const minDate = now.subtract(maxDays, "days").startOf("day")
             if (minDate.valueOf() / 1000 > tsAfter) {
-                throw new Error(`Invalid date range, minimum allowed date: ${minDate.format("YYYY-MM-DD")}`)
+                throw new Error(`Invalid date range, minimum allowed date: ${minDate.format("LL")}`)
             }
 
             // Fetch user activities for the specified time range.
@@ -256,11 +256,11 @@ export class StravaActivities {
 
             if (dateFrom) {
                 where.push(["dateProcessed", ">=", dateFrom])
-                logFrom = ` from ${dayjs(dateFrom).format("YY-MM-DD")}`
+                logFrom = ` from ${dayjs(dateFrom).format("ll")}`
             }
             if (dateTo) {
                 where.push(["dateProcessed", "<=", dateTo])
-                logTo = ` to ${dayjs(dateTo).format("YY-MM-DD")}`
+                logTo = ` to ${dayjs(dateTo).format("ll")}`
             }
             if (limit) {
                 logLimit = `, limit ${limit}`
@@ -450,7 +450,7 @@ export class StravaActivities {
      * @param batchSize Optional batch size, otherwise use the default from settings.
      */
     getQueuedActivities = async (beforeDate: Date, batchSize?: number): Promise<StravaProcessedActivity[]> => {
-        const logDate = `Before ${dayjs(beforeDate).format("YY-MM-DD HH:mm:ss")}`
+        const logDate = `Before ${dayjs(beforeDate).format("lll")}`
         if (!batchSize) batchSize = settings.strava.queueBatchSize
 
         // Get queued activities from the database.

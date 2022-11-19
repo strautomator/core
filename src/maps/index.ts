@@ -413,7 +413,7 @@ export class Maps {
      */
     cleanup = async (all?: boolean): Promise<void> => {
         const since = dayjs().subtract(settings.maps.maxCacheDuration, "seconds")
-        const sinceLog = all ? "All" : `Since ${since.format("YY-MM-DD HH:mm")}`
+        const sinceLog = all ? "All" : `Since ${since.format("lll")}`
 
         try {
             const where: any[] = [["dateCached", "<", since.toDate()]]
@@ -441,7 +441,7 @@ export class Maps {
         if (address.country) result.push(address.country)
 
         if (fromCache && address.dateCached) {
-            result.push(`Cached ${dayjs(address.dateCached).format("MMM DD HH:mm")}`)
+            result.push(`Cached ${dayjs(address.dateCached).format("lll")}`)
         }
 
         return result.join(", ")
