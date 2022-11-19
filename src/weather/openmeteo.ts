@@ -31,15 +31,16 @@ export class OpenMeteo implements WeatherProvider {
     /**
      * Get current weather conditions for the specified coordinates.
      * @param coordinates Array with latitude and longitude.
-     * @param date Date for the weather request.
+     * @param dDate Date for the weather request (as a DayJS object).
      * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
+    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
-        const isoDate = date.toISOString()
-        const today = dayjs.utc()
-        const diffHours = Math.abs(today.diff(date, "hours"))
-        const isFuture = today.isBefore(date)
+        const isoDate = dDate.toISOString()
+        const utcDate = dDate.utc()
+        const utcNow = dayjs.utc()
+        const diffHours = Math.abs(utcNow.diff(utcDate, "hours"))
+        const isFuture = utcNow.isBefore(utcDate)
         const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
@@ -47,8 +48,8 @@ export class OpenMeteo implements WeatherProvider {
             if (!preferences) preferences = {}
 
             const baseUrl = settings.weather.openmeteo.baseUrl
-            const dateFormat = dayjs.utc(date).format("YYYY-MM-DD")
-            const daysQuery = isFuture ? `start_date=${dateFormat}&end_date=${dateFormat}` : `past_days=${today.dayOfYear() - today.subtract(diffHours, "hours").dayOfYear()}`
+            const dateFormat = dDate.format("YYYY-MM-DD")
+            const daysQuery = isFuture ? `start_date=${dateFormat}&end_date=${dateFormat}` : `past_days=${utcNow.dayOfYear() - utcNow.subtract(diffHours, "hours").dayOfYear()}`
             const weatherUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,pressure_msl,precipitation,weathercode,snow_depth,cloudcover,windspeed_10m,winddirection_10m,windgusts_10m&current_weather=true`
 
             // Fetch weather data.
@@ -56,9 +57,9 @@ export class OpenMeteo implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("OpenMeteo.getWeather", weatherSummaryString(coordinates, date, result, preferences))
+                logger.debug("OpenMeteo.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
             }
 
             return result
@@ -72,14 +73,16 @@ export class OpenMeteo implements WeatherProvider {
     /**
      * Transform data from the Open-Meteo API to a WeatherSummary.
      * @param data Data from Open-Meteo.
-     * @param preferences User preferences.
+     * @param coordinates Array with latitude and longitude.
+     * @param dDate The date (as a DayJS object).
+     * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
         if (!data || !data.hourly) return
 
-        const baseDate = dayjs.utc(date)
-        const hour = baseDate.minute() < 30 ? baseDate.hour() : baseDate.hour() + 1
-        const dateFormat = baseDate.hour(hour).minute(0).format("YYYY-MM-DDTHH:mm")
+        const utcDate = dDate.utc()
+        const hour = utcDate.minute() < 30 ? utcDate.hour() : utcDate.hour() + 1
+        const dateFormat = utcDate.hour(hour).minute(0).format("YYYY-MM-DDTHH:mm")
         const index = data.hourly.time.findIndex((h) => dateFormat == h)
 
         const result: WeatherSummary = {
@@ -93,13 +96,13 @@ export class OpenMeteo implements WeatherProvider {
             windDirection: data.hourly.winddirection_10m[index],
             cloudCover: data.hourly.cloudcover[index],
             extraData: {
-                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                timeOfDay: getSuntimes(coordinates, dDate).timeOfDay,
                 mmPrecipitation: data.hourly.precipitation[index]
             }
         }
 
         // Process and return weather summary.
-        processWeatherSummary(result, date, preferences)
+        processWeatherSummary(result, dDate, preferences)
         return result
     }
 }

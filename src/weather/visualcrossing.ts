@@ -31,15 +31,16 @@ export class VisualCrossing implements WeatherProvider {
     /**
      * Get current weather conditions for the specified coordinates and date.
      * @param coordinates Array with latitude and longitude.
-     * @param date Date for the weather request.
+     * @param dDate Date for the weather request (as a DayJS object).
      * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
+    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
-        const isoDate = date.toISOString()
-        const today = dayjs.utc()
-        const diffHours = Math.abs(today.diff(date, "hours"))
-        const isFuture = today.isBefore(date)
+        const isoDate = dDate.toISOString()
+        const utcDate = dDate.utc()
+        const utcNow = dayjs.utc()
+        const diffHours = Math.abs(utcNow.diff(utcDate, "hours"))
+        const isFuture = utcNow.isBefore(utcDate)
         const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
@@ -49,12 +50,12 @@ export class VisualCrossing implements WeatherProvider {
             const baseUrl = settings.weather.visualcrossing.baseUrl
             const secret = settings.weather.visualcrossing.secret
 
-            let mDate = dayjs.utc(date)
-            if (mDate.dayOfYear() != dayjs.utc().dayOfYear()) {
-                mDate = mDate.subtract(1, "days")
+            if (utcDate.dayOfYear() != utcNow.dayOfYear()) {
+                dDate = dDate.subtract(1, "days")
             }
 
-            const qDate = mDate.format("YYYY-MM-DDTHH:mm:ss")
+            // Visual Crossing expects the date in their local timezone.
+            const qDate = dDate.format("YYYY-MM-DDTHH:mm:ss")
             const latlon = coordinates.join(",")
             const include = "current,obs,histfcst"
             const lang = preferences.language && preferences.language != "pt" ? preferences.language || "en" : "en"
@@ -65,9 +66,9 @@ export class VisualCrossing implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("VisualCrossing.getWeather", weatherSummaryString(coordinates, date, result, preferences))
+                logger.debug("VisualCrossing.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
             }
 
             return result
@@ -80,15 +81,18 @@ export class VisualCrossing implements WeatherProvider {
     /**
      * Transform data from the Visual Crossing API to a WeatherSummary.
      * @param data Data from Visual Crossing.
+     * @param coordinates Array with latitude and longitude.
+     * @param dDate The date (as a DayJS object).
+     * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
         if (!data) return
 
         // Locate correct hour report from the response.
         if (data.days && data.days.length > 0) {
             data = data.days[0]
             if (data.hours && data.hours.length > 0) {
-                data = data.hours.find((d) => d.datetime == dayjs.utc(date).format("HH:mm:ss"))
+                data = data.hours.find((d) => d.datetime == dDate.format("HH:mm:ss"))
             }
         }
 
@@ -115,7 +119,7 @@ export class VisualCrossing implements WeatherProvider {
             cloudCover: data.cloudcover,
             visibility: data.visibility,
             extraData: {
-                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                timeOfDay: getSuntimes(coordinates, dDate).timeOfDay,
                 mmPrecipitation: snowDepth || precipLevel
             }
         }
@@ -126,7 +130,7 @@ export class VisualCrossing implements WeatherProvider {
         }
 
         // Process and return weather summary.
-        processWeatherSummary(result, date, preferences)
+        processWeatherSummary(result, dDate, preferences)
         return result
     }
 }

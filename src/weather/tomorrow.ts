@@ -32,15 +32,16 @@ export class Tomorrow implements WeatherProvider {
     /**
      * Get current weather conditions for the specified coordinates.
      * @param coordinates Array with latitude and longitude.
-     * @param date Date for the weather request.
+     * @param dDate Date for the weather request (as a DayJS object).
      * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
+    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
-        const isoDate = date.toISOString()
-        const today = dayjs.utc()
-        const diffHours = Math.abs(today.diff(date, "hours"))
-        const isFuture = today.isBefore(date)
+        const isoDate = dDate.toISOString()
+        const utcDate = dDate.utc()
+        const utcNow = dayjs.utc()
+        const diffHours = Math.abs(utcNow.diff(utcDate, "hours"))
+        const isFuture = utcNow.isBefore(utcDate)
         const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
@@ -50,9 +51,8 @@ export class Tomorrow implements WeatherProvider {
             const baseUrl = settings.weather.tomorrow.baseUrl
             const secret = settings.weather.tomorrow.secret
             const dateFormat = "YYYY-MM-DDTHH:mm:ss"
-            const mDate = dayjs.utc(date)
-            const startTime = mDate.format(dateFormat) + "Z"
-            const endTime = mDate.add(1, "h").format(dateFormat) + "Z"
+            const startTime = utcDate.format(dateFormat) + "Z"
+            const endTime = utcDate.add(1, "h").format(dateFormat) + "Z"
             const fields = `weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover,visibility`
             const latlon = coordinates.join(",")
             const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
@@ -62,9 +62,9 @@ export class Tomorrow implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("Tomorrow.getWeather", weatherSummaryString(coordinates, date, result, preferences))
+                logger.debug("Tomorrow.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
             }
 
             return result
@@ -78,8 +78,11 @@ export class Tomorrow implements WeatherProvider {
     /**
      * Transform data from the Tomorrow API to a WeatherSummary.
      * @param data Data from Tomorrow.
+     * @param coordinates Array with latitude and longitude.
+     * @param dDate The date (as a DayJS object).
+     * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
         data = data.data && data.data.timelines ? data.data.timelines[0].intervals[0].values : null
         if (!data) return
 
@@ -101,7 +104,7 @@ export class Tomorrow implements WeatherProvider {
             cloudCover: data.cloudCover,
             visibility: data.visibility,
             extraData: {
-                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                timeOfDay: getSuntimes(coordinates, dDate).timeOfDay,
                 iconText: summary,
                 mmPrecipitation: data.precipitationIntensity
             }
@@ -112,7 +115,7 @@ export class Tomorrow implements WeatherProvider {
         }
 
         // Process and return weather summary.
-        processWeatherSummary(result, date, preferences)
+        processWeatherSummary(result, dDate, preferences)
         return result
     }
 

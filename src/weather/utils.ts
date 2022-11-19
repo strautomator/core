@@ -54,8 +54,12 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
  * Numeric data passed as string will be untouched, while actual numbers
  * will be processed (converting to proper units and adding the suffixes).
  * @param summary The weather summary to be processed.
+ * @param dDate The date (as a DayJS object).
+ * @param preferences User preferences.
  */
-export function processWeatherSummary(summary: WeatherSummary, date: Date, preferences: UserPreferences): void {
+export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayjs, preferences: UserPreferences): void {
+    const date = dDate.toDate()
+
     try {
         const prcFog = translation("Fog", preferences)
         const prcDrizzle = translation("Drizzle", preferences)
@@ -228,22 +232,23 @@ export function processWeatherSummary(summary: WeatherSummary, date: Date, prefe
         delete summary.extraData
     } catch (ex) {
         delete summary.extraData
-        logger.error("Weather.processWeatherSummary", date.toISOString(), Object.values(summary).join(", "), ex)
+        logger.error("Weather.processWeatherSummary", dDate.format("lll"), Object.values(summary).join(", "), ex)
     }
 }
 
 /**
  * Helper to get a single liner with the summary of a weather summary.
  * @param coordinates Coordinates.
- * @param date The date.
+ * @param dDate The date (as a DayJS object).
  * @param summary The parsed weather summary.
  * @param preferences User preferences (used for language translations).
  */
-export function weatherSummaryString(coordinates: [number, number], date: Date, summary: WeatherSummary, preferences: UserPreferences): string {
-    const dateFormat = dayjs(date).format("YYYY-MM-DD HH:mm")
-    return `${coordinates.join(", ")} - ${dateFormat} - ${summary.summary} - ${translation("Temp", preferences)}: ${summary.temperature}, ${translation("Humidity", preferences)}: ${summary.humidity}, ${translation("Precipitation", preferences)}: ${
-        summary.precipitation
-    }`
+export function weatherSummaryString(coordinates: [number, number], dDate: dayjs.Dayjs, summary: WeatherSummary, preferences: UserPreferences): string {
+    const dateFormat = dDate.format("lll")
+    return `${coordinates.join(", ")} | ${dateFormat} | ${summary.icon} ${summary.summary} | ${translation("Temp", preferences)}: ${summary.temperature}, ${translation("Humidity", preferences)}: ${summary.humidity}, ${translation(
+        "Precipitation",
+        preferences
+    )}: ${summary.precipitation}`
 }
 
 /**
@@ -286,10 +291,10 @@ export function getMoonPhase(date: Date): MoonPhase {
 /**
  * Get the sunrise and sunset on the specified coordinates / date.
  * @param coordinates Latitude and longitude.
- * @param date The date.
- * @param tz Optional timezone offset (hours).
+ * @param dDate The date (as a DayJS object).
  */
-export function getSuntimes(coordinates: [number, number], date: Date, tz?: number): Suntimes {
+export function getSuntimes(coordinates: [number, number], dDate: dayjs.Dayjs): Suntimes {
+    const date = dDate.toDate()
     const lat = coordinates[0]
     const lng = coordinates[1]
     const radians = Math.PI / 180.0
@@ -322,9 +327,8 @@ export function getSuntimes(coordinates: [number, number], date: Date, tz?: numb
     // Calculate it.
     const utcRise = 24 * (jRise - jDay) + 12
     const utcSet = 24 * (jSet - jDay) + 12
-    const tzOffset = tz === undefined ? (-1 * date.getTimezoneOffset()) / 60 : tz
-    const localRise = (utcRise + tzOffset) % 24
-    const localSet = (utcSet + tzOffset) % 24
+    const localRise = (utcRise + dDate.utcOffset() / 60) % 24
+    const localSet = (utcSet + dDate.utcOffset() / 60) % 24
 
     let hourSunrise: any = Math.floor(localRise)
     let minuteSunrise: any = Math.round((localRise - Math.floor(localRise)) * 60)
@@ -337,11 +341,11 @@ export function getSuntimes(coordinates: [number, number], date: Date, tz?: numb
 
     const sunrise = `${hourSunrise}:${minuteSunrise}`
     const sunset = `${hourSunset}:${minuteSunset}`
-    const fDate = dayjs(date).format("HH:mm")
+    const fDate = dDate.format("HH:mm")
     const timeOfDay = fDate >= sunrise && fDate <= sunset ? "day" : "night"
     const suntimesResult: Suntimes = {sunrise: sunrise, sunset: sunset, timeOfDay: timeOfDay}
 
-    logger.debug("Weather.getSuntimes", date, suntimesResult)
+    logger.debug("Weather.getSuntimes", dDate.format("lll"), suntimesResult)
 
     return suntimesResult
 }

@@ -31,15 +31,16 @@ export class OpenWeatherMap implements WeatherProvider {
     /**
      * Get current weather conditions for the specified coordinates.
      * @param coordinates Array with latitude and longitude.
-     * @param date Date for the weather request.
+     * @param dDate Date for the weather request (as a DayJS object).
      * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
+    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
-        const isoDate = date.toISOString()
-        const today = dayjs.utc()
-        const diffHours = Math.abs(today.diff(date, "hours"))
-        const isFuture = today.isBefore(date)
+        const isoDate = dDate.toISOString()
+        const utcDate = dDate.utc()
+        const utcNow = dayjs.utc()
+        const diffHours = Math.abs(utcNow.diff(utcDate, "hours"))
+        const isFuture = utcNow.isBefore(utcDate)
         const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
@@ -57,9 +58,9 @@ export class OpenWeatherMap implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("OpenWeatherMap.getWeather", weatherSummaryString(coordinates, date, result, preferences))
+                logger.debug("OpenWeatherMap.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
             }
 
             return result
@@ -73,12 +74,14 @@ export class OpenWeatherMap implements WeatherProvider {
     /**
      * Transform data from the OpenWeatherMap API to a WeatherSummary.
      * @param data Data from OpenWeatherMap.
-     * @param preferences User preferences.
+     * @param coordinates Array with latitude and longitude.
+     * @param dDate The date (as a DayJS object).
+     * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
         if (!data) return
         if (data.list) {
-            data = data.list.find((d) => d.dt > dayjs.utc(date).unix())
+            data = data.list.find((d) => d.dt > dDate.utc().unix())
         }
         if (!data) return
 
@@ -123,14 +126,14 @@ export class OpenWeatherMap implements WeatherProvider {
             cloudCover: data.clouds ? data.clouds.all : null,
             visibility: data.visibility,
             extraData: {
-                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                timeOfDay: getSuntimes(coordinates, dDate).timeOfDay,
                 iconText: iconText,
                 mmPrecipitation: mmSnow || mmRain
             }
         }
 
         // Process and return weather summary.
-        processWeatherSummary(result, date, preferences)
+        processWeatherSummary(result, dDate, preferences)
         return result
     }
 }

@@ -31,15 +31,16 @@ export class StormGlass implements WeatherProvider {
     /**
      * Get current weather conditions for the specified coordinates and date.
      * @param coordinates Array with latitude and longitude.
-     * @param date Date for the weather request.
+     * @param dDate Date for the weather request (as a DayJS object).
      * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], date: Date, preferences: UserPreferences): Promise<WeatherSummary> => {
+    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
         const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
-        const isoDate = date.toISOString()
-        const today = dayjs.utc()
-        const diffHours = Math.abs(today.diff(date, "hours"))
-        const isFuture = today.isBefore(date)
+        const isoDate = dDate.toISOString()
+        const utcDate = dDate.utc()
+        const utcNow = dayjs.utc()
+        const diffHours = Math.abs(utcNow.diff(utcDate, "hours"))
+        const isFuture = utcNow.isBefore(utcDate)
         const maxHours = isFuture ? this.hoursFuture : this.hoursPast
 
         try {
@@ -48,13 +49,12 @@ export class StormGlass implements WeatherProvider {
 
             const baseUrl = settings.weather.stormglass.baseUrl
             const secret = settings.weather.stormglass.secret
-            const mDate = dayjs.utc(date)
-            const isYesterday = mDate.dayOfYear() != dayjs.utc().dayOfYear()
+            const isYesterday = utcDate.dayOfYear() != dayjs.utc().dayOfYear()
             const params = "airTemperature,humidity,pressure,cloudCover,windDirection,windSpeed,precipitation,snowDepth,visibility"
             let weatherUrl = `${baseUrl}weather/point?lat=${coordinates[0]}&lng=${coordinates[1]}&params=${params}`
 
             // If date is different than today, send it with the request.
-            if (isYesterday) weatherUrl += `&start=${mDate.unix()}&end=${mDate.add(1, "h").unix()}`
+            if (isYesterday) weatherUrl += `&start=${utcDate.unix()}&end=${utcDate.add(1, "h").unix()}`
 
             // Set auth header.
             const headers = {Authorization: secret}
@@ -64,9 +64,9 @@ export class StormGlass implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl, headers: headers}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, date, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("StormGlass.getWeather", weatherSummaryString(coordinates, date, result, preferences))
+                logger.debug("StormGlass.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
             }
 
             return result
@@ -80,15 +80,18 @@ export class StormGlass implements WeatherProvider {
     /**
      * Transform data from the Storm Glass API to a WeatherSummary.
      * @param data Data from Storm Glass.
+     * @param coordinates Array with latitude and longitude.
+     * @param dDate The date (as a DayJS object).
+     * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], date: Date, preferences: UserPreferences): WeatherSummary => {
+    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
         if (!data) return
 
         // Get correct array from response.
         data = data.hours || data.data
 
         // Locate weather details for the correct time.
-        const timeFilter = dayjs.utc(date).format("YYYY-MM-DDTHH")
+        const timeFilter = dDate.utc().format("YYYY-MM-DDTHH")
         const timeData = data.find((r) => r.time.includes(timeFilter))
 
         // Data for the specified time not found? Stop here.
@@ -112,13 +115,13 @@ export class StormGlass implements WeatherProvider {
             cloudCover: cloudCover,
             visibility: this.getDataProperty(timeData.visibility),
             extraData: {
-                timeOfDay: getSuntimes(coordinates, date).timeOfDay,
+                timeOfDay: getSuntimes(coordinates, dDate).timeOfDay,
                 mmPrecipitation: precipLevel
             }
         }
 
         // Process and return weather summary.
-        processWeatherSummary(result, date, preferences)
+        processWeatherSummary(result, dDate, preferences)
         return result
     }
 
