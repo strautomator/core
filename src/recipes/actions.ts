@@ -150,14 +150,19 @@ export const addWeatherTags = async (user: UserData, activity: StravaActivity, r
             return processedValue
         }
 
+        // Weather specific at the start.
         if (processedValue.includes("${weather.start.")) {
             processedValue = jaul.data.replaceTags(processedValue, weatherSummary.start || "", "weather.start.")
         }
+
+        // Weather specific at the end.
         if (processedValue.includes("${weather.end.")) {
             processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || "", "weather.end.")
         }
+
+        // More time during the day or during the night?
         if (processedValue.includes("${weather.")) {
-            processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || weatherSummary.start || "", "weather.")
+            processedValue = jaul.data.replaceTags(processedValue, weatherSummary.mid || weatherSummary.end || weatherSummary.end || "", "weather.")
         }
     } catch (ex) {
         logger.warn("Recipes.addWeatherTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, ex)
