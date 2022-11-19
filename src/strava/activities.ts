@@ -133,8 +133,8 @@ export class StravaActivities {
             // Get start time and timezone to be logged.
             let timeStart
             if (activity.dateStart) {
-                const offset = activity.utcStartOffset > 0 ? `+${activity.utcStartOffset}` : activity.utcStartOffset
-                timeStart = `${dayjs.utc(activity.dateStart).format("LTS")}, offset ${offset}`
+                const activityDate = dayjs(activity.dateStart)
+                timeStart = `Local ${activityDate.format("LTS")}, UTC ${activityDate.utc().format("LTS")}`
             } else {
                 timeStart = "No dateStart"
             }
