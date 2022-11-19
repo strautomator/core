@@ -33,9 +33,10 @@ export class StravaFtp {
             if (!activities || activities.length == 0) {
                 const dateAfter = dayjs.utc().subtract(settings.strava.ftp.weeks, "weeks")
                 const tsAfter = dateAfter.valueOf() / 1000
-                const tsBefore = new Date().valueOf() / 1000
+                const tsBefore = new Date().valueOf() / 1000 - 1
                 activities = await stravaActivities.getActivities(user, {before: tsBefore, after: tsAfter})
             }
+
             activityCount = activities.length
 
             const now = dayjs()
@@ -238,13 +239,17 @@ export class StravaFtp {
         try {
             const ftpEstimation = await this.estimateFtp(user)
 
-            if (ftpEstimation) {
-                if (!ftpEstimation.recentlyUpdated) {
-                    await this.saveFtp(user, ftpEstimation.ftpWatts)
-                } else {
-                    logger.warn("Strava.processFtp", `User ${user.id} ${user.displayName}`, "FTP already updated recently")
-                }
+            if (!ftpEstimation) {
+                logger.warn("Strava.processFtp", `User ${user.id} ${user.displayName}`, "Could not estimate the user's FTP")
+                return
             }
+
+            if (ftpEstimation.recentlyUpdated) {
+                logger.warn("Strava.processFtp", `User ${user.id} ${user.displayName}`, "FTP already updated recently")
+                return
+            }
+
+            await this.saveFtp(user, ftpEstimation.ftpWatts)
         } catch (ex) {
             logger.error("Strava.processFtp", `User ${user.id} ${user.displayName}`, ex)
         }
