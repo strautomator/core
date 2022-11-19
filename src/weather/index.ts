@@ -113,8 +113,18 @@ export class Weather {
             try {
                 weather.start = await this.getLocationWeather(user, activity.locationStart, activity.dateStart)
                 weather.end = await this.getLocationWeather(user, activity.locationEnd, activity.dateEnd)
-            } catch (ex) {
-                logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, ex)
+            } catch (innerEx) {
+                logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, innerEx)
+            }
+
+            // Weather in the middle of the activity is restricted to PRO users and activities longer than 3 hours.
+            if (user.isPro && activity.totalTime > 10800) {
+                try {
+                    const dateMid = dayjs(activity.dateStart).add(activity.totalTime / 2, "seconds")
+                    weather.mid = await this.getLocationWeather(user, activity.locationMid, dateMid.toDate())
+                } catch (innerEx) {
+                    logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, "Mid location", innerEx)
+                }
             }
 
             // Make sure weather result is valid.
@@ -122,8 +132,8 @@ export class Weather {
                 throw new Error("Failed to get the activity weather")
             }
 
-            const startSummary = weather.start ? `Start: ${weather.start.summary}` : "No weather for start location"
-            const endSummary = weather.end ? `End: ${weather.end.summary}` : "No weather for end location"
+            const startSummary = weather.start ? `Start ${dayjs(activity.dateStart).format("LT")}: ${weather.start.summary}` : "No weather for start location"
+            const endSummary = weather.end ? `End ${dayjs(activity.dateEnd).format("LT")}: ${weather.end.summary}` : "No weather for end location"
             logger.info("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, startSummary, endSummary)
 
             return weather
