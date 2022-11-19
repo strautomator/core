@@ -84,7 +84,7 @@ export class UserSubscriptions {
 
             // Maybe user was already removed?
             if (!user) {
-                throw new Error(`User ${user.id} not found`)
+                throw new Error(`User ${subscription.userId} not found`)
             }
 
             // Remove the subscription reference from the user data.
@@ -98,7 +98,7 @@ export class UserSubscriptions {
             await database.delete("subscriptions", subscription.id)
             logger.info("UserSubscriptions.delete", subscription.id, `Deleted subscription for user ${user.id} ${user.displayName}`)
         } catch (ex) {
-            logger.error("UserSubscriptions.delete", ex)
+            logger.error("UserSubscriptions.delete", subscription.id, ex)
         }
     }
 }
