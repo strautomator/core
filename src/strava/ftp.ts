@@ -48,7 +48,7 @@ export class StravaFtp {
             let ftpWatts: number = 0
             let currentWatts: number = 0
             let bestActivity: StravaActivity
-            let lastActivityDate = new Date("2000-01-01")
+            let lastActivityDate = user.dateRegistered
 
             // Helper to process the activity and get power stats.
             const processActivity = async (a: StravaActivity) => {
@@ -227,7 +227,7 @@ export class StravaFtp {
 
             return true
         } catch (ex) {
-            logger.error("Strava.saveFtp", ex)
+            logger.error("Strava.saveFtp", `User ${user.id} ${user.displayName}`, ex)
         }
     }
 
