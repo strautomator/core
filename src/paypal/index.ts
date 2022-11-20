@@ -81,16 +81,19 @@ export class PayPal {
                 throw new Error("Missing the mandatory paypal.api.clientSecret setting")
             }
 
+            const authenticated = await api.authenticate()
+
             // Wait for the setup the product and billing plans on PayPal, if quickStart was not set.
-            if (!quickStart) {
-                if (await api.authenticate()) {
+            if (authenticated) {
+                if (!quickStart) {
                     await this.setupProduct()
                     await this.setupBillingPlans()
                 } else {
-                    throw new Error("PayPal authentication failed")
+                    await this.setupProduct()
+                    this.setupBillingPlans()
                 }
             } else {
-                this.setupBillingPlans()
+                throw new Error("PayPal authentication failed")
             }
 
             // Unsubscribe when user gets deleted.
@@ -162,11 +165,6 @@ export class PayPal {
         try {
             api.currentBillingPlans = {}
             api.legacyBillingPlans = {}
-
-            // Make sure the API has a product setup before.
-            if (!api.currentProduct) {
-                await this.setupProduct()
-            }
 
             const billingPlans = await paypalSubscriptions.getBillingPlans()
             const frequencies = Object.keys(settings.plans.pro.price)
