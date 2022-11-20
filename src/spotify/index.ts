@@ -113,8 +113,11 @@ export class Spotify {
 
             // Validate referenced user.
             user = await users.getById(userId)
-            if (!user || user.spotifyAuthState != arrState[1]) {
+            if (!user) {
                 throw new Error("Invalid user")
+            }
+            if (user.spotifyAuthState != arrState[1]) {
+                throw new Error(`Invalid auth state: ${user.spotifyAuthState}`)
             }
 
             const tokens = await this.getToken(user, req.query.code as string)
