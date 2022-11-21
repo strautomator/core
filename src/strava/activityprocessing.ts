@@ -215,18 +215,16 @@ export class StravaActivities {
                 }
 
                 // Save activity to the database and update count on user data.
-                // If failed, log error but this is not essential so won't throw.
                 try {
-                    const processedActivity = await this.saveProcessedActivity(user, activity, recipeIds, saveError)
                     await users.setActivityCount(user)
                     user.activityCount++
 
-                    return processedActivity
+                    return await this.saveProcessedActivity(user, activity, recipeIds, saveError)
                 } catch (ex) {
-                    logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "Can't save to database", ex)
+                    logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "Not saved to database", ex)
+                } finally {
+                    eventManager.emit("Strava.processActivity", user, activity)
                 }
-
-                eventManager.emit("Strava.processActivity", user, activity)
             } else {
                 logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `No matching recipes`)
             }
