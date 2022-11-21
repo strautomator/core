@@ -417,13 +417,18 @@ export class Recipes {
      * @param action The recipe action to get the summary for.
      */
     getActionSummary = (action: RecipeAction): string => {
-        const actionType = _.find(recipeActionList, {value: action.type}).text
-        const valueText = action.friendlyValue || action.value
+        try {
+            const actionType = _.find(recipeActionList, {value: action.type}).text
+            const valueText = action.friendlyValue || action.value
 
-        if (action.value && action.type != "commute") {
-            return `${actionType}: ${valueText}`
-        } else {
-            return `${actionType}`
+            if (action.value && action.type != "commute") {
+                return `${actionType}: ${valueText}`
+            } else {
+                return `${actionType}`
+            }
+        } catch (ex) {
+            logger.error("Recipes.getActionSummary", action.type, ex)
+            return `${action.type}: ${action.value}`
         }
     }
 
@@ -432,16 +437,21 @@ export class Recipes {
      * @param condition The recipe condition to get the summary for.
      */
     getConditionSummary = (condition: RecipeCondition): string => {
-        const property = _.find(recipePropertyList, {value: condition.property})
-        const fieldText = property.text
-        const operatorText = _.find(property.operators, {value: condition.operator}).text
-        let valueText = condition.friendlyValue || condition.value
+        try {
+            const property = _.find(recipePropertyList, {value: condition.property})
+            const fieldText = property.text
+            const operatorText = _.find(property.operators, {value: condition.operator}).text
+            let valueText = condition.friendlyValue || condition.value
 
-        if (property.suffix) {
-            valueText += ` ${property.suffix}`
+            if (property.suffix) {
+                valueText += ` ${property.suffix}`
+            }
+
+            return `${fieldText} ${operatorText} ${valueText}`
+        } catch (ex) {
+            logger.error("Recipes.getConditionSummary", condition.property, ex)
+            return `${condition.property} ${condition.operator} ${condition.value}`
         }
-
-        return `${fieldText} ${operatorText} ${valueText}`
     }
 }
 
