@@ -60,6 +60,11 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
 export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayjs, preferences: UserPreferences): void {
     const date = dDate.toDate()
 
+    // Missing temperature and humidity? Then it's likely garbage data.
+    if ((_.isNaN(summary.temperature) && _.isNaN(summary.humidity)) || (_.isNil(summary.temperature) && _.isNil(summary.humidity))) {
+        throw new Error("Missing temperature and humidity")
+    }
+
     try {
         const prcFog = translation("Fog", preferences)
         const prcDrizzle = translation("Drizzle", preferences)
@@ -232,7 +237,8 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         delete summary.extraData
     } catch (ex) {
         delete summary.extraData
-        logger.error("Weather.processWeatherSummary", dDate.format("lll"), Object.values(summary).join(", "), ex)
+        const weatherProps = Object.keys(summary).map((key) => `${key}: ${summary[key]}`)
+        logger.error("Weather.processWeatherSummary", dDate.format("lll"), weatherProps.join(" | "), ex)
     }
 }
 
@@ -241,14 +247,11 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
  * @param coordinates Coordinates.
  * @param dDate The date (as a DayJS object).
  * @param summary The parsed weather summary.
- * @param preferences User preferences (used for language translations).
  */
-export function weatherSummaryString(coordinates: [number, number], dDate: dayjs.Dayjs, summary: WeatherSummary, preferences: UserPreferences): string {
+export function weatherSummaryString(coordinates: [number, number], dDate: dayjs.Dayjs, summary: WeatherSummary): string {
     const dateFormat = dDate.format("lll")
-    return `${coordinates.join(", ")} | ${dateFormat} | ${summary.icon} ${summary.summary} | ${translation("Temp", preferences)}: ${summary.temperature}, ${translation("Humidity", preferences)}: ${summary.humidity}, ${translation(
-        "Precipitation",
-        preferences
-    )}: ${summary.precipitation}`
+    const weatherProps = Object.keys(summary).map((key) => (!["provider", "icon", "summary"].includes(key) ? `${key}: ${summary[key]}` : summary[key]))
+    return `${coordinates.join(", ")} | ${dateFormat} | ${summary.icon} ${summary.summary} | ${weatherProps.join(", ")}`
 }
 
 /**
