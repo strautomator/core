@@ -161,6 +161,9 @@ export class Weather {
             return null
         }
 
+        // Round coordinates to 11 meters.
+        coordinates = coordinates.map((c) => parseFloat(c.toFixed(4))) as [number, number]
+
         let result: WeatherSummary
         let providerModule: WeatherProvider
         let isDefaultProvider: boolean = false
