@@ -447,7 +447,7 @@
         // WeatherAPI.com settings.
         "weatherapi": {
             "baseUrl": "https://api.weatherapi.com/v1/",
-            // OpenWeathWeatherbiterMap API rate limits.
+            // WeatherAPI.com rate limits.
             "rateLimit": {
                 "maxConcurrent": 4,
                 "perHour": 2000,
