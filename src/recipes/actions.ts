@@ -144,8 +144,8 @@ export const addWeatherTags = async (user: UserData, activity: StravaActivity, r
 
         if (!weatherSummary) {
             logger.warn("Recipes.addWeatherTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "Got no valid activity weather")
-            processedValue = jaul.data.replaceTags(processedValue, "", "weather.start")
-            processedValue = jaul.data.replaceTags(processedValue, "", "weather.end")
+            processedValue = jaul.data.replaceTags(processedValue, "", "weather.start.")
+            processedValue = jaul.data.replaceTags(processedValue, "", "weather.end.")
             processedValue = jaul.data.replaceTags(processedValue, "", "weather.")
             return processedValue
         }
