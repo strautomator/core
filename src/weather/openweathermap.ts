@@ -60,7 +60,7 @@ export class OpenWeatherMap implements WeatherProvider {
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("OpenWeatherMap.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
+                logger.info("OpenWeatherMap.getWeather", weatherSummaryString(coordinates, dDate, result))
             }
 
             return result

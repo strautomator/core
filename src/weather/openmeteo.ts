@@ -59,7 +59,7 @@ export class OpenMeteo implements WeatherProvider {
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("OpenMeteo.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
+                logger.info("OpenMeteo.getWeather", weatherSummaryString(coordinates, dDate, result))
             }
 
             return result
@@ -82,8 +82,15 @@ export class OpenMeteo implements WeatherProvider {
 
         const utcDate = dDate.utc()
         const hour = utcDate.minute() < 30 ? utcDate.hour() : utcDate.hour() + 1
-        const dateFormat = utcDate.hour(hour).minute(0).format("YYYY-MM-DDTHH:mm")
-        const index = data.hourly.time.findIndex((h) => dateFormat == h)
+        const targetDate = utcDate.hour(hour).minute(0)
+        const dateFormat = "YYYY-MM-DDTHH:mm"
+        const exactDateFormat = targetDate.format(dateFormat)
+        const previousDateFormat = targetDate.hour(hour - 1).format(dateFormat)
+        const nextDateFormat = targetDate.hour(hour + 1).format(dateFormat)
+        const index = data.hourly.time.findIndex((h) => h == exactDateFormat || h == previousDateFormat || h == nextDateFormat)
+
+        // No valid hourly index found? Stop here.
+        if (index == -1) return
 
         const result: WeatherSummary = {
             provider: this.name,

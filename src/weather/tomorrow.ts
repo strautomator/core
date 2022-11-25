@@ -64,7 +64,7 @@ export class Tomorrow implements WeatherProvider {
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("Tomorrow.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
+                logger.info("Tomorrow.getWeather", weatherSummaryString(coordinates, dDate, result))
             }
 
             return result
@@ -83,8 +83,11 @@ export class Tomorrow implements WeatherProvider {
      * @param preferences The user preferences.
      */
     private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
-        data = data.data && data.data.timelines ? data.data.timelines[0].intervals[0].values : null
-        if (!data) return
+        if (!data || !data.data || !data.data.timelines) return
+
+        data = data.data.timelines[0]
+        const index = dDate.utc().minute() > 30 && data.intervals.length > 1 ? 1 : 0
+        data = data.intervals[index].values
 
         const hasPrecip = data.precipitationType && data.precipitationType > 0
         const precipitation = hasPrecip ? this.fieldDescriptors.precipitationType[data.precipitationType] : null

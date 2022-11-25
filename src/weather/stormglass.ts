@@ -66,7 +66,7 @@ export class StormGlass implements WeatherProvider {
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
             if (result) {
-                logger.info("StormGlass.getWeather", weatherSummaryString(coordinates, dDate, result, preferences))
+                logger.info("StormGlass.getWeather", weatherSummaryString(coordinates, dDate, result))
             }
 
             return result
