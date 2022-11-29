@@ -353,16 +353,13 @@ export class GearWear {
 
                     // Get activities timespan.
                     const days = isNaN(user.preferences.gearwearDelayDays) ? settings.gearwear.delayDays : user.preferences.gearwearDelayDays
-                    const tsLastActivity = Math.floor(dayjs.utc(user.dateLastActivity).unix())
-                    let dateAfter = dayjs.utc().subtract(days, "days").hour(0).minute(0).second(0).millisecond(0)
-                    let dateBefore = dayjs.utc().subtract(days, "days").hour(23).minute(59).second(59).millisecond(0)
-                    let tsAfter = Math.floor(dateAfter.unix())
-                    let tsBefore = Math.floor(dateBefore.unix())
+                    let dateAfter = dayjs.utc().subtract(days, "days").startOf("day")
+                    let dateBefore = dayjs.utc().subtract(days, "days").endOf("day")
 
                     // Recent activities for the user? Update counters.
-                    if (tsLastActivity >= tsAfter) {
+                    if (dateAfter.isBefore(user.dateLastActivity)) {
                         const userGears = _.remove(gearwearList, {userId: userId})
-                        const userActivityCount = await this.processUserActivities(user, userGears, tsAfter, tsBefore)
+                        const userActivityCount = await this.processUserActivities(user, userGears, dateAfter, dateBefore)
 
                         activityCount += userActivityCount
                         userCount++
@@ -393,16 +390,15 @@ export class GearWear {
      * Returns the number of processed actvities for the user.
      * @param user The user to fetch activities for.
      * @param configs List of GearWear configurations.
-     * @param tsAfter Get activities that occured after this timestamp.
-     * @param tsBefore Get activities that occured before this timestamp.
+     * @param dDateFrom Get activities that occured after this timestamp.
+     * @param dDateTo Get activities that occured before this timestamp.
      */
-    processUserActivities = async (user: UserData, configs: GearWearConfig[], tsAfter: number, tsBefore: number): Promise<number> => {
-        let dateString = dayjs.utc(tsAfter * 1000 + 1000).format("ll")
+    processUserActivities = async (user: UserData, configs: GearWearConfig[], dDateFrom: dayjs.Dayjs, dDateTo: dayjs.Dayjs): Promise<number> => {
+        let dateString = `${dDateFrom.format("ll")} to ${dDateTo.format("ll")}`
         let count = 0
 
         try {
-            const query = {before: tsBefore, after: tsAfter}
-            const activities = await strava.activities.getActivities(user, query)
+            const activities = await strava.activities.getActivities(user, {after: dDateFrom, before: dDateTo})
 
             // No recent activities found? Stop here.
             if (activities.length == 0) {

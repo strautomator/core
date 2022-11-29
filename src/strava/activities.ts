@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaActivityStreams, StravaGear} from "./types"
+import {StravaActivity, StravaActivityQuery, StravaActivityStreams, StravaGear} from "./types"
 import {toStravaActivity} from "./utils"
 import {UserData} from "../users/types"
 import stravaAthletes from "./athletes"
@@ -34,28 +34,46 @@ export class StravaActivities {
      * @param query Query options.
      * @param checkRecords If true, new records will be checked against the resulting activities.
      */
-    getActivities = async (user: UserData, query: any, checkRecords?: boolean): Promise<StravaActivity[]> => {
-        const arrLogQuery = query ? Object.entries(query).map((p) => p[0] + "=" + p[1]) : ["no query"]
+    getActivities = async (user: UserData, query: StravaActivityQuery, checkRecords?: boolean): Promise<StravaActivity[]> => {
+        const arrLogQuery = []
+
+        // Parse activities query.
+        if (query.after) {
+            arrLogQuery.push(`After ${query.after.format("lll")}`)
+            query.after = query.after.unix() as any
+        }
+        if (query.before) {
+            arrLogQuery.push(`Before ${query.before.format("lll")}`)
+            query.before = query.before.unix() as any
+        }
+        if (query.per_page) {
+            arrLogQuery.push(`${query.per_page} per page`)
+        }
+        if (query.page) {
+            arrLogQuery.push(`Starting from page ${query.page}`)
+        } else if (query.page === 0) {
+            logger.warn("Strava.getActivities", `User ${user.id} ${user.displayName}`, "Switching page from 0 to 1 (default start)")
+            query.page = 1
+        }
+
         const logQuery = arrLogQuery.join(", ")
 
         try {
             const tokens = user.stravaTokens
             const activities: StravaActivity[] = []
 
-            // Default query options.
-            if (!query.per_page) query.per_page = 200
-            if (!query.page) query.page = 1
-
-            // Fetch activities from Strava, respecting the pagination.
-            while (query.page) {
+            // Fetch activities from Strava, respecting the pagination (starts from page 1).
+            while (query.page > 0) {
                 try {
                     const data = await api.get(tokens, "athlete/activities", query)
 
                     // No data returned? Stop here.
                     if (!data || data.length == 0) {
-                        query.page = false
+                        query.page = 0
                         break
                     }
+
+                    logger.info("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Page ${query.page}`)
 
                     // Iterate and transform activities from raw strava data to StravaActivity models.
                     for (let activity of data) {
@@ -66,12 +84,12 @@ export class StravaActivities {
                     if (data.length >= query.per_page / 2) {
                         query.page++
                     } else {
-                        query.page = false
+                        query.page = 0
                         break
                     }
                 } catch (innerEx) {
                     logger.error("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Page ${query.page}`, innerEx)
-                    query.page = false
+                    query.page = 0
                 }
             }
 

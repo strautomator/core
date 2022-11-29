@@ -1,6 +1,7 @@
 // Strautomator Core: Strava types
 
 import {KomootRoute} from "../komoot/types"
+import dayjs from "dayjs"
 
 /**
  * An activity on Strava.
@@ -525,6 +526,20 @@ export interface StravaActivityFilter {
     race?: boolean
     /** Specific sport type, otherwise all. */
     sportType?: StravaSport
+}
+
+/**
+ * Strava activity query filter (used to fetch activities).
+ */
+export interface StravaActivityQuery {
+    /** Get only activities after timestamp. */
+    after?: dayjs.Dayjs
+    /** Get only activities before timestamp. */
+    before?: dayjs.Dayjs
+    /** Current page. */
+    page?: number
+    /** Activities per page. */
+    per_page?: number
 }
 
 /**

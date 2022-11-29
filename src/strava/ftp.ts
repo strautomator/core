@@ -30,17 +30,16 @@ export class StravaFtp {
         let activityCount: number = 0
 
         try {
+            const now = dayjs().utc()
+            const weeksAgo = now.subtract(14, "days")
+
             if (!activities || activities.length == 0) {
-                const dateAfter = dayjs.utc().subtract(settings.strava.ftp.weeks, "weeks")
-                const tsAfter = dateAfter.valueOf() / 1000
-                const tsBefore = new Date().valueOf() / 1000 - 1
-                activities = await stravaActivities.getActivities(user, {before: tsBefore, after: tsAfter})
+                const dateFrom = now.subtract(settings.strava.ftp.weeks, "weeks").startOf("day")
+                const dateTo = now.subtract(1, "second")
+                activities = await stravaActivities.getActivities(user, {after: dateFrom, before: dateTo})
             }
 
             activityCount = activities.length
-
-            const now = dayjs()
-            const weeksAgo = now.subtract(14, "days")
 
             let listWatts: number[] = []
             let avgWatts: number = 0

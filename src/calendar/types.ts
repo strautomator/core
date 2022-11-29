@@ -1,5 +1,7 @@
 // Strautomator Core: Calendar types
 
+import dayjs from "dayjs"
+
 /**
  * Options used to generate activity calendars.
  */
@@ -8,10 +10,10 @@ export interface CalendarOptions {
     activities?: boolean
     /** Include club events? */
     clubs?: boolean
-    /** Starting date, defaults to the pastCalendarDays on PRO / free accounts. */
-    dateFrom?: Date
-    /** Ending date, defaults to futureCalendarDays on PRO / free accounts. */
-    dateTo?: Date
+    /** Starting date (as DayJS), defaults to the pastCalendarDays setting. */
+    dateFrom?: dayjs.Dayjs
+    /** Ending date (as DayJS), defaults to the futureCalendarDays setting. */
+    dateTo?: dayjs.Dayjs
     /** Exclude commutes? Default is false. */
     excludeCommutes?: boolean
     /** Exclude club events which user hasn't joined to? */

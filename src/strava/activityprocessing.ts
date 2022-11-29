@@ -37,19 +37,17 @@ export class StravaActivities {
      * Batch process activities for the specified user. This will effectively add the
      * activities for the specified range to the processing queue.
      * @param user The activities owner (user).
-     * @param dateFrom Activities since (from that date).
-     * @param dateTo Activities up to (till that date), if not passed will use today.
+     * @param dDateFrom Activities since (from that date).
+     * @param dDateTo Activities up to (till that date), if not passed will use today.
      * @param filter Additional activity filters.
      */
-    batchProcessActivities = async (user: UserData, dateFrom: Date, dateTo?: Date, filter?: StravaActivityFilter): Promise<number> => {
-        if (!dateTo) dateTo = new Date()
+    batchProcessActivities = async (user: UserData, dDateFrom: dayjs.Dayjs, dDateTo?: dayjs.Dayjs, filter?: StravaActivityFilter): Promise<number> => {
+        if (!dDateTo) dDateTo = dayjs()
         if (!filter) filter = {}
 
         let activityCount = 0
-        const dateLog = `${dayjs(dateFrom).format("lll")} to ${dayjs(dateTo).format("lll")}`
-        const tsAfter = dateFrom.valueOf() / 1000
-        const tsBefore = dateTo.valueOf() / 1000
-        const now = dayjs()
+        const dateLog = `${dDateFrom.format("lll")} to ${dDateTo.format("lll")}`
+        const now = dayjs().utc()
 
         try {
             if (user.suspended || !user.recipes || Object.keys(user.recipes).length == 0) {
@@ -60,12 +58,12 @@ export class StravaActivities {
             // Check if passed date range is valid.
             const maxDays = user.isPro ? settings.plans.pro.batchDays : settings.plans.free.batchDays
             const minDate = now.subtract(maxDays, "days").startOf("day")
-            if (minDate.valueOf() / 1000 > tsAfter) {
+            if (minDate.isAfter(dDateFrom)) {
                 throw new Error(`Invalid date range, minimum allowed date: ${minDate.format("LL")}`)
             }
 
             // Fetch user activities for the specified time range.
-            const activities = await stravaActivities.getActivities(user, {before: tsBefore, after: tsAfter})
+            const activities = await stravaActivities.getActivities(user, {after: dDateFrom, before: dDateTo})
 
             if (activities.length == 0) {
                 logger.warn("Strava.batchProcessActivities", `User ${user.id} ${user.displayName}`, dateLog, "No activities for that date range")

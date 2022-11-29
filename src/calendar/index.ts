@@ -100,8 +100,8 @@ export class Calendar {
             const nowUtc = dayjs.utc()
             const pastDays = user.isPro ? settings.plans.pro.pastCalendarDays : settings.plans.free.pastCalendarDays
             const futureDays = user.isPro ? settings.plans.pro.futureCalendarDays : settings.plans.free.futureCalendarDays
-            const minDate = nowUtc.hour(0).minute(0).second(0).subtract(pastDays, "days")
-            const maxDate = nowUtc.hour(23).minute(59).second(59).add(futureDays, "days")
+            const minDate = nowUtc.startOf("day").subtract(pastDays, "days")
+            const maxDate = nowUtc.endOf("day").add(futureDays, "days")
             const defaultFromDate = nowUtc.subtract(settings.plans.free.pastCalendarDays, "days")
             let dateFrom = options.dateFrom ? dayjs(options.dateFrom) : defaultFromDate
             let dateTo = options.dateTo ? dayjs(options.dateTo) : maxDate
@@ -178,8 +178,8 @@ export class Calendar {
             const cal = ical(icalOptions)
 
             // Force set the dates from and to so we can build the activities / club events.
-            options.dateFrom = dateFrom.toDate()
-            options.dateTo = dateTo.toDate()
+            options.dateFrom = dateFrom
+            options.dateTo = dateTo
 
             // User is suspended? Add a single event, otherwise process activities and club events.
             if (user.suspended) {
@@ -235,20 +235,14 @@ export class Calendar {
      * @param cal The ical instance.
      */
     private buildActivities = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
-        const fromLog = dayjs(options.dateFrom).format("ll")
-        const toLog = dayjs(options.dateFrom).format("ll")
-        const optionsLog = `From ${fromLog} to ${toLog}`
+        const optionsLog = `From ${options.dateFrom.format("ll")} to ${options.dateTo.format("ll")}`
         let eventCount = 0
 
         try {
             const calendarTemplate: UserCalendarTemplate = user.calendarTemplate || {}
-            const tsAfter = options.dateFrom.valueOf() / 1000
-            const tsBefore = options.dateTo.valueOf() / 1000
 
-            // Fetch user activities.
-            const activities = await strava.activities.getActivities(user, {before: tsBefore, after: tsAfter})
-
-            // Iterate activities from Strava, checking filters before proceeding.
+            // Fetch and iterate user activities, checking filters before proceeding.
+            const activities = await strava.activities.getActivities(user, {after: options.dateFrom, before: options.dateTo})
             for (let activity of activities) {
                 const arrDetails = []
 
@@ -363,10 +357,8 @@ export class Calendar {
      * @param cal The ical instance.
      */
     private buildClubs = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
+        const optionsLog = `From ${options.dateFrom.format("ll")} to ${options.dateFrom.format("ll")}`
         const today = dayjs().hour(0).toDate()
-        const fromLog = dayjs(options.dateFrom).format("ll")
-        const toLog = dayjs(options.dateFrom).format("ll")
-        const optionsLog = `From ${fromLog} to ${toLog}`
         const tOrganizer = translation("Organizer", user.preferences, true)
 
         try {
@@ -413,7 +405,7 @@ export class Calendar {
 
                     // Iterate event dates and add each one of them to the calendar.
                     for (let eventDate of clubEvent.dates) {
-                        if (options.dateFrom > eventDate || options.dateTo < eventDate) continue
+                        if (options.dateFrom.isAfter(eventDate) || options.dateTo.isBefore(eventDate)) continue
                         let endDate: Date
 
                         const estimatedTime = clubEvent.route ? clubEvent.route.estimatedTime : clubEvent.komootRoute ? clubEvent.komootRoute.estimatedTime : 0
