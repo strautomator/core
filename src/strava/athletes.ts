@@ -279,7 +279,7 @@ export class StravaAthletes {
                 if (stats && stats.count > 0) {
                     sportCount++
                     records[sport] = {
-                        distance: {value: stats.distance / stats.count, previous: 0}
+                        distance: {value: Math.round(stats.distance / stats.count), previous: 0}
                     }
                 }
             }
