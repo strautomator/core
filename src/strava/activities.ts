@@ -48,11 +48,12 @@ export class StravaActivities {
         }
         if (query.per_page) {
             arrLogQuery.push(`${query.per_page} per page`)
+        } else {
+            query.per_page = settings.strava.api.pageSize
         }
         if (query.page) {
             arrLogQuery.push(`Starting from page ${query.page}`)
-        } else if (query.page === 0) {
-            logger.warn("Strava.getActivities", `User ${user.id} ${user.displayName}`, "Switching page from 0 to 1 (default start)")
+        } else {
             query.page = 1
         }
 
@@ -72,8 +73,6 @@ export class StravaActivities {
                         query.page = 0
                         break
                     }
-
-                    logger.info("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Page ${query.page}`)
 
                     // Iterate and transform activities from raw strava data to StravaActivity models.
                     for (let activity of data) {
