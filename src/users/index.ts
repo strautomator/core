@@ -835,6 +835,12 @@ export class Users {
             user.isPro = true
             user.displayName = existingUser.displayName
 
+            // Reset the batch date, if there's one, so the user can run a new batch sync straight away.
+            if (user.dateLastBatchProcessing) {
+                logger.info("Users.switchToPro", user.id, user.displayName, "Resetting the last batch processing date")
+                user.dateLastBatchProcessing = user.dateRegistered
+            }
+
             // Create subscription reference, if not there yet.
             if (!user.subscription) {
                 user.subscription = {id: user.id, enabled: true}
