@@ -32,6 +32,7 @@ export class StravaFtp {
         try {
             const now = dayjs().utc()
             const weeksAgo = now.subtract(14, "days")
+            const bikeTypes = [StravaSport.Ride, StravaSport.GravelRide, StravaSport.MountainBikeRide, StravaSport.VirtualRide]
 
             if (!activities || activities.length == 0) {
                 const dateFrom = now.subtract(settings.strava.ftp.weeks, "weeks").startOf("day")
@@ -39,7 +40,23 @@ export class StravaFtp {
                 activities = await stravaActivities.getActivities(user, {after: dateFrom, before: dateTo})
             }
 
+            // Filter only cycling activities with good power data and that lasted at least 20 minutes.
+            activities = activities.filter((a) => bikeTypes.includes(a.type) && a.hasPower && (a.movingTime || a.totalTime) >= 1200)
             activityCount = activities.length
+
+            // No valid activities? Stop here.
+            if (activityCount == 0) {
+                logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "No recent activities with power, can't estimate")
+                return null
+            }
+
+            // Make sure we have the very latest athlete data.
+            try {
+                const athlete = await stravaAthletes.getAthlete(user.stravaTokens)
+                user.profile.ftp = athlete.ftp
+            } catch (athleteEx) {
+                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "Could not get latest athlete data, will use the cache")
+            }
 
             let listWatts: number[] = []
             let avgWatts: number = 0
@@ -50,7 +67,7 @@ export class StravaFtp {
             let lastActivityDate = user.dateRegistered
 
             // Helper to process the activity and get power stats.
-            const processActivity = async (a: StravaActivity) => {
+            const processActivity = async (a: StravaActivity): Promise<void> => {
                 try {
                     const dateEnd = dayjs(a.dateEnd)
                     const totalTime = a.movingTime || a.totalTime
@@ -60,27 +77,25 @@ export class StravaFtp {
                         lastActivityDate = a.dateEnd
                     }
 
-                    // Ignore cycling activities with no power meter or that lasted less than 20 minutes.
-                    const bikeTypes = [StravaSport.Ride, StravaSport.GravelRide, StravaSport.MountainBikeRide, StravaSport.VirtualRide]
-                    if (!bikeTypes.includes(a.type)) return
-                    if (!a.hasPower) return
-                    if (totalTime < 60 * 5) return
-
                     let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
                     let power: number
 
+                    // Leisure activities (less than 50% FTP) are not processed.
+                    if (watts < user.profile.ftp / 2) {
+                        logger.debug("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Activity ${a.id} power is too low (${watts}), won't process`)
+                        return
+                    }
+
                     // FTP ranges from 94% to 100% from 20 minutes to 1 hour, and then
                     // 103% for each extra hour of activity time.
-                    if (totalTime > 1200) {
-                        if (totalTime <= 3600) {
-                            const perc = ((3600 - totalTime) / 60 / 8) * 0.011
-                            power = Math.round(watts * (1 - perc))
-                        } else {
-                            const extraHours = Math.floor(totalTime / 3600) - 1
-                            const fraction = 1 + 0.03 * ((totalTime % 3600) / 60 / 60)
-                            const factor = 1.03 ** extraHours * fraction
-                            power = watts * factor
-                        }
+                    if (totalTime <= 3600) {
+                        const perc = ((3600 - totalTime) / 60 / 8) * 0.011
+                        power = Math.round(watts * (1 - perc))
+                    } else {
+                        const extraHours = Math.floor(totalTime / 3600) - 1
+                        const fraction = 1 + 0.03 * ((totalTime % 3600) / 60 / 60)
+                        const factor = 1.03 ** extraHours * fraction
+                        power = watts * factor
                     }
 
                     // PRO users also get the best power splits from 5 / 20 / 60 min intervals.
@@ -119,20 +134,6 @@ export class StravaFtp {
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
             while (activities.length) {
                 await Promise.all(activities.splice(0, batchSize).map(processActivity))
-            }
-
-            // No activities with power? Stop here.
-            if (listWatts.length == 0) {
-                logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "No recent activities with power, can't estimate")
-                return null
-            }
-
-            // Make sure we have the very latest athlete data.
-            try {
-                const athlete = await stravaAthletes.getAthlete(user.stravaTokens)
-                user.profile.ftp = athlete.ftp
-            } catch (athleteEx) {
-                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "Could not get latest athlete data, will use the cache")
             }
 
             avgWatts = Math.round(_.mean(listWatts))
