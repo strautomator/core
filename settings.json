@@ -316,7 +316,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 6,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 55,
+            "maxPerMinute": 60,
             // Default page size is the max of 200.
             "pageSize": 200,
             // Token to be appended to the URL of Strava webhooks, for
@@ -337,7 +337,7 @@
             "routes": 1800
         },
         "ftp": {
-            // Estimated FTP will go down by 1.5% for each week of no activities.
+            // Estimated FTP will go down by 1.5% for each retroactive week of no activities.
             "idleLossPerWeek": 0.015,
             // User's FTP will be estimated based on activities from the last 10 weeks.
             "weeks": 10,
