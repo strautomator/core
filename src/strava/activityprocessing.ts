@@ -204,8 +204,9 @@ export class StravaActivities {
 
                             const title = `Failed to process activity ${activity.id}`
                             const body = `There was an error processing your ${activity.sportType} "${activity.name}", on ${aDate.format("lll")}. Strava returned an error message.`
+                            const expiry = dayjs().add(14, "days").toDate()
 
-                            await notifications.createNotification(user, {title: title, body: body, activityId: activity.id})
+                            await notifications.createNotification(user, {title: title, body: body, activityId: activity.id, dateExpiry: expiry})
                         } catch (innerEx) {
                             logger.warn("Strava.processActivity", `Failed creating notification for activity ${activityId}, from user ${user.id}`)
                         }
