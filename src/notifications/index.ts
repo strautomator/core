@@ -223,9 +223,9 @@ export class Notifications {
             // Expiry date not set? Use the default based on settings.
             if (!notification.dateExpiry) {
                 notification.dateExpiry = dayjs.utc().add(settings.notifications.defaultExpireDays, "days").toDate()
-            } else {
-                logDetails.push(`Expires ${dayjs(notification.dateExpiry).utc().format("lll")}`)
             }
+
+            logDetails.push(`Expires ${dayjs(notification.dateExpiry).utc().format("lll")}`)
 
             // Additional notification details to be logged.
             if (notification["recipeId"]) logDetails.push(`Recipe ID ${notification["recipeId"]}`)
@@ -233,7 +233,7 @@ export class Notifications {
 
             // Save to database and log.
             await database.set("notifications", notification, notification.id)
-            logger.info("Notifications.createNotification", `User ${user.id} ${user.displayName}`, `Message ID ${notification.id}`, notification.title, logDetails.join(","))
+            logger.info("Notifications.createNotification", `User ${user.id} ${user.displayName}`, `Message ID ${notification.id}`, notification.title, logDetails.join(", "))
         } catch (ex) {
             logger.error("Notifications.createNotification", `User ${user.id} ${user.displayName}`, notification.title, ex)
         }
