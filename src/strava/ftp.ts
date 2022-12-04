@@ -41,7 +41,7 @@ export class StravaFtp {
             }
 
             // Filter only cycling activities with good power data and that lasted at least 20 minutes.
-            activities = activities.filter((a) => bikeTypes.includes(a.type) && a.hasPower && (a.movingTime || a.totalTime) >= 1200)
+            activities = activities.filter((a) => bikeTypes.includes(a.type) && a.hasPower && a.movingTime >= 1200)
             activityCount = activities.length
 
             // No valid activities? Stop here.
@@ -70,7 +70,6 @@ export class StravaFtp {
             const processActivity = async (a: StravaActivity): Promise<void> => {
                 try {
                     const dateEnd = dayjs(a.dateEnd)
-                    const totalTime = a.movingTime || a.totalTime
 
                     // Date of the last activity.
                     if (dateEnd.isAfter(lastActivityDate)) {
@@ -88,12 +87,12 @@ export class StravaFtp {
 
                     // FTP ranges from 94% to 100% from 20 minutes to 1 hour, and then
                     // 103% for each extra hour of activity time.
-                    if (totalTime <= 3600) {
-                        const perc = ((3600 - totalTime) / 60 / 8) * 0.011
+                    if (a.movingTime <= 3600) {
+                        const perc = ((3600 - a.movingTime) / 60 / 8) * 0.011
                         power = Math.round(watts * (1 - perc))
                     } else {
-                        const extraHours = Math.floor(totalTime / 3600) - 1
-                        const fraction = 1 + 0.03 * ((totalTime % 3600) / 60 / 60)
+                        const extraHours = Math.floor(a.movingTime / 3600) - 1
+                        const fraction = 1 + 0.03 * ((a.movingTime % 3600) / 60 / 60)
                         const factor = 1.03 ** extraHours * fraction
                         power = watts * factor
                     }

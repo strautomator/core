@@ -146,7 +146,6 @@ export class StravaAthletes {
                 }
 
                 const currentRecords: StravaRecords = allRecords[activity.sportType]
-                const movingTime = activity.movingTime || 0
 
                 // If activity had no power meter, exclude the power based records.
                 // Check all of the possible record properties.
@@ -157,7 +156,7 @@ export class StravaAthletes {
                     // Has broken a new record? If an average-based metric, was the
                     // activity longer than the minMovingTimeAvg setting?
                     if (activity[prop] && activity[prop] > currentValue) {
-                        if (prop.includes("Avg") && movingTime < minMovingTime) {
+                        if (prop.includes("Avg") && activity.movingTime < minMovingTime) {
                             logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, prop, `Activity ${activity.id} has less than ${minMovingTime}`)
                             continue
                         }

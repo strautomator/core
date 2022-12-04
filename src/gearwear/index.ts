@@ -461,10 +461,9 @@ export class GearWear {
             for (let activity of activities) {
                 try {
                     const distance = activity.distance
-                    const elapsedTime = activity.movingTime || activity.totalTime
 
                     // Stop here if activity has no valid distance and time.
-                    if (!distance && !elapsedTime) {
+                    if (!distance && !activity.movingTime) {
                         logger.warn("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Activity ${activity.id} nas no distance or time`)
                         continue
                     }
@@ -479,7 +478,7 @@ export class GearWear {
 
                     // Append totals.
                     if (distance > 0) totalDistance += distance
-                    if (elapsedTime > 0) totalTime += elapsedTime
+                    if (activity.movingTime > 0) totalTime += activity.movingTime
 
                     // Iterate and update distance on gear components.
                     for ([id, component] of Object.entries(config.components)) {
@@ -511,7 +510,7 @@ export class GearWear {
 
                         // Increase distance (distance) and time (hours).
                         if (distance > 0) component.currentDistance += distance
-                        if (elapsedTime > 0) component.currentTime += elapsedTime
+                        if (activity.movingTime > 0) component.currentTime += activity.movingTime
 
                         // Round to 1 decimal case.
                         component.currentDistance = Math.round(component.currentDistance * 10) / 10
