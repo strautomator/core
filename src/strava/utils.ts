@@ -33,7 +33,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         dateStart: startDate.toDate(),
         utcStartOffset: data.utc_offset,
         totalTime: data.elapsed_time,
-        movingTime: data.moving_time,
+        movingTime: data.moving_time || data.elapsed_time,
         locationStart: data.start_latlng,
         locationEnd: data.end_latlng,
         hasPower: data.device_watts ? true : false,
@@ -135,9 +135,11 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         }
         if (data.average_speed) {
             activity.speedAvg = parseFloat((data.average_speed * 3.6 * rMiles).toFixed(1))
+            activity.paceAvg = parseFloat((60 / (data.average_speed * 3.6 * rMiles)).toFixed(2))
         }
         if (data.max_speed) {
             activity.speedMax = parseFloat((data.max_speed * 3.6 * rMiles).toFixed(1))
+            activity.paceMax = parseFloat((60 / (data.max_speed * 3.6 * rMiles)).toFixed(2))
         }
         if (laps) {
             laps.forEach((lap) => {
@@ -157,9 +159,11 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         }
         if (data.average_speed) {
             activity.speedAvg = parseFloat((data.average_speed * 3.6).toFixed(1))
+            activity.paceAvg = parseFloat((60 / (data.average_speed * 3.6)).toFixed(2))
         }
         if (data.max_speed) {
             activity.speedMax = parseFloat((data.max_speed * 3.6).toFixed(1))
+            activity.paceMax = parseFloat((60 / (data.max_speed * 3.6)).toFixed(2))
         }
         if (laps) {
             laps.forEach((lap) => {

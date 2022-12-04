@@ -58,6 +58,8 @@ export const recipePropertyList = [
     {value: "distance", text: "Distance", type: "number", operators: recipeOperatorList.number, suffix: "km", impSuffix: "mi"},
     {value: "speedAvg", text: "Average speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
     {value: "speedMax", text: "Max speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
+    {value: "paceAvg", text: "Average pace", type: "number", operators: recipeOperatorList.number, suffix: "min/km", impSuffix: "min/miles"},
+    {value: "paceMax", text: "Max pace", type: "number", operators: recipeOperatorList.number, suffix: "min/km", impSuffix: "min/miles"},
     {value: "elevationGain", text: "Elevation gain", type: "number", operators: recipeOperatorList.number, suffix: "m", impSuffix: "ft"},
     {value: "elevationMax", text: "Elevation max", type: "number", operators: recipeOperatorList.number, suffix: "m", impSuffix: "ft"},
     {value: "dateStart", text: "Start time", type: "time", operators: recipeOperatorList.time, suffix: "h"},

@@ -69,10 +69,14 @@ export interface StravaActivity {
     polyline?: string
     /** Gear used. */
     gear?: StravaGear
-    /** Average speed. */
+    /** Average speed (per hour). */
     speedAvg?: number
-    /** Maximum speed. */
+    /** Maximum speed (per hour). */
     speedMax?: number
+    /** Average pace (per km/mi). */
+    paceAvg?: number
+    /** Maximum pace (per km/mi). */
+    paceMax?: number
     /** Average watts. */
     wattsAvg?: number
     /** Weighted average watts. */
