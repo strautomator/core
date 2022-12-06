@@ -6,45 +6,47 @@
 export const recipeOperatorList = {
     // Free text.
     text: [
-        {value: "=", text: "is exactly", description: "Text matches the specified value"},
-        {value: "like", text: "has", description: "Text contains the specified value"},
-        {value: "notlike", text: "does not have", description: "Text does not contain the specified value"}
+        {value: "=", text: "is exactly", description: "Text matches exactly the value set below"},
+        {value: "like", text: "has", description: "Text contains the value set below"},
+        {value: "notlike", text: "does not have", description: "Text does not contain the value set below"}
     ],
     // Only positive numbers.
     number: [
-        {value: "like", text: "is around (±10%)", description: "Number is around (±10%) the specified value"},
-        {value: "=", text: "is exactly", description: "Number matches the specified value"},
-        {value: "<", text: "is lower than", description: "Number less than the specified value"},
-        {value: ">", text: "is higher than", description: "Number greater than the specified value"}
-    ],
-    // Any number.
-    anyNumber: [
-        {value: "like", text: "is around (±10%)", description: "Number is around (±10%) the specified value"},
-        {value: "=", text: "is exactly", description: "Number matches the specified value"},
-        {value: "<", text: "is lower than", description: "Number less than the specified value"},
-        {value: ">", text: "is higher than", description: "Number greater than the specified value"}
+        {value: "like", text: "is around (±10%)", description: "Number is within ±10% of the value set below"},
+        {value: "approx", text: "is around (±3%)", description: "Number is within ±3% of the value set below"},
+        {value: "=", text: "is exactly", description: "Number matches exactly the value set below"},
+        {value: "<", text: "is lower than", description: "Number less than the value set below"},
+        {value: ">", text: "is higher than", description: "Number greater than the value set below"}
     ],
     // Location coordinates.
     location: [
-        {value: "like", text: "within 650m of", description: "Location within 650m (710 yards)"},
-        {value: "approx", text: "within 300m of", description: "Location within 300m (328 yards)"},
-        {value: "=", text: "within 60m of", description: "Location within 60m (65 yards)"}
+        {value: "like", text: "within 650m of", impText: "within 710 yards of", description: "Location within 650 meters (710 yards)"},
+        {value: "approx", text: "within 300m of", impText: "within 328 yards of", description: "Location within 300 meters (328 yards)"},
+        {value: "=", text: "within 60m of", impText: "within 65 yards of", description: "Location within 60 meters (65 yards)"}
     ],
     // Time.
     time: [
-        {value: "like", text: "at around (± 30min)", description: "Within 30 minutes of the specified time"},
-        {value: "approx", text: "at around (± 10min)", description: "Within 10 minutes of the specified time"},
-        {value: "=", text: "at (± 2min)", description: "Within 2 minutes of the specified time"},
-        {value: "<", text: "is before", description: "Time is before"},
-        {value: ">", text: "is after", description: "Time is after"}
+        {value: "like", text: "at around (±30min)", description: "Time within 30 min. of the value set below"},
+        {value: "approx", text: "at around (±10min)", description: "Time within 10 min. of the value set below"},
+        {value: "=", text: "at (±1min)", description: "Time within 1 min. of the value set below"},
+        {value: "<", text: "is before", description: "Time is before the value set below"},
+        {value: ">", text: "is after", description: "Time is after the value set below"}
     ],
     // Elapsed time.
     elapsedTime: [
-        {value: "like", text: "is around (± 30min)", description: "Elapsed time within 30 minutes of the specified value"},
-        {value: "approx", text: "is around (± 10min)", description: "Elapsed time within 10 minutes of the specified value"},
-        {value: "=", text: "is (± 2min)", description: "Elapsed time within 2 minutes of the specified value"},
-        {value: "<", text: "is less than", description: "Elapsed time is less than"},
-        {value: ">", text: "is more than", description: "Elapsed time is more than"}
+        {value: "like", text: "is around (±30min)", description: "Elapsed time within 30 min. of the value set below"},
+        {value: "approx", text: "is around (±10min)", description: "Elapsed time within 10 min. of the value set below"},
+        {value: "=", text: "is exactly (±1min)", description: "Elapsed time within 1 min. of the value set below"},
+        {value: "<", text: "is less than", description: "Elapsed time is less than the value set below"},
+        {value: ">", text: "is more than", description: "Elapsed time is greater than the value set below"}
+    ],
+    // Pace.
+    pace: [
+        {value: "like", text: "is around (±60sec)", description: "Pace within 60 sec. of the value set below"},
+        {value: "approx", text: "is around (±20sec)", description: "Pace within 20 sec. of the value set below"},
+        {value: "=", text: "is exactly (±1sec)", description: "Pace within 1 sec. of the value set below"},
+        {value: "<", text: "is faster than", description: "Pace is faster than the value set below"},
+        {value: ">", text: "is slower than", description: "Pace is slower than the value set below"}
     ],
     // Only "is" as operator.
     is: [{value: "=", text: "is", description: ""}]
@@ -58,8 +60,8 @@ export const recipePropertyList = [
     {value: "distance", text: "Distance", type: "number", operators: recipeOperatorList.number, suffix: "km", impSuffix: "mi"},
     {value: "speedAvg", text: "Average speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
     {value: "speedMax", text: "Max speed", type: "number", operators: recipeOperatorList.number, suffix: "km/h", impSuffix: "mph"},
-    {value: "paceAvg", text: "Average pace", type: "number", operators: recipeOperatorList.number, suffix: "min/km", impSuffix: "min/miles"},
-    {value: "paceMax", text: "Max pace", type: "number", operators: recipeOperatorList.number, suffix: "min/km", impSuffix: "min/miles"},
+    {value: "paceAvg", text: "Average pace", type: "time", operators: recipeOperatorList.pace, suffix: "min/km", impSuffix: "min/miles"},
+    {value: "paceMax", text: "Max pace", type: "time", operators: recipeOperatorList.pace, suffix: "min/km", impSuffix: "min/miles"},
     {value: "elevationGain", text: "Elevation gain", type: "number", operators: recipeOperatorList.number, suffix: "m", impSuffix: "ft"},
     {value: "elevationMax", text: "Elevation max", type: "number", operators: recipeOperatorList.number, suffix: "m", impSuffix: "ft"},
     {value: "dateStart", text: "Start time", type: "time", operators: recipeOperatorList.time, suffix: "h"},
@@ -91,10 +93,10 @@ export const recipePropertyList = [
     {value: "prSegments", text: "Has new segment PRs", type: "boolean", operators: recipeOperatorList.is},
     {value: "gear", text: "Gear", type: "gear", operators: recipeOperatorList.is},
     {value: "device", text: "Device or app", type: "text", operators: recipeOperatorList.text},
-    {value: "temperature", text: "Device temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
+    {value: "temperature", text: "Device temperature", type: "anyNumber", operators: recipeOperatorList.number, suffix: "°C", fSuffix: "°F"},
     {value: "trainer", text: "Using a trainer machine", type: "boolean", operators: recipeOperatorList.is},
     {value: "manual", text: "Created manually", type: "boolean", operators: recipeOperatorList.is},
-    {value: "weather.temperature", text: "Weather temperature", type: "anyNumber", operators: recipeOperatorList.anyNumber, suffix: "°C", fSuffix: "°F"},
+    {value: "weather.temperature", text: "Weather temperature", type: "anyNumber", operators: recipeOperatorList.number, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", type: "number", operators: recipeOperatorList.number, suffix: "kph", impSuffix: "mph"},
     {value: "weather.humidity", text: "Weather humidity", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100},
     {value: "spotify.track", text: "Listened Spotify track name", type: "text", operators: recipeOperatorList.text},

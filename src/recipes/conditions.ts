@@ -70,9 +70,9 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
 }
 
 /**
- * Check if the passed datetime (timestamp in seconds) based condition is valid.
+ * Check if the passed timestamp based condition is valid.
  * @param activity The Strava activity to be checked.
- * @param condition The datetime based recipe condition.
+ * @param condition The timestamp based recipe condition.
  */
 export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
@@ -83,12 +83,14 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         return false
     }
 
-    let aTime: number = 0
-    let valid: boolean = true
+    let aTime = 0
+    let valid = true
+    let isPace = prop.indexOf("pace") == 0
+    let isTime = prop.includes("Time")
     const value = parseInt(condition.value as string)
 
-    // Parse activity time or date.
-    if (prop.includes("Time")) {
+    // Parse activity as pace, time (duration) or full datetime.
+    if (isPace || isTime) {
         aTime = activity[prop]
     } else {
         let aDate = dayjs.utc(activity[prop])
@@ -99,17 +101,22 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         aTime = aDate.second() + aDate.minute() * 60 + aDate.hour() * 3600
     }
 
-    // Check it time is greater, less, within 2 minutes, or around 30 minutes of the condition's time.
+    // Pace and time based comparisons have different operator values.
+    const eqBuffer = isPace ? 1 : 60
+    const approxBuffer = isPace ? 20 : 600
+    const likeBuffer = isPace ? 60 : 1800
+
+    // Check it time matches the condition's operator / buffer time.
     if (op == RecipeOperator.GreaterThan) {
         valid = aTime > value
     } else if (op == RecipeOperator.LessThan) {
         valid = aTime < value
     } else if (op == RecipeOperator.Equal) {
-        valid = aTime >= value - 120 && aTime <= value + 120
+        valid = aTime >= value - eqBuffer && aTime <= value + eqBuffer
     } else if (op == RecipeOperator.Approximate) {
-        valid = aTime >= value - 600 && aTime <= value + 600
+        valid = aTime >= value - approxBuffer && aTime <= value + approxBuffer
     } else if (op == RecipeOperator.Like) {
-        valid = aTime >= value - 1800 && aTime <= value + 1800
+        valid = aTime >= value - likeBuffer && aTime <= value + likeBuffer
     }
 
     if (!valid) {
@@ -251,8 +258,7 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
     const prop = condition.property
     const op = condition.operator
     const value = parseFloat(condition.value as any)
-    const diff = value * 0.1
-    let valid: boolean = true
+    let valid = true
     let aNumber = activity[prop]
 
     // If target is an array, use its length instead.
@@ -266,7 +272,11 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
     }
 
     if (op == RecipeOperator.Like) {
-        valid = value < aNumber + diff && value > aNumber - diff
+        const diff = value * 0.1
+        valid = value <= aNumber + diff && value >= aNumber - diff
+    } else if (op == RecipeOperator.Approximate) {
+        const diff = value * 0.03
+        valid = value <= aNumber + diff && value >= aNumber - diff
     } else if (op == RecipeOperator.Equal && Math.round(aNumber) != Math.round(value)) {
         valid = false
     } else if (op == RecipeOperator.GreaterThan && aNumber <= value) {
@@ -289,7 +299,7 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
  */
 export const checkBoolean = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
-    const valid: boolean = (!activity[prop] && condition.value === false) || activity[prop] === condition.value
+    const valid = (!activity[prop] && condition.value === false) || activity[prop] === condition.value
 
     if (!valid) {
         logger.debug("Recipes.checkBoolean", `Activity ${activity.id}`, condition, "Failed")
@@ -351,7 +361,7 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
     }
 
     try {
-        let valid: boolean = false
+        let valid = false
 
         // Parse condition value and weather property.
         const value = parseInt(condition.value as string)

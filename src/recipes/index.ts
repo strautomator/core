@@ -265,6 +265,7 @@ export class Recipes {
     checkCondition = async (user: UserData, activity: StravaActivity, recipe: RecipeData, condition: RecipeCondition): Promise<boolean> => {
         try {
             const prop = condition.property
+            const propDetails = recipePropertyList.find((p) => p.value == prop)
 
             // Weather conditions.
             if (prop.indexOf("weather") == 0) {
@@ -281,12 +282,6 @@ export class Recipes {
             // First activity of the day condition.
             else if (prop.indexOf("firstOfDay") == 0) {
                 const valid = await checkFirstOfDay(user, activity, condition, prop.includes(".same"))
-                if (!valid) return false
-            }
-
-            // Location condition.
-            else if (prop.indexOf("location") == 0 || prop == "polyline") {
-                const valid = checkLocation(activity, condition)
                 if (!valid) return false
             }
 
@@ -314,8 +309,14 @@ export class Recipes {
                 if (!valid) return false
             }
 
+            // Location condition.
+            else if (propDetails?.type == "location") {
+                const valid = checkLocation(activity, condition)
+                if (!valid) return false
+            }
+
             // Time based condition.
-            else if (prop.indexOf("date") == 0 || prop.indexOf("Time") > 0) {
+            else if (propDetails?.type == "time") {
                 const valid = checkTimestamp(activity, condition)
                 if (!valid) return false
             }
