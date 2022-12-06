@@ -118,59 +118,65 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         }
     }
 
-    // Default climbing ratio multiplier in metric is 19m / 1km.
-    // Imperial climbing ration multiplier is 100ft / 1mi.
-    let cRatioMultiplier = profile.units == "imperial" ? 100 : 19
+    // Climbing ratio multiplier in metric is 19m / 1km.
+    // Distance and elevation are already in metric by default.
+    let cRatioMultiplier = 19
+    let distanceMultiplier = 1
+    let elevationMultiplier = 1
 
-    // Convert values according to the specified units.
+    // Conversion to imperial units.
+    // Climbing ration multiplier is 100ft / 1mi.
+    // Speeds are in mph, distance in miles, and elevation in feet.
     if (profile.units == "imperial") {
-        if (data.total_elevation_gain) {
-            activity.elevationGain = Math.round(data.total_elevation_gain * rFeet)
-        }
-        if (data.elev_high) {
-            activity.elevationMax = Math.round(data.elev_high * rFeet)
-        }
-        if (data.distance) {
-            activity.distance = parseFloat(((data.distance / 1000) * rMiles).toFixed(1))
-        }
-        if (data.average_speed) {
-            activity.speedAvg = parseFloat((data.average_speed * 3.6 * rMiles).toFixed(1))
-            activity.paceAvg = parseFloat((60 / (data.average_speed * 3.6 * rMiles)).toFixed(2))
-        }
-        if (data.max_speed) {
-            activity.speedMax = parseFloat((data.max_speed * 3.6 * rMiles).toFixed(1))
-            activity.paceMax = parseFloat((60 / (data.max_speed * 3.6 * rMiles)).toFixed(2))
-        }
-        if (laps) {
-            laps.forEach((lap) => {
-                lap.distance = parseFloat(((lap.distance / 1000) * rMiles).toFixed(1))
-                lap.speed = parseFloat((lap.speed * 2.23694).toFixed(1))
-            })
-        }
-    } else {
-        if (data.total_elevation_gain) {
-            activity.elevationGain = data.total_elevation_gain
-        }
-        if (data.elev_high) {
-            activity.elevationMax = data.elev_high
-        }
-        if (data.distance) {
-            activity.distance = parseFloat((data.distance / 1000).toFixed(1))
-        }
-        if (data.average_speed) {
-            activity.speedAvg = parseFloat((data.average_speed * 3.6).toFixed(1))
-            activity.paceAvg = parseFloat((60 / (data.average_speed * 3.6)).toFixed(2))
-        }
-        if (data.max_speed) {
-            activity.speedMax = parseFloat((data.max_speed * 3.6).toFixed(1))
-            activity.paceMax = parseFloat((60 / (data.max_speed * 3.6)).toFixed(2))
-        }
-        if (laps) {
-            laps.forEach((lap) => {
-                lap.distance = parseFloat((lap.distance / 1000).toFixed(1))
-                lap.speed = parseFloat((lap.speed * 3.6).toFixed(1))
-            })
-        }
+        cRatioMultiplier = 100
+        distanceMultiplier = rMiles
+        elevationMultiplier = rFeet
+    }
+
+    // Speed, distance and elevation.
+    let avgSpeed: number = data.average_speed * 3.6 * distanceMultiplier
+    let maxSpeed: number = data.max_speed * 3.6 * distanceMultiplier
+    let distance: number = (data.distance / 1000) * distanceMultiplier
+    let elevationGain: number = data.total_elevation_gain * elevationMultiplier
+    let elevationMax: number = data.elev_high * elevationMultiplier
+
+    // Calculate pace in minutes, and get seconds with leading 0.
+    let paceDurationAvg = dayjs.duration(60 / avgSpeed, "minutes")
+    let avgPaceMinutes = paceDurationAvg.minutes()
+    let avgPaceSeconds: any = paceDurationAvg.seconds()
+    if (paceDurationAvg.milliseconds() > 500) avgPaceSeconds += 1
+    if (avgPaceSeconds < 10) avgPaceSeconds = `0${avgPaceSeconds}`
+    let paceDurationMax = dayjs.duration(60 / maxSpeed, "minutes")
+    let maxPaceMinutes = paceDurationMax.minutes()
+    let maxPaceSeconds: any = paceDurationMax.seconds()
+    if (paceDurationMax.milliseconds() > 500) maxPaceSeconds += 1
+    if (maxPaceSeconds < 10) maxPaceSeconds = `0${maxPaceSeconds}`
+
+    // Append distance, elevation, speed and pace.
+    if (_.isNil(data.total_elevation_gain)) {
+        activity.elevationGain = Math.round(elevationGain)
+    }
+    if (_.isNil(data.elev_high)) {
+        activity.elevationMax = Math.round(elevationMax)
+    }
+    if (data.distance) {
+        activity.distance = parseFloat(distance.toFixed(1))
+    }
+    if (data.average_speed) {
+        activity.speedAvg = parseFloat(avgSpeed.toFixed(1))
+        activity.paceAvg = parseFloat(`${avgPaceMinutes}:${avgPaceSeconds}`).toFixed(2)
+    }
+    if (data.max_speed) {
+        activity.speedMax = parseFloat(maxSpeed.toFixed(1))
+        activity.paceMax = parseFloat(`${maxPaceMinutes}:${maxPaceSeconds}`).toFixed(2)
+    }
+
+    // Set lap distances and speed.
+    if (laps) {
+        laps.forEach((lap) => {
+            lap.distance = parseFloat(((lap.distance / 1000) * distanceMultiplier).toFixed(1))
+            lap.speed = parseFloat((lap.speed * 3.6 * distanceMultiplier).toFixed(1))
+        })
     }
 
     // Lap summaries.
