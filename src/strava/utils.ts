@@ -164,11 +164,11 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     }
     if (data.average_speed) {
         activity.speedAvg = parseFloat(avgSpeed.toFixed(1))
-        activity.paceAvg = parseFloat(`${avgPaceMinutes}:${avgPaceSeconds}`).toFixed(2)
+        activity.paceAvg = parseFloat(`${avgPaceMinutes}.${avgPaceSeconds}`).toFixed(2).replace(".", ":")
     }
     if (data.max_speed) {
         activity.speedMax = parseFloat(maxSpeed.toFixed(1))
-        activity.paceMax = parseFloat(`${maxPaceMinutes}:${maxPaceSeconds}`).toFixed(2)
+        activity.paceMax = parseFloat(`${maxPaceMinutes}.${maxPaceSeconds}`).toFixed(2).replace(".", ":")
     }
 
     // Set lap distances and speed.
