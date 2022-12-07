@@ -158,9 +158,6 @@ export class Database {
      */
     get = async (collection: string, id: string, skipCache?: boolean): Promise<any> => {
         let colname = `${collection}${settings.database.collectionSuffix}`
-        if (settings.database.readProductionSuffix !== null) {
-            colname = `${collection}${settings.database.readProductionSuffix}`
-        }
 
         // First check if document is cached.
         if (!skipCache && settings.database.cacheDuration) {
@@ -202,10 +199,6 @@ export class Database {
      */
     search = async (collection: string, queryList?: any[], orderBy?: string | [string, OrderByDirection], limit?: number): Promise<any[]> => {
         let colname = `${collection}${settings.database.collectionSuffix}`
-        if (settings.database.readProductionSuffix !== null) {
-            colname = `${collection}${settings.database.readProductionSuffix}`
-        }
-
         let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
 
         // Make sure query list is an array by itself.

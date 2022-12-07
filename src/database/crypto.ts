@@ -82,10 +82,6 @@ export function decryptData(prop: string, value: string): string {
 
         return decrypted.toString()
     } catch (ex) {
-        if (settings.database.readProductionSuffix !== null) {
-            logger.error("Database.decrypt", prop, value, ex)
-        } else {
-            logger.error("Database.decrypt", prop, `Likely due to readProductionSuffix set`, ex)
-        }
+        logger.error("Database.decrypt", prop, value, ex)
     }
 }
