@@ -1,6 +1,7 @@
 // Strautomator Core: Database
 
 import {DocumentReference, FieldValue, Firestore, OrderByDirection} from "@google-cloud/firestore"
+import {DatabaseOptions} from "./types"
 import {cryptoProcess} from "./crypto"
 import _ = require("lodash")
 import cache = require("bitecache")
@@ -19,6 +20,9 @@ export class Database {
     static get Instance() {
         return this._instance || (this._instance = new this())
     }
+    static newInstance() {
+        return new this()
+    }
 
     /**
      * Firestore client.
@@ -30,9 +34,14 @@ export class Database {
 
     /**
      * Init the Database wrapper.
+     * @param dbOptions Custom database access options (ie. for beta deployments).
      */
-    init = async (): Promise<void> => {
+    init = async (dbOptions?: DatabaseOptions): Promise<void> => {
         try {
+            const customLog = dbOptions ? dbOptions.description : "Default connection"
+            dbOptions = _.defaultsDeep(dbOptions || {}, settings.database)
+
+            // Crypto key is global and required.
             if (!settings.database.crypto.key) {
                 throw new Error("Missing the mandatory database.crypto.key setting")
             }
@@ -43,21 +52,14 @@ export class Database {
             }
 
             this.firestore = new Firestore(options)
-            this.firestore.settings({ignoreUndefinedProperties: true})
+            this.firestore.settings({ignoreUndefinedProperties: dbOptions.ignoreUndefinedProperties})
 
             // Setup bitecache.
-            cache.setup("database", settings.database.cacheDuration)
+            cache.setup("database", dbOptions.cacheDuration)
 
-            const suffix = settings.database.collectionSuffix
+            const suffix = dbOptions.collectionSuffix
             const logSuffix = suffix ? `Collections suffixd with "${suffix}"` : "No collection suffix"
-            logger.info("Database.init", logSuffix)
-
-            // Read from production?
-            if (process.env.NODE_ENV != "production" && settings.database.readProductionSuffix !== null && settings.database.readProductionSuffix !== false) {
-                logger.warn("Database.init", "readProductionSuffix is set, data will be read from production")
-            } else {
-                settings.database.readProductionSuffix = null
-            }
+            logger.info("Database.init", customLog, logSuffix)
         } catch (ex) {
             logger.error("Database.init", ex)
             throw ex
