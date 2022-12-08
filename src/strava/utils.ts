@@ -26,6 +26,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         type: data.type,
         name: data.name,
         description: data.description,
+        flagged: data.flagged ? true : false,
         private: data.private ? true : false,
         commute: data.commute ? true : false,
         hideHome: data.hide_from_home ? true : false,
@@ -44,7 +45,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         hrAvg: data.average_heartrate ? Math.round(data.average_heartrate) : null,
         hrMax: data.max_heartrate ? Math.round(data.max_heartrate) : null,
         cadenceAvg: data.average_cadence || null,
-        calories: data.calories || data.kilojoules || null,
+        calories: data.calories || null,
         relativeEffort: data.suffer_score || null,
         device: data.device_name,
         manual: data.manual,
@@ -220,14 +221,14 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     }
 
     // Calculate TSS if possible.
-    if (user.profile && user.profile.ftp && activity.hasPower && activity.wattsWeighted) {
+    if (user.profile?.ftp && activity.hasPower && activity.wattsWeighted) {
         const intensity = activity.wattsWeighted / user.profile.ftp
         const tss = ((activity.wattsWeighted * intensity * activity.movingTime) / (user.profile.ftp * 3600)) * 100
         activity.tss = Math.round(tss)
     }
 
     // Check for new PRs and KOMs.
-    if (data.segment_efforts && data.segment_efforts.length > 0) {
+    if (data.segment_efforts?.length > 0) {
         const pr: any[] = data.segment_efforts.filter((r) => r.pr_rank == 1)
         const kom: any[] = data.segment_efforts.filter((r) => r.kom_rank == 1)
 
