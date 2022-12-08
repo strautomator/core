@@ -109,6 +109,8 @@ export interface StravaActivity {
     manual?: boolean
     /** Has photos? */
     hasPhotos?: boolean
+    /** Activity flagged? */
+    flagged?: boolean
     /** Activity map style. */
     mapStyle?: StravaMapStyle
     /** Activity icon (emoticon). */
