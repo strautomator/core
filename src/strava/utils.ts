@@ -153,10 +153,10 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     if (maxPaceSeconds < 10) maxPaceSeconds = `0${maxPaceSeconds}`
 
     // Append distance, elevation, speed and pace.
-    if (_.isNil(data.total_elevation_gain)) {
+    if (!_.isNil(data.total_elevation_gain)) {
         activity.elevationGain = Math.round(elevationGain)
     }
-    if (_.isNil(data.elev_high)) {
+    if (!_.isNil(data.elev_high)) {
         activity.elevationMax = Math.round(elevationMax)
     }
     if (data.distance) {
