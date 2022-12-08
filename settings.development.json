@@ -2,7 +2,15 @@
 
 {
     "app": {
-        "title": "Strautomator (Dev)"
+        "title": "Strautomator (Dev)",
+        // Default Web port for web on development is 3000.
+        "port": 3000,
+        // Please set the app URL on your settings.secret.json file or via
+        // the $SMU_app_url environment variable. Webhooks will not work
+        // if you use localhost, as this endpoint needs to be public.
+        "url": "http://localhost:3000/",
+        // Open a tunnel with Cloudflare by default.
+        "tunnel": true
     },
     "announcements": {
         // Active announcements should be cached for only 1 minute on dev.
@@ -77,6 +85,9 @@
             "clubs": 180,
             "clubs-group-events": 180,
             "routes": 180
-        }
+        },
+        // Enabling test mode will prevent activities from being written to Strava.
+        // They will be logged to the console instead.
+        "testMode": false
     }
 }

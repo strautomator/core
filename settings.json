@@ -3,9 +3,31 @@
 
 {
     "app": {
+        // Application title.
         "title": "Strautomator",
+        // The server will look for the files strautomator.cert and strautomator.key on the
+        // app root to start a HTTPS server on port 8443. If these files are not there,
+        // the server will listen on HTTP port 8080 instead.
+        "port": null,
+        // You can set the app URL on your settings.secret.json file or
+        // via the $SMU_app_url environment variable.
+        "url": "https://strautomator.com/",
+        // Listen to all incoming connections by default.
+        "ip": "0.0.0.0",
         // Hashtag used on social media.
-        "hashtag": "#strautomator.com"
+        "hashtag": "#strautomator.com",
+        // Express trust proxy settings.
+        "trustProxy": 1
+    },
+    "api": {
+        // API is rate limited to 900 requests per minute per instance by default. If you wish to disable
+        // rate limiting altogether, set "rateLimit" to false.
+        "rateLimit": {
+            "max": 900,
+            "windowMs": 60000
+        },
+        // Only accept connections coming via Cloudflare by default.
+        "requireCloudflare": true
     },
     "announcements": {
         // Active announcements should be cached for up to 60 minutes.
@@ -20,6 +42,10 @@
     // Beta environment and settings disabled by default.
     "beta": {
         "enabled": false,
+        // Beta deployment domain.
+        "url": "https://beta.strautomator.com/",
+        // Suffix added to database collections, cookies and sessions.
+        "suffix": "-beta",
         // Collection suffix of the production database to be referenced on the beta environment.
         "prodCollectionSuffix": ""
     },
@@ -35,6 +61,12 @@
         "defaultDurationMinutes": 15,
         // Calendars are cached for a maximum of 5 days, even if there were no new activities. Value in seconds.
         "maxCacheDuration": 432000
+    },
+    "cookie": {
+        "sessionName": "strautsession",
+        // This secret should be updated via the settings.secret.json file or
+        // via the $SMU_cookie_secret environment variable.
+        "secret": "Strautocookie-Super-Secret"
     },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
@@ -462,5 +494,9 @@
             // via the SMU_weather_weatherapi_secret environment variable.
             "secret": null
         }
+    },
+    "webhooks": {
+        // Retry the webhooks setup every 60 seconds (if failed). Value in milliseconds.
+        "retryInterval": 60000
     }
 }
