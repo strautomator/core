@@ -88,6 +88,8 @@ import {FAQ} from "./faq"
 export const faq: FAQ = FAQ.Instance
 import {GDPR} from "./gdpr"
 export const gdpr: GDPR = GDPR.Instance
+import {Beta} from "./beta"
+export const beta: Beta = Beta.Instance
 
 // Export event manager.
 import {EventManager} from "./eventmanager"
@@ -122,12 +124,24 @@ export const startup = async (quickStart?: boolean) => {
     process.on("SIGINT", shutdown)
     process.on("SIGTERM", shutdown)
 
+    let settings: any
+
     try {
         setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`])
         setmeup.load()
         setmeup.loadFromEnv()
 
-        const settings = setmeup.settings
+        // Running locally on dev? Load local-only settings.
+        if (process.env.NODE_ENV == "development") {
+            setmeup.load("settings.local.json")
+        }
+
+        settings = setmeup.settings
+
+        // Beta deployment?
+        if (settings.beta.enabled) {
+            logger.info("Strautomator.startup", "BETA DEPLOYMENT")
+        }
 
         // Check basic settings.
         if (!settings.gcp.projectId) {
@@ -150,13 +164,18 @@ export const startup = async (quickStart?: boolean) => {
             const path = require("path")
             const downloadSettings = settings.gcp.downloadSettings
             const targetFile = path.resolve(path.dirname(require.main.filename), "settings.from-gcp.json")
+            const loadOptions = {crypto: true}
 
             try {
                 await storage.downloadFile(downloadSettings.bucket, downloadSettings.filename, targetFile)
-
-                // Load downloaded settings, assuming they're encrypted.
-                const loadOptions = {crypto: true, destroy: true}
                 setmeup.load(targetFile, loadOptions)
+
+                // Beta deployment? Load the beta settings.
+                if (settings.beta.enabled) {
+                    const targetBetaFile = path.resolve(path.dirname(require.main.filename), "settings.from-gcp-beta.json")
+                    await storage.downloadFile(downloadSettings.bucket, downloadSettings.betaFilename, targetBetaFile)
+                    setmeup.load(targetBetaFile, loadOptions)
+                }
             } catch (ex) {
                 logger.error("Strautomator.startup", `Could not download ${downloadSettings.filename} from GCP bucket ${downloadSettings.bucket}`, ex)
             }
@@ -166,10 +185,13 @@ export const startup = async (quickStart?: boolean) => {
         return process.exit(1)
     }
 
+    // Start the database first.
+    await database.init()
+
     // Try starting individual modules now.
-    for (let coreModule of [database, github, mailer, maps, paypal, strava, komoot, spotify, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
+    for (let coreModule of [github, mailer, maps, paypal, strava, komoot, spotify, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
         try {
-            const modSettings = setmeup.settings[coreModule.constructor.name.toLowerCase()]
+            const modSettings = settings[coreModule.constructor.name.toLowerCase()]
 
             if (modSettings && modSettings.disabled) {
                 logger.warn("Strautomator.startup", coreModule.constructor.name, "Module is disabled on settings")
@@ -186,6 +208,11 @@ export const startup = async (quickStart?: boolean) => {
         }
     }
 
+    // Running on a beta environment?
+    if (settings.beta.enabled) {
+        await beta.init()
+    }
+
     // Running locally? Setup the necessary cron jobs which are
     // otherwise defined as Cloud Functions in production.
     if (process.env.NODE_ENV == "development" && process.env.STRAUTOMATOR_CRON) {
@@ -199,7 +226,7 @@ export const startup = async (quickStart?: boolean) => {
 
         // Cleanup old queued activities every hour.
         const cleanupQueuedActivities = async () => {
-            const beforeDate = dayjs().subtract(setmeup.settings.strava.maxQueueAge, "seconds").toDate()
+            const beforeDate = dayjs().subtract(settings.strava.maxQueueAge, "seconds").toDate()
             const activities = await strava.activityProcessing.getQueuedActivities(beforeDate)
 
             for (let activity of activities) {

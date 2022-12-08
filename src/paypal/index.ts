@@ -189,10 +189,13 @@ export class PayPal {
                     const existing = _.find(api.currentBillingPlans, {price: price, currency: currency, frequency: frequency})
 
                     if (!existing) {
-                        const newPlan = await paypalSubscriptions.createBillingPlan(api.currentProduct.id, currency, frequency)
-                        api.currentBillingPlans[newPlan.id] = newPlan
-
-                        logger.info("PayPal.setupBillingPlans", newPlan.id, newPlan.name, "New!")
+                        if (settings.beta.enabled) {
+                            logger.warn("PayPal.setupBillingPlans", currency, frequency, "New billing plans are disabled on the beta environment, will not create")
+                        } else {
+                            const newPlan = await paypalSubscriptions.createBillingPlan(api.currentProduct.id, currency, frequency)
+                            api.currentBillingPlans[newPlan.id] = newPlan
+                            logger.info("PayPal.setupBillingPlans", newPlan.id, newPlan.name, "New!")
+                        }
                     } else {
                         logger.info("PayPal.setupBillingPlans", existing.id, existing.name)
                     }

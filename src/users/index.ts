@@ -501,6 +501,11 @@ export class Users {
                 }
             }
 
+            // Users are always PRO on the beta environment.
+            if (settings.beta.enabled) {
+                userData.isPro = true
+            }
+
             // Save user to the database.
             await database.merge("users", userData, doc)
 
