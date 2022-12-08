@@ -14,6 +14,18 @@ export interface GitHubChangelog {
 }
 
 /**
+ * GitHub commit details.
+ */
+export interface GitHubCommit {
+    /** Repository. */
+    repo: string
+    /** Commit message. */
+    message: string
+    /** Commit date. */
+    dateCommited: Date
+}
+
+/**
  * A GitHub subscription (sponsorship).
  */
 export interface GitHubSubscription {

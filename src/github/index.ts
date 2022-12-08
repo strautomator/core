@@ -1,7 +1,8 @@
 // Strautomator Core: GitHub
 
-import {GitHubChangelog, GitHubSubscription} from "./types"
-import {axiosRequest} from "../axios"
+import {GitHubChangelog, GitHubCommit, GitHubSubscription} from "./types"
+import api from "./api"
+import cache = require("bitecache")
 import database from "../database"
 import dayjs from "../dayjs"
 import eventManager from "../eventmanager"
@@ -9,7 +10,6 @@ import users from "../users"
 import _ = require("lodash")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * GitHub Manager.
@@ -30,8 +30,10 @@ export class GitHub {
      */
     init = async (quickStart?: boolean): Promise<void> => {
         try {
+            cache.setup("github-commits", settings.github.cacheDuration)
+
             if (!quickStart) {
-                await this.buildChangelog()
+                this.buildChangelog()
             }
         } catch (ex) {
             logger.error("GitHub.init", ex)
@@ -39,89 +41,55 @@ export class GitHub {
         }
     }
 
+    // METHODS
+    // --------------------------------------------------------------------------
+
     /**
-     * Make a request to the GitHub API with the given options.
-     * @param method Request method.
-     * @param path API path.
-     * @param body Optional body.
+     * Get the list of last commits from the Strautomator repos.
      */
-    private makeRequest = async (method: "GET" | "POST", path: string, body?: any): Promise<any> => {
-        const options: any = {headers: {}, returnResponse: true}
-
-        // Request options.
-        options.method = method
-        options.url = `${settings.github.api.baseUrl}${path}`
-        options.headers["Authorization"] = `Bearer ${settings.github.api.token}`
-        options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
-
-        // Optional body.
-        if (body) {
-            options.body = body
-        }
-
+    getLastCommits = async (): Promise<GitHubCommit[]> => {
         try {
-            let result = []
+            const fromCache = cache.get("github-commits", "last")
 
-            // Follow pagination.
-            while (options.url) {
-                const res = await axiosRequest(options)
-                logger.debug("GitHub.makeRequest", method, options.url)
-
-                options.url = null
-
-                if (res.data && _.isArray(res.data) && res.headers && res.headers["link"]) {
-                    const links = res.headers["link"].split(", ")
-
-                    for (let link of links) {
-                        if (link.includes(`rel="next"`)) {
-                            options.url = link.substring(1, link.indexOf(">"))
-                            break
-                        }
-                    }
-
-                    result = result.concat(res.data)
-                } else if (result.length == 0) {
-                    result = res.data
-                }
+            // Cached commits still valid?
+            if (fromCache?.length > 0) {
+                logger.debug("GitHub.getLastCommits.fromCache", `${fromCache.length} commits`)
+                return fromCache
             }
 
-            return result
+            const since = dayjs().subtract(3, "month").toISOString()
+            const coreCommits = await api.getRepoCommits(settings.github.api.coreRepo, since, 10, true)
+            const webCommits = await api.getRepoCommits(settings.github.api.repo, since, 10, true)
+            const commits = _.concat(coreCommits, webCommits)
+            const unsortedResults: GitHubCommit[] = []
+
+            // Build list of last commits.
+            for (let c of commits) {
+                const arrGitRepo = c.commit.tree.url.replace("https://api.github.com/repos/", "").split("/").slice(0, 2)
+                unsortedResults.push({repo: arrGitRepo.join("/"), message: c.commit.message, dateCommited: dayjs(c.commit.committer.date).toDate()})
+            }
+
+            const results = _.orderBy(unsortedResults, "dateCommited", "desc")
+            cache.set("github-commits", "last", results)
+            logger.info("GitHub.getLastCommits", `Last commit on ${dayjs(results[0].dateCommited).format("lll")}`)
+
+            return results
         } catch (ex) {
-            logger.error("GitHub.makeRequest", method, options.url, ex)
+            logger.error("GitHub.getLastCommits", ex)
             throw ex
         }
     }
-
-    // MAIN METHODS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Get the releases from the repository on GitHub.
-     */
-    getRepoReleases = async (): Promise<any[]> => {
-        try {
-            const reqPath = `repos/${settings.github.api.repo}/releases?per_page=100`
-            const result = await this.makeRequest("GET", reqPath)
-
-            return result
-        } catch (ex) {
-            logger.error("GitHub.getRepoReleases", ex)
-            throw ex
-        }
-    }
-
-    // CHANGELOG
-    // --------------------------------------------------------------------------
 
     /**
      * Build the application change log based on the repo releases.
      */
     buildChangelog = async (): Promise<void> => {
         try {
-            const releases = await this.getRepoReleases()
+            const releases = await api.getRepoReleases(settings.github.api.repo)
             const changelog: GitHubChangelog = {}
             let relevReleases: number = 0
 
+            // Iterate raw releases to build the change log.
             for (let rel of releases) {
                 const body = rel.body.split("\n")
                 const updates = body.filter((b) => !b.includes("Updated dependencies") && !b.includes("Maintenance release") && !b.includes("Redeployment"))
