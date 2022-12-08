@@ -17,6 +17,12 @@
         // Retry axios requests afew 5 seconds. Value set in milliseconds.
         "retryInterval": 5000
     },
+    // Beta environment and settings disabled by default.
+    "beta": {
+        "enabled": false,
+        // Collection suffix of the production database to be referenced on the beta environment.
+        "prodCollectionSuffix": ""
+    },
     "calendar": {
         // Default activity fields to be added to event details. Each item is a line, and multiple fields
         // can be added to same line separated by comma.
@@ -47,12 +53,8 @@
             "key": null,
             "iv": null
         },
-        // You can use this settings to read data from production by allowing a user
-        // to login with credentials stored on dev, but using recipes / activities / gearwear
-        // data from production, by setting the collection suffix used in production.
-        // This is for READ ONLY! No data will be ever written to production while on test.
-        // Leave as null to disable.
-        "readProductionSuffix": null
+        // Ignore undefined properties?
+        "ignoreUndefinedProperties": true
     },
     "faq": {
         // Download questions from the database twice a day by default. Value set in seconds.
@@ -67,10 +69,11 @@
         // If you wish the app to download settings from Google Cloud Storage on startup, please
         // specify the bucket name and filename below on your secret settings or via the
         // SMU_gcp_downloadSettings_bucket and SMU_gcp_downloadSettings_filename environment
-        // variables. We HIGHLY recommend you to have the settings file encrypted there.
+        // variables. It's HIGHLY recommended to have the settings files encrypted there.
         "downloadSettings": {
             "bucket": null,
-            "filename": "settings.secret.json"
+            "filename": "settings.secret.json",
+            "betaFilename": "settings.beta.json"
         }
     },
     "gearwear": {
@@ -252,6 +255,8 @@
             "calendarCacheDuration": 21600,
             // No links on PRO accounts processed activities.
             "linksOn": false,
+            // Allow personal records for all sports.
+            "recordSports": true,
             // Subscription prices on PayPal to get a PRO account.
             "price": {
                 "year": 6.99
