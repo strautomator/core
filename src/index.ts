@@ -131,17 +131,7 @@ export const startup = async (quickStart?: boolean) => {
         setmeup.load()
         setmeup.loadFromEnv()
 
-        // Running locally on dev? Load local-only settings.
-        if (process.env.NODE_ENV == "development") {
-            setmeup.load("settings.local.json")
-        }
-
         settings = setmeup.settings
-
-        // Beta deployment?
-        if (settings.beta.enabled) {
-            logger.info("Strautomator.startup", "BETA DEPLOYMENT")
-        }
 
         // Check basic settings.
         if (!settings.gcp.projectId) {
@@ -149,6 +139,20 @@ export const startup = async (quickStart?: boolean) => {
         }
         if (!settings.app.url) {
             throw new Error("Missing the mandatory app.url setting")
+        }
+
+        // Beta deployment? Override the database collection suffix and other relevant settings.
+        if (settings.beta.enabled) {
+            logger.warn("Strautomator.startup", "BETA DEPLOYMENT")
+            settings.app.title += " (Beta)"
+            settings.app.url = settings.beta.url
+            settings.database.collectionSuffix += settings.beta.suffix
+            settings.cookie.sessionName += settings.beta.suffix
+        }
+
+        // Running locally on dev? Load local-only settings as the last loaded file so it overwrites everything else.
+        if (process.env.NODE_ENV == "development") {
+            setmeup.load("settings.local.json")
         }
 
         // Storage client must be initiated before everything else.
@@ -185,7 +189,7 @@ export const startup = async (quickStart?: boolean) => {
         return process.exit(1)
     }
 
-    // Start the database first.
+    // Start the database before other modules.
     await database.init()
 
     // Try starting individual modules now.
@@ -216,32 +220,36 @@ export const startup = async (quickStart?: boolean) => {
     // Running locally? Setup the necessary cron jobs which are
     // otherwise defined as Cloud Functions in production.
     if (process.env.NODE_ENV == "development" && process.env.STRAUTOMATOR_CRON) {
-        logger.warn("Strautomator.startup", "Setting up cron jobs directly")
+        try {
+            logger.warn("Strautomator.startup", "Setting up cron jobs directly")
 
-        // Process queued activities every 5 minutes.
-        const processQueuedActivities = async () => {
-            await strava.activityProcessing.processQueuedActivities()
-        }
-        setInterval(processQueuedActivities, 1000 * 60 * 5)
-
-        // Cleanup old queued activities every hour.
-        const cleanupQueuedActivities = async () => {
-            const beforeDate = dayjs().subtract(settings.strava.maxQueueAge, "seconds").toDate()
-            const activities = await strava.activityProcessing.getQueuedActivities(beforeDate)
-
-            for (let activity of activities) {
-                await strava.activityProcessing.deleteQueuedActivity(activity)
+            // Process queued activities every 5 minutes.
+            const processQueuedActivities = async () => {
+                await strava.activityProcessing.processQueuedActivities()
             }
+            setInterval(processQueuedActivities, 1000 * 60 * 5)
+
+            // Cleanup old queued activities every hour.
+            const cleanupQueuedActivities = async () => {
+                const beforeDate = dayjs().subtract(settings.strava.maxQueueAge, "seconds").toDate()
+                const activities = await strava.activityProcessing.getQueuedActivities(beforeDate)
+
+                for (let activity of activities) {
+                    await strava.activityProcessing.deleteQueuedActivity(activity)
+                }
+            }
+            setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
+
+            // Cleanup cached Strava responses, notifications and GDPR archives right away.
+            strava.cleanupCache()
+            notifications.cleanup()
+            gdpr.clearArchives()
+
+            // Process GearWear configurations right away.
+            gearwear.processRecentActivities()
+        } catch (ex) {
+            logger.error("Strautomator.startup", "Failed to setup cron jobs", ex)
         }
-        setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
-
-        // Cleanup cached Strava responses, notifications and GDPR archives right away.
-        strava.cleanupCache()
-        notifications.cleanup()
-        gdpr.clearArchives()
-
-        // Process GearWear configurations right away.
-        gearwear.processRecentActivities()
     }
 }
 

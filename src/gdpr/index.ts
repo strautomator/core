@@ -67,8 +67,9 @@ export class GDPR {
             }
 
             const now = dayjs()
-            const filename = `${user.id}-${user.urlToken}.zip`
-            const saveAs = `strautomator-${user.id}.zip`
+            const extension = settings.beta.enabled ? "-beta.zip" : ".zip"
+            const filename = `${user.id}-${user.urlToken}${extension}`
+            const saveAs = `strautomator-${user.id}${extension}`
             const minDays = settings.users.archiveDownloadDays
             const lastDownload = user.dateLastArchiveGenerated || dayjs("2000-01-01")
             const diffDays = now.diff(lastDownload, "days")

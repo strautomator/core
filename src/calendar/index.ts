@@ -119,7 +119,10 @@ export class Calendar {
             const startTime = dayjs().unix()
 
             // Use "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
-            const hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 12)
+            // Append -beta to the hash code in Beta environments.
+            let hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 14)
+            if (settings.beta.enabled) hash += "-beta"
+
             cacheId = `${user.id}/${user.urlToken}-${hash}.ics`
             cachedFile = await storage.getFile("calendar", cacheId)
 
@@ -297,7 +300,7 @@ export class Calendar {
 
                 // Get summary and details from options or from defaults.
                 try {
-                    const summaryTemplate = calendarTemplate.eventSummary ? calendarTemplate.eventSummary : settings.calendar.eventSummary
+                    const summaryTemplate = calendarTemplate?.eventSummary || settings.calendar.eventSummary
                     const summary = jaul.data.replaceTags(summaryTemplate, activity)
                     const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join("\n")
 
@@ -312,7 +315,7 @@ export class Calendar {
                     })
 
                     // Geo location available?
-                    if (activity.locationEnd && activity.locationEnd.length > 0) {
+                    if (activity.locationEnd?.length > 0) {
                         let locationString: string = activity.locationEnd.join(", ")
 
                         // PRO users will have the location parsed into an address.

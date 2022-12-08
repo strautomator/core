@@ -140,14 +140,19 @@ export class Mailer {
 
             // Replace default keywords (from app).
             const defaultTags = {
-                appUrl: settings.app.url || "https://strautomator.com/",
-                appTitle: settings.app.title || "Strautomator"
+                appUrl: settings.app.url,
+                appTitle: settings.app.title
             }
 
             // Append body to the base HTML template.
             body = EmailBaseTemplate.replace("${contents}", body)
             body = jaul.data.replaceTags(body, defaultTags)
             subject = jaul.data.replaceTags(subject, defaultTags)
+
+            // Append beta footer on Beta environments.
+            if (settings.beta.enabled) {
+                body += "<br><p><i><b>Email sent via Strautomator's Beta environment!</b></i></p>"
+            }
 
             // Send options.
             sendingOptions = {
