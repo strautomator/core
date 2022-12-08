@@ -120,8 +120,11 @@
     "github": {
         "api": {
             "baseUrl": "https://api.github.com/",
-            "repo": "strautomator/web"
-        }
+            "repo": "strautomator/web",
+            "coreRepo": "strautomator/core"
+        },
+        // GitHub data is cached for up to 30 minutes.
+        "cacheDuration": 1800
     },
     "komoot": {
         "baseUrl": "https://www.komoot.com/",
