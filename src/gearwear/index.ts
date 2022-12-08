@@ -309,6 +309,8 @@ export class GearWear {
     processRecentActivities = async (): Promise<void> => {
         try {
             let state: GearWearDbState = await database.appState.get("gearwear")
+            let lastRunDate: dayjs.Dayjs = dayjs().subtract(1, "year")
+            let today = dayjs.utc()
 
             // First we check if method is currently processing or if it already ran successfully today.
             // If so, log a warning and abort execution.
@@ -319,10 +321,9 @@ export class GearWear {
                 }
 
                 if (state.dateLastProcessed) {
-                    const today = dayjs.utc()
-                    const runDate = dayjs.utc(state.dateLastProcessed)
+                    lastRunDate = dayjs.utc(state.dateLastProcessed)
 
-                    if (runDate.dayOfYear() == today.dayOfYear() && state.recentActivityCount > 0) {
+                    if (lastRunDate.dayOfYear() == today.dayOfYear() && state.recentActivityCount > 0) {
                         logger.info("GearWear.processRecentActivities", `Already processed ${state.recentActivityCount} activities today`)
                         return
                     }
@@ -353,8 +354,13 @@ export class GearWear {
 
                     // Get activities timespan.
                     const days = isNaN(user.preferences.gearwearDelayDays) ? settings.gearwear.delayDays : user.preferences.gearwearDelayDays
-                    let dateAfter = dayjs.utc().subtract(days, "days").startOf("day")
-                    let dateBefore = dayjs.utc().subtract(days, "days").endOf("day")
+                    let dateBefore = today.subtract(days, "days").endOf("day")
+                    let dateAfter = today.subtract(days, "days").startOf("day")
+
+                    // If the processing hasn't ran in a while, use its last run date instead.
+                    if (dateAfter.isAfter(lastRunDate.subtract(settings.gearwear.delayDays))) {
+                        dateAfter = lastRunDate
+                    }
 
                     // Recent activities for the user? Update counters.
                     if (dateAfter.isBefore(user.dateLastActivity)) {
