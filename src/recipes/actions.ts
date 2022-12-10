@@ -8,6 +8,7 @@ import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {getActivityFortune} from "../fortune"
 import recipeStats from "./stats"
+import musixmatch from "../musixmatch"
 import notifications from "../notifications"
 import spotify from "../spotify"
 import weather from "../weather"
@@ -182,16 +183,26 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
     try {
         const tracks = await spotify.getActivityTracks(user, activity)
 
-        if (!tracks) {
+        if (!tracks || tracks.length == 0) {
             logger.warn("Recipes.addSpotifyTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "No Spotify tracks returned for the activity")
             processedValue = jaul.data.replaceTags(processedValue, "", "spotify.")
             return processedValue
         }
 
         const musicTags: RecipeMusicTags = {
-            trackStart: tracks && tracks.length > 0 ? tracks[0].title : "",
-            trackEnd: tracks && tracks.length > 0 ? tracks[tracks.length - 1].title : "",
-            trackList: tracks && tracks.length > 0 ? tracks.map((t) => t.title).join("\n") + "\n(tracklist from spotify.com)" : ""
+            trackStart: tracks[0].title,
+            trackEnd: tracks[tracks.length - 1].title,
+            trackList: tracks.map((t) => t.title).join("\n") + "\n(tracklist from spotify.com)"
+        }
+
+        // Add lyrics (only available to PRO users).
+        if (user.isPro) {
+            if (processedValue.includes("spotify.lyricsStart")) {
+                musicTags.lyricsStart = await musixmatch.getLyrics(tracks[0])
+            }
+            if (processedValue.includes("spotify.lyricsEnd")) {
+                musicTags.lyricsEnd = await musixmatch.getLyrics(tracks[tracks.length - 1])
+            }
         }
 
         processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.")

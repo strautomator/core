@@ -76,12 +76,16 @@ export interface RecipeStatsData {
  * Helper interface used for music tags.
  */
 export interface RecipeMusicTags {
+    /** Full track list for the activity. */
+    trackList: string
     /** Music track on the start of an activity. */
     trackStart: string
     /** Music track on the end of an activity. */
     trackEnd: string
-    /** Full track list for the activity. */
-    trackList: string
+    /** Lyrics for the track on the start of an activity. */
+    lyricsStart?: string
+    /** Lyrics for the track on the end of an activity. */
+    lyricsEnd?: string
 }
 
 /**
