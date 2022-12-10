@@ -197,6 +197,17 @@
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
         }
     },
+    // musixmatch integration. The API key must be set via secret settings or
+    // via the SMU_musixmatch_api_key environment variable.
+    "musixmatch": {
+        "api": {
+            "baseUrl": "https://api.musixmatch.com/ws/1.1/"
+        },
+        // Track lyrics are cached in memory for up to 2 minutes. Value set in seconds.
+        "cacheDuration": 120,
+        // Track lyrics cached for up to 30 days in the database. Value set in seconds.
+        "maxCacheDuration": 2592000
+    },
     "notifications": {
         // Cache notification results for up to 4 seconds.
         "cacheDuration": 4,
@@ -327,7 +338,7 @@
             "tokenUrl": "https://accounts.spotify.com/api/token",
             "scopes": "user-read-email,user-read-recently-played"
         },
-        // Cache profiles and recently played tracks for up to 2 minutes.
+        // Cache profiles and recently played tracks for up to 2 minutes. Value set in seconds.
         "cacheDuration": 120,
         // Include tracks that started / ended within a minute of the activity date.
         "dateBufferSeconds": 60,
