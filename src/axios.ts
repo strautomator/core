@@ -39,7 +39,7 @@ export const axiosRequest = async (options: AxiosConfig): Promise<any> => {
     } catch (ex) {
         const message = `${ex.code} ${ex.message}`.toUpperCase()
         const isTimeout = message.includes("ECONNRESET") || message.includes("ECONNABORTED") || message.includes("ETIMEDOUT") || message.includes("TIMEOUT") || message.includes("REQUEST_ABORTED") || message.includes("ERR_BAD_REQUEST")
-        const isRetryable = ex.response && [429, 500, 502, 503, 504, 520, 597].includes(ex.response.status)
+        const isRetryable = ex.response && [405, 429, 500, 502, 503, 504, 520, 597].includes(ex.response.status)
         const accessDenied = ex.response && [401, 403].includes(ex.response.status)
 
         // Abort if the stopStatus is set.
