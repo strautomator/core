@@ -12,6 +12,7 @@ import cache from "bitecache"
 import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
+const packageVersion = require("../../package.json").version
 
 /**
  * Spotify API wrapper.
@@ -57,7 +58,7 @@ export class Spotify {
             url: `${settings.spotify.api.baseUrl}${path}`,
             headers: {
                 Authorization: `Bearer ${tokens.accessToken}`,
-                "User-Agent": settings.axios.uaBrowser
+                "User-Agent": `${settings.app.title} / ${packageVersion}`
             }
         }
 
