@@ -25,6 +25,11 @@ export class Database {
     }
 
     /**
+     * Database collection suffix.
+     */
+    collectionSuffix: string
+
+    /**
      * Firestore client.
      */
     firestore: Firestore
@@ -53,12 +58,12 @@ export class Database {
 
             this.firestore = new Firestore(options)
             this.firestore.settings({ignoreUndefinedProperties: dbOptions.ignoreUndefinedProperties})
+            this.collectionSuffix = dbOptions.collectionSuffix || ""
 
             // Setup bitecache.
-            cache.setup("database", dbOptions.cacheDuration)
+            cache.setup(`database${this.collectionSuffix}`, dbOptions.cacheDuration)
 
-            const suffix = dbOptions.collectionSuffix
-            const logSuffix = suffix ? `Collections suffixd with "${suffix}"` : "No collection suffix"
+            const logSuffix = this.collectionSuffix ? `Collections suffixd with "${this.collectionSuffix}"` : "No collection suffix"
             logger.info("Database.init", customLog, logSuffix)
         } catch (ex) {
             logger.error("Database.init", ex)
@@ -75,7 +80,7 @@ export class Database {
      * @param id Optional document ID.
      */
     doc = (collection: string, id?: string): DocumentReference => {
-        const colname = `${collection}${settings.database.collectionSuffix}`
+        const colname = `${collection}${this.collectionSuffix}`
         return id ? this.firestore.collection(colname).doc(id) : this.firestore.collection(colname).doc()
     }
 
@@ -86,7 +91,7 @@ export class Database {
      * @param id Unique ID of the document.
      */
     set = async (collection: string, data: any, id: string): Promise<number> => {
-        const colname = `${collection}${settings.database.collectionSuffix}`
+        const colname = `${collection}${this.collectionSuffix}`
         const table = this.firestore.collection(colname)
         const doc = table.doc(id)
 
@@ -97,7 +102,7 @@ export class Database {
         // Set the document, save to cache and return it.
         try {
             const result = await doc.set(encryptedData)
-            cache.set("database", `${collection}-${id}`, data)
+            cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
 
             return result.writeTime.seconds
         } catch (ex) {
@@ -105,7 +110,7 @@ export class Database {
                 await jaul.io.sleep(deadlineTimeout)
 
                 const result = await doc.set(encryptedData)
-                cache.set("database", `${collection}-${id}`, data)
+                cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
 
                 return result.writeTime.seconds
             } else {
@@ -125,7 +130,7 @@ export class Database {
         cryptoProcess(encryptedData, true)
 
         if (!doc) {
-            const colname = `${collection}${settings.database.collectionSuffix}`
+            const colname = `${collection}${this.collectionSuffix}`
             const table = this.firestore.collection(colname)
             doc = table.doc(data.id)
         }
@@ -133,7 +138,7 @@ export class Database {
         // Merge the data, save to cache and return it.
         try {
             const result = await doc.set(encryptedData, {merge: true})
-            cache.merge("database", `${collection}-${doc.id}`, data)
+            cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
 
             return result.writeTime.seconds
         } catch (ex) {
@@ -141,7 +146,7 @@ export class Database {
                 await jaul.io.sleep(deadlineTimeout)
 
                 const result = await doc.set(encryptedData, {merge: true})
-                cache.merge("database", `${collection}-${doc.id}`, data)
+                cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
 
                 return result.writeTime.seconds
             } else {
@@ -157,11 +162,11 @@ export class Database {
      * @param skipCache If set to true, will not lookup on in-memory cache.
      */
     get = async (collection: string, id: string, skipCache?: boolean): Promise<any> => {
-        let colname = `${collection}${settings.database.collectionSuffix}`
+        let colname = `${collection}${this.collectionSuffix}`
 
         // First check if document is cached.
         if (!skipCache && settings.database.cacheDuration) {
-            const fromCache = cache.get("database", `${collection}-${id}`)
+            const fromCache = cache.get(`database${this.collectionSuffix}`, `${collection}-${id}`)
             if (fromCache) {
                 return fromCache
             }
@@ -181,7 +186,7 @@ export class Database {
 
             // Add result to cache, only if enabled.
             if (settings.database.cacheDuration) {
-                cache.set("database", `${collection}-${id}`, result)
+                cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, result)
             }
 
             return result
@@ -198,7 +203,7 @@ export class Database {
      * @param limit Limit results, optional.
      */
     search = async (collection: string, queryList?: any[], orderBy?: string | [string, OrderByDirection], limit?: number): Promise<any[]> => {
-        let colname = `${collection}${settings.database.collectionSuffix}`
+        let colname = `${collection}${this.collectionSuffix}`
         let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
 
         // Make sure query list is an array by itself.
@@ -251,7 +256,7 @@ export class Database {
      * @param value Optional increment valud, default is 1, can also be negative.
      */
     increment = async (collection: string, id: string, field: string, value?: number): Promise<void> => {
-        const colname = `${collection}${settings.database.collectionSuffix}`
+        const colname = `${collection}${this.collectionSuffix}`
         const table = this.firestore.collection(colname)
         const doc = table.doc(id)
 
@@ -283,7 +288,7 @@ export class Database {
      * @param queryOrId ID or query / queries in the format [property, operator, value].
      */
     delete = async (collection: string, queryOrId: string | any[]): Promise<number> => {
-        const colname = `${collection}${settings.database.collectionSuffix}`
+        const colname = `${collection}${this.collectionSuffix}`
 
         if (!queryOrId || queryOrId.length < 1) {
             throw new Error("A valid queryList or ID is mandatory")
@@ -292,6 +297,7 @@ export class Database {
         // Check ir an actual ID was passed, or a query list.
         if (_.isString(queryOrId)) {
             const id = queryOrId as string
+            cache.del(`database${this.collectionSuffix}`, `${collection}-${id}`)
             await this.firestore.collection(colname).doc(id).delete()
 
             logger.info("Database.delete", collection, `ID ${id}`, `Deleted`)
@@ -331,7 +337,7 @@ export class Database {
          */
         get: async (id: string): Promise<any> => {
             const collection = "app-state"
-            const colname = `${collection}${settings.database.collectionSuffix}`
+            const colname = `${collection}${this.collectionSuffix}`
 
             // Continue here with a regular database fetch.
             const table = this.firestore.collection(colname)
@@ -353,7 +359,7 @@ export class Database {
          */
         set: async (id: string, data: any, replace?: boolean): Promise<void> => {
             const collection = "app-state"
-            const colname = `${collection}${settings.database.collectionSuffix}`
+            const colname = `${collection}${this.collectionSuffix}`
             const table = this.firestore.collection(colname)
             const doc = table.doc(id)
 
@@ -369,7 +375,7 @@ export class Database {
          */
         increment: async (id: string, field: string, value?: number): Promise<void> => {
             const collection = "app-state"
-            const colname = `${collection}${settings.database.collectionSuffix}`
+            const colname = `${collection}${this.collectionSuffix}`
             const table = this.firestore.collection(colname)
             const doc = table.doc(id)
 
