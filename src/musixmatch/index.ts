@@ -66,7 +66,8 @@ export class Musixmatch {
     // --------------------------------------------------------------------------
 
     /**
-     * Get the lyrics for the specified Spotify track.
+     * Get the lyrics for the specified Spotify track. Never throws, will return
+     * an empty string if failed.
      * @param track Spotify track.
      */
     getLyrics = async (track: SpotifyTrack): Promise<string> => {
@@ -74,14 +75,14 @@ export class Musixmatch {
             const cacheId = `lyrics-${track.id}`
             const cached: string = cache.get("musixmatch", cacheId)
             if (cached) {
-                logger.info("Musixmatch.getLyrics.fromCache", track.title, "From cache")
+                logger.info("Musixmatch.getLyrics.fromCache", track.title, "From memory")
                 return cached
             }
 
             // Check if lyrics are available in the database cache first.
             const dbCached: MusixmatchLyrics = await database.get("lyrics", track.id)
             if (dbCached) {
-                logger.info("Musixmatch.getLyrics.fromCache", track.title, "From cache")
+                logger.info("Musixmatch.getLyrics.fromCache", track.title, "From database")
                 return dbCached.lyrics
             }
 
@@ -106,6 +107,12 @@ export class Musixmatch {
                 return null
             }
 
+            // We just want the first part of the lyrics, usually separated with 3 dots.
+            const indexDots = lyrics.indexOf("...\n")
+            if (indexDots > 0) {
+                lyrics = lyrics.substring(0, indexDots + 4)
+            }
+
             // Save to database.
             const dbEntry: MusixmatchLyrics = {
                 id: track.id,
@@ -119,7 +126,7 @@ export class Musixmatch {
             return lyrics
         } catch (ex) {
             logger.error("Musixmatch.getLyrics", track.title, ex)
-            throw ex
+            return null
         }
     }
 }
