@@ -192,7 +192,7 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
         const musicTags: RecipeMusicTags = {
             trackStart: tracks[0].title,
             trackEnd: tracks[tracks.length - 1].title,
-            trackList: tracks.map((t) => t.title).join("\n") + "\n(tracklist from spotify.com)"
+            trackList: tracks.map((t) => t.title).join("\n") + "\n#spotify"
         }
 
         // Add lyrics (only available to PRO users).
