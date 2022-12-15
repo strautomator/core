@@ -413,8 +413,8 @@
         "maxQueueAge": 86400
     },
     "twitter": {
-        // Around 70% chances of posting interesting activities on Twitter for users that have opted in.
-        "activityThreshold": 0.7
+        // Around 80% chances of posting interesting activities on Twitter for users that have opted in.
+        "activityThreshold": 0.8
     },
     "users": {
         // Consider users idle if they had no processed activities for more than 2 months.
