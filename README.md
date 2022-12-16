@@ -58,7 +58,9 @@ The following collections are currently used:
 -   **strava-cache** cached responses from Strava
 -   **users** registered user details
 
-Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
+Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`, and on production there's no suffix.
+
+Some indexes are needed in Firestore. At the moment there's no automated creation, so you might see some warnings or errors on the logs asking to create an index before a specific query can be executed.
 
 ### Storage
 
@@ -116,8 +118,9 @@ Some of Strautomator's features depend on scheduled tasks that needs a manual se
 
 ### Users
 
+-   **users.getIdle() + users.delete()** - weekly, delete idle user accounts.
 -   **users.subscriptions.getDangling()** - weekly, iterate (and if necessary cleanup) dangling PRO subscriptions.
 -   **users.subscriptions.getNonActive()** - weekly, iterate and switch users with an invalid subscription back to Free.
--   **users.getByResetCounter() + recipes.stats.setCounter** - daily, get and reset counters for users matching today's date.
+-   **users.getByResetCounter() + recipes.stats.setCounter()** - daily, get and reset counters for users matching today's date.
 -   **users.getWithSpotify() + spotify.refreshToken()** - weekly, refresh expired Spotify tokens.
 -   **recipes.stats.getFailingRecipes()** - weekly, iterate (and if necessary disable) recipes that keep failing.
