@@ -138,9 +138,10 @@ export class Strava {
      * Shortcut to API's refreshToken().
      * @param refreshToken The refresh token for the user / client.
      * @param accessToken Previous access token.
+     * @param noEmit Sometimes we might want to avoid emitting the refreshToken event.
      */
-    refreshToken = async (refreshToken: string, accessToken?: string): Promise<StravaTokens> => {
-        return await api.refreshToken(refreshToken, accessToken)
+    refreshToken = async (refreshToken: string, accessToken?: string, noEmit?: boolean): Promise<StravaTokens> => {
+        return await api.refreshToken(refreshToken, accessToken, noEmit)
     }
 
     /**
