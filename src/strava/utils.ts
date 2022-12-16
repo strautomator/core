@@ -47,7 +47,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         cadenceAvg: data.average_cadence || null,
         calories: data.calories || null,
         relativeEffort: data.suffer_score || null,
-        device: data.device_name,
+        device: data.device_name || null,
         manual: data.manual,
         hasPhotos: data.photos && data.photos.count > 0 ? true : false,
         updatedFields: []
