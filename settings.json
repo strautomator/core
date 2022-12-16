@@ -417,10 +417,12 @@
         "activityThreshold": 0.8
     },
     "users": {
-        // Consider users idle if they had no processed activities for more than 2 months.
-        "idleDays": 60,
-        // Consider users dormant (no recipes, no gearwear, no activites) after 90 days.
-        "dormantDays": 90,
+        // Consider users idle (for deletion) if they are suspended for longer than 6 months or
+        // haven't done any Strava activities for more than 2 years.
+        "idleDays": {
+            "suspended": 180,
+            "noActivities": 730
+        },
         // Consider user subscriptions dangling (pending approval) after 5 days.
         "danglingDays": 5,
         // Users can request an archive download once every 10 days.
