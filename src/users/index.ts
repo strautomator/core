@@ -34,20 +34,12 @@ export class Users {
     // --------------------------------------------------------------------------
 
     /**
-     * Init the Users manager.
+     * Init the Users manager. Listen to PayPal, GitHub and Strava events.
      */
     init = async (): Promise<void> => {
-        if (!settings.users.idleDays || settings.users.idleDays < 7) {
-            logger.warn("Users.init", "idleDays setting must be at least 7, force setting it to 7 now")
-            settings.users.idleDays = 7
-        }
-
-        // PayPal and GitHub events.
         eventManager.on("PayPal.subscriptionCreated", this.onPayPalSubscription)
         eventManager.on("PayPal.subscriptionUpdated", this.onPayPalSubscription)
         eventManager.on("GitHub.subscriptionUpdated", this.onGitHubSubscription)
-
-        // Strava events.
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
         eventManager.on("Strava.tokenFailure", this.onStravaTokenFailure)
     }
@@ -211,7 +203,7 @@ export class Users {
                 mailer.send(options)
             } else if (user.reauth >= settings.oauth.tokenFailuresDisable) {
                 logger.warn("Users.onStravaTokenFailure", `User ${user.id} ${user.displayName} will be suspended due to too many token failures`)
-                await this.suspend(user)
+                await this.suspend(user, "Too many token failures")
             }
 
             await this.update(updatedUser)
@@ -270,18 +262,24 @@ export class Users {
     }
 
     /**
-     * Get users with recipes defined but with no activities processed for a few days.
+     * Get idle users that have not received any activities from Strava, or had their account
+     * suspended for a while. Used mostly for cleanup purposes.
      */
     getIdle = async (): Promise<UserData[]> => {
         try {
-            const since = dayjs.utc().subtract(settings.users.idleDays, "days")
-            const result = await database.search("users", ["dateLastActivity", "<", since.toDate()])
+            const now = dayjs.utc()
 
-            // Remove user with no recipes.
-            _.remove(result, {recipeCount: 0})
+            // Get users suspended for a while.
+            const whereSuspendedFlag = ["suspended", "==", true]
+            const whereSuspended = ["dateLastActivity", "<", now.subtract(settings.users.idleDays.suspended, "days").toDate()]
+            const suspended = await database.search("users", [whereSuspendedFlag, whereSuspended])
 
-            logger.info("Users.getIdle", `${result.length} idle users`)
-            return result
+            // Get users with no activities sent by Strava for a while.
+            const whereNoActivities = ["dateLastActivity", "<", now.subtract(settings.users.idleDays.noActivities, "days").toDate()]
+            const noActivities = await database.search("users", [whereNoActivities])
+
+            logger.info("Users.getIdle", `${suspended.length || "no"} suspended users, ${noActivities.length || "no"} users with no activities`)
+            return _.concat(suspended, noActivities)
         } catch (ex) {
             logger.error("Users.getIdle", ex)
             throw ex
@@ -610,11 +608,12 @@ export class Users {
     /**
      * Suspend / deactivate the specified user.
      * @param user The user to be deactivate.
+     * @param reason Optional reason for suspension.
      */
-    suspend = async (user: UserData): Promise<void> => {
+    suspend = async (user: UserData, reason?: string): Promise<void> => {
         try {
             await database.merge("users", {id: user.id, suspended: true})
-            logger.info("Users.suspend", user.id, user.displayName)
+            logger.info("Users.suspend", user.id, user.displayName, reason || "No reason given")
         } catch (ex) {
             logger.error("Users.suspend", user.id, user.displayName, ex)
         }
