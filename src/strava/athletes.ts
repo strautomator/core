@@ -332,7 +332,7 @@ export class StravaAthletes {
 
                 // If athlete was returned as null, means it was deauthorized.
                 if (!athlete) {
-                    await users.suspend(user)
+                    await users.suspend(user, "User deauthorized the Strautomator app")
                 }
             }
         } catch (ex) {
