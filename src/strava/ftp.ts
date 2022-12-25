@@ -31,7 +31,7 @@ export class StravaFtp {
 
         try {
             const now = dayjs().utc()
-            const weeksAgo = now.subtract(14, "days")
+            const twoWeeksAgo = now.subtract(14, "days")
             const bikeTypes = [StravaSport.Ride, StravaSport.GravelRide, StravaSport.MountainBikeRide, StravaSport.VirtualRide]
 
             if (!activities || activities.length == 0) {
@@ -97,7 +97,8 @@ export class StravaFtp {
                         power = watts * factor
                     }
 
-                    // PRO users also get the best power splits from 5 / 20 / 60 min intervals.
+                    // PRO users also get the best power splits from 5 / 20 / 60 min intervals,
+                    // but only for activities that happened in the last 6 weeks.
                     if (user.isPro) {
                         const pIntervals = await this.getPowerIntervals(user, a)
 
@@ -113,8 +114,8 @@ export class StravaFtp {
                     }
 
                     // Small power drop for activities older than 2 weeks.
-                    if (dateEnd.isBefore(weeksAgo)) {
-                        power -= power * (weeksAgo.diff(dateEnd, "days") * 0.001)
+                    if (dateEnd.isBefore(twoWeeksAgo)) {
+                        power -= power * (twoWeeksAgo.diff(dateEnd, "days") * 0.0009)
                     }
 
                     // New best power?
@@ -144,7 +145,7 @@ export class StravaFtp {
             // Otherwise get the weighted or current value itself, whatever is the lowest.
             if (currentWatts && currentWatts > maxWatts) {
                 const maxWattsWeight = [maxWatts, 1]
-                const currentWattsWeight = [currentWatts, 1.3]
+                const currentWattsWeight = [currentWatts, 1.4]
                 const ftpWeights = [maxWattsWeight, currentWattsWeight]
                 const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
                 ftpWatts = ftpTotalSum / ftpWeightSum
