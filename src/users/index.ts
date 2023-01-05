@@ -548,7 +548,7 @@ export class Users {
                 if (user.dateLastActivity) {
                     logs.push(dayjs(user.dateLastActivity).format("lll"))
                 }
-                if (user.dateLastFtpUpdate) {
+                if (user.ftpStatus) {
                     logs.push("FTP")
                 }
                 if (user.calendarTemplate) {

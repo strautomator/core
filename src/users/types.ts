@@ -34,6 +34,8 @@ export interface UserData {
     preferences?: UserPreferences
     /** Calendar template. */
     calendarTemplate?: UserCalendarTemplate
+    /** FTP status. */
+    ftpStatus?: UserFtpStatus
     /** Subscription details (for PRO accounts). */
     subscription?: UserSubscriptionRef
     /** Linked Spotify account. */
@@ -50,8 +52,6 @@ export interface UserData {
     dateLastActivity?: Date
     /** Date of last activity updated by a recipe. */
     dateLastProcessedActivity?: Date
-    /** Date when the user FTP was last updated. */
-    dateLastFtpUpdate?: Date
     /** Date when the user last triggered a batch processing. */
     dateLastBatchProcessing?: Date
     /** Date when the last GDPR archive download was requested. */
@@ -104,6 +104,18 @@ export interface UserCalendarTemplate {
     eventSummary?: string
     /** Custom event details. */
     eventDetails?: string
+}
+
+/**
+ * User FTP update status.
+ */
+export interface UserFtpStatus {
+    /** The Strava activity ID. */
+    activityId: number
+    /** Previous FTP value. */
+    previousFtp: number
+    /** Date of update. */
+    dateUpdated: Date
 }
 
 /**

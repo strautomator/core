@@ -1,7 +1,7 @@
 // Strautomator Core: Strava Activities
 
 import {StravaActivity, StravaActivityPerformance, StravaEstimatedFtp, StravaSport} from "./types"
-import {UserData} from "../users/types"
+import {UserData, UserFtpStatus} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
 import api from "./api"
@@ -25,8 +25,9 @@ export class StravaFtp {
      * Estimate the user's FTP based on the passed activities.
      * @param user The user to estimate the FTP for.
      * @param activities List of activities to be used for the estimation.
+     * @param force Force recalculation of FTP for older activities compared to the estimated last activity ID.
      */
-    estimateFtp = async (user: UserData, activities?: StravaActivity[]): Promise<StravaEstimatedFtp> => {
+    estimateFtp = async (user: UserData, activities?: StravaActivity[], force?: boolean): Promise<StravaEstimatedFtp> => {
         let activityCount: number = 0
 
         try {
@@ -38,6 +39,13 @@ export class StravaFtp {
                 const dateFrom = now.subtract(settings.strava.ftp.weeks, "weeks").startOf("day")
                 const dateTo = now.subtract(1, "second")
                 activities = await stravaActivities.getActivities(user, {after: dateFrom, before: dateTo})
+            }
+
+            // Filter only activities since the last FTP status, if force is not set.
+            // We add a 100 buffer to the activity ID in the (very rare) case where an activity is
+            // created earlier but processed later than the one which triggered the last FTP update.
+            if (!force && user.ftpStatus) {
+                activities = activities.filter((a) => a.id >= user.ftpStatus.activityId - 100)
             }
 
             // Filter only cycling activities with good power data and that lasted at least 20 minutes.
@@ -155,9 +163,9 @@ export class StravaFtp {
 
             // Check if the FTP was recently updated for that user.
             let recentlyUpdated: boolean = false
-            if (user.dateLastFtpUpdate) {
+            if (user.ftpStatus) {
                 const now = dayjs().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
-                const lastUpdate = dayjs(user.dateLastFtpUpdate).unix()
+                const lastUpdate = dayjs(user.ftpStatus.dateUpdated).unix()
                 recentlyUpdated = lastUpdate >= now
             }
 
@@ -190,11 +198,13 @@ export class StravaFtp {
     /**
      * Update the user's FTP.
      * @param user User data.
-     * @param ftp The FTP (as number).
+     * @param ftpEstimation The FTP estimation details.
      * @param force Force update, even if FTP was updated recently or is still the same value.
      */
-    saveFtp = async (user: UserData, ftp: number, force?: boolean): Promise<boolean> => {
+    saveFtp = async (user: UserData, ftpEstimation: StravaEstimatedFtp, force?: boolean): Promise<boolean> => {
         try {
+            const ftp = ftpEstimation.ftpWatts
+
             if (ftp <= 0) {
                 throw new Error("Invalid FTP, must be higher than 0")
             }
@@ -202,9 +212,9 @@ export class StravaFtp {
             // Updating the FTP via Strautomator is limited to once every 24 hours by default,
             // and only if the value actually changed. Ignore these conditions if force is set.
             if (!force) {
-                if (user.dateLastFtpUpdate) {
+                if (user.ftpStatus) {
                     const now = dayjs().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
-                    const lastUpdate = dayjs(user.dateLastFtpUpdate).unix()
+                    const lastUpdate = dayjs(user.ftpStatus.dateUpdated).unix()
 
                     if (lastUpdate >= now) {
                         logger.warn("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`, `Abort, FTP was already updated recently`)
@@ -220,9 +230,15 @@ export class StravaFtp {
                 }
             }
 
+            const ftpStatus: UserFtpStatus = {
+                activityId: ftpEstimation.bestActivity.id,
+                previousFtp: ftpEstimation.ftpCurrentWatts,
+                dateUpdated: new Date()
+            }
+
             // All good? Update FTP on Strava and save date to the database.
             await api.put(user.stravaTokens, "athlete", {ftp: ftp})
-            await users.update({id: user.id, displayName: user.displayName, dateLastFtpUpdate: new Date()})
+            await users.update({id: user.id, displayName: user.displayName, ftpStatus: ftpStatus})
             logger.info("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`)
 
             return true
@@ -249,7 +265,7 @@ export class StravaFtp {
                 return
             }
 
-            await this.saveFtp(user, ftpEstimation.ftpWatts)
+            await this.saveFtp(user, ftpEstimation)
         } catch (ex) {
             logger.error("Strava.processFtp", `User ${user.id} ${user.displayName}`, ex)
         }

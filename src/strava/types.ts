@@ -129,12 +129,12 @@ export interface StravaActivity {
     prSegments?: string[]
     /** List of segment KOMs. */
     komSegments?: string[]
-    /** Fields that were updated by Strautomator (internal use only). */
-    updatedFields?: string[]
     /** Was a link to Strautomator added to the activity (internal use only)? */
     linkback?: boolean
     /** Activity counter (extra field used exclusively when replacing activity tags). */
     counter?: number
+    /** Fields that were updated by Strautomator (internal use only). */
+    updatedFields?: string[]
 }
 
 /**
