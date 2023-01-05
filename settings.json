@@ -221,7 +221,7 @@
     "oauth": {
         // Alert users after 2 token failures.
         "tokenFailuresAlert": 2,
-        // Disable users after 10 token failures.
+        // Suspend users after 10 token failures.
         "tokenFailuresDisable": 10,
         // Token exchange requests times out in 10 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).
