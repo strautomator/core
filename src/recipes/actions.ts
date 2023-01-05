@@ -48,7 +48,7 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
 export const defaultAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
         let processedValue = action.value || ""
-        let activityWithSuffix: any = _.cloneDeep(activity)
+        let activityWithSuffix: StravaActivity = _.cloneDeep(activity)
 
         // Pre-process activity data and append suffixes to values before processing.
         transformActivityFields(user, activityWithSuffix)

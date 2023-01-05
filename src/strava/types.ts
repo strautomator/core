@@ -43,6 +43,8 @@ export interface StravaActivity {
     dateStart?: Date
     /** End date and time, local time. */
     dateEnd?: Date
+    /** Week of the year. */
+    weekOfYear?: number
     /** Stores the original UTC offset (timezone) in minutes. */
     utcStartOffset?: number
     /** Total distance in kilometers. */
@@ -131,6 +133,8 @@ export interface StravaActivity {
     updatedFields?: string[]
     /** Was a link to Strautomator added to the activity (internal use only)? */
     linkback?: boolean
+    /** Activity counter (extra field used exclusively when replacing activity tags). */
+    counter?: number
 }
 
 /**
