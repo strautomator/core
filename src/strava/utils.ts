@@ -32,7 +32,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         hideHome: data.hide_from_home ? true : false,
         trainer: data.trainer ? true : false,
         dateStart: startDate.toDate(),
-        weekOfYear: startDate.weekYear(),
+        weekOfYear: startDate.week(),
         utcStartOffset: data.utc_offset,
         totalTime: data.elapsed_time,
         movingTime: data.moving_time || data.elapsed_time,
