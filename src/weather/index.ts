@@ -242,6 +242,10 @@ export class Weather {
                 // Try again using another provider. If also failed, log both exceptions.
                 try {
                     result = await providerModule.getWeather(coordinates, dDate, preferences)
+
+                    if (!result) {
+                        throw new Error("No weather summary returned")
+                    }
                 } catch (retryEx) {
                     logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, failedProviderName, ex)
                     logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, providerModule.name, retryEx)
