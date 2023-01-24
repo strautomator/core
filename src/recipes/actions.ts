@@ -297,14 +297,8 @@ export const sportTypeAction = async (user: UserData, activity: StravaActivity, 
     try {
         const activityType = StravaSportRefs[action.value] ? StravaSportRefs[action.value] : action.value
         activity.type = activityType
-        activity.updatedFields.push("type")
-
-        // Some newer sports (GravelRide, TrailRun, etc) are implemented on the sport_type
-        // field instead of the main activity type, so we handle those separately here.
-        if (activityType != action.value) {
-            activity.sportType = action.value
-            activity.updatedFields.push("sportType")
-        }
+        activity.sportType = activityType
+        activity.updatedFields.push("sportType")
 
         return true
     } catch (ex) {
