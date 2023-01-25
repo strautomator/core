@@ -621,6 +621,11 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             }
         }
 
+        // Sport type separated by spaces.
+        else if (prop.value == "sportType") {
+            activity.sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim() as any
+        }
+
         // Append suffixes.
         if (suffix && !_.isNil(activity[prop.value]) && !_.isDate(activity[prop.value])) {
             activity[prop.value] = `${activity[prop.value]}${suffix}`
