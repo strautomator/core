@@ -100,6 +100,18 @@ export class StravaWebhooks {
 
             logger.info("Strava.createWebhook", `ID ${result.id}`, this.callbackUrl)
         } catch (ex) {
+            if (JSON.stringify(ex, null, 0).includes("already exists")) {
+                logger.warn("Strava.createWebhook", "Webhook subscription already exists, will try getting it again")
+
+                try {
+                    await this.getWebhook()
+                    return
+                } catch (innerEx) {
+                    logger.error("Strava.createWebhook", "Failed to get existing webhook subscription", ex)
+                    throw ex
+                }
+            }
+
             if (ex.response && ex.response.data && ex.response.data.errors) {
                 logger.error("Strava.createWebhook", ex, ex.response.data.errors[0])
             } else {
