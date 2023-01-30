@@ -72,7 +72,7 @@ export class StravaFtp {
             let ftpWatts: number = 0
             let currentWatts: number = 0
             let bestActivity: StravaActivity
-            let lastActivityDate = user.dateRegistered
+            let lastActivityDate = user.dateLastActivity || user.dateRegistered
 
             // Helper to process the activity and get power stats.
             const processActivity = async (a: StravaActivity): Promise<void> => {
@@ -153,7 +153,7 @@ export class StravaFtp {
             // Otherwise get the weighted or current value itself, whatever is the lowest.
             if (currentWatts && currentWatts > maxWatts) {
                 const maxWattsWeight = [maxWatts, 1]
-                const currentWattsWeight = [currentWatts, 1.4]
+                const currentWattsWeight = [currentWatts, 4]
                 const ftpWeights = [maxWattsWeight, currentWattsWeight]
                 const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
                 ftpWatts = ftpTotalSum / ftpWeightSum

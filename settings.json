@@ -388,8 +388,8 @@
             "routes": 1800
         },
         "ftp": {
-            // Estimated FTP will go down by 1.5% for each retroactive week of no activities.
-            "idleLossPerWeek": 0.015,
+            // Estimated FTP will go down by 1% for each retroactive week of no activities.
+            "idleLossPerWeek": 0.01,
             // User's FTP will be estimated based on activities from the last 8 weeks.
             "weeks": 8,
             // FTP can be updated only once every 24 hours.
