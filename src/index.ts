@@ -146,8 +146,10 @@ export const startup = async (quickStart?: boolean) => {
         // Beta deployment? Override the database collection suffix and other relevant settings.
         if (settings.beta.enabled) {
             logger.warn("Strautomator.startup", "BETA DEPLOYMENT")
-            settings.app.title += " (Beta)"
+            process.env.API_URL = `${settings.beta.url}api/`
+            process.env.API_URL_BROWSER = `${settings.beta.url}api/`
             settings.app.url = settings.beta.url
+            settings.app.title += " (Beta)"
             settings.database.collectionSuffix += settings.beta.suffix
             settings.cookie.sessionName += settings.beta.suffix
         }
