@@ -8,7 +8,7 @@ export const RideLongDistance = [
     "Check that ${distance} ride today by ${user}! Automated with Strautomator 🙂",
     "A massive ${distance} ride by ${user}! Well done!",
     "An impressive ${distance} ride by ${user}, just updated with Strautomator!",
-    "A long day in the saddle for ${user}, covering astonishing ${distance} today."
+    "A long day in the saddle for ${user}, covering an astonishing distance of ${distance} today."
 ]
 
 // prettier-ignore
