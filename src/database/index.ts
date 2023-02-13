@@ -249,6 +249,32 @@ export class Database {
     }
 
     /**
+     * Count how many documents are returned for the specified query.
+     * @param collection Name of the collection.
+     * @param queryList List of query in the format [property, operator, value].
+     */
+    count = async (collection: string, queryList?: any[]): Promise<number> => {
+        let colname = `${collection}${this.collectionSuffix}`
+        let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
+
+        // Make sure query list is an array by itself.
+        if (queryList && _.isString(queryList[0])) {
+            queryList = [queryList]
+        }
+
+        // Iterate and build queries, if any was passed.
+        if (queryList) {
+            for (let query of queryList) {
+                filteredTable = filteredTable.where(query[0], query[1], query[2])
+            }
+        }
+
+        // Return the snapshop count.
+        const snapshot = await filteredTable.count().get()
+        return snapshot.data().count
+    }
+
+    /**
      * Increment a field on the specified document on the database.
      * @param collection Name of the collection.
      * @param id Document ID.
