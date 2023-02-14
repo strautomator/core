@@ -14,7 +14,7 @@ import komoot from "../komoot"
 import maps from "../maps"
 import storage from "../storage"
 import strava from "../strava"
-import ical, {ICalCalendar} from "ical-generator"
+import ical, {ICalCalendar, ICalAttendeeType, ICalAttendeeRole, ICalAttendeeStatus, ICalEventData} from "ical-generator"
 import jaul = require("jaul")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
@@ -432,23 +432,43 @@ export class Calendar {
                         const organizer = clubEvent.organizer ? `${clubEvent.organizer.firstName} ${clubEvent.organizer.lastName}` : null
 
                         // Add all relevant details to the event description.
-                        const arrDescription = [club.name]
+                        const arrDescription = [`${club.name}\n`]
                         if (clubEvent.description) {
-                            arrDescription.push(clubEvent.description)
+                            arrDescription.push(`${clubEvent.description}\n`)
+                        }
+                        if (clubEvent.joined) {
+                            arrDescription.push("Attending: yes")
                         }
                         if (organizer) {
-                            arrDescription.push(`${tOrganizer}: ${organizer}`)
+                            arrDescription.push(`${tOrganizer}: ${organizer}\n`)
                         }
                         arrDescription.push(eventLink)
 
-                        const event = cal.createEvent({
+                        // Base event data.
+                        const eventData: ICalEventData = {
                             id: `club-${clubEvent.id}`,
                             start: eventDate,
                             end: endDate,
                             summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
-                            description: arrDescription.join("\n\n"),
+                            description: arrDescription.join("\n"),
                             url: eventLink
-                        })
+                        }
+
+                        // Attending to the calendar and user has an email set?
+                        // Add user to the list of attendees.
+                        if (user.email && clubEvent.joined) {
+                            eventData.attendees = [
+                                {
+                                    status: ICalAttendeeStatus.ACCEPTED,
+                                    role: ICalAttendeeRole.OPT,
+                                    type: ICalAttendeeType.INDIVIDUAL,
+                                    email: user.email
+                                }
+                            ]
+                        }
+
+                        // Create event.
+                        const event = cal.createEvent(eventData)
 
                         // Location available?
                         if (clubEvent.address) {
