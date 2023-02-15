@@ -9,7 +9,7 @@ import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
 import recipeStats from "./stats"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings

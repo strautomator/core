@@ -6,7 +6,7 @@ import {URLSearchParams} from "url"
 import database from "../database"
 import eventManager from "../eventmanager"
 import Bottleneck from "bottleneck"
-import _ = require("lodash")
+import _ from "lodash"
 import crypto = require("crypto")
 import logger = require("anyhow")
 import dayjs from "../dayjs"

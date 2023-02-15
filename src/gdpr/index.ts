@@ -9,7 +9,7 @@ import dayjs from "../dayjs"
 import path from "path"
 import logger = require("anyhow")
 import JSZip = require("jszip")
-import _ = require("lodash")
+import _ from "lodash"
 const settings = require("setmeup").settings
 
 /**

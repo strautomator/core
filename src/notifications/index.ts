@@ -6,7 +6,7 @@ import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
 import users from "../users"
-import _ = require("lodash")
+import _ from "lodash"
 import cache = require("bitecache")
 import logger = require("anyhow")
 import dayjs from "../dayjs"

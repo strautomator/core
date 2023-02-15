@@ -6,7 +6,7 @@ import {UserData} from "../users/types"
 import users from "../users"
 import api from "./api"
 import database from "../database"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 const settings = require("setmeup").settings
 

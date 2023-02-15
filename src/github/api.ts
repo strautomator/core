@@ -1,7 +1,7 @@
 // Strautomator Core: GitHub API
 
 import {axiosRequest} from "../axios"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version

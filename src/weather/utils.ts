@@ -4,7 +4,7 @@ import {MoonPhase, Suntimes, WeatherProvider, WeatherSummary} from "./types"
 import {UserPreferences} from "../users/types"
 import {translation} from "../translations"
 import Bottleneck from "bottleneck"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
 

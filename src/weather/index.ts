@@ -10,7 +10,7 @@ import openweathermap from "./openweathermap"
 import stormglass from "./stormglass"
 import visualcrossing from "./visualcrossing"
 import weatherapi from "./weatherapi"
-import _ = require("lodash")
+import _ from "lodash"
 import cache = require("bitecache")
 import logger = require("anyhow")
 import dayjs from "../dayjs"

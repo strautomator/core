@@ -7,7 +7,7 @@ import eventManager from "../eventmanager"
 import paypalProducts from "./products"
 import paypalSubscriptions from "./subscriptions"
 import paypalWebhooks from "./webhooks"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 const settings = require("setmeup").settings
 

@@ -4,7 +4,7 @@ import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
 import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings

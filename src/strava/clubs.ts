@@ -7,7 +7,7 @@ import stravaRoutes from "./routes"
 import api from "./api"
 import komoot from "../komoot"
 import dayjs from "../dayjs"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 const settings = require("setmeup").settings
 

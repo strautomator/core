@@ -5,7 +5,7 @@ import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import maps from "../maps"
 import dayjs from "../dayjs"
-import _ = require("lodash")
+import _ from "lodash"
 import polyline = require("@mapbox/polyline")
 
 // Feet and miles ratio.

@@ -5,7 +5,7 @@ import {transformActivityFields} from "../strava/utils"
 import {UserData} from "../users/types"
 import * as messages from "./messages"
 import eventManager from "../eventmanager"
-import _ = require("lodash")
+import _ from "lodash"
 import TwitterLite from "twitter-lite"
 import jaul = require("jaul")
 import logger = require("anyhow")

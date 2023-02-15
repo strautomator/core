@@ -7,7 +7,7 @@ import {StravaClub} from "../strava/types"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
 import {File} from "@google-cloud/storage"
-import _ = require("lodash")
+import _ from "lodash"
 import crypto = require("crypto")
 import eventManager from "../eventmanager"
 import komoot from "../komoot"

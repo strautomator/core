@@ -12,7 +12,7 @@ import musixmatch from "../musixmatch"
 import notifications from "../notifications"
 import spotify from "../spotify"
 import weather from "../weather"
-import _ = require("lodash")
+import _ from "lodash"
 import jaul = require("jaul")
 import logger = require("anyhow")
 const settings = require("setmeup").settings

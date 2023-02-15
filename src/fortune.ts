@@ -4,7 +4,7 @@ import {StravaActivity, StravaSport} from "./strava/types"
 import {UserData} from "./users/types"
 import weather from "./weather"
 import dayjs from "./dayjs"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 
 /**

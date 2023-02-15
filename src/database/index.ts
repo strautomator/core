@@ -3,7 +3,7 @@
 import {DocumentReference, FieldValue, Firestore, OrderByDirection} from "@google-cloud/firestore"
 import {DatabaseOptions} from "./types"
 import {cryptoProcess} from "./crypto"
-import _ = require("lodash")
+import _ from "lodash"
 import cache = require("bitecache")
 import jaul = require("jaul")
 import logger = require("anyhow")

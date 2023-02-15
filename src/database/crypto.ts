@@ -1,6 +1,6 @@
 // Strautomator Core: Database Crypto
 
-import _ = require("lodash")
+import _ from "lodash"
 import crypto = require("crypto")
 import logger = require("anyhow")
 const settings = require("setmeup").settings

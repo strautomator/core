@@ -7,7 +7,7 @@ import {WeatherSummary} from "../weather/types"
 import spotify from "../spotify"
 import strava from "../strava"
 import weather from "../weather"
-import _ = require("lodash")
+import _ from "lodash"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
 import polyline = require("@mapbox/polyline")
