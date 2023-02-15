@@ -7,6 +7,7 @@ import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import {Request} from "express"
 import users from "../users"
+import _ from "lodash"
 import crypto from "crypto"
 import cache from "bitecache"
 import logger from "anyhow"
@@ -322,9 +323,13 @@ export class Spotify {
 
             // Make request to fetch list of recent tracks, and iterate results
             // to populate the list of matching tracks for the activity timespan.
+            // Tracks will be sorted by play date.
             const res = await this.makeRequest(tokens, `me/player/recently-played?after=${tsFrom}&limit=${settings.spotify.trackLimit}`)
+            const items = _.sortBy(res.items || [], "played_at")
+
+            // Iterate, transform and populate track list.
             const tracks: SpotifyTrack[] = []
-            for (let i of res.items) {
+            for (let i of items) {
                 const track = toSpotifyTrack(i)
                 if (track.datePlayed.valueOf() < tsTo) {
                     tracks.push(track)
