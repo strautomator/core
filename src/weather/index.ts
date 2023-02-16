@@ -92,8 +92,9 @@ export class Weather {
      * Exceptions won't be thrown, will return null instead.
      * @param user The user requesting a weather report.
      * @param activity The Strava activity.
+     * @param provider Optional preferred provider.
      */
-    getActivityWeather = async (user: UserData, activity: StravaActivity): Promise<ActivityWeather> => {
+    getActivityWeather = async (user: UserData, activity: StravaActivity, provider?: string): Promise<ActivityWeather> => {
         try {
             if (!activity.hasLocation) {
                 logger.warn("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "No start / end location, can't fetch weather")
@@ -113,8 +114,8 @@ export class Weather {
             // Fetch weather for the start and end locations of the activity.
             let weather: ActivityWeather = {}
             try {
-                weather.start = await this.getLocationWeather(user, activity.locationStart, dateStart)
-                weather.end = await this.getLocationWeather(user, activity.locationEnd, dateEnd)
+                weather.start = await this.getLocationWeather(user, activity.locationStart, dateStart, provider)
+                weather.end = await this.getLocationWeather(user, activity.locationEnd, dateEnd, provider)
             } catch (innerEx) {
                 logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, innerEx)
             }
@@ -124,7 +125,7 @@ export class Weather {
                 try {
                     const seconds = activity.totalTime / 2
                     const dateMid = dayjs(activity.dateStart).add(seconds, "seconds").utcOffset(activity.utcStartOffset)
-                    weather.mid = await this.getLocationWeather(user, activity.locationMid, dateMid)
+                    weather.mid = await this.getLocationWeather(user, activity.locationMid, dateMid, provider)
                 } catch (innerEx) {
                     logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, "Mid location", innerEx)
                 }
@@ -204,58 +205,55 @@ export class Weather {
             return null
         }
 
-        let currentProviders: WeatherProvider[]
+        // Get a list (max 3) of providers to be used for this request.
+        let currentProviders: WeatherProvider[] = _.remove(availableProviders, {name: provider})
+        if (currentProviders.length > 0) {
+            currentProviders = _.concat(currentProviders, _.sampleSize(availableProviders, 2))
+        } else {
+            currentProviders = _.sampleSize(availableProviders, 2)
+        }
 
-        // First try using the preferred or user's default provider.
-        // If the default provider is not valid, get random ones.
-        try {
-            currentProviders = _.remove(availableProviders, {name: provider})
+        // Helper function to fetch weather data using the existing available providers.
+        const fetchWeather = async () => {
+            try {
+                providerModule = currentProviders.shift()
 
-            if (currentProviders.length > 0) {
-                currentProviders.push(_.sample(availableProviders))
-            } else {
-                currentProviders = _.sampleSize(availableProviders, 2)
-            }
-
-            providerModule = currentProviders[0]
-            result = await providerModule.getWeather(coordinates, dDate, preferences)
-
-            if (!result) {
-                throw new Error("No weather summary returned")
-            }
-
-            providerModule.disabledTillDate = null
-        } catch (ex) {
-            const failedProviderName = providerModule.name
-
-            if (ex.response && ex.response.status == 402) {
-                providerModule.disabledTillDate = utcNow.endOf("day").add(1, "hour").toDate()
-                logger.warn("Weather.getLocationWeather", `${failedProviderName} daily quota reached`)
-            }
-
-            // Has a second alternative? Try again.
-            if (currentProviders.length > 1) {
-                providerModule = currentProviders[1]
-
-                logger.warn("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, `${failedProviderName} failed, will try ${providerModule.name}`)
-
-                // Try again using another provider. If also failed, log both exceptions.
-                try {
-                    result = await providerModule.getWeather(coordinates, dDate, preferences)
-
-                    if (!result) {
-                        throw new Error("No weather summary returned")
-                    }
-                } catch (retryEx) {
-                    logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, failedProviderName, ex)
-                    logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, providerModule.name, retryEx)
-                    return null
+                result = await providerModule.getWeather(coordinates, dDate, preferences)
+                if (result) {
+                    providerModule.disabledTillDate = null
+                } else {
+                    throw new Error("No weather summary returned")
                 }
-            } else {
-                logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, failedProviderName, ex)
+            } catch (ex) {
+                const failedProviderName = providerModule.name
+
+                // Rate limited?
+                if (ex.response && ex.response.status == 402) {
+                    providerModule.disabledTillDate = utcNow.endOf("day").add(1, "hour").toDate()
+                    logger.warn("Weather.getLocationWeather", `${failedProviderName} daily quota reached`)
+                }
+
+                // Still has other providers to try and fetch the weather?
+                if (currentProviders.length > 0) {
+                    providerModule = currentProviders[1]
+                    logger.warn("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, `${failedProviderName} failed, will try another`, ex.message)
+                } else {
+                    logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, failedProviderName, ex)
+                }
             }
         }
 
+        // Keep trying to fetch weather data.
+        while (!result && currentProviders.length > 0) {
+            await fetchWeather()
+        }
+
+        // No valid weather found?
+        if (!result) {
+            return null
+        }
+
+        // Save to cache and return weather results.
         cache.set(`weather`, cacheId, result)
         logger.info("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, result.provider, `${result.icon} ${result.summary}`)
         return result
