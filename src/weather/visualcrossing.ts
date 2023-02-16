@@ -98,6 +98,7 @@ export class VisualCrossing implements WeatherProvider {
 
         // Data not found? Stop here.
         if (!data || !data.datetime) return
+        if (!data.temp && !data.humidity && !data.icon) return
 
         // Get precipitation details.
         const precipLevel = data.precip || 0
