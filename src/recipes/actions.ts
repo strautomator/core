@@ -8,6 +8,7 @@ import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {getActivityFortune} from "../fortune"
 import recipeStats from "./stats"
+import maps from "../maps"
 import musixmatch from "../musixmatch"
 import notifications from "../notifications"
 import spotify from "../spotify"
@@ -56,6 +57,22 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         // Using the activity fortune?
         if (action.type == RecipeActionType.GenerateName) {
             processedValue = await getActivityFortune(user, activity)
+        }
+
+        // City tag set? Trigger a reverse geocode for the specified coordinates, at the moment PRO users only.
+        if (user.isPro && processedValue.includes("${city}") && activity.hasLocation) {
+            try {
+                const cityObj = {city: ""}
+
+                if (activity.hasLocation) {
+                    const address = await maps.getReverseGeocode(activity.locationStart || activity.locationEnd, "locationiq")
+                    cityObj.city = address?.city ? address.city : ""
+                }
+
+                processedValue = jaul.data.replaceTags(processedValue, {city: cityObj.city})
+            } catch (locationEx) {
+                logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, "Failed to geocode the city")
+            }
         }
 
         // Value has a counter tag? Get recipe stats to increment the counter.
