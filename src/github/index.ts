@@ -163,10 +163,22 @@ export class GitHub {
                 }
 
                 subscription = {id: subId, userId: user.id, dateCreated: now, dateUpdated: now}
+
+                // One time payment? Set the expiration date to 31 days.
+                if (data.sponsorship.tier.is_one_time) {
+                    subscription.dateExpiry = dayjs().add(31, "days").toDate()
+                }
             }
 
             subscription.status = data.action == "cancelled" ? "CANCELLED" : "ACTIVE"
             subscription.monthlyPrice = data.sponsorship.tier.monthly_price_in_dollars
+
+            // Make sure the expiration date is removed if not a single payment.
+            if (!data.sponsorship.tier.is_one_time) {
+                delete subscription.dateExpiry
+            } else {
+                details.push(`One time payment`)
+            }
 
             logger.info("GitHub.processWebhook", details.join(", "))
 

@@ -35,10 +35,12 @@ export interface GitHubSubscription {
     userId: string
     /** Subscription status. */
     status?: "ACTIVE" | "CANCELLED"
+    /** Monthly price paid. */
+    monthlyPrice?: number
     /** Date of creation of the subscription. */
     dateCreated: Date
     /** Date of last update of the subscription. */
     dateUpdated: Date
-    /** Details of the last payment (if any was made). */
-    monthlyPrice?: number
+    /** Expiry date (used mostly in case of one-time payments). */
+    dateExpiry?: Date
 }
