@@ -55,16 +55,26 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         updatedFields: []
     }
 
-    // Activity has location data?
-    activity.hasLocation = (activity.locationStart && activity.locationStart.length > 0) || (activity.locationEnd && activity.locationEnd.length > 0)
-
-    // Calculate activity mid point.
+    // Get coordinates from polyline, and make sure start and end locations are
+    // populated if coming empty from the Strava API for whatever reason.
     if (activity.polyline) {
         const coordinates = polyline.decode(activity.polyline)
+
         if (coordinates.length > 0) {
+            if (!activity.locationStart || !activity.locationStart.length) {
+                activity.locationStart = coordinates[0]
+            }
+            if (!activity.locationEnd || !activity.locationEnd.length) {
+                activity.locationEnd = coordinates[coordinates.length - 1]
+            }
+
+            // Calculate activity mid point.
             activity.locationMid = coordinates[Math.round(coordinates.length / 2)]
         }
     }
+
+    // Activity has location data?
+    activity.hasLocation = activity.locationStart?.length > 0 || activity.locationEnd?.length > 0
 
     // Extra optional fields.
     if (data.workout_type && data.workout_type != 0 && data.workout_type != 10) {
