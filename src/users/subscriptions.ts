@@ -75,6 +75,25 @@ export class UserSubscriptions {
     // --------------------------------------------------------------------------
 
     /**
+     * Set the specified active subscription status to "EXPIRED".
+     * @param subscription The subscription to be expired.
+     */
+    expire = async (subscription: PayPalSubscription | GitHubSubscription): Promise<void> => {
+        try {
+            if (subscription.status != "ACTIVE") {
+                logger.warn("UserSubscriptions.expire", `User ${subscription.userId}`, subscription.id, "Subscription is not active, will not expire")
+                return
+            }
+
+            subscription.status = "EXPIRED"
+            await database.merge("subscriptions", {id: subscription.id, status: subscription.status})
+            logger.info("UserSubscriptions.expire", `User ${subscription.userId}`, subscription.id, "Status set to EXPIRED")
+        } catch (ex) {
+            logger.error("UserSubscriptions.expire", `User ${subscription.userId}`, subscription.id, ex)
+        }
+    }
+
+    /**
      * Delete the specified subscription. This method always resolves, as it's not considered critical.
      * @param subscription The subscription to be deleted.
      */
@@ -84,21 +103,21 @@ export class UserSubscriptions {
 
             // Maybe user was already removed?
             if (!user) {
-                throw new Error(`User ${subscription.userId} not found`)
+                throw new Error("User not found")
             }
 
             // Remove the subscription reference from the user data.
             if (user.subscription) {
                 await database.merge("users", {id: subscription.userId, subscription: null})
             } else {
-                logger.warn("UserSubscriptions.delete", subscription.id, `User ${user.id} ${user.displayName} had no subscription attached`)
+                logger.warn("UserSubscriptions.delete", `User ${subscription.userId}`, subscription.id, "User has no subscription attached")
             }
 
             // Delete subscription details from the database.
             await database.delete("subscriptions", subscription.id)
-            logger.info("UserSubscriptions.delete", subscription.id, `Deleted subscription for user ${user.id} ${user.displayName}`)
+            logger.info("UserSubscriptions.delete", `User ${subscription.userId}`, subscription.id, "Deleted subscription")
         } catch (ex) {
-            logger.error("UserSubscriptions.delete", subscription.id, ex)
+            logger.error("UserSubscriptions.delete", `User ${subscription.userId}`, subscription.id, ex)
         }
     }
 }

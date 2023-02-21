@@ -923,6 +923,11 @@ export class Users {
             // Update user on the database.
             await this.update(user)
 
+            // Expire the subscription, in case it's active.
+            if (subscription?.status == "ACTIVE") {
+                await this.subscriptions.expire(subscription)
+            }
+
             const email = user.email || existingUser.email
             const status = subscription ? subscription.status.toLowerCase() : "cancelled"
 
