@@ -30,14 +30,14 @@
         "requireCloudflare": true
     },
     "announcements": {
-        // Active announcements should be cached for up to 60 minutes.
-        "cacheDuration": 3600
+        // Active announcements should be cached for up to 120 minutes.
+        "cacheDuration": 7200
     },
     "axios": {
         // User agent used to emulate a browser.
         "uaBrowser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
-        // Retry axios requests afew 5 seconds. Value set in milliseconds.
-        "retryInterval": 5000
+        // Retry axios requests afew 4 seconds. Value set in milliseconds.
+        "retryInterval": 4000
     },
     // Beta environment and settings disabled by default.
     "beta": {
@@ -223,9 +223,9 @@
         "tokenFailuresAlert": 2,
         // Suspend users after 10 token failures.
         "tokenFailuresDisable": 10,
-        // Token exchange requests times out in 10 seconds. This applies to all
+        // Token exchange requests times out in 9 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).
-        "tokenTimeout": 10000
+        "tokenTimeout": 9000
     },
     "paypal": {
         "api": {
