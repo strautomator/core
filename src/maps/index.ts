@@ -341,7 +341,10 @@ export class Maps {
                 else if (addressInfo.suburb) address.neighborhood = addressInfo.suburb
                 if (addressInfo.city) address.city = addressInfo.city
                 else if (addressInfo.town) address.city = addressInfo.town
+                else if (addressInfo.village) address.city = addressInfo.village
+                else if (addressInfo.county) address.city = addressInfo.county
                 if (addressInfo.state) address.state = addressInfo.state
+                else if (addressInfo.state_district) address.state = addressInfo.state_district
                 else if (addressInfo.county) address.state = addressInfo.county
                 if (addressInfo.country) address.country = addressInfo.country
 
