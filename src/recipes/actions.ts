@@ -59,17 +59,25 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             processedValue = await getActivityFortune(user, activity)
         }
 
-        // City tag set? Trigger a reverse geocode for the specified coordinates, at the moment PRO users only.
-        if (user.isPro && processedValue.includes("${city}") && activity.hasLocation) {
+        // City tag(s) set? Trigger a reverse geocode for the specified coordinates, at the moment PRO users only.
+        const hasCityStart = processedValue.includes("${cityStart}")
+        const hasCityEnd = processedValue.includes("${cityEnd}")
+        if (user.isPro && (hasCityStart || hasCityEnd)) {
             try {
-                const cityObj = {city: ""}
+                const cityObj = {cityStart: "", cityEnd: ""}
 
                 if (activity.hasLocation) {
-                    const address = await maps.getReverseGeocode(activity.locationStart || activity.locationEnd, "locationiq")
-                    cityObj.city = address?.city ? address.city : ""
+                    if (hasCityStart) {
+                        const address = await maps.getReverseGeocode(activity.locationStart, "locationiq")
+                        cityObj.cityStart = address?.city ? address.city : ""
+                    }
+                    if (hasCityEnd) {
+                        const address = await maps.getReverseGeocode(activity.locationEnd, "locationiq")
+                        cityObj.cityStart = address?.city ? address.city : ""
+                    }
                 }
 
-                processedValue = jaul.data.replaceTags(processedValue, {city: cityObj.city})
+                processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, cityEnd: cityObj.cityEnd})
             } catch (locationEx) {
                 logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, "Failed to geocode the city")
             }
