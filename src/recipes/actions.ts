@@ -61,23 +61,28 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
         // City tag(s) set? Trigger a reverse geocode for the specified coordinates, at the moment PRO users only.
         const hasCityStart = processedValue.includes("${cityStart}")
+        const hasCityMid = processedValue.includes("${cityMid}")
         const hasCityEnd = processedValue.includes("${cityEnd}")
-        if (user.isPro && (hasCityStart || hasCityEnd)) {
+        if (user.isPro && (hasCityStart || hasCityMid || hasCityEnd)) {
             try {
-                const cityObj = {cityStart: "", cityEnd: ""}
+                const cityObj = {cityStart: "", cityMid: "", cityEnd: ""}
 
                 if (activity.hasLocation) {
                     if (hasCityStart) {
                         const address = await maps.getReverseGeocode(activity.locationStart, "locationiq")
                         cityObj.cityStart = address?.city ? address.city : ""
                     }
+                    if (hasCityMid) {
+                        const address = await maps.getReverseGeocode(activity.locationMid, "locationiq")
+                        cityObj.cityMid = address?.city ? address.city : ""
+                    }
                     if (hasCityEnd) {
                         const address = await maps.getReverseGeocode(activity.locationEnd, "locationiq")
-                        cityObj.cityStart = address?.city ? address.city : ""
+                        cityObj.cityEnd = address?.city ? address.city : ""
                     }
                 }
 
-                processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, cityEnd: cityObj.cityEnd})
+                processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, hasCityMid: cityObj.cityMid, cityEnd: cityObj.cityEnd})
             } catch (locationEx) {
                 logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, "Failed to geocode the city")
             }
