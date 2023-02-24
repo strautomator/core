@@ -64,28 +64,36 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         const hasCityMid = processedValue.includes("${cityMid}")
         const hasCityEnd = processedValue.includes("${cityEnd}")
         if (user.isPro && (hasCityStart || hasCityMid || hasCityEnd)) {
-            try {
-                const cityObj = {cityStart: "", cityMid: "", cityEnd: ""}
+            const cityObj = {cityStart: "", cityMid: "", cityEnd: ""}
 
-                if (activity.hasLocation) {
-                    if (hasCityStart) {
+            if (activity.hasLocation) {
+                if (hasCityStart) {
+                    try {
                         const address = await maps.getReverseGeocode(activity.locationStart, "locationiq")
                         cityObj.cityStart = address?.city ? address.city : ""
-                    }
-                    if (hasCityMid) {
-                        const address = await maps.getReverseGeocode(activity.locationMid, "locationiq")
-                        cityObj.cityMid = address?.city ? address.city : ""
-                    }
-                    if (hasCityEnd) {
-                        const address = await maps.getReverseGeocode(activity.locationEnd, "locationiq")
-                        cityObj.cityEnd = address?.city ? address.city : ""
+                    } catch (innerEx) {
+                        logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, recipe.id, "Failed to geocode the cityStart")
                     }
                 }
-
-                processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, hasCityMid: cityObj.cityMid, cityEnd: cityObj.cityEnd})
-            } catch (locationEx) {
-                logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, "Failed to geocode the city")
+                if (hasCityMid) {
+                    try {
+                        const address = await maps.getReverseGeocode(activity.locationMid, "locationiq")
+                        cityObj.cityMid = address?.city ? address.city : ""
+                    } catch (innerEx) {
+                        logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, recipe.id, "Failed to geocode the cityMid")
+                    }
+                }
+                if (hasCityEnd) {
+                    try {
+                        const address = await maps.getReverseGeocode(activity.locationEnd, "locationiq")
+                        cityObj.cityEnd = address?.city ? address.city : ""
+                    } catch (innerEx) {
+                        logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, recipe.id, "Failed to geocode the cityEnd")
+                    }
+                }
             }
+
+            processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, hasCityMid: cityObj.cityMid, cityEnd: cityObj.cityEnd})
         }
 
         // Value has a counter tag? Get recipe stats to increment the counter.
