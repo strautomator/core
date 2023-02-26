@@ -408,9 +408,10 @@
         // Only a single batch operation per user every 24 hours.
         "queueBatchPerHours": 24,
         // Default batch size when processing queued activities.
-        "queueBatchSize": 45,
-        // How long can activities stayed queued for processing? Value set in seconds.
-        "maxQueueAge": 86400
+        "queueBatchSize": 50,
+        // How long can activities stayed queued for processing?
+        // By default 2 days, value set in seconds.
+        "maxQueueAge": 172800
     },
     "twitter": {
         // Around 85% chances of posting interesting activities on Twitter for users that have opted in.
