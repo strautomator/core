@@ -13,6 +13,113 @@ import dayjs from "../dayjs"
 import polyline = require("@mapbox/polyline")
 
 /**
+ * Check if the passed text / string based condition is valid.
+ * This is the the "default" condition.
+ * @param activity The Strava activity to be checked.
+ * @param condition The text / string based recipe condition.
+ */
+export const checkText = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+    const prop = condition.property
+    const op = condition.operator
+    let valid = false
+
+    // Activity field has no value? Stop here.
+    if (_.isNil(activity[prop])) {
+        return false
+    }
+
+    // Property and parsed condition value.
+    const aText: string = activity[prop].toString().toLowerCase()
+    const value: string = condition.value.toString().toLowerCase()
+
+    // Check text.
+    if (op == RecipeOperator.Equal && aText == value) {
+        valid = true
+    } else if (op == RecipeOperator.Like && aText.includes(value)) {
+        valid = true
+    } else if (op == RecipeOperator.NotLike && !aText.includes(value)) {
+        valid = true
+    } else {
+        throw new Error(`Invalid operator ${op} for ${prop}`)
+    }
+
+    if (valid) {
+        return true
+    }
+
+    logger.debug("Recipes.checkText", `Activity ${activity.id}`, condition, "Failed")
+    return false
+}
+
+/**
+ * Check if the passed boolean condition is valid.
+ * @param activity The Strava activity to be checked.
+ * @param condition The boolean recipe condition.
+ */
+export const checkBoolean = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+    const prop = condition.property
+    const valid = (!activity[prop] && condition.value === false) || activity[prop] === condition.value
+
+    if (valid) {
+        return true
+    }
+
+    logger.debug("Recipes.checkBoolean", `Activity ${activity.id}`, condition, "Failed")
+    return valid
+}
+
+/**
+ * Check if the passed number based condition is valid.
+ * @param activity The Strava activity to be checked.
+ * @param condition The number based recipe condition.
+ */
+export const checkNumber = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+    const prop = condition.property
+    const op = condition.operator
+    let valid = false
+
+    // If target is an array, use its length instead.
+    let aNumber = activity[prop]
+    if (_.isArray(aNumber)) {
+        aNumber = aNumber.length
+    }
+
+    // Activity field has no value? Stop here.
+    if (_.isNil(aNumber)) {
+        return false
+    }
+
+    // Parsed condition value.
+    const value = parseFloat(condition.value as string)
+
+    // Check number.
+    if (op == RecipeOperator.Equal) {
+        valid = aNumber.toFixed(1) == value.toFixed(1)
+    } else if (op == RecipeOperator.NotEqual) {
+        valid = aNumber.toFixed(1) != value.toFixed(1)
+    } else if (op == RecipeOperator.Approximate) {
+        const diff = value * 0.03
+        valid = value <= aNumber + diff && value >= aNumber - diff
+    } else if (op == RecipeOperator.Like) {
+        const diff = value * 0.1
+        valid = value <= aNumber + diff && value >= aNumber - diff
+    } else if (op == RecipeOperator.LessThan) {
+        valid = aNumber < value
+    } else if (op == RecipeOperator.GreaterThan) {
+        valid = aNumber > value
+    } else {
+        throw new Error(`Invalid operator ${op} for ${prop}`)
+    }
+
+    if (valid) {
+        return true
+    }
+
+    logger.debug("Recipes.checkNumber", `Activity ${activity.id}`, condition, "Failed")
+    return false
+}
+
+/**
  * Check if the activity starts, passes on or ends on the specified location.
  * @param activity The Strava activity to be checked.
  * @param condition The location based recipe condition.
@@ -21,33 +128,16 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
     const prop = condition.property
     const op = condition.operator
 
-    // Stop here if activity has no location data.
-    if (!activity[prop]) {
+    // Activity location field has no value? Stop here.
+    if (_.isNil(activity[prop])) {
         return false
     }
-
-    // Parse condition and activity's coordinates.
-    const arr = condition.value.toString().split(",")
-    const cLat = parseFloat(arr[0])
-    const cLong = parseFloat(arr[1])
 
     // Checking for a point in the activity polyline, or for a single lat / long?
-    let coordinates: [number[]]
-    let radius: number
-
-    // Bug with the Strava API not returning the end location, so we use the polyline instead.
-    if (prop == "locationEnd" && activity.polyline && !activity.locationEnd.length) {
-        logger.info("Recipes.checkLocation", `Activity ${activity.id}`, "Using the polyline due to empty locationEnd")
-        coordinates = [polyline.decode(activity.polyline).pop()]
-    } else if (prop == "polyline") {
-        coordinates = polyline.decode(activity.polyline)
-    } else if (activity[prop].length) {
-        coordinates = [[activity[prop][0], activity[prop][1]]]
-    } else {
-        return false
-    }
+    let coordinates: [number[]] = prop == "polyline" ? polyline.decode(activity.polyline) : [[activity[prop][0], activity[prop][1]]]
 
     // When using "equals" use around 60m radius, and "like" use 650m radius.
+    let radius: number
     if (op == RecipeOperator.Equal) {
         radius = 0.000556
     } else if (op == RecipeOperator.Approximate) {
@@ -57,6 +147,11 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
+
+    // Parsed coordinates from condition value.
+    const arr = condition.value.toString().split(",")
+    const cLat = parseFloat(arr[0])
+    const cLong = parseFloat(arr[1])
 
     // Check if activity passed near the specified location.
     for (let [lat, long] of coordinates) {
@@ -77,17 +172,21 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
 export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
     const op = condition.operator
+    let valid = false
 
-    // Stop here if field has no data on it.
-    if (!activity[prop]) {
+    // Activity field has no value? Stop here.
+    if (_.isNil(activity[prop])) {
         return false
     }
 
     let aTime = 0
-    let valid = true
     let isPace = prop.indexOf("pace") == 0
     let isTime = prop.includes("Time")
-    const value = parseInt(condition.value as string)
+
+    // Pace and time based comparisons have different operator values.
+    const eqBuffer = isPace ? 1 : 60
+    const approxBuffer = isPace ? 20 : 600
+    const likeBuffer = isPace ? 60 : 1800
 
     // Parse activity as pace, time (duration) or full datetime.
     if (isPace || isTime) {
@@ -101,29 +200,30 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         aTime = aDate.second() + aDate.minute() * 60 + aDate.hour() * 3600
     }
 
-    // Pace and time based comparisons have different operator values.
-    const eqBuffer = isPace ? 1 : 60
-    const approxBuffer = isPace ? 20 : 600
-    const likeBuffer = isPace ? 60 : 1800
+    // Parsed timestamp as integer.
+    const value = parseInt(condition.value as string)
 
     // Check it time matches the condition's operator / buffer time.
-    if (op == RecipeOperator.GreaterThan) {
-        valid = aTime > value
-    } else if (op == RecipeOperator.LessThan) {
-        valid = aTime < value
-    } else if (op == RecipeOperator.Equal) {
+    if (op == RecipeOperator.Equal) {
         valid = aTime >= value - eqBuffer && aTime <= value + eqBuffer
     } else if (op == RecipeOperator.Approximate) {
         valid = aTime >= value - approxBuffer && aTime <= value + approxBuffer
     } else if (op == RecipeOperator.Like) {
         valid = aTime >= value - likeBuffer && aTime <= value + likeBuffer
+    } else if (op == RecipeOperator.LessThan) {
+        valid = aTime < value
+    } else if (op == RecipeOperator.GreaterThan) {
+        valid = aTime > value
+    } else {
+        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
-    if (!valid) {
-        logger.debug("Recipes.checkTimestamp", `Activity ${activity.id}`, condition, "Failed")
+    if (valid) {
+        return true
     }
 
-    return valid
+    logger.debug("Recipes.checkTimestamp", `Activity ${activity.id}`, condition, "Failed")
+    return false
 }
 
 /**
@@ -134,29 +234,27 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
 export const checkSportType = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
     const op = condition.operator
+    let valid = false
 
-    // Activity sport not set? Stop here.
-    if (!activity.sportType) {
-        return false
-    }
+    // Sport and parsed condition value.
+    const sportType = activity.sportType ? activity.sportType.toString() : ""
+    const arrValue = condition.value.toString().split(",")
 
-    // Parse condition values.
-    const value = condition.value.toString()
-    const sportType = activity.sportType.toString()
-    let valid: boolean
-
-    // Check if activity sport type matches any set on the condition.
+    // Check sport type.
     if (op == RecipeOperator.Equal) {
-        valid = value == sportType || value.split(",").includes(sportType)
+        valid = arrValue.includes(sportType)
+    } else if (op == RecipeOperator.NotEqual) {
+        valid = !sportType || !arrValue.includes(sportType)
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
-    if (!valid) {
-        logger.debug("Recipes.checkSportType", `Activity ${activity.id}`, condition, "Failed")
+    if (valid) {
+        return true
     }
 
-    return valid
+    logger.debug("Recipes.checkSportType", `Activity ${activity.id}`, condition, "Failed")
+    return false
 }
 
 /**
@@ -167,29 +265,27 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
 export const checkGear = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
     const op = condition.operator
+    let valid = false
 
-    // Activity sport not set? Stop here.
-    if (!activity.gear) {
-        return false
-    }
+    // Gear and parsed condition value.
+    const gear = activity.gear ? activity.gear.id : ""
+    const arrValue = condition.value.toString().split(",")
 
-    // Parse condition values.
-    const value = condition.value.toString()
-    const gear = activity.gear.id
-    let valid: boolean
-
-    // Check if gear matches any set on the condition.
+    // Check gear.
     if (op == RecipeOperator.Equal) {
-        valid = value == gear || value.split(",").includes(gear)
+        valid = arrValue.includes(gear)
+    } else if (op == RecipeOperator.NotEqual) {
+        valid = !gear || !arrValue.includes(gear)
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
-    if (!valid) {
-        logger.debug("Recipes.checkGear", `Activity ${activity.id}`, condition, "Failed")
+    if (valid) {
+        return true
     }
 
-    return valid
+    logger.debug("Recipes.checkGear", `Activity ${activity.id}`, condition, "Failed")
+    return false
 }
 
 /**
@@ -201,13 +297,14 @@ export const checkNewRecords = (activity: StravaActivity, condition: RecipeCondi
     const prop = activity[condition.property]
     const yes = prop && prop.length > 0
     const no = !prop || prop.length == 0
-    const valid = condition.value === true ? yes : no
 
-    if (!valid) {
-        logger.debug("Recipes.checkNewRecords", `Activity ${activity.id}`, condition, "Failed")
+    // Check new records.
+    if (condition.value === true ? yes : no) {
+        return true
     }
 
-    return valid
+    logger.debug("Recipes.checkNewRecords", `Activity ${activity.id}`, condition, "Failed")
+    return false
 }
 
 /**
@@ -218,130 +315,38 @@ export const checkNewRecords = (activity: StravaActivity, condition: RecipeCondi
 export const checkWeekday = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const prop = condition.property
     const op = condition.operator
+    let valid = false
 
     // No valid start date? Stop here.
-    if (!activity["dateStart"]) {
+    if (!activity.dateStart) {
         return false
     }
 
-    // Parse activity date, considering the UTC offset for start date.
+    // Activity start date.
     let aDate = dayjs.utc(activity["dateStart"])
     if (activity.utcStartOffset) {
         aDate = aDate.add(activity.utcStartOffset, "minutes")
     }
 
-    // Parse condition and activity's date.
-    const value = condition.value.toString()
+    // Weekday and parsed condition value.
     const weekday = aDate.day().toString()
-    let valid: boolean
+    const arrValue = condition.value.toString().split(",")
 
-    // Check if current week day is selected on the condition.
+    // Check weekday.
     if (op == RecipeOperator.Equal) {
-        valid = value == weekday || value.split(",").includes(weekday)
+        valid = arrValue.includes(weekday)
+    } else if (op == RecipeOperator.NotEqual) {
+        valid = !arrValue.includes(weekday)
     } else {
         throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
-    if (!valid) {
-        logger.debug("Recipes.checkWeekday", `Activity ${activity.id}`, condition, "Failed")
+    if (valid) {
+        return true
     }
 
-    return valid
-}
-
-/**
- * Check if the passed number based condition is valid.
- * @param activity The Strava activity to be checked.
- * @param condition The number based recipe condition.
- */
-export const checkNumber = (activity: StravaActivity, condition: RecipeCondition): boolean => {
-    const prop = condition.property
-    const op = condition.operator
-    const value = parseFloat(condition.value as any)
-    let valid = true
-    let aNumber = activity[prop]
-
-    // If target is an array, use its length instead.
-    if (_.isArray(aNumber)) {
-        aNumber = aNumber.length
-    }
-
-    // No valid number set? Stop here.
-    if (_.isNil(aNumber)) {
-        return false
-    }
-
-    if (op == RecipeOperator.Like) {
-        const diff = value * 0.1
-        valid = value <= aNumber + diff && value >= aNumber - diff
-    } else if (op == RecipeOperator.Approximate) {
-        const diff = value * 0.03
-        valid = value <= aNumber + diff && value >= aNumber - diff
-    } else if (op == RecipeOperator.Equal && Math.round(aNumber) != Math.round(value)) {
-        valid = false
-    } else if (op == RecipeOperator.GreaterThan && aNumber <= value) {
-        valid = false
-    } else if (op == RecipeOperator.LessThan && aNumber >= value) {
-        valid = false
-    }
-
-    if (!valid) {
-        logger.debug("Recipes.checkNumber", `Activity ${activity.id}`, condition, "Failed")
-    }
-
-    return valid
-}
-
-/**
- * Check if the passed boolean condition is valid.
- * @param activity The Strava activity to be checked.
- * @param condition The boolean recipe condition.
- */
-export const checkBoolean = (activity: StravaActivity, condition: RecipeCondition): boolean => {
-    const prop = condition.property
-    const valid = (!activity[prop] && condition.value === false) || activity[prop] === condition.value
-
-    if (!valid) {
-        logger.debug("Recipes.checkBoolean", `Activity ${activity.id}`, condition, "Failed")
-    }
-
-    return valid
-}
-
-/**
- * Check if the passed text / string based condition is valid.
- * @param activity The Strava activity to be checked.
- * @param condition The text / string based recipe condition.
- */
-export const checkText = (activity: StravaActivity, condition: RecipeCondition): boolean => {
-    const prop = condition.property
-    const op = condition.operator
-
-    // No valid number set? Stop here.
-    if (_.isNil(activity[prop])) {
-        return false
-    }
-
-    // Parse condition and activity's lowercased values.
-    const value: string = condition.value.toString().toLowerCase()
-    const aText: string = activity[prop].toString().toLowerCase()
-    let valid: boolean = true
-
-    if (op == RecipeOperator.Equal && aText != value) {
-        valid = false
-    } else if (op == RecipeOperator.Like && !aText.includes(value)) {
-        valid = false
-    } else if (op == RecipeOperator.NotLike && aText.includes(value)) {
-        valid = false
-    } else if (op == RecipeOperator.GreaterThan || op == RecipeOperator.LessThan) {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
-    }
-
-    if (!valid) {
-        logger.debug("Recipes.checkText", `Activity ${activity.id}`, condition, "Failed")
-    }
-
-    return valid
+    logger.debug("Recipes.checkWeekday", `Activity ${activity.id}`, condition, "Failed")
+    return false
 }
 
 /**
@@ -353,6 +358,7 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition):
 export const checkWeather = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
     const prop = condition.property
     const op = condition.operator
+    let valid = false
 
     // If activity has no valid location data, stop right here.
     if (!activity.hasLocation) {
@@ -360,58 +366,54 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
         return false
     }
 
-    try {
-        let valid = false
+    // Get activity weather.
+    const weatherProp = prop.split(".")[1]
+    const weatherSummary = await weather.getActivityWeather(user, activity)
+    let summary: WeatherSummary
 
-        // Parse condition value and weather property.
-        const value = parseInt(condition.value as string)
-        const weatherProp = prop.split(".")[1]
-
-        // Get activity weather.
-        const weatherSummary = await weather.getActivityWeather(user, activity)
-        let summary: WeatherSummary
-
-        // Weather could not be fetched? Stop here.
-        if (!weatherSummary) {
-            logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed to fetch weather")
-            return false
-        }
-
-        // Check for weather on start and end of the activity.
-        for (summary of [weatherSummary.start, weatherSummary.end]) {
-            if (!summary || _.isNil(summary[weatherProp])) {
-                continue
-            }
-
-            let weatherPropValue = summary[weatherProp].replace(/[^\d.-]/g, "")
-            if (!isNaN(weatherPropValue)) weatherPropValue = parseFloat(weatherPropValue)
-
-            if (op == RecipeOperator.Equal) {
-                valid = valid || weatherPropValue == value
-            } else if (op == RecipeOperator.Like) {
-                const diff = value * 0.1
-                valid = value <= weatherPropValue + diff && value >= weatherPropValue - diff
-            } else if (op == RecipeOperator.Approximate) {
-                const diff = value * 0.03
-                valid = value <= weatherPropValue + diff && value >= weatherPropValue - diff
-            } else if (op == RecipeOperator.GreaterThan) {
-                valid = valid || weatherPropValue > value
-            } else if (op == RecipeOperator.LessThan) {
-                valid = valid || weatherPropValue < value
-            } else {
-                throw new Error(`Invalid operator ${op} for ${prop}`)
-            }
-        }
-
-        if (!valid) {
-            logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed")
-        }
-
-        return valid
-    } catch (ex) {
-        logger.error("Recipes.checkWeather", `Activity ${activity.id}`, condition, ex)
+    // Weather could not be fetched? Stop here.
+    if (!weatherSummary) {
+        logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed to fetch weather")
         return false
     }
+
+    let weatherPropValue = summary[weatherProp].replace(/[^\d.-]/g, "")
+    if (!isNaN(weatherPropValue)) {
+        weatherPropValue = parseFloat(weatherPropValue)
+    }
+
+    // Parsed condition value as number.
+    const value = parseInt(condition.value as string)
+
+    // Check for weather on start and end of the activity.
+    for (summary of [weatherSummary.start, weatherSummary.end]) {
+        if (!summary || _.isNil(summary[weatherProp])) {
+            continue
+        }
+
+        if (op == RecipeOperator.Equal) {
+            valid = valid || weatherPropValue == value
+        } else if (op == RecipeOperator.Approximate) {
+            const diff = value * 0.03
+            valid = value <= weatherPropValue + diff && value >= weatherPropValue - diff
+        } else if (op == RecipeOperator.Like) {
+            const diff = value * 0.1
+            valid = value <= weatherPropValue + diff && value >= weatherPropValue - diff
+        } else if (op == RecipeOperator.LessThan) {
+            valid = valid || weatherPropValue < value
+        } else if (op == RecipeOperator.GreaterThan) {
+            valid = valid || weatherPropValue > value
+        } else {
+            throw new Error(`Invalid operator ${op} for ${prop}`)
+        }
+    }
+
+    if (valid) {
+        return true
+    }
+
+    logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed")
+    return false
 }
 
 /**
@@ -423,6 +425,7 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
 export const checkSpotify = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
     const prop = condition.property
     const op = condition.operator
+    let valid = false
 
     // If user has no Spotify account linked, stop here.
     if (!user.spotify) {
@@ -430,45 +433,38 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
         return false
     }
 
-    try {
-        let valid: boolean = false
+    // Fetch recent played tracks from Spotify.
+    const tracks = (await spotify.getActivityTracks(user, activity)) || []
+    const trackTitles = tracks.map((t) => t.title.toLowerCase())
+    const value = condition.value.toString().toLowerCase() || ""
 
-        // Validated already if user has no Spotify and condition is "not like".
-        if (!user.spotify && op == RecipeOperator.NotLike) {
-            valid = true
-        } else {
-            const trackName = condition.value ? condition.value.toString().toLowerCase() : ""
-
-            // Fetch recent played tracks from Spotify.
-            const tracks = (await spotify.getActivityTracks(user, activity)) || []
-            const trackTitles = tracks.map((t) => t.title.toLowerCase())
-
-            // Set as valid if user has tracks and either no specific track name was set,
-            // or a track name was set and it matches one of the played tracks.
-            if (tracks.length > 0) {
-                if (op == RecipeOperator.Equal) {
-                    valid = trackTitles.filter((t) => t == trackName).length > 0
-                } else if (op == RecipeOperator.Like) {
-                    valid = trackTitles.join(" | ").includes(trackName)
-                } else if (op == RecipeOperator.NotLike) {
-                    valid = !trackTitles.join(" | ").includes(trackName)
-                } else {
-                    throw new Error(`Invalid operator ${op} for ${prop}`)
-                }
+    // Check Spotify.
+    // Set as valid if user has tracks and either no specific track name was set,
+    // or a track name was set and it matches one of the played tracks.
+    if (!user.spotify && op == RecipeOperator.NotLike) {
+        valid = true
+    } else {
+        if (tracks.length > 0) {
+            if (op == RecipeOperator.Equal) {
+                valid = trackTitles.filter((t) => t == value).length > 0
+            } else if (op == RecipeOperator.Like) {
+                valid = trackTitles.filter((t) => t.includes(t)).length > 0
             } else if (op == RecipeOperator.NotLike) {
-                valid = true
+                valid = trackTitles.filter((t) => !t.includes(t)).length > 0
+            } else {
+                throw new Error(`Invalid operator ${op} for ${prop}`)
             }
+        } else if (op == RecipeOperator.NotLike) {
+            valid = true
         }
 
-        if (!valid) {
-            logger.debug("Recipes.checkSpotify", `Activity ${activity.id}`, condition, "Failed")
+        if (valid) {
+            return true
         }
-
-        return valid
-    } catch (ex) {
-        logger.error("Recipes.checkSpotify", `Activity ${activity.id}`, condition, ex)
-        return false
     }
+
+    logger.debug("Recipes.checkSpotify", `Activity ${activity.id}`, condition, "Failed")
+    return false
 }
 
 /**
@@ -484,43 +480,43 @@ export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, 
     const op = condition.operator
     const value = condition.value as boolean
 
-    try {
-        if (op != RecipeOperator.Equal) {
-            throw new Error(`Invalid operator ${op} for ${prop}`)
-        }
-
-        const now = dayjs().utc()
-        const lastActivityDate = dayjs(user.dateLastActivity || user.dateRegistered).utc()
-        const activityDate = dayjs(activity.dateStart).utc()
-        let isFirst = activityDate.dayOfYear() > lastActivityDate.dayOfYear() || activityDate.year() > lastActivityDate.year()
-        let valid: boolean = false
-
-        // Processing an older activity, or filtering by same sport?
-        // Fetch activities for the same date to check if it's the first one.
-        if (!isFirst && (sameSport || lastActivityDate.isAfter(activityDate))) {
-            const query: StravaActivityQuery = {after: activityDate.startOf("day")}
-            if (now.dayOfYear() != activityDate.dayOfYear()) {
-                query.before = activityDate.endOf("day")
-            }
-
-            const dayActivities = await strava.activities.getActivities(user, query)
-            const filteredActivities = sameSport ? _.filter(dayActivities, {sportType: activity.sportType}) : dayActivities
-            const activities = _.sortBy(filteredActivities, "dateStart")
-
-            if (activities.length == 0 || activities[0].id == activity.id) {
-                isFirst = true
-            }
-        }
-
-        valid = (isFirst && value) || (!isFirst && !value)
-
-        if (!valid) {
-            logger.debug("Recipes.checkFirstOfDay", `Activity ${activity.id}`, condition, sameLog, "Failed")
-        }
-
-        return valid
-    } catch (ex) {
-        logger.error("Recipes.checkFirstOfDay", `Activity ${activity.id}`, condition, sameLog, ex)
-        return false
+    if (op != RecipeOperator.Equal && op != RecipeOperator.NotEqual) {
+        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
+
+    const now = dayjs().utc()
+    const lastActivityDate = dayjs(user.dateLastActivity || user.dateRegistered).utc()
+    const activityDate = dayjs(activity.dateStart).utc()
+    let isFirst = activityDate.dayOfYear() > lastActivityDate.dayOfYear() || activityDate.year() > lastActivityDate.year()
+    let valid = false
+
+    // Processing an older activity, or filtering by same sport?
+    // Fetch activities for the same date to check if it's the first one.
+    if (!isFirst && (sameSport || lastActivityDate.isAfter(activityDate))) {
+        const query: StravaActivityQuery = {after: activityDate.startOf("day")}
+        if (now.dayOfYear() != activityDate.dayOfYear()) {
+            query.before = activityDate.endOf("day")
+        }
+
+        const dayActivities = await strava.activities.getActivities(user, query)
+        const filteredActivities = sameSport ? _.filter(dayActivities, {sportType: activity.sportType}) : dayActivities
+        const activities = _.sortBy(filteredActivities, "dateStart")
+
+        if (activities.length == 0 || activities[0].id == activity.id) {
+            isFirst = true
+        }
+    }
+
+    if (op == RecipeOperator.Equal) {
+        valid = isFirst && value
+    } else if (op == RecipeOperator.NotEqual) {
+        valid = !isFirst && !value
+    }
+
+    if (valid) {
+        return true
+    }
+
+    logger.debug("Recipes.checkFirstOfDay", `Activity ${activity.id}`, condition, sameLog, "Failed")
+    return false
 }
