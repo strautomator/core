@@ -16,6 +16,10 @@ export interface RecipeData {
     actions: RecipeAction[]
     /** Order of execution (1 executes first, then 2, 3...) */
     order?: number
+    /** Conditions should use AND or OR as its logical operator? */
+    op?: "or" | "and"
+    /** Same type (grouped) conditions should use AND or OR as its logical operator? */
+    samePropertyOp?: "or" | "and"
     /** Default recipe for a specific sport (applies to all incoming activities). */
     defaultFor?: StravaSport
     /** Stop executing other automations if this one executes. */
@@ -45,7 +49,7 @@ export interface RecipeCondition {
     /** Operator. */
     operator: RecipeOperator
     /** Target value. */
-    value: string | number | boolean
+    value: boolean | string | number
     /** Friendly display value. */
     friendlyValue?: string
 }
