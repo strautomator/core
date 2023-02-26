@@ -75,9 +75,10 @@ export class Recipes {
     /**
      * Validate a recipe, mostly called before saving to the database.
      * Will throw an error when something wrong is found.
+     * @param user The owner of the recipe.
      * @param recipe The recipe object.
      */
-    validate = (recipe: RecipeData): void => {
+    validate = (user: UserData, recipe: RecipeData): void => {
         try {
             if (!recipe) {
                 throw new Error("Recipe is empty")
@@ -105,6 +106,19 @@ export class Recipes {
                 recipe.conditions = recipe.conditions.filter((c) => !_.isEmpty(c))
             }
 
+            // Delete unknown fields.
+            const recipeFields = Object.keys(recipe)
+            const unknownFields = []
+            for (let key of recipeFields) {
+                if (!["id", "title", "conditions", "actions", "order", "op", "samePropertyOp", "defaultFor", "killSwitch", "disabled"].includes(key)) {
+                    unknownFields.push(key)
+                    delete recipe[key]
+                }
+            }
+            if (unknownFields.length > 0) {
+                logger.warn("Recipes.validate", `User ${user.id} ${user.displayName}`, recipe.id, `Removing invalid unknown fields: ${unknownFields.join(", ")}`)
+            }
+
             // Default recipes for a specific sport type should have no conditions, and order 0.
             if (recipe.defaultFor) {
                 recipe.order = 0
@@ -118,16 +132,18 @@ export class Recipes {
 
                 // Parse recipe conditions.
                 for (let condition of recipe.conditions) {
+                    const cValue = condition.value as any
+
                     if (!condition.property) {
                         throw new Error(`Missing condition property`)
                     }
                     if (!Object.values(RecipeOperator).includes(condition.operator)) {
                         throw new Error(`Invalid condition operator: ${condition.operator}`)
                     }
-                    if (condition.value === null || condition.value === "") {
+                    if (cValue === null || cValue === "") {
                         throw new Error(`Missing condition value`)
                     }
-                    if (_.isString(condition.value) && (condition.value as string).length > settings.recipes.maxLength.conditionValue) {
+                    if (_.isString(cValue) && cValue.length > settings.recipes.maxLength.conditionValue) {
                         throw new Error(`Condition value is too long (max length is ${settings.recipes.maxLength.conditionValue})`)
                     }
                     if (condition.friendlyValue && _.isString(condition.friendlyValue) && (condition.friendlyValue as string).length > settings.recipes.maxLength.conditionValue) {
@@ -159,7 +175,7 @@ export class Recipes {
                 // Some actions must have a value.
                 if (action.type != RecipeActionType.Commute) {
                     if (action.value === null || action.value === "") {
-                        throw new Error(`Missing action value`)
+                        throw new Error("Missing action value")
                     }
                 }
 
@@ -218,10 +234,28 @@ export class Recipes {
 
         // Otherwise iterate conditions and evaluate each one.
         else {
-            logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, `Will check ${recipe.conditions.length} conditions`)
+            if (!recipe.op) recipe.op = "AND"
+            if (!recipe.samePropertyOp) recipe.samePropertyOp = "AND"
 
-            for (let condition of recipe.conditions) {
-                const valid = await this.checkCondition(user, activity, recipe, condition)
+            logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, `${recipe.op} ${recipe.samePropertyOp}`, `${recipe.conditions.length} conditions`)
+
+            // Group conditions by property type, so we can evaluate on an ordely basis
+            // and apply the samePropertyOp operator.
+            const groupedConditions = Object.values(_.groupBy(recipe.conditions, "property"))
+            for (let conditions of groupedConditions) {
+                let condition: RecipeCondition
+                let valid = recipe.samePropertyOp == "OR" ? false : true
+
+                // Evaluate conditions, depending on the recipe's "same property" operator.
+                for (condition of conditions) {
+                    if (recipe.samePropertyOp == "OR") {
+                        valid = valid || (await this.checkCondition(user, activity, recipe, condition))
+                        if (valid) break
+                    } else {
+                        valid = valid && (await this.checkCondition(user, activity, recipe, condition))
+                        if (!valid) break
+                    }
+                }
 
                 // Recipe not valid for this activity? Log what failed.
                 // Polyline contents won't be logged.
@@ -279,12 +313,6 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            // First activity of the day condition.
-            else if (prop.indexOf("firstOfDay") == 0) {
-                const valid = await checkFirstOfDay(user, activity, condition, prop.includes(".same"))
-                if (!valid) return false
-            }
-
             // Sport type condition.
             else if (prop == "sportType") {
                 const valid = checkSportType(activity, condition)
@@ -297,15 +325,15 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            // New records?
-            else if (prop == "newRecords" || prop == "komSegments" || prop == "prSegments") {
-                const valid = checkNewRecords(activity, condition)
-                if (!valid) return false
-            }
-
             // Day of week condition.
             else if (prop == "weekday") {
                 const valid = checkWeekday(activity, condition)
+                if (!valid) return false
+            }
+
+            // New records?
+            else if (prop == "newRecords" || prop == "komSegments" || prop == "prSegments") {
+                const valid = checkNewRecords(activity, condition)
                 if (!valid) return false
             }
 
@@ -321,15 +349,21 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            // Number condition.
-            else if (_.isNumber(activity[condition.property])) {
-                const valid = checkNumber(activity, condition)
+            // First activity of the day condition.
+            else if (prop.indexOf("firstOfDay") == 0) {
+                const valid = await checkFirstOfDay(user, activity, condition, prop.includes(".same"))
                 if (!valid) return false
             }
 
             // Boolean condition.
             else if (_.isBoolean(condition.value)) {
                 const valid = checkBoolean(activity, condition)
+                if (!valid) return false
+            }
+
+            // Number condition.
+            else if (_.isNumber(activity[condition.property])) {
+                const valid = checkNumber(activity, condition)
                 if (!valid) return false
             }
 

@@ -17,9 +17,9 @@ export interface RecipeData {
     /** Order of execution (1 executes first, then 2, 3...) */
     order?: number
     /** Conditions should use AND or OR as its logical operator? */
-    op?: "or" | "and"
+    op?: "OR" | "AND"
     /** Same type (grouped) conditions should use AND or OR as its logical operator? */
-    samePropertyOp?: "or" | "and"
+    samePropertyOp?: "OR" | "AND"
     /** Default recipe for a specific sport (applies to all incoming activities). */
     defaultFor?: StravaSport
     /** Stop executing other automations if this one executes. */
