@@ -6,15 +6,16 @@
 export const recipeOperatorList = {
     // Free text.
     text: [
-        {value: "=", text: "is exactly", description: "Text matches exactly the value set below"},
         {value: "like", text: "has", description: "Text contains the value set below"},
-        {value: "notlike", text: "does not have", description: "Text does not contain the value set below"}
+        {value: "notlike", text: "does not have", description: "Text does not contain the value set below"},
+        {value: "=", text: "is exactly", description: "Text matches exactly the value set below"}
     ],
     // Only positive numbers.
     number: [
         {value: "like", text: "is around (±10%)", description: "Number is within ±10% of the value set below"},
         {value: "approx", text: "is around (±3%)", description: "Number is within ±3% of the value set below"},
         {value: "=", text: "is exactly", description: "Number matches exactly the value set below"},
+        {value: "!=", text: "is not", description: "Number is different than the value set below"},
         {value: "<", text: "is lower than", description: "Number less than the value set below"},
         {value: ">", text: "is higher than", description: "Number greater than the value set below"}
     ],
@@ -49,7 +50,10 @@ export const recipeOperatorList = {
         {value: ">", text: "is slower than", description: "Pace is slower than the value set below"}
     ],
     // Only "is" as operator.
-    is: [{value: "=", text: "is", description: ""}]
+    is: [
+        {value: "=", text: "is", description: ""},
+        {value: "!=", text: "is not", description: ""}
+    ]
 }
 
 /**
