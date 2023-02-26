@@ -143,6 +143,11 @@ export const startup = async (quickStart?: boolean) => {
             throw new Error("Missing the mandatory app.url setting")
         }
 
+        // Running locally on dev? Load local-only settings as the last loaded file so it overwrites everything else.
+        if (process.env.NODE_ENV == "development") {
+            setmeup.load("settings.local.json")
+        }
+
         // Beta deployment? Override the database collection suffix and other relevant settings.
         if (settings.beta.enabled) {
             logger.warn("Strautomator.startup", "BETA DEPLOYMENT")
@@ -152,11 +157,6 @@ export const startup = async (quickStart?: boolean) => {
             settings.app.title += " (Beta)"
             settings.database.collectionSuffix += settings.beta.suffix
             settings.cookie.sessionName += settings.beta.suffix
-        }
-
-        // Running locally on dev? Load local-only settings as the last loaded file so it overwrites everything else.
-        if (process.env.NODE_ENV == "development") {
-            setmeup.load("settings.local.json")
         }
 
         // Storage client must be initiated before everything else.
