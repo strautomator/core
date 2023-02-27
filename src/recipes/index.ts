@@ -241,7 +241,7 @@ export class Recipes {
 
             // Group conditions by property type, so we can evaluate on an ordely basis
             // and apply the samePropertyOp operator.
-            const groupedConditions = Object.entries(_.groupBy(recipe.conditions, "property"))
+            const groupedConditions = Object.entries(_.groupBy(recipe.conditions, "property")) as any
             let gProperty: string
             let conditions: RecipeCondition[]
             for ([gProperty, conditions] of groupedConditions) {
