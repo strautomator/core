@@ -241,11 +241,14 @@ export class Recipes {
 
             // Group conditions by property type, so we can evaluate on an ordely basis
             // and apply the samePropertyOp operator.
-            const groupedConditions = Object.values(_.groupBy(recipe.conditions, "property"))
+            const groupedConditions = Object.entries(_.groupBy(recipe.conditions, "property"))
+            let gProperty: string
             let conditions: RecipeCondition[]
-            for (conditions of groupedConditions) {
+            for ([gProperty, conditions] of groupedConditions) {
                 let condition: RecipeCondition
                 let valid = recipe.samePropertyOp == "OR" ? false : true
+
+                logger.debug("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `Processing conditions: ${gProperty}`)
 
                 // Evaluate conditions, depending on the recipe's "same property" operator.
                 for (condition of conditions) {
