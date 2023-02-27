@@ -89,7 +89,7 @@ export class StravaAPI {
                 grant_type: "authorization_code",
                 client_id: settings.strava.api.clientId,
                 client_secret: settings.strava.api.clientSecret,
-                redirect_uri: `${settings.app.url}strava/auth/callback`,
+                redirect_uri: `${settings.app.url}auth/callback`,
                 code: code
             }
 
@@ -132,7 +132,7 @@ export class StravaAPI {
      * @param accessToken Previous access token.
      * @param noEmit Sometimes we might want to avoid emitting the refreshToken event.
      * @event Strava.refreshToken
-     * @event Strava.refreshTokenExpired
+     * @event Strava.tokenFailure
      */
     refreshToken = async (refreshToken: string, accessToken?: string, noEmit?: boolean): Promise<StravaTokens> => {
         try {
@@ -234,7 +234,7 @@ export class StravaAPI {
      * @param path The API path.
      * @param params Additional parameters to be passed, optional.
      * @param body Additional body to be posted with the request.
-     * @event Strava.refreshTokenExpired
+     * @event Strava.tokenFailure
      */
     private makeRequest = async (tokens: StravaTokens, method: string, path: string, params?: any, body?: any): Promise<any> => {
         let token: string = null
