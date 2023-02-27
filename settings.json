@@ -44,10 +44,14 @@
         "enabled": false,
         // Beta deployment domain.
         "url": "https://beta.strautomator.com/",
-        // Suffix added to database collections, cookies and sessions.
-        "suffix": "-beta",
+        // Suffix added to database collections.
+        "collectionSuffix": "-beta",
         // Collection suffix of the production database to be referenced on the beta environment.
-        "prodCollectionSuffix": ""
+        "prodCollectionSuffix": "",
+        // Remove beta users that have not logged in for more than 2 months.
+        "idleDays": {
+            "noLogin": 60
+        }
     },
     "calendar": {
         // Default activity fields to be added to event details. Each item is a line, and multiple fields

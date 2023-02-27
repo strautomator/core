@@ -269,17 +269,22 @@ export class Users {
         try {
             const now = dayjs.utc()
 
-            // Get users suspended for a while.
+            // Suspended users.
             const whereSuspendedFlag = ["suspended", "==", true]
             const whereSuspended = ["dateLastActivity", "<", now.subtract(settings.users.idleDays.suspended, "days").toDate()]
             const suspended = await database.search("users", [whereSuspendedFlag, whereSuspended])
 
-            // Get users with no activities sent by Strava for a while.
+            // Users with no activities sent by Strava for a while.
             const whereNoActivities = ["dateLastActivity", "<", now.subtract(settings.users.idleDays.noActivities, "days").toDate()]
             const noActivities = await database.search("users", [whereNoActivities])
 
-            logger.info("Users.getIdle", `${suspended.length || "no"} suspended users, ${noActivities.length || "no"} users with no activities`)
-            return _.concat(suspended, noActivities)
+            // Users that haven't logged in for a while.
+            const whereNoLogin = settings.users.idleDays.noLogin ? ["dateLogin", "<", now.subtract(settings.users.idleDays.noLogin, "days").toDate()] : null
+            const noLogin = whereNoLogin ? await database.search("users", [whereNoLogin]) : []
+
+            logger.info("Users.getIdle", `${suspended.length || "no"} suspended, ${noActivities.length || "no"} with no activities, ${noLogin.length || "no"} with no recent logins`)
+
+            return _.concat(suspended, noActivities, noLogin)
         } catch (ex) {
             logger.error("Users.getIdle", ex)
             throw ex
