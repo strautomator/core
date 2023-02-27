@@ -90,8 +90,6 @@ import {FAQ} from "./faq"
 export const faq: FAQ = FAQ.Instance
 import {GDPR} from "./gdpr"
 export const gdpr: GDPR = GDPR.Instance
-import {Beta} from "./beta"
-export const beta: Beta = Beta.Instance
 
 // Export event manager.
 import {EventManager} from "./eventmanager"
@@ -217,11 +215,6 @@ export const startup = async (quickStart?: boolean) => {
             logger.error("Strautomator.startup", "Failed to start a core module, will exit...")
             return process.exit(1)
         }
-    }
-
-    // Running on a beta environment?
-    if (settings.beta.enabled) {
-        await beta.init()
     }
 
     // Running locally? Setup the necessary cron jobs which are

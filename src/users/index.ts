@@ -448,6 +448,18 @@ export class Users {
 
             // Set registration date, if user does not exist yet.
             if (!exists) {
+                logger.debug("Users.upsert", profile.id, "Will create new user")
+
+                // Beta available to PRO users only.
+                if (settings.beta.enabled) {
+                    const docFromProd = await database.doc("users", profile.id, settings.beta.prodCollectionSuffix).get()
+                    if (!docFromProd.exists || !docFromProd.data().isPro) {
+                        logger.warn("Users.upsert", profile.id, "Beta available to PRO users only")
+                        userData.isPro = false
+                        return userData
+                    }
+                }
+
                 userData.displayName = profile.username || profile.firstName || profile.lastName
                 userData.dateRegistered = now
                 userData.preferences = {}
