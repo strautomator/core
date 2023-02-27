@@ -10,7 +10,9 @@
         // if you use localhost, as this endpoint needs to be public.
         "url": "http://localhost:3000/",
         // Open a tunnel with Cloudflare by default.
-        "tunnel": true
+        "tunnel": true,
+        // To enabled debug logs, set this to true.
+        "debug": false
     },
     "announcements": {
         // Active announcements should be cached for only 1 minute on dev.

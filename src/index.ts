@@ -148,15 +148,18 @@ export const startup = async (quickStart?: boolean) => {
             setmeup.load("settings.local.json")
         }
 
+        // Debugging enabled?
+        if (settings.app.debug) {
+            logger.options.levels.push("debug")
+        }
+
         // Beta deployment? Override the database collection suffix and other relevant settings.
         if (settings.beta.enabled) {
             logger.warn("Strautomator.startup", "BETA DEPLOYMENT")
-            process.env.API_URL = `${settings.beta.url}api/`
-            process.env.API_URL_BROWSER = `${settings.beta.url}api/`
             settings.app.url = settings.beta.url
             settings.app.title += " (Beta)"
-            settings.database.collectionSuffix += settings.beta.suffix
-            settings.cookie.sessionName += settings.beta.suffix
+            settings.database.collectionSuffix += settings.beta.collectionSuffix
+            settings.cookie.sessionName += "beta"
         }
 
         // Storage client must be initiated before everything else.
