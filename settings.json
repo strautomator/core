@@ -48,9 +48,9 @@
         "collectionSuffix": "-beta",
         // Collection suffix of the production database to be referenced on the beta environment.
         "prodCollectionSuffix": "",
-        // Remove beta users that have not logged in for more than 2 months.
+        // Remove beta users that have not logged in for more than a week.
         "idleDays": {
-            "noLogin": 60
+            "noLogin": 7
         }
     },
     "calendar": {
