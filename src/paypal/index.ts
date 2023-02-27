@@ -198,8 +198,6 @@ export class PayPal {
      * plans will be marked as enabled (one for each currency + frequency).
      */
     setupBillingPlans = async () => {
-        let hasPlans = false
-
         try {
             const billingPlans = await paypalSubscriptions.getBillingPlans()
             const frequencies = Object.keys(settings.plans.pro.price)
@@ -232,7 +230,6 @@ export class PayPal {
                         } else {
                             const newPlan = await paypalSubscriptions.createBillingPlan(api.currentProduct.id, currency, frequency)
                             api.currentBillingPlans[newPlan.id] = newPlan
-                            hasPlans = true
 
                             logger.info("PayPal.setupBillingPlans", newPlan.id, newPlan.name, "New!")
                         }
