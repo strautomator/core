@@ -78,9 +78,10 @@ export class Database {
      * Returns a new (unsaved) document for the specified collection.
      * @param collection Name of the collection.
      * @param id Optional document ID.
+     * @param collectionSuffix Optional collection suffix to override the default one.
      */
-    doc = (collection: string, id?: string): DocumentReference => {
-        const colname = `${collection}${this.collectionSuffix}`
+    doc = (collection: string, id?: string, collectionSuffix?: string): DocumentReference => {
+        const colname = `${collection}${collectionSuffix || this.collectionSuffix}`
         return id ? this.firestore.collection(colname).doc(id) : this.firestore.collection(colname).doc()
     }
 
