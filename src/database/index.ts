@@ -374,6 +374,7 @@ export class Database {
 
             if (doc.exists) {
                 const result: any = doc.data()
+                cryptoProcess(result, false)
                 this.transformData(result)
                 return result
             }
@@ -387,13 +388,18 @@ export class Database {
          * @param replace Replace full object instead of merging.
          */
         set: async (id: string, data: any, replace?: boolean): Promise<void> => {
+            const encryptedData = _.cloneDeep(data)
+            cryptoProcess(encryptedData, true)
+
             const collection = "app-state"
             const colname = `${collection}${this.collectionSuffix}`
             const table = this.firestore.collection(colname)
             const doc = table.doc(id)
 
             // Save state data to the database.
-            await doc.set(data, {merge: !replace})
+            await doc.set(encryptedData, {merge: replace ? false : true})
+
+            logger.info("Database.appState.set", id)
         },
         /**
          * Increment a counter on an app state document.
@@ -417,6 +423,8 @@ export class Database {
             const data: any = {}
             data[field] = FieldValue.increment(value)
             await doc.update(data)
+
+            logger.info("Database.appState.increment", id, field, value)
         }
     }
 
