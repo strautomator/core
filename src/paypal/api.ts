@@ -2,6 +2,7 @@
 
 import {PayPalAuth, PayPalBillingPlan, PayPalProduct} from "./types"
 import {axiosRequest} from "../axios"
+import database from "../database"
 import _ from "lodash"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
@@ -111,6 +112,8 @@ export class PayPalAPI {
             }
 
             logger.info("PayPal.authenticate", "Got a new token")
+            await database.appState.set("paypal", {auth: this.auth})
+
             return true
         } catch (ex) {
             logger.error("PayPal.authenticate", parseResponseError(ex))
@@ -125,7 +128,11 @@ export class PayPalAPI {
     makeRequest = async (reqOptions: any): Promise<any> => {
         try {
             if (!this.auth) {
-                throw new Error("Not authenticated to PayPal")
+                try {
+                    await this.authenticate()
+                } catch (innerEx) {
+                    throw new Error("Not authenticated to PayPal")
+                }
             }
 
             if (this.auth.expiresAt <= dayjs().unix()) {

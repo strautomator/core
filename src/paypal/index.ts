@@ -3,12 +3,14 @@
 import {PayPalBillingPlan, PayPalProduct} from "./types"
 import {UserData} from "../users/types"
 import api from "./api"
+import database from "../database"
 import eventManager from "../eventmanager"
 import paypalProducts from "./products"
 import paypalSubscriptions from "./subscriptions"
 import paypalWebhooks from "./webhooks"
 import _ from "lodash"
 import logger = require("anyhow")
+import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
@@ -81,19 +83,11 @@ export class PayPal {
                 throw new Error("Missing the mandatory paypal.api.clientSecret setting")
             }
 
-            const authenticated = await api.authenticate()
+            await this.loadFromCache()
 
-            // Wait for the setup the product and billing plans on PayPal, if quickStart was not set.
-            if (authenticated) {
-                if (!quickStart) {
-                    await this.setupProduct()
-                    await this.setupBillingPlans()
-                } else {
-                    await this.setupProduct()
-                    this.setupBillingPlans()
-                }
-            } else {
-                throw new Error("PayPal authentication failed")
+            // Load live data if quickstart was not set.
+            if (!quickStart) {
+                this.loadLive()
             }
 
             // Unsubscribe when user gets deleted.
@@ -127,6 +121,48 @@ export class PayPal {
     // --------------------------------------------------------------------------
 
     /**
+     * Load product and billing plan details from the database.
+     */
+    loadFromCache = async (): Promise<void> => {
+        try {
+            const fromCache = await database.appState.get("paypal")
+
+            if (!fromCache) {
+                logger.warn("PayPal.loadFromCache", "No PayPal data found")
+                return
+            }
+
+            // Set initial auth, product and billing plans.
+            api.auth = fromCache.auth
+            api.currentProduct = fromCache.product
+            api.currentBillingPlans = fromCache.billingPlans
+
+            logger.info("PayPal.loadFromCache", `Product: ${api.currentProduct.id}`, `Billing plans: ${Object.keys(api.currentBillingPlans).join(", ")}`)
+        } catch (ex) {
+            logger.error("PayPal.loadFromCache", ex)
+        }
+    }
+
+    /**
+     * Authenticate with PayPal and load product details and billing plans from the live API.
+     */
+    loadLive = async (): Promise<void> => {
+        try {
+            const authenticated = await api.authenticate()
+
+            if (authenticated) {
+                await this.setupProduct()
+                await this.setupBillingPlans()
+                await database.appState.set("paypal", {product: api.currentProduct, billingPlans: this.currentBillingPlans})
+            } else if (api.auth.expiresAt <= dayjs().unix()) {
+                throw new Error("PayPal authentication failed")
+            }
+        } catch (ex) {
+            logger.error("PayPal.loadLive", ex)
+        }
+    }
+
+    /**
      * Create the Strautomator product on PayPal, if one does not exist yet.
      */
     setupProduct = async (): Promise<void> => {
@@ -146,7 +182,7 @@ export class PayPal {
                     return
                 }
 
-                logger.warn("PayPal.setupProduct", `Found no products matching name: ${productName}`, `Will create a new one`)
+                logger.warn("PayPal.setupProduct", `Found no products matching name: ${productName}`, "Will create a new one")
             }
 
             // Create new product if none was found before.
@@ -162,12 +198,14 @@ export class PayPal {
      * plans will be marked as enabled (one for each currency + frequency).
      */
     setupBillingPlans = async () => {
-        try {
-            api.currentBillingPlans = {}
-            api.legacyBillingPlans = {}
+        let hasPlans = false
 
+        try {
             const billingPlans = await paypalSubscriptions.getBillingPlans()
             const frequencies = Object.keys(settings.plans.pro.price)
+
+            api.currentBillingPlans = {}
+            api.legacyBillingPlans = {}
 
             // Match existing plans by looking for the currency / frequency and price.
             for (let plan of billingPlans) {
@@ -194,6 +232,8 @@ export class PayPal {
                         } else {
                             const newPlan = await paypalSubscriptions.createBillingPlan(api.currentProduct.id, currency, frequency)
                             api.currentBillingPlans[newPlan.id] = newPlan
+                            hasPlans = true
+
                             logger.info("PayPal.setupBillingPlans", newPlan.id, newPlan.name, "New!")
                         }
                     } else {
