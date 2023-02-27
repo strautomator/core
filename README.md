@@ -7,23 +7,41 @@ This is the core module of Strautomator, containing most of its business logic. 
 Some main points to know before you start:
 
 -   Code is mostly TypeScript
--   Should run on Node 14+
--   Optimized for Google Cloud Platform
+-   Should run on Node 18+
+-   Highly optimized for GCP (Google Cloud Platform)
 
-You'll also have to register an account and get the necessary credentials for the 3rd party integrations:
+### Required 3rd party services
 
--   Google Cloud Platform (service account and API credentials)
--   Strava API
+Mandatory credentials:
+
+-   [GCP](https://console.cloud.google.com/apis/credentials)
+-   [Strava API](https://www.strava.com/settings/api)
+
+Optional credentials:
+
+-   GitHub API
+-   LocationIQ API
+-   musixmatch API
 -   PayPal API
--   Twitter API
 -   Spotify API
--   Weather providers (Tomorrow.io, Storm Glass etc...)
+-   Twitter API
+-   Weather providers: OpenWeatherMap, Storm Glass, Tomorrow.io, Visual Crossing
 
 Please note that some of these services might (and will!) charge you.
 
-If you need help getting any of those, or have questions, just open a [new issue](https://github.com/strautomator/core/issues/new) and I'll be glad to help.
+### Getting your GCP credentials
 
-### Settings
+Once you have created a project in GCP, it's recommended to [create](https://console.cloud.google.com/iam-admin/serviceaccounts/create) a dedicated service account with full permissions to Firestore and Storage Buckets. Or if you prefer, just use any existing service accounts.
+
+Then you'll need to download a set of JSON credentials for that account:
+
+1. Open the credentials [overview](https://console.cloud.google.com/apis/credentials).
+2. On the Service Accounts list, click on the desired service account email.
+3. Go to the `Keys` tab, then click on `Add Key` > `Create new key`.
+4. Select `JSON` format and create.
+5. Save the file as `~/gcp-strautomator.json`, on your home folder.
+
+## Settings
 
 Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its [docs](https://setmeup.devv.com). The settings are split as follows:
 
@@ -39,7 +57,7 @@ If you want to download settings from Google Cloud Storage, you must define the 
 
 Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same procedure, same logic.
 
-### Database
+## Database
 
 By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, such as MongoDB or DynamoDB.
 
@@ -50,6 +68,8 @@ The following collections are currently used:
 -   **app-state** general application state
 -   **athlete-records** athlete sports records
 -   **faq** help questions and answers
+-   **komoot** cached Komoot routes
+-   **lyrics** cached Lyrics from musixmatch
 -   **gearwear** GearWear configurations
 -   **maps** cached geolocation data
 -   **notifications** notifications to users
@@ -58,11 +78,11 @@ The following collections are currently used:
 -   **strava-cache** cached responses from Strava
 -   **users** registered user details
 
-Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`, and on production there's no suffix.
+Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`. On beta environments, it's `-beta`, and on production there's no suffix.
 
-Some indexes are needed in Firestore. At the moment there's no automated creation, so you might see some warnings or errors on the logs asking to create an index before a specific query can be executed.
+Some indexes are needed in Firestore. At the moment there's no automated creation, so you might see some warnings or errors on the logs asking to create an index before a specific query can be executed. Just follow the links provided directly on the console logs.
 
-### Storage
+## Storage
 
 Strautomator will store some files on Google Cloud Storage buckets:
 
@@ -73,11 +93,11 @@ Buckets can have an optional TTL (days) policy, also defined on the settings as 
 
 By default, buckets in production are created as CNAME records. This can be disabled by setting the `settings.storage.cname` flag to false.
 
-#### IAM policy
+### IAM policy
 
 Please make sure that the service account being used has full permissions to read and write to your GCP project Storage buckets. Otherwise you'll have to create the buckets manually via the GCP Console.
 
-### Make
+## Make
 
 All the necessary commands to update, build and deploy the Strautomator Core are done using make. For instance, to update the Node.js dependencies and set a new package version:
 
@@ -89,38 +109,6 @@ Or to do a "dry run" and test the startup routine with the current settings:
 
 Please have a look on the provided Makefile for all available commands.
 
-### Hosting on GCP
+## Hosting on GCP
 
 Strautomator is currently optimized to run on Google Cloud Platform. It makes use of Firestore, Cloud Storage, and various other Google APIs to get things working. There are no plans to port the code to make it work on other ecosystems, but as all the code is wrapped in its own specific set of modules, such tasks should be more or less trouble-free.
-
-## Scheduled Tasks
-
-Some of Strautomator's features depend on scheduled tasks that needs a manual setup. For instance, using the GCP Cloud Functions + Cloud Scheduler.
-
-### GearWear
-
--   **gearwear.processRecentActivities()** - daily, fetch recent activities and update the GearWear counters.
-
-### Maps
-
--   **maps.cleanup()** - weekly, cleanup of cached geolocation data.
-
-### Notifications
-
--   **notifications.cleanup()** - weekly, cleanup old notifications.
--   **notifications.sendEmailReminders()** - monthly, send email reminders to users that have too many unread notifications.
-
-### Strava
-
--   **strava.cleanupCache()** - daily, optional (if cache is enabled), delete expired cached Strava responses.
--   **strava.activities.getQueuedActivities()** - daily, iterate (and if necessary remove) failed queued activities.
--   **strava.ftp.processFtp()** - weekly, iterate PRO users and process their current FTP.
-
-### Users
-
--   **users.getIdle() + users.delete()** - weekly, delete idle user accounts.
--   **users.subscriptions.getDangling()** - weekly, iterate (and if necessary cleanup) dangling PRO subscriptions.
--   **users.subscriptions.getNonActive()** - weekly, iterate and switch users with an invalid subscription back to Free.
--   **users.getByResetCounter() + recipes.stats.setCounter()** - daily, get and reset counters for users matching today's date.
--   **users.getWithSpotify() + spotify.refreshToken()** - weekly, refresh expired Spotify tokens.
--   **recipes.stats.getFailingRecipes()** - weekly, iterate (and if necessary disable) recipes that keep failing.
