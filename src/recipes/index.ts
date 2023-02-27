@@ -242,7 +242,8 @@ export class Recipes {
             // Group conditions by property type, so we can evaluate on an ordely basis
             // and apply the samePropertyOp operator.
             const groupedConditions = Object.values(_.groupBy(recipe.conditions, "property"))
-            for (let conditions of groupedConditions) {
+            let conditions: RecipeCondition[]
+            for (conditions of groupedConditions) {
                 let condition: RecipeCondition
                 let valid = recipe.samePropertyOp == "OR" ? false : true
 
