@@ -68,7 +68,7 @@ export class Mailer {
 
             // Fallback defined? Instantiate it.
             const fallbackSettings = settings.mailer.smtpFallback
-            if (fallbackSettings && fallbackSettings.auth && fallbackSettings.auth.user && fallbackSettings.auth.pass) {
+            if (fallbackSettings?.auth?.user && fallbackSettings?.auth?.pass) {
                 const smtpFallback = settings.mailer.smtpFallback
                 this.clientFallback = nodemailer.createTransport(smtpFallback)
 
