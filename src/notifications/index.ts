@@ -53,7 +53,7 @@ export class Notifications {
         }
 
         // Masked token used on warning logs.
-        const maskedToken = `${token.substring(0, 2)}***${token.substring(token.length - 2)}`
+        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
 
         try {
             const user = await users.getByToken({accessToken: token})

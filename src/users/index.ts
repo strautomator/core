@@ -122,7 +122,7 @@ export class Users {
         }
 
         // Masked token used on warning logs.
-        const maskedToken = `${refreshToken.substring(0, 2)}***${refreshToken.substring(refreshToken.length - 2)}`
+        const maskedToken = `${refreshToken.substring(0, 2)}*${refreshToken.substring(refreshToken.length - 2)}`
 
         try {
             let user = await this.getByToken({refreshToken: refreshToken})
@@ -169,7 +169,7 @@ export class Users {
         }
 
         // Masked token used on warning logs.
-        const maskedToken = `${token.substring(0, 2)}***${token.substring(token.length - 2)}`
+        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
 
         try {
             const byToken: StravaTokens = refresh ? {refreshToken: token} : {accessToken: token}
@@ -337,7 +337,7 @@ export class Users {
                 users = await database.search("users", ["stravaTokens.accessToken", "==", encryptedToken])
 
                 if (users.length > 0) {
-                    const maskedToken = `${tokens.accessToken.substring(0, 2)}***${tokens.accessToken.substring(tokens.accessToken.length - 2)}`
+                    const maskedToken = `${tokens.accessToken.substring(0, 2)}*${tokens.accessToken.substring(tokens.accessToken.length - 2)}`
                     logger.debug("Users.getByToken", `Found ${users[0].id} - ${users[0].displayName} by current token ${maskedToken}`)
 
                     return users[0]
@@ -347,7 +347,7 @@ export class Users {
                 users = await database.search("users", ["stravaTokens.previousAccessToken", "==", encryptedToken])
 
                 if (users.length > 0) {
-                    const maskedToken = `${tokens.accessToken.substring(0, 2)}***${tokens.accessToken.substring(tokens.accessToken.length - 2)}`
+                    const maskedToken = `${tokens.accessToken.substring(0, 2)}*${tokens.accessToken.substring(tokens.accessToken.length - 2)}`
                     logger.debug("Users.getByToken", `Found ${users[0].id} - ${users[0].displayName} by previous token ${maskedToken}`)
 
                     return users[0]
@@ -360,7 +360,7 @@ export class Users {
                 users = await database.search("users", ["stravaTokens.refreshToken", "==", encryptedToken])
 
                 if (users.length > 0) {
-                    const maskedToken = `${tokens.refreshToken.substring(0, 2)}***${tokens.refreshToken.substring(tokens.refreshToken.length - 2)}`
+                    const maskedToken = `${tokens.refreshToken.substring(0, 2)}*${tokens.refreshToken.substring(tokens.refreshToken.length - 2)}`
                     logger.info("Users.getByToken", `Found ${users[0].id} - ${users[0].displayName} by refresh token ${maskedToken}`)
 
                     return users[0]
