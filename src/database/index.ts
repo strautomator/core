@@ -81,7 +81,9 @@ export class Database {
      * @param collectionSuffix Optional collection suffix to override the default one.
      */
     doc = (collection: string, id?: string, collectionSuffix?: string): DocumentReference => {
-        const colname = `${collection}${collectionSuffix || this.collectionSuffix}`
+        if (_.isNil(collectionSuffix)) collectionSuffix = this.collectionSuffix
+
+        const colname = `${collection}${collectionSuffix}`
         return id ? this.firestore.collection(colname).doc(id) : this.firestore.collection(colname).doc()
     }
 
