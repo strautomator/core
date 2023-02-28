@@ -34,6 +34,43 @@ export class StravaActivities {
     // --------------------------------------------------------------------------
 
     /**
+     * Get saved processed activities for the specified user.
+     * @param user The activities owner.
+     * @param dateFrom Activities processed since date.
+     * @param dateTo Activities processed up to date.
+     * @param limit Optional, limit how many results should be returned?
+     *
+     */
+    getProcessedActivites = async (user: UserData, dateFrom?: Date, dateTo?: Date, limit?: number): Promise<StravaProcessedActivity[]> => {
+        try {
+            let logFrom = ""
+            let logTo = ""
+            let logLimit = ""
+
+            const where: any[] = [["user.id", "==", user.id]]
+
+            if (dateFrom) {
+                where.push(["dateProcessed", ">=", dateFrom])
+                logFrom = ` from ${dayjs(dateFrom).format("ll")}`
+            }
+            if (dateTo) {
+                where.push(["dateProcessed", "<=", dateTo])
+                logTo = ` to ${dayjs(dateTo).format("ll")}`
+            }
+            if (limit) {
+                logLimit = `, limit ${limit}`
+            }
+
+            const activities = await database.search("activities", where, ["dateProcessed", "desc"], limit)
+            logger.info("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
+
+            return activities
+        } catch (ex) {
+            logger.error("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, dateFrom, dateTo, ex)
+        }
+    }
+
+    /**
      * Batch process activities for the specified user. This will effectively add the
      * activities for the specified range to the processing queue.
      * @param user The activities owner (user).
@@ -236,43 +273,6 @@ export class StravaActivities {
     }
 
     /**
-     * Get saved processed activities for the specified user.
-     * @param user The activities owner.
-     * @param dateFrom Activities processed since date.
-     * @param dateTo Activities processed up to date.
-     * @param limit Limit how many results should be returned?
-     *
-     */
-    getProcessedActivites = async (user: UserData, dateFrom?: Date, dateTo?: Date, limit?: number): Promise<StravaProcessedActivity[]> => {
-        try {
-            let logFrom = ""
-            let logTo = ""
-            let logLimit = ""
-
-            const where: any[] = [["user.id", "==", user.id]]
-
-            if (dateFrom) {
-                where.push(["dateProcessed", ">=", dateFrom])
-                logFrom = ` from ${dayjs(dateFrom).format("ll")}`
-            }
-            if (dateTo) {
-                where.push(["dateProcessed", "<=", dateTo])
-                logTo = ` to ${dayjs(dateTo).format("ll")}`
-            }
-            if (limit) {
-                logLimit = `, limit ${limit}`
-            }
-
-            const activities = await database.search("activities", where, ["dateProcessed", "desc"], limit)
-            logger.info("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
-
-            return activities
-        } catch (ex) {
-            logger.error("Strava.getProcessedActivites", `User ${user.id} ${user.displayName}`, ex)
-        }
-    }
-
-    /**
      * Save a processed activity with user and recipe details to the database.
      * @param user The activity's owner.
      * @param activity The Strava activity details.
@@ -352,26 +352,35 @@ export class StravaActivities {
      * Delete all saved / processed activities for the specified user.
      * Returns the number of deleted actvities.
      * @param user The user account.
-     * @param ageDays Optional, activities older than that age (in days) will be deleted.
+     * @param ageDays Activities older than that age (in days) will be deleted.
      */
-    deleteProcessedActivities = async (user: UserData, ageDays?: number): Promise<number> => {
+    deleteProcessedActivities = async (user?: UserData, ageDays?: number): Promise<number> => {
         if (!ageDays) ageDays = 0
 
-        try {
-            const where: any[] = [["user.id", "==", user.id]]
+        const userLog = user ? `User ${user.id} ${user.displayName}` : "All users"
+        const sinceLog = ageDays > 0 ? `Older than ${ageDays} days` : "Since the beginning"
+        const where: any[] = []
 
+        try {
+            if (user) {
+                where.push(["user.id", "==", user.id])
+            }
             if (ageDays > 0) {
                 const maxDate = dayjs().subtract(ageDays, "days").toDate()
                 where.push(["dateProcessed", "<", maxDate])
             }
 
+            // At least a user or age must be passed.
+            if (where.length == 0) {
+                throw new Error("A user or an ageDays must be passed")
+            }
+
             const count = await database.delete("activities", where)
-            const sinceLog = ageDays > 0 ? ` older than ${ageDays} days` : ""
-            logger.info("Strava.deleteProcessedActivities", `User ${user.id} ${user.displayName}`, `Deleted ${count || "no"} activities${sinceLog}`)
+            logger.info("Strava.deleteProcessedActivities", userLog, sinceLog, `Deleted ${count || "no"} activities`)
 
             return count
         } catch (ex) {
-            logger.error("Strava.deleteProcessedActivities", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.deleteProcessedActivities", userLog, sinceLog, ex)
             return 0
         }
     }

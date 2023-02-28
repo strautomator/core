@@ -240,12 +240,13 @@ export const startup = async (quickStart?: boolean) => {
             }
             setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
 
-            // Cleanup cached Strava responses, notifications and GDPR archives right away.
+            // Cleanup cached Strava responses, processed activities, notifications and GDPR archives right away.
             strava.cleanupCache()
+            strava.activityProcessing.deleteProcessedActivities(null, settings.strava.processedActivities.maxAgeDays)
             notifications.cleanup()
             gdpr.clearArchives()
 
-            // Process GearWear configurations right away.
+            // Process GearWear configurations.
             gearwear.processRecentActivities()
         } catch (ex) {
             logger.error("Strautomator.startup", "Failed to setup cron jobs", ex)
