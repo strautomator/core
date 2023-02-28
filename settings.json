@@ -403,6 +403,10 @@
             // FTP must have changed by at least 2% to be updated automatically
             "saveThreshold": 0.02
         },
+        "processedActivities": {
+            // Processed activity details will be deleted from the database after 2 years. Value set in days.
+            "maxAgeDays": 730
+        },
         "records": {
             // For "average" records, consider only the activities that have at least 20 minutes of moving time.
             "minMovingTimeAvg": 1200
