@@ -397,7 +397,9 @@
             // User's FTP will be estimated based on activities from the last 8 weeks.
             "weeks": 8,
             // FTP can be updated only once every 24 hours.
-            "sinceLastHours": 24
+            "sinceLastHours": 24,
+            // FTP must have changed by at least 2% to be updated automatically
+            "saveThreshold": 0.02
         },
         "records": {
             // For "average" records, consider only the activities that have at least 20 minutes of moving time.
