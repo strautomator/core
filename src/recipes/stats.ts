@@ -35,10 +35,10 @@ export class RecipeStats {
                     return null
                 }
 
-                // Set activity count.
-                stats.activityCount = stats.activities ? stats.activities.length : 0
-
-                // Make sure custom counter is set.
+                // Make sure activity count and recipe counter are set.
+                if (!stats.activityCount) {
+                    stats.activityCount = stats.activities?.length || 0
+                }
                 if (!stats.counter) {
                     stats.counter = 0
                 }
@@ -107,16 +107,22 @@ export class RecipeStats {
                     id: id,
                     userId: user.id,
                     activities: [activity.id],
-                    dateLastTrigger: now,
-                    counter: 1
+                    activityCount: 0,
+                    counter: 0
                 }
 
                 logger.info("RecipeStats.updateStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, "Created new recipe stats")
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
 
+                // Only add activity ID to list if it not there yet.
                 if (!stats.activities.includes(activity.id)) {
                     stats.activities.push(activity.id)
+                }
+
+                // Make sure the activity count is set.
+                if (!stats.activityCount) {
+                    stats.activityCount = stats.activities.length
                 }
 
                 // Make sure stats has a counter.
@@ -124,9 +130,17 @@ export class RecipeStats {
                     stats.counter = 0
                 }
 
-                stats.dateLastTrigger = now
-                stats.counter++
+                // Remove activity IDs from the stats.
+                if (stats.activities.length > settings.recipes.maxActivityIds) {
+                    const removedId = stats.activities.shift()
+                    logger.info("RecipeStats.updateStats", `User ${user.id} ${user.displayName}`, `Recipe ${recipe.id}`, `Activity ${removedId} removed from list`)
+                }
             }
+
+            // Update stats.
+            stats.dateLastTrigger = now
+            stats.activityCount++
+            stats.counter++
 
             // Increase failure counter if recipe execution was not successful.
             if (success) {

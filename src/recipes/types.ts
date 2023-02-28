@@ -63,10 +63,10 @@ export interface RecipeStatsData {
     /** User that owns this recipe. */
     userId: string
     /** When was it last triggered. */
-    dateLastTrigger: Date
-    /** List of activity IDs that triggered this recipe. */
+    dateLastTrigger?: Date
+    /** List of activity IDs that triggered the recipe. */
     activities: number[]
-    /** Optional, populated automatically with the length of the activities field. */
+    /** Total number of activities processed by the recipe. */
     activityCount?: number
     /** Custom counter that can be used on activity name and description. */
     counter?: number
