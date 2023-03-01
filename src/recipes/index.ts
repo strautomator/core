@@ -235,7 +235,7 @@ export class Recipes {
         // Otherwise iterate conditions and evaluate each one.
         else {
             if (!recipe.op) recipe.op = "AND"
-            if (!recipe.samePropertyOp) recipe.samePropertyOp = "AND"
+            if (!recipe.samePropertyOp) recipe.samePropertyOp = recipe.op
 
             logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, `${recipe.op} ${recipe.samePropertyOp}`, `${recipe.conditions.length} conditions`)
 
