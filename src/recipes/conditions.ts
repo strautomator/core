@@ -39,8 +39,6 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition):
         valid = true
     } else if (op == RecipeOperator.NotLike && !aText.includes(value)) {
         valid = true
-    } else {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
     if (valid) {
@@ -107,8 +105,6 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
         valid = aNumber < value
     } else if (op == RecipeOperator.GreaterThan) {
         valid = aNumber > value
-    } else {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
     if (valid) {
@@ -144,8 +140,6 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
         radius = 0.002735
     } else if (op == RecipeOperator.Like) {
         radius = 0.005926
-    } else {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
     // Parsed coordinates from condition value.
@@ -214,8 +208,6 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         valid = aTime < value
     } else if (op == RecipeOperator.GreaterThan) {
         valid = aTime > value
-    } else {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
     if (valid) {
@@ -232,7 +224,6 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
  * @param condition The sport type recipe condition.
  */
 export const checkSportType = (activity: StravaActivity, condition: RecipeCondition): boolean => {
-    const prop = condition.property
     const op = condition.operator
     let valid = false
 
@@ -245,8 +236,6 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
         valid = arrValue.includes(sportType)
     } else if (op == RecipeOperator.NotEqual) {
         valid = !sportType || !arrValue.includes(sportType)
-    } else {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
     if (valid) {
@@ -263,7 +252,6 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
  * @param condition The gear recipe condition.
  */
 export const checkGear = (activity: StravaActivity, condition: RecipeCondition): boolean => {
-    const prop = condition.property
     const op = condition.operator
     let valid = false
 
@@ -276,8 +264,6 @@ export const checkGear = (activity: StravaActivity, condition: RecipeCondition):
         valid = arrValue.includes(gear)
     } else if (op == RecipeOperator.NotEqual) {
         valid = !gear || !arrValue.includes(gear)
-    } else {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
     if (valid) {
@@ -313,7 +299,6 @@ export const checkNewRecords = (activity: StravaActivity, condition: RecipeCondi
  * @param condition The weekday based recipe condition.
  */
 export const checkWeekday = (activity: StravaActivity, condition: RecipeCondition): boolean => {
-    const prop = condition.property
     const op = condition.operator
     let valid = false
 
@@ -337,8 +322,6 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
         valid = arrValue.includes(weekday)
     } else if (op == RecipeOperator.NotEqual) {
         valid = !arrValue.includes(weekday)
-    } else {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
     }
 
     if (valid) {
@@ -403,8 +386,6 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
             valid = valid || weatherPropValue < value
         } else if (op == RecipeOperator.GreaterThan) {
             valid = valid || weatherPropValue > value
-        } else {
-            throw new Error(`Invalid operator ${op} for ${prop}`)
         }
     }
 
@@ -423,7 +404,6 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
  * @param condition The Spotify based recipe condition.
  */
 export const checkSpotify = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
-    const prop = condition.property
     const op = condition.operator
     let valid = false
 
@@ -451,8 +431,6 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
                 valid = trackTitles.filter((t) => t.includes(t)).length > 0
             } else if (op == RecipeOperator.NotLike) {
                 valid = trackTitles.filter((t) => !t.includes(t)).length > 0
-            } else {
-                throw new Error(`Invalid operator ${op} for ${prop}`)
             }
         } else if (op == RecipeOperator.NotLike) {
             valid = true
@@ -476,13 +454,8 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
  */
 export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, condition: RecipeCondition, sameSport: boolean): Promise<boolean> => {
     const sameLog = sameSport ? "Same sport" : "Any sport"
-    const prop = condition.property
     const op = condition.operator
     const value = condition.value as boolean
-
-    if (op != RecipeOperator.Equal && op != RecipeOperator.NotEqual) {
-        throw new Error(`Invalid operator ${op} for ${prop}`)
-    }
 
     const now = dayjs().utc()
     const lastActivityDate = dayjs(user.dateLastActivity || user.dateRegistered).utc()
