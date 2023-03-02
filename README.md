@@ -1,6 +1,6 @@
 # Strautomator Core
 
-This is the core module of Strautomator, containing most of its business logic. This project doesn't run by itself, but is used by the [Strautomator Web](https://github.com/strautomator/web) and can be linked on other environments as well (Cloud Functions, CLI tools etc...).
+This is the core module of Strautomator, containing most of its business logic. This project doesn't run by itself, but is used by the [Web](https://github.com/strautomator/web) and [Functions](https://github.com/strautomator/functions).
 
 ## Getting started
 
