@@ -25,9 +25,9 @@ export class StravaFtp {
      * Estimate the user's FTP based on the passed activities.
      * @param user The user to estimate the FTP for.
      * @param activities List of activities to be used for the estimation.
-     * @param force Force recalculation of FTP for older activities compared to the estimated last activity ID.
+     * @param skipIntervals Optional, set to skip checking 5 / 20 / 60min power intervals.
      */
-    estimateFtp = async (user: UserData, activities?: StravaActivity[], force?: boolean): Promise<StravaEstimatedFtp> => {
+    estimateFtp = async (user: UserData, activities?: StravaActivity[], skipIntervals?: boolean): Promise<StravaEstimatedFtp> => {
         let activityCount: number = 0
 
         try {
@@ -41,15 +41,15 @@ export class StravaFtp {
                 activities = await stravaActivities.getActivities(user, {after: dateFrom, before: dateTo})
             }
 
-            // Filter only activities since the last FTP status, if force is not set.
+            // Filter only activities since the last FTP status.
             // We add a 100 buffer to the activity ID in the (very rare) case where an activity is
             // created earlier but processed later than the one which triggered the last FTP update.
-            if (!force && user.ftpStatus) {
+            if (user.ftpStatus) {
                 activities = activities.filter((a) => a.id >= user.ftpStatus.activityId - 100)
             }
 
             // Filter only cycling activities with good power data and that lasted at least 20 minutes.
-            activities = activities.filter((a) => bikeTypes.includes(a.type) && a.hasPower && a.movingTime >= 1200)
+            activities = activities.filter((a) => bikeTypes.includes(a.type) && a.hasPower && a.movingTime > 1200)
             activityCount = activities.length
 
             // No valid activities? Stop here.
@@ -87,8 +87,8 @@ export class StravaFtp {
                     let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
                     let power: number
 
-                    // Leisure activities (less than 50% FTP) are not processed.
-                    if (watts < user.profile.ftp / 2) {
+                    // Low effort activities (less than 60% FTP) are not processed.
+                    if (watts < user.profile.ftp * 0.6) {
                         logger.debug("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Activity ${a.id} power is too low (${watts}), won't process`)
                         return
                     }
@@ -105,9 +105,8 @@ export class StravaFtp {
                         power = watts * factor
                     }
 
-                    // PRO users also get the best power splits from 5 / 20 / 60 min intervals,
-                    // but only for activities that happened in the last 6 weeks.
-                    if (user.isPro) {
+                    // PRO users might also get the best power splits from 5 / 20 / 60 min intervals for recent activities.
+                    if (!skipIntervals && user.isPro) {
                         const pIntervals = await this.getPowerIntervals(user, a)
 
                         if (pIntervals) {
@@ -213,11 +212,11 @@ export class StravaFtp {
             // and only if the value actually changed. Ignore these conditions if force is set.
             if (!force) {
                 if (user.ftpStatus) {
-                    const now = dayjs().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
+                    const sinceLast = dayjs().subtract(settings.strava.ftp.sinceLastHours, "hours").unix()
                     const lastUpdate = dayjs(user.ftpStatus.dateUpdated).unix()
 
-                    if (lastUpdate >= now) {
-                        logger.warn("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`, `Abort, FTP was already updated recently`)
+                    if (lastUpdate >= sinceLast) {
+                        logger.warn("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`, `Abort, FTP was updated recently`)
                         return false
                     }
                 }
@@ -250,10 +249,12 @@ export class StravaFtp {
     /**
      * Estimate and save the user's FTP if necessary.
      * @param user User data.
+     * @param activities Optional activities to be processed.
+     * @param skipIntervals Optional, set to skip checking 5 / 20 / 60min power intervals.
      */
-    processFtp = async (user: UserData): Promise<void> => {
+    processFtp = async (user: UserData, activities?: StravaActivity[], skipIntervals?: boolean): Promise<void> => {
         try {
-            const ftpEstimation = await this.estimateFtp(user)
+            const ftpEstimation = await this.estimateFtp(user, activities, skipIntervals)
 
             if (!ftpEstimation) {
                 logger.warn("Strava.processFtp", `User ${user.id} ${user.displayName}`, "Could not estimate the user's FTP")

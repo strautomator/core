@@ -5,6 +5,7 @@ import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
+import stravaFtp from "./ftp"
 import database from "../database"
 import eventManager from "../eventmanager"
 import notifications from "../notifications"
@@ -263,6 +264,19 @@ export class StravaActivities {
                 }
             } else {
                 logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `No matching recipes`)
+            }
+
+            // Check for FTP updates in case user has opted-in and the activity happened in the last few days.
+            // At the moe
+            try {
+                const shouldUpdateFtp = user.isPro && user.preferences?.ftpAutoUpdate && user.profile.ftp
+                const powerIncreased = activity.hasPower && activity.wattsWeighted >= user.profile.ftp
+                const isRecent = dayjs().utc().subtract(2, "days").isBefore(activity.dateStart)
+                if (shouldUpdateFtp && powerIncreased && isRecent) {
+                    await stravaFtp.processFtp(user, [activity],true)
+                }
+            } catch (ftpEx) {
+                logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "Failed to auto-update FTP", ftpEx)
             }
         } catch (ex) {
             logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
