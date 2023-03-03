@@ -1,6 +1,6 @@
 // Strautomator Core: Axios
 
-import {AxiosRequestConfig} from "axios"
+import {AxiosRequestConfig, AxiosResponse} from "axios"
 import jaul = require("jaul")
 import logger = require("anyhow")
 import url = require("url")
@@ -21,11 +21,46 @@ export interface AxiosConfig extends AxiosRequestConfig {
 }
 
 /**
+ * A rudimentary rate-limit logging and throttling mechanism that activates
+ * when we are about to reach the API's predefined rate limits.
+ * @param res The response from the target API.
+ * @param urlInfo URL information.
+ * @param rateLimitExtractor Optional function to extract the rate limits from the response.
+ */
+export const rateLimitDelay = async (res: AxiosResponse, urlInfo: URL, rateLimitExtractor?: (res: AxiosResponse) => number) => {
+    const logUrl = `${urlInfo.hostname}${urlInfo.pathname}`
+
+    if (res.headers && rateLimitExtractor) {
+        try {
+            const usedQuota = rateLimitExtractor(res)
+
+            if (usedQuota > settings.axios.backoffThreshold / 2 && usedQuota % 9 == 0) {
+                logger.warn("Axios.rateLimitDelay", logUrl, `Used ${usedQuota.toFixed(0)}% of API quota`)
+            }
+            if (usedQuota > settings.axios.backoffThreshold) {
+                const multiplier = usedQuota - settings.axios.backoffThreshold
+                await jaul.io.sleep(settings.axios.backoffInterval * multiplier)
+            }
+        } catch (headerEx) {
+            logger.warn("Axios.rateLimitDelay", logUrl, "Failed to extract the rate limits", headerEx)
+        }
+    } else if (res.status == 429) {
+        logger.warn("Axios.rateLimitDelay", logUrl, "Rate limited")
+        await jaul.io.sleep(settings.axios.retryInterval)
+    }
+}
+
+/**
  * Make a request using axios. Will retry once if it times out.
  * @param options Options to be passed to axios.
+ * @param rateLimitExtractor Optional function to extract the rate limit usage (0 to 100%) from the response.
  */
-export const axiosRequest = async (options: AxiosConfig): Promise<any> => {
+export const axiosRequest = async (options: AxiosConfig, rateLimitExtractor?: (res: AxiosResponse) => number): Promise<AxiosResponse | any> => {
+    const urlInfo = new url.URL(options.url)
+    const logUrl = `${urlInfo.hostname}${urlInfo.pathname}`
+
     try {
+        if (!options.method) options.method = "GET"
         if (!options.headers) options.headers = {}
 
         // User agent defaults to app title and version.
@@ -33,8 +68,11 @@ export const axiosRequest = async (options: AxiosConfig): Promise<any> => {
             options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
         }
 
-        // Make request, return true if response was a 204 with no body, otherwise return response body.
-        const res = await axios(options)
+        // Make request and check for possible rate limits.
+        const res: AxiosResponse = await axios(options)
+        await rateLimitDelay(res, urlInfo, rateLimitExtractor)
+
+        // Return true if response was a 204 with no body, otherwise return response body.
         return res.status == 204 && !res.data ? true : options.returnResponse ? res : res.data
     } catch (ex) {
         const message = `${ex.code} ${ex.message}`.toUpperCase()
@@ -49,16 +87,17 @@ export const axiosRequest = async (options: AxiosConfig): Promise<any> => {
 
         // Retry the request if it failed due to timeout, rate limiting or server errors.
         if ((isTimeout || isRetryable) && !accessDenied) {
-            const urlInfo = new url.URL(options.url)
-
             try {
                 await jaul.io.sleep(settings.axios.retryInterval)
-                const res = await axios(options)
 
-                logger.warn("Axios.axiosRequest", options.method, `${urlInfo.hostname}${urlInfo.pathname}`, ex, "Failed once, retrying worked")
-                return res.status == 204 && !res.data ? true : res.data
+                // Retry the request.
+                const res = await axios(options)
+                await rateLimitDelay(res, urlInfo, rateLimitExtractor)
+
+                logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed once, retrying worked")
+                return res.status == 204 && !res.data ? true : options.returnResponse ? res : res.data
             } catch (innerEx) {
-                logger.warn("Axios.axiosRequest", options.method, `${urlInfo.hostname}${urlInfo.pathname}`, ex, "Failed twice, will not retry")
+                logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed twice, will not retry")
                 throw innerEx
             }
         }

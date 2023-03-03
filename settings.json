@@ -36,8 +36,13 @@
     "axios": {
         // User agent used to emulate a browser.
         "uaBrowser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
-        // Retry axios requests afew 4 seconds. Value set in milliseconds.
-        "retryInterval": 4000
+        // Start throttling requests if we reach over 95% of the extracted quota. Value in percent (0 to 100).
+        "backoffThreshold": 95,
+        // Forced back-off base delay when about to hit API rate limits.
+        // Value set in milliseconds, will increase as we get closer to the limits.
+        "backoffInterval": 500,
+        // Retry axios requests after 2 seconds. Value set in milliseconds.
+        "retryInterval": 2000
     },
     // Beta environment and settings disabled by default.
     "beta": {
@@ -373,7 +378,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 6,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 60,
+            "maxPerMinute": 70,
             // Default page size is the max of 200.
             "pageSize": 200,
             // Token to be appended to the URL of Strava webhooks, for
@@ -396,8 +401,8 @@
         "ftp": {
             // Estimated FTP will go down by 1% for each retroactive week of no activities.
             "idleLossPerWeek": 0.01,
-            // User's FTP will be estimated based on activities from the last 8 weeks.
-            "weeks": 8,
+            // User's FTP will be estimated based on activities from the last 12 weeks.
+            "weeks": 12,
             // FTP can be updated only once every 24 hours.
             "sinceLastHours": 24,
             // FTP must have changed by at least 2% to be updated automatically
@@ -452,8 +457,8 @@
             // Open-Meteo API rate limits.
             "rateLimit": {
                 "maxConcurrent": 4,
-                "perHour": 2000,
-                "perDay": 8000
+                "perHour": 1000,
+                "perDay": 5000
             },
             // The Open-Meteo API does not need a secret.
             "secret": true
@@ -476,9 +481,9 @@
             "baseUrl": "https://api.stormglass.io/v2/",
             /// Storm Glass API rate limits.
             "rateLimit": {
-                "maxConcurrent": 2,
-                "perHour": 15,
-                "perDay": 35
+                "maxConcurrent": 1,
+                "perHour": 4,
+                "perDay": 10
             },
             // The Storm Glass API secret MUST be set via secret settings or
             // via the SMU_weather_stormglass_secret environment variable.
