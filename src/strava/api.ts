@@ -2,6 +2,7 @@
 
 import {StravaCachedResponse, StravaTokens} from "./types"
 import {AxiosConfig, axiosRequest} from "../axios"
+import {AxiosResponse} from "axios"
 import {URLSearchParams} from "url"
 import database from "../database"
 import eventManager from "../eventmanager"
@@ -228,6 +229,21 @@ export class StravaAPI {
     // --------------------------------------------------------------------------
 
     /**
+     * Helper to extract rate limits from response headers.
+     * @param res The Axios response.
+     */
+    private rateLimitExtractor = (res: AxiosResponse): number => {
+        try {
+            const headerLimit = parseInt(res.headers["x-ratelimit-limit"]?.split(",")[0] || "1")
+            const headerUsage = parseInt(res.headers["x-ratelimit-usage"]?.split(",")[0] || "0")
+            return (headerUsage / headerLimit) * 100
+        } catch (ex) {
+            logger.warn("Strava.rateLimitExtractor", ex)
+            return 0
+        }
+    }
+
+    /**
      * Internal implementation to make a request to the Strava API.
      * @param tokens The user OAuth2 tokens.
      * @param method HTTP method can be GET or POST.
@@ -275,8 +291,7 @@ export class StravaAPI {
             }
 
             // Send request to Strava.
-            const res: any = await this.limiter.schedule({id: options.path}, () => axiosRequest(options))
-
+            const res: AxiosResponse = await this.limiter.schedule({id: options.path}, () => axiosRequest(options, this.rateLimitExtractor))
             if (!res) {
                 throw new Error("Invalid or empty response")
             }
