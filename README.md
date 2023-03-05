@@ -27,7 +27,7 @@ Optional credentials:
 -   Twitter API
 -   Weather providers: OpenWeatherMap, Storm Glass, Tomorrow.io, Visual Crossing
 
-Please note that some of these services might (and will!) charge you.
+Please note that all the services above have a free plan / version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid offers.
 
 ### Getting your GCP credentials
 
