@@ -221,9 +221,14 @@ export class Recipes {
 
         // Recipe disabled? Stop here.
         if (recipe.disabled) {
-            logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} is disabled`)
+            logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, "Recipe is disabled")
             return false
         }
+
+        // Set default logical operators.
+        if (!recipe.op) recipe.op = "AND"
+        if (!recipe.samePropertyOp) recipe.samePropertyOp = recipe.op
+        const operatorLog = recipe.op == recipe.samePropertyOp ? recipe.op : `${recipe.samePropertyOp} ${recipe.op}`
 
         // If recipe is default for a sport, check the type.
         if (recipe.defaultFor) {
@@ -231,13 +236,9 @@ export class Recipes {
                 return false
             }
         }
-
         // Otherwise iterate conditions and evaluate each one.
         else {
-            if (!recipe.op) recipe.op = "AND"
-            if (!recipe.samePropertyOp) recipe.samePropertyOp = recipe.op
-
-            logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, `${recipe.op} ${recipe.samePropertyOp}`, `${recipe.conditions.length} conditions`)
+            logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, operatorLog, `${recipe.conditions.length} conditions`)
 
             // Group conditions by property type, so we can evaluate on an ordely basis
             // and apply the samePropertyOp operator.
@@ -276,7 +277,7 @@ export class Recipes {
         }
 
         const logEvaluated = recipe.defaultFor ? `default for ${recipe.defaultFor}` : recipe.conditions.map((c) => `${c.property}: ${activity[c.property] ? activity[c.property].id || activity[c.property] : c.value}`).join(" | ")
-        logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, "Evaluated", logEvaluated)
+        logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, operatorLog, logEvaluated)
 
         // Sort recipe actions, webhook should come last.
         const sortedActions = _.sortBy(recipe.actions, ["type"])
