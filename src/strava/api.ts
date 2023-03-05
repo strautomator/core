@@ -236,7 +236,7 @@ export class StravaAPI {
         try {
             const headerLimit = parseInt(res.headers["x-ratelimit-limit"]?.split(",")[0] || "1")
             const headerUsage = parseInt(res.headers["x-ratelimit-usage"]?.split(",")[0] || "0")
-            return (headerUsage / headerLimit) * 100
+            return Math.floor((headerUsage / headerLimit) * 100)
         } catch (ex) {
             logger.warn("Strava.rateLimitExtractor", ex)
             return 0

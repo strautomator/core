@@ -227,10 +227,10 @@ export class Weather {
             } catch (ex) {
                 const failedProviderName = providerModule.name
 
-                // Rate limited?
-                if (ex.response && ex.response.status == 402) {
+                // Daily rate limit reached?
+                if (ex.response?.status == 402) {
                     providerModule.disabledTillDate = utcNow.endOf("day").add(1, "hour").toDate()
-                    logger.warn("Weather.getLocationWeather", `${failedProviderName} daily quota reached`)
+                    logger.warn("Weather.getLocationWeather", failedProviderName, "Daily quota reached")
                 }
 
                 // Still has other providers to try and fetch the weather?
