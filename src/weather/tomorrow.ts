@@ -4,6 +4,7 @@ import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
 import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
 import {UserPreferences} from "../users/types"
 import {axiosRequest} from "../axios"
+import {AxiosResponse} from "axios"
 import {translation} from "../translations"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
@@ -59,7 +60,7 @@ export class Tomorrow implements WeatherProvider {
 
             // Fetch weather data.
             logger.debug("Tomorrow.getWeather", weatherUrl)
-            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
+            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}, this.rateLimitExtractor))
 
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
@@ -120,6 +121,29 @@ export class Tomorrow implements WeatherProvider {
         // Process and return weather summary.
         processWeatherSummary(result, dDate, preferences)
         return result
+    }
+
+    /**
+     * Helper to extract rate limits from response headers.
+     * @param res The Axios response.
+     */
+    private rateLimitExtractor = (res: AxiosResponse): number => {
+        let currentUsage = 0
+
+        try {
+            for (let key of ["hour", "day"]) {
+                const headerLimit = parseInt(res.headers[`x-ratelimit-limit-${key}`] || "1")
+                const headerRemaining = parseInt(res.headers[`x-ratelimit-remaining-${key}`] || "1")
+                const usage = Math.floor(((headerLimit - headerRemaining) / headerLimit) * 100)
+                if (usage > currentUsage) {
+                    currentUsage = usage
+                }
+            }
+        } catch (ex) {
+            logger.warn("Tomorrow.rateLimitExtractor", ex)
+        }
+
+        return currentUsage
     }
 
     // INTERNAL HELPERS
