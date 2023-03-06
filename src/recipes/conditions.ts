@@ -352,7 +352,6 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
     // Get activity weather.
     const weatherProp = prop.split(".")[1]
     const weatherSummary = await weather.getActivityWeather(user, activity)
-    let summary: WeatherSummary
 
     // Weather could not be fetched? Stop here.
     if (!weatherSummary) {
@@ -360,18 +359,19 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
         return false
     }
 
-    let weatherPropValue = summary[weatherProp].replace(/[^\d.-]/g, "")
-    if (!isNaN(weatherPropValue)) {
-        weatherPropValue = parseFloat(weatherPropValue)
-    }
-
     // Parsed condition value as number.
     const value = parseInt(condition.value as string)
+    let summary: WeatherSummary
 
     // Check for weather on start and end of the activity.
     for (summary of [weatherSummary.start, weatherSummary.end]) {
         if (!summary || _.isNil(summary[weatherProp])) {
             continue
+        }
+
+        let weatherPropValue = summary[weatherProp]?.toString().replace(/[^\d.-]/g, "") || ""
+        if (!isNaN(weatherPropValue)) {
+            weatherPropValue = parseFloat(weatherPropValue)
         }
 
         if (op == RecipeOperator.Equal) {
