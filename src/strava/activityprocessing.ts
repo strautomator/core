@@ -273,7 +273,7 @@ export class StravaActivities {
                 const powerIncreased = activity.hasPower && activity.wattsWeighted >= user.profile.ftp
                 const isRecent = dayjs().utc().subtract(2, "days").isBefore(activity.dateStart)
                 if (shouldUpdateFtp && powerIncreased && isRecent) {
-                    await stravaFtp.processFtp(user, [activity],true)
+                    await stravaFtp.processFtp(user, [activity], true)
                 }
             } catch (ftpEx) {
                 logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "Failed to auto-update FTP", ftpEx)
@@ -363,12 +363,16 @@ export class StravaActivities {
     }
 
     /**
-     * Delete all saved / processed activities for the specified user.
-     * Returns the number of deleted actvities.
-     * @param user The user account.
-     * @param ageDays Activities older than that age (in days) will be deleted.
+     * Delete all saved / processed activities for the specified user and / or max age.
+     * At least one argument is required. Returns the number of deleted actvities.
+     * @param user Optional user account.
+     * @param ageDays Optional max age (in days).
      */
-    deleteProcessedActivities = async (user?: UserData, ageDays?: number): Promise<number> => {
+    deleteProcessedActivities = async (user?: UserData | null, ageDays?: number): Promise<number> => {
+        if (!user && !ageDays) {
+            throw new Error("At least a user or a max age in days is necessary")
+        }
+
         if (!ageDays) ageDays = 0
 
         const userLog = user ? `User ${user.id} ${user.displayName}` : "All users"
