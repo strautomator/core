@@ -111,4 +111,4 @@ Please have a look on the provided Makefile for all available commands.
 
 ## Hosting on GCP
 
-Strautomator is currently optimized to run on Google Cloud Platform. It makes use of Firestore, Cloud Storage, and various other Google APIs to get things working. There are no plans to port the code to make it work on other ecosystems, but as all the code is wrapped in its own specific set of modules, such tasks should be more or less trouble-free.
+Strautomator is currently optimized to run on Google Cloud Platform. It makes use of Firestore, Cloud Storage, and various other Google APIs to get things working. There are no plans to port the code to make it work in other ecosystems, but as all the code is wrapped in its own specific set of modules, such tasks should be easily doable.

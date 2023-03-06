@@ -248,12 +248,13 @@ export class Recipes {
             let condition: RecipeCondition
             let valid = recipe.op == "OR" ? false : true
 
+            // Evaluate conditions, grouping them by same type.
             for ([gProperty, conditions] of groupedConditions) {
-                let sameValid = recipe.samePropertyOp == "OR" ? false : true
-
                 logger.debug("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `Processing conditions: ${gProperty}`)
 
-                // Evaluate conditions, depending on the recipe's "same property" logical operator.
+                let sameValid = recipe.samePropertyOp == "OR" ? false : true
+
+                // Individual checks, using the logical operator for conditions with same type.
                 for (condition of conditions) {
                     if (recipe.samePropertyOp == "OR") {
                         sameValid = sameValid || (await this.checkCondition(user, activity, recipe, condition))
