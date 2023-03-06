@@ -245,34 +245,45 @@ export class Recipes {
             const groupedConditions = Object.entries(_.groupBy(recipe.conditions, "property")) as any
             let gProperty: string
             let conditions: RecipeCondition[]
+            let condition: RecipeCondition
+            let valid = recipe.op == "OR" ? false : true
+
             for ([gProperty, conditions] of groupedConditions) {
-                let condition: RecipeCondition
-                let valid = recipe.samePropertyOp == "OR" ? false : true
+                let sameValid = recipe.samePropertyOp == "OR" ? false : true
 
                 logger.debug("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `Processing conditions: ${gProperty}`)
 
-                // Evaluate conditions, depending on the recipe's "same property" operator.
+                // Evaluate conditions, depending on the recipe's "same property" logical operator.
                 for (condition of conditions) {
                     if (recipe.samePropertyOp == "OR") {
-                        valid = valid || (await this.checkCondition(user, activity, recipe, condition))
-                        if (valid) break
+                        sameValid = sameValid || (await this.checkCondition(user, activity, recipe, condition))
+                        if (sameValid) break
                     } else {
-                        valid = valid && (await this.checkCondition(user, activity, recipe, condition))
-                        if (!valid) break
+                        sameValid = sameValid && (await this.checkCondition(user, activity, recipe, condition))
+                        if (!sameValid) break
                     }
                 }
 
-                // Recipe not valid for this activity? Log what failed.
-                // Polyline contents won't be logged.
-                if (!valid) {
-                    let conditionProp = condition.property == "polyline" ? null : activity[condition.property]
-                    if (_.isDate(conditionProp)) conditionProp = dayjs(conditionProp).format("lll")
-                    else if (_.isArray(conditionProp)) conditionProp = conditionProp.length
-
-                    let logValue = conditionProp ? `Not a match: ${conditionProp}` : "Not a match"
-                    logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
-                    return false
+                // Logical operator for conditions with different types.
+                if (recipe.op == "OR") {
+                    valid = valid || sameValid
+                    if (valid) break
+                } else {
+                    valid = valid && sameValid
+                    if (!valid) break
                 }
+            }
+
+            // Recipe not valid for this activity? Log what failed.
+            // Polyline contents won't be logged.
+            if (!valid) {
+                let conditionProp = condition.property == "polyline" ? null : activity[condition.property]
+                if (_.isDate(conditionProp)) conditionProp = dayjs(conditionProp).format("lll")
+                else if (_.isArray(conditionProp)) conditionProp = conditionProp.length
+
+                let logValue = conditionProp ? `Not a match: ${conditionProp}` : "Not a match"
+                logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
+                return false
             }
         }
 
