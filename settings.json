@@ -425,10 +425,10 @@
         // Only a single batch operation per user every 24 hours.
         "queueBatchPerHours": 24,
         // Default batch size when processing queued activities.
-        "queueBatchSize": 50,
+        "queueBatchSize": 55,
         // How long can activities stayed queued for processing?
-        // By default 2 days, value set in seconds.
-        "maxQueueAge": 172800
+        // By default 2 and a half days, value set in seconds.
+        "maxQueueAge": 216000
     },
     "twitter": {
         // Around 85% chances of posting interesting activities on Twitter for users that have opted in.
@@ -441,8 +441,8 @@
             "suspended": 180,
             "noActivities": 730
         },
-        // Consider user subscriptions dangling (pending approval) after 5 days.
-        "danglingDays": 5,
+        // Consider user subscriptions dangling (pending approval) after 4 days.
+        "danglingDays": 4,
         // Users can request an archive download once every 10 days.
         "archiveDownloadDays": 10
     },
@@ -530,7 +530,7 @@
         }
     },
     "webhooks": {
-        // Retry the webhooks setup every 60 seconds (if failed). Value in milliseconds.
-        "retryInterval": 60000
+        // Retry the webhooks setup every 30 seconds (if failed). Value in milliseconds.
+        "retryInterval": 30000
     }
 }
