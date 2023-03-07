@@ -625,17 +625,6 @@ export enum StravaSport {
 }
 
 /**
- * Strava sport-specific types, used to match the correct
- * activity_type and sport_type on activities.
- */
-export const StravaSportRefs = {
-    GravelRide: "Ride",
-    MountainBikeRide: "Ride",
-    EMountainBikeRide: "EBikeRide",
-    TrailRun: "Run"
-}
-
-/**
  * Strava "Ride" workout types.
  */
 export enum StravaRideType {

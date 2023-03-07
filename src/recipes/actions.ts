@@ -3,7 +3,7 @@
 import {RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStatsData} from "./types"
 import {recipeActionList} from "./lists"
 import {transformActivityFields} from "../strava/utils"
-import {StravaActivity, StravaGear, StravaSportRefs} from "../strava/types"
+import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {getActivityFortune} from "../fortune"
@@ -333,7 +333,7 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
  */
 export const sportTypeAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        const activityType = StravaSportRefs[action.value] ? StravaSportRefs[action.value] : action.value
+        const activityType = action.value
         activity.type = activityType
         activity.sportType = activityType
         activity.updatedFields.push("sportType")
