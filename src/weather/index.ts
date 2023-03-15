@@ -69,7 +69,7 @@ export class Weather {
 
                 // Set the API rate limiting object and stats and add provider.
                 provider.apiRequest = apiRateLimiter(provider, pSettings.rateLimit)
-                provider.stats = {requestCount: 0, errorCount: 0, lastRequest: null}
+                provider.stats = {requestCount: 0, errorCount: 0, repeatedErrors: 0, lastRequest: null}
                 this.providers.push(provider)
 
                 if (provider.hoursPast > this.maxHoursPast) {
@@ -221,16 +221,22 @@ export class Weather {
                 result = await providerModule.getWeather(coordinates, dDate, preferences)
                 if (result) {
                     providerModule.disabledTillDate = null
+                    providerModule.stats.repeatedErrors = 0
                 } else {
                     throw new Error("No weather summary returned")
                 }
             } catch (ex) {
                 const failedProviderName = providerModule.name
+                providerModule.stats.repeatedErrors++
 
-                // Daily rate limit reached?
+                // Daily rate limit reached, or too many consecutive errors?
                 if (ex.response?.status == 402) {
                     providerModule.disabledTillDate = utcNow.endOf("day").add(1, "hour").toDate()
                     logger.warn("Weather.getLocationWeather", failedProviderName, "Daily quota reached")
+                } else if (providerModule.stats.repeatedErrors > settings.weather.maxRepeatedErrors) {
+                    providerModule.disabledTillDate = utcNow.add(1, "hour").toDate()
+                    providerModule.stats.repeatedErrors = 0
+                    logger.warn("Weather.getLocationWeather", failedProviderName, "Temporarily disabled, too many repeated errors")
                 }
 
                 // Still has other providers to try and fetch the weather?

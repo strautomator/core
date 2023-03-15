@@ -451,6 +451,8 @@
         "cacheDuration": 900,
         // Set the default weather providers.
         "defaultProviders": ["tomorrow", "openmeteo"],
+        // Provider will temporarily stop requests if it fails more than 5 times in a row.
+        "maxRepeatedErrors": 5,
         // Open-Meteo API settings.
         "openmeteo": {
             "baseUrl": "https://api.open-meteo.com/v1/forecast",

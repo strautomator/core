@@ -106,6 +106,8 @@ export interface WeatherApiStats {
     requestCount: number
     /** How many errors. */
     errorCount: number
+    /** Repeated error count. */
+    repeatedErrors: number
     /** Date of last request. */
     lastRequest: Date
 }
