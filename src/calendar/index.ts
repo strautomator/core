@@ -411,6 +411,7 @@ export class Calendar {
                         if (options.dateFrom.isAfter(eventDate) || options.dateTo.isBefore(eventDate)) continue
                         let endDate: Date
 
+                        const evTimestamp = Math.round(eventDate.valueOf() / 1000)
                         const estimatedTime = clubEvent.route ? clubEvent.route.estimatedTime : clubEvent.komootRoute ? clubEvent.komootRoute.estimatedTime : 0
 
                         // Upcoming event has a route with estimated time? Use it as the end date,
@@ -446,7 +447,7 @@ export class Calendar {
 
                         // Base event data.
                         const eventData: ICalEventData = {
-                            id: `club-${clubEvent.id}`,
+                            id: `club-${clubEvent.id}-${evTimestamp}`,
                             start: eventDate,
                             end: endDate,
                             summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
