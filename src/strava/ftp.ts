@@ -87,9 +87,9 @@ export class StravaFtp {
                     let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
                     let power: number
 
-                    // Low effort activities (less than 60% FTP) are not processed.
-                    if (watts < user.profile.ftp * 0.6) {
-                        logger.debug("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Activity ${a.id} power is too low (${watts}), won't process`)
+                    // Low effort activities (less than 60% FTP or current best activity) are not processed.
+                    if (watts < user.profile.ftp * 0.6 || watts < maxWatts * 0.6) {
+                        logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Activity ${a.id} power is too low: (${watts}), won't process`)
                         return
                     }
 
