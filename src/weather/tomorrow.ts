@@ -134,7 +134,7 @@ export class Tomorrow implements WeatherProvider {
             for (let key of ["hour", "day"]) {
                 const headerLimit = parseInt(res.headers[`x-ratelimit-limit-${key}`] || "1")
                 const headerRemaining = parseInt(res.headers[`x-ratelimit-remaining-${key}`] || "1")
-                const usage = Math.floor(((headerLimit - headerRemaining) / headerLimit) * 100)
+                const usage = ((headerLimit - headerRemaining) / headerLimit) * 100
                 if (usage > currentUsage) {
                     currentUsage = usage
                 }

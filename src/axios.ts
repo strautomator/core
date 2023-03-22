@@ -33,9 +33,10 @@ export const rateLimitDelay = async (res: AxiosResponse, urlInfo: URL, rateLimit
     if (res.headers && rateLimitExtractor) {
         try {
             const usedQuota = rateLimitExtractor(res)
+            const modQuota = usedQuota % 9
 
-            if (usedQuota > settings.axios.backoffThreshold / 2 && usedQuota % 9 == 0) {
-                logger.warn("Axios.rateLimitDelay", logUrl, `Used ${usedQuota.toFixed(0)}% of API quota`)
+            if (usedQuota > settings.axios.backoffThreshold / 2 && (modQuota === 0 || modQuota === 0.5)) {
+                logger.warn("Axios.rateLimitDelay", logUrl, `Used ${usedQuota.toFixed(1)}% of API quota`)
             }
             if (usedQuota > settings.axios.backoffThreshold) {
                 const multiplier = usedQuota - settings.axios.backoffThreshold
