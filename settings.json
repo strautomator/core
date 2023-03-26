@@ -236,6 +236,13 @@
         // OAuth2 modules (Strava, PayPal, etc).
         "tokenTimeout": 9000
     },
+    "openai": {
+        "api": {
+            "baseUrl": "https://api.openai.com/v1/chat/completions"
+        },
+        // Limit to 20 tokens per response.
+        "maxTokens": 20
+    },
     "paypal": {
         "api": {
             "mode": "live",

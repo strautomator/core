@@ -68,6 +68,8 @@ import {Komoot} from "./komoot"
 export const komoot: Komoot = Komoot.Instance
 import {Musixmatch} from "./musixmatch"
 export const musixmatch: Musixmatch = Musixmatch.Instance
+import {OpenAI} from "./openai"
+export const openai: OpenAI = OpenAI.Instance
 import {Spotify} from "./spotify"
 export const spotify: Spotify = Spotify.Instance
 import {Twitter} from "./twitter"
@@ -198,7 +200,7 @@ export const startup = async (quickStart?: boolean) => {
     await database.init()
 
     // Try starting individual modules now.
-    for (let coreModule of [github, mailer, maps, paypal, strava, komoot, spotify, musixmatch, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
+    for (let coreModule of [github, mailer, maps, paypal, strava, komoot, openai, spotify, musixmatch, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
         try {
             const modSettings = settings[coreModule.constructor.name.toLowerCase()]
 

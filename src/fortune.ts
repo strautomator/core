@@ -2,6 +2,8 @@
 
 import {StravaActivity, StravaSport} from "./strava/types"
 import {UserData} from "./users/types"
+import {ActivityWeather} from "./weather/types"
+import openai from "./openai"
 import weather from "./weather"
 import dayjs from "./dayjs"
 import _ from "lodash"
@@ -46,16 +48,40 @@ export const fortuneCookies: string[] = [
 export const getActivityFortune = async (user: UserData, activity: StravaActivity): Promise<string> => {
     const now = dayjs.utc()
     const imperial = user.profile.units == "imperial"
-
+    const isRide = activity.type == StravaSport.Ride || activity.type == StravaSport.VirtualRide || activity.type == StravaSport.EBikeRide
+    const isRun = activity.type == StravaSport.Run || activity.type == StravaSport.Walk
     let prefixes = ["", "delightful", "amazing", "great", "", "just your regular", "crazy", "superb", "", "magnificent", "marvellous", "exotic", ""]
     let names = []
     let uniqueNames = []
     let seqCount = 0
-    let usingWeather = false
 
-    // Activity types.
-    const isRide = activity.type == StravaSport.Ride || activity.type == StravaSport.VirtualRide || activity.type == StravaSport.EBikeRide
-    const isRun = activity.type == StravaSport.Run || activity.type == StravaSport.Walk
+    // Weather props.
+    const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
+    let usingWeather = false
+    let weatherSummaries: ActivityWeather
+
+    // Weather based checks for 30% of non-PRO and 90% of PRO users, but only
+    // for activities that happened on the last 2 days.
+    const rndWeather = user.isPro ? 0.91 : 0.31
+    if (activity.hasLocation && now.subtract(2, "days").isBefore(activity.dateEnd) && Math.random() < rndWeather) {
+        const language = user.preferences.language
+
+        // Force English language, fetch weather summaries for activity,
+        // then reset the user language back to its default.
+        user.preferences.language = "en"
+        weatherSummaries = await weather.getActivityWeather(user, activity)
+        user.preferences.language = language
+    }
+
+    // If user is PRO and activity is cycling / running, use ChatGPT to generate the activity name.
+    if (user.isPro && (isRide || isRun)) {
+        const aiName = await openai.generateActivityName(user, activity, weatherSummaries)
+
+        if (aiName) {
+            logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, `${usingWeather ? "with" : "withour"} weather`, "Via OpenAI", aiName)
+            return aiName
+        }
+    }
 
     // Rounded activity properties.
     const distanceR = Math.round(activity.distance)
@@ -91,7 +117,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         } else if ((imperial && distanceR == 26) || distanceR == 42) {
             uniqueNames.push("marathon on two wheels")
             uniqueNames.push("marathon on a bike")
-        } else if (((imperial && activity.distance < 6) || activity.distance) < 10 && activity.distance > 0) {
+        } else if (((imperial && activity.distance < 6) || activity.distance <= 10) && activity.distance > 0) {
             names.push("and short, too short of a ride")
             names.push("short, very short ride")
             names.push("mini ride")
@@ -222,61 +248,49 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         }
     }
 
-    // Weather based checks for 30% of non-PRO and 90% of PRO users, but only
-    // for activities that happened on the last 2 days.
-    const rndWeather = user.isPro ? 0.91 : 0.31
-    if (activity.hasLocation && now.subtract(2, "days").isBefore(activity.dateEnd) && Math.random() < rndWeather) {
-        const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
+    // Got the activity weather summary? Add a few
+    if (weatherSummaries) {
+        let wPrefixes: string[] = []
 
-        // Force language to English.
-        const preferences = _.cloneDeep(user.preferences)
-        preferences.language = "en"
+        // Check for weather on start and end of the activity.
+        for (let summary of [weatherSummaries.start, weatherSummaries.end]) {
+            if (!summary) continue
 
-        // Fetch weather summary for activity.
-        const weatherSummary = await weather.getActivityWeather(user, activity)
-        if (weatherSummary) {
-            let wPrefixes: string[] = []
+            const temperature = parseFloat(summary.temperature.toString().replace(/[^\d.-]/g, ""))
+            const precipitation = summary.precipitation ? summary.precipitation.toLowerCase() : ""
+            const random = Math.random()
 
-            // Check for weather on start and end of the activity.
-            for (let summary of [weatherSummary.start, weatherSummary.end]) {
-                if (!summary) continue
-
-                const temperature = parseFloat(summary.temperature.toString().replace(/[^\d.-]/g, ""))
-                const precipitation = summary.precipitation ? summary.precipitation.toLowerCase() : ""
-                const random = Math.random()
-
-                if ((weatherUnit == "f" && temperature < 23) || temperature < -5) {
-                    uniqueNames.push("ice age")
-                    uniqueNames.push("frostbite festival")
-                    uniqueNames.push("feels like summer")
-                } else if ((weatherUnit == "f" && temperature > 95) || temperature > 35) {
-                    uniqueNames.push("melting")
-                    uniqueNames.push("outdoor sauna")
-                    uniqueNames.push("doesn't feel warm, at all")
-                } else if ((weatherUnit == "f" && temperature < 33) || temperature < 1) {
-                    wPrefixes.push(random > 0.5 ? "freezing" : "icy")
-                } else if ((weatherUnit == "f" && temperature < 51) || temperature < 11) {
-                    wPrefixes.push(random > 0.5 ? "chilly" : "cold")
-                } else if ((weatherUnit == "f" && temperature > 86) || temperature > 30) {
-                    wPrefixes.push(random > 0.5 ? "tropical" : "hot")
-                } else if ((weatherUnit == "f" && temperature > 68) || temperature > 20) {
-                    wPrefixes.push(random > 0.5 ? "warm" : "cozy")
-                }
-
-                if (precipitation.includes("snow")) {
-                    wPrefixes.push(random > 0.5 ? "snowy" : "snow-powdered")
-                } else if (precipitation.includes("rain") || precipitation.includes("drizzle")) {
-                    wPrefixes.push(random > 0.5 ? "raining" : "wet")
-                }
+            if ((weatherUnit == "f" && temperature < 23) || temperature < -5) {
+                uniqueNames.push("ice age")
+                uniqueNames.push("frostbite festival")
+                uniqueNames.push("feels like summer")
+            } else if ((weatherUnit == "f" && temperature > 95) || temperature > 35) {
+                uniqueNames.push("melting")
+                uniqueNames.push("outdoor sauna")
+                uniqueNames.push("doesn't feel warm, at all")
+            } else if ((weatherUnit == "f" && temperature < 33) || temperature < 1) {
+                wPrefixes.push(random > 0.5 ? "freezing" : "icy")
+            } else if ((weatherUnit == "f" && temperature < 51) || temperature < 11) {
+                wPrefixes.push(random > 0.5 ? "chilly" : "cold")
+            } else if ((weatherUnit == "f" && temperature > 86) || temperature > 30) {
+                wPrefixes.push(random > 0.5 ? "tropical" : "hot")
+            } else if ((weatherUnit == "f" && temperature > 68) || temperature > 20) {
+                wPrefixes.push(random > 0.5 ? "warm" : "cozy")
             }
 
-            // Weather prefixes were set? Append them to the original prefixes.
-            if (wPrefixes.length > 0) {
-                prefixes = prefixes.map((p) => `${_.sample(wPrefixes)} ${p}`)
+            if (precipitation.includes("snow")) {
+                wPrefixes.push(random > 0.5 ? "snowy" : "snow-powdered")
+            } else if (precipitation.includes("rain") || precipitation.includes("drizzle")) {
+                wPrefixes.push(random > 0.5 ? "raining" : "wet")
             }
-
-            usingWeather = true
         }
+
+        // Weather prefixes were set? Append them to the original prefixes.
+        if (wPrefixes.length > 0) {
+            prefixes = prefixes.map((p) => `${_.sample(wPrefixes)} ${p}`)
+        }
+
+        usingWeather = true
     }
 
     // No uniqe names or names? Maybe just use the basic stuff, 10% chances.
