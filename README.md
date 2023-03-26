@@ -22,12 +22,13 @@ Optional credentials:
 -   GitHub API
 -   LocationIQ API
 -   musixmatch API
+-   OpenAI API
 -   PayPal API
 -   Spotify API
 -   Twitter API
 -   Weather providers: OpenWeatherMap, Storm Glass, Tomorrow.io, Visual Crossing
 
-Please note that all the services above have a free plan / version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid offers.
+Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid plans.
 
 ### Getting your GCP credentials
 
