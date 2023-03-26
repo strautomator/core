@@ -66,6 +66,7 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
     }
 
     try {
+        const tempValue = parseFloat(summary.temperature.toString())
         const prcFog = translation("Fog", preferences)
         const prcDrizzle = translation("Drizzle", preferences)
         const prcRain = translation("Rain", preferences)
@@ -80,8 +81,8 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
             const mm = extraData.mmPrecipitation || 0
 
             if (mm > 0) {
-                if (summary.temperature < 1) summary.precipitation = prcSnow
-                else if (summary.temperature < 4) summary.precipitation = prcSleet
+                if (tempValue < 1) summary.precipitation = prcSnow
+                else if (tempValue < 4) summary.precipitation = prcSleet
                 else if (mm < 1) summary.precipitation = prcDrizzle
                 else summary.precipitation = prcRain
 
@@ -115,12 +116,12 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
 
         // Temperature summary.
         let tempSummary = translation("Cool", preferences)
-        if (summary.temperature > 40) tempSummary = translation("ExtremelyWarm", preferences)
-        else if (summary.temperature > 30) tempSummary = translation("VeryWarm", preferences)
-        else if (summary.temperature > 22) tempSummary = translation("Warm", preferences)
-        else if (summary.temperature < -10) tempSummary = translation("ExtremelyCold", preferences)
-        else if (summary.temperature < 2) tempSummary = translation("VeryCold", preferences)
-        else if (summary.temperature < 12) tempSummary = translation("Cold", preferences)
+        if (tempValue > 40) tempSummary = translation("ExtremelyWarm", preferences)
+        else if (tempValue > 30) tempSummary = translation("VeryWarm", preferences)
+        else if (tempValue > 22) tempSummary = translation("Warm", preferences)
+        else if (tempValue < -10) tempSummary = translation("ExtremelyCold", preferences)
+        else if (tempValue < 2) tempSummary = translation("VeryCold", preferences)
+        else if (tempValue < 12) tempSummary = translation("Cold", preferences)
 
         // Make sure the "feels like" temperature is set.
         if (_.isNil(summary.feelsLike)) {
@@ -147,7 +148,7 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         }
 
         // Wind summary.
-        const isWindy = summary.windSpeed && summary.windSpeed > 20
+        const isWindy = summary.windSpeed && (summary.windSpeed as number) > 20
 
         // Wind speed.
         if (!_.isNil(summary.windSpeed)) {
