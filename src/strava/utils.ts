@@ -55,6 +55,14 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         updatedFields: []
     }
 
+    // Get elapsed and moving times as HH:MM:SS strings.
+    if (activity.totalTime > 0) {
+        activity.totalTimeString = dayjs.duration(activity.totalTime, "seconds").format("HH:mm:ss")
+    }
+    if (activity.movingTime > 0) {
+        activity.movingTimeString = dayjs.duration(activity.movingTime, "seconds").format("HH:mm:ss")
+    }
+
     // Get coordinates from polyline, and make sure start and end locations are
     // populated if coming empty from the Strava API for whatever reason.
     if (activity.polyline) {
@@ -168,8 +176,12 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     if (!_.isNil(data.elev_high)) {
         activity.elevationMax = Math.round(elevationMax)
     }
+    if (activity.elevationGain > 0 || activity.elevationMax > 0) {
+        activity.elevationUnit = user.profile.units == "imperial" ? "ft" : "m"
+    }
     if (data.distance) {
         activity.distance = parseFloat(distance.toFixed(1))
+        activity.distanceUnit = user.profile.units == "imperial" ? "miles" : "km"
     }
     if (data.average_speed) {
         activity.speedAvg = parseFloat(avgSpeed.toFixed(1))
@@ -178,6 +190,9 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     if (data.max_speed) {
         activity.speedMax = parseFloat(maxSpeed.toFixed(1))
         activity.paceMax = parseFloat(`${maxPaceMinutes}.${maxPaceSeconds}`).toFixed(2).replace(".", ":")
+    }
+    if (activity.speedAvg > 0 || activity.speedMax > 0) {
+        activity.speedUnit = user.profile.units == "imperial" ? "mi/h" : "km/h"
     }
 
     // Set lap distances and speed.

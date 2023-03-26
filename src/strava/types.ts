@@ -49,16 +49,24 @@ export interface StravaActivity {
     utcStartOffset?: number
     /** Total distance in kilometers. */
     distance?: number
+    /** Distance units based on the user profile. */
+    distanceUnit?: "km" | "miles"
     /** Total elevation gain in meters. */
     elevationGain?: number
     /** Maximum elevation. */
     elevationMax?: number
+    /** Elevation unit. */
+    elevationUnit?: "m" | "ft"
     /** Distance / climbing ratio: 19m per kilometer or 100ft per mile */
     climbingRatio?: number
     /** Total elapsed time in seconds. */
     totalTime: number
-    /** Elapsed moving time in seconds. */
+    /** Total elapsed time in the format HH:MM:SS. */
+    totalTimeString?: string
+    /** Moving time in seconds. */
     movingTime: number
+    /** Moving time in the format HH:MM:SS. */
+    movingTimeString?: string
     /** The activity has location coordinates? */
     hasLocation?: boolean
     /** Start location (latitude and longitude). */
@@ -75,6 +83,8 @@ export interface StravaActivity {
     speedAvg?: number
     /** Maximum speed (per hour). */
     speedMax?: number
+    /** Speed unit. */
+    speedUnit?: "km/h" | "mi/h"
     /** Average pace (per km/mi), as string. */
     paceAvg?: string
     /** Maximum pace (per km/mi), as string. */
