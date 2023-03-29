@@ -481,8 +481,12 @@ export class Calendar {
                 }
             }
 
+            // Get relevant clubs (all, or filtered by ID).
+            const allClubs = await strava.clubs.getClubs(user)
+            const clubFilter = (c: StravaClub) => options.clubIds.includes(c.id.toString()) || (c.url && options.clubIds.includes(c.url))
+            const clubs = options.clubIds?.length > 0 ? allClubs.filter(clubFilter) : allClubs
+
             // Iterate user's clubs to get their events and push to the calendar.
-            const clubs = await strava.clubs.getClubs(user)
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
             while (clubs.length) {
                 await Promise.all(clubs.splice(0, batchSize).map(getEvents))

@@ -10,6 +10,8 @@ export interface CalendarOptions {
     activities?: boolean
     /** Include club events? */
     clubs?: boolean
+    /** Include only specific clubs (by ID). */
+    clubIds?: string[]
     /** Starting date (as DayJS), defaults to the pastCalendarDays setting. */
     dateFrom?: dayjs.Dayjs
     /** Ending date (as DayJS), defaults to the futureCalendarDays setting. */
