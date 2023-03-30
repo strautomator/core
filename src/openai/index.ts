@@ -1,4 +1,4 @@
-// Strautomator Core: OpenAI
+// Strautomator Core: OpenAI (ChatGPT)
 
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
@@ -46,7 +46,7 @@ export class OpenAI {
      */
     generateActivityName = async (user: UserData, activity: StravaActivity, weatherSummaries?: ActivityWeather): Promise<string> => {
         try {
-            const adj = _.sample(["cool", "funny", "exquisite", "silly", "sarcastic"])
+            const adj = _.sample(["cool", "funny", "exquisite", "silly", "sarcastic", "ironic", "mocking", "very cool", "very funny", "very silly"])
             const arrPrompt = [`Please generate a single ${adj} name for my Strava ${activity.commute ? "commute" : "activity"}.`]
 
             if (activity.distance > 0 && activity.movingTime > 0) {
