@@ -315,7 +315,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     }
 
     result = result ? result.charAt(0).toUpperCase() + result.slice(1) : _.sample(fortuneCookies)
-    logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, `${usingWeather ? "with" : "withour"} weather`, result)
+    logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, result)
 
     return result
 }
