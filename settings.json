@@ -68,8 +68,8 @@
         "name": "Strava",
         // Default event duration in minutes (ie. for past club events).
         "defaultDurationMinutes": 15,
-        // Calendars are cached for a maximum of 5 days, even if there were no new activities. Value in seconds.
-        "maxCacheDuration": 432000
+        // Calendars are cached for a maximum of 7 days, even if there were no new activities. Value in seconds.
+        "maxCacheDuration": 604800
     },
     "cookie": {
         "sessionName": "strautsession",
@@ -400,10 +400,10 @@
         },
         // Some Strava resources might be cached in memory. Duration in seconds.
         "cacheDuration": {
-            "athletes-stats": 60,
-            "clubs": 1800,
-            "clubs-group-events": 600,
-            "routes": 1800
+            "athletes-stats": 120,
+            "clubs": 3600,
+            "clubs-group-events": 1200,
+            "routes": 3600
         },
         "ftp": {
             // Estimated FTP will go down by 1% for each retroactive week of no activities.
