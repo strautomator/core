@@ -665,7 +665,7 @@ export enum StravaRouteTerrain {
  */
 export enum StravaMapStyle {
     Default = "default",
-    Sattelite3D = "satellite_3d",
+    Satellite3D = "satellite_3d",
     SurfaceType = "surface_type",
     Elevation = "elevation",
     Gradient = "gradient",
