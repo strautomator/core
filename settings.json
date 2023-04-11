@@ -232,9 +232,9 @@
         "tokenFailuresAlert": 2,
         // Suspend users after 10 token failures.
         "tokenFailuresDisable": 10,
-        // Token exchange requests times out in 9 seconds. This applies to all
+        // Token exchange requests times out in 8 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).
-        "tokenTimeout": 9000
+        "tokenTimeout": 8000
     },
     "openai": {
         "api": {
