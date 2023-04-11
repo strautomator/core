@@ -64,11 +64,14 @@ export class OpenAI {
             }
             if (weatherSummaries) {
                 if (weatherSummaries.start && weatherSummaries.end && weatherSummaries.start.summary != weatherSummaries.end.summary) {
-                    arrPrompt.push(`The weather at the start was ${weatherSummaries.start.summary}, and at the end it was ${weatherSummaries.end.summary}`)
+                    arrPrompt.push(`The weather at the start was ${weatherSummaries.start.summary}, and at the end it was ${weatherSummaries.end.summary}.`)
                 } else {
-                    arrPrompt.push(`The weather was ${weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "mixed"}`)
+                    arrPrompt.push(`The weather was ${weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "mixed"}.`)
                 }
             }
+
+            // Avoid boilerplate around the actual answer.
+            arrPrompt.push("Answer the generated name only, with no additional text.")
 
             // Get final prompt and request options.
             const content = arrPrompt.join(" ")
