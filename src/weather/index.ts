@@ -136,8 +136,8 @@ export class Weather {
                 throw new Error("Failed to get the activity weather")
             }
 
-            const startSummary = weather.start ? `Start ${dateStart.format("LT")}: ${weather.start.summary}` : "No weather for start location"
-            const endSummary = weather.end ? `End ${dateStart.format("LT")}: ${weather.end.summary}` : "No weather for end location"
+            const startSummary = weather.start ? `Start ${dateStart.format("LT")}, ${weather.start.provider}: ${weather.start.summary}` : "No weather for start location"
+            const endSummary = weather.end ? `End ${dateStart.format("LT")}, ${weather.end.provider}: ${weather.end.summary}` : "No weather for end location"
             logger.info("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, startSummary, endSummary)
 
             return weather
