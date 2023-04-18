@@ -81,10 +81,10 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         }
     }
 
-    // Activity has location data?
-    activity.hasLocation = activity.locationStart?.length > 0 || activity.locationEnd?.length > 0
-
     // Extra optional fields.
+    activity.hasLocation = activity.locationStart?.length > 0 || activity.locationEnd?.length > 0
+    activity.hasCadence = activity.cadenceAvg && activity.cadenceAvg > 0
+
     if (data.workout_type && data.workout_type != 0 && data.workout_type != 10) {
         activity.workoutType = data.workout_type
     }

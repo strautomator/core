@@ -105,6 +105,8 @@ export interface StravaActivity {
     hrMax?: number
     /** Average cadence. */
     cadenceAvg?: number
+    /** Has cadence data? */
+    hasCadence?: boolean
     /** Calories. */
     calories?: number
     /** Relative effort (previously called suffer score). */
