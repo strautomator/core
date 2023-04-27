@@ -1,8 +1,8 @@
 // Strautomator Core: Weather - Visual Crossing
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
-import {UserPreferences} from "../users/types"
+import {getSuntimes, weatherSummaryString} from "./utils"
+import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
@@ -30,12 +30,12 @@ export class VisualCrossing implements WeatherProvider {
 
     /**
      * Get current weather conditions for the specified coordinates and date.
+     * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
-     * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
-        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -45,7 +45,6 @@ export class VisualCrossing implements WeatherProvider {
 
         try {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
-            if (!preferences) preferences = {}
 
             const baseUrl = settings.weather.visualcrossing.baseUrl
             const secret = settings.weather.visualcrossing.secret
@@ -57,48 +56,52 @@ export class VisualCrossing implements WeatherProvider {
             // Visual Crossing expects the date in their local timezone.
             const qDate = dDate.format("YYYY-MM-DDTHH:mm:ss")
             const latlon = coordinates.join(",")
-            const include = "current,obs,histfcst"
-            const lang = preferences.language && preferences.language != "pt" ? preferences.language || "en" : "en"
-            let weatherUrl = `${baseUrl}timeline/${latlon}/${qDate}?key=${secret}&include=${include}&unitGroup=metric&lang=${lang}`
+            const lang = user.preferences?.language && user.preferences.language != "pt" ? user.preferences.language : "en"
+            const include = diffHours > 1 ? "current,days,hours,fcst,obs" : "current"
+            const basePath = diffHours > 1 ? `timeline/${latlon}/${qDate}` : `timeline/${latlon}`
+            let weatherUrl = `${baseUrl}${basePath}?key=${secret}&include=${include}&lang=${lang}&unitGroup=metric`
 
             // Fetch weather data.
             logger.debug("VisualCrossing.getWeather", weatherUrl)
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate)
             if (result) {
-                logger.info("VisualCrossing.getWeather", weatherSummaryString(coordinates, dDate, result))
+                logger.info("VisualCrossing.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(coordinates, dDate, result))
             }
 
             return result
         } catch (ex) {
-            logger.error("VisualCrossing.getWeather", coordinates, isoDate, unit, ex)
+            logger.error("VisualCrossing.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
             throw ex
         }
     }
 
     /**
      * Transform data from the Visual Crossing API to a WeatherSummary.
-     * @param data Data from Visual Crossing.
+     * @param rawData Raw data from Visual Crossing.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
      * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
-        if (!data) return
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+        if (!rawData) return null
+        let data = rawData
 
-        // Locate correct hour report from the response.
-        if (data.days && data.days.length > 0) {
-            data = data.days[0]
-            if (data.hours && data.hours.length > 0) {
-                data = data.hours.find((d) => d.datetime == dDate.format("HH:mm:ss"))
-            }
+        // Locate correct report from the response.
+        if (data.days?.length > 0) {
+            data = data.days.find((d) => d.datetime == dDate.format("YYYY-MM-DD")) || data.days[0] || data
+        }
+        if (data.hours?.length > 0) {
+            data = data.hours.find((d) => d.datetime == dDate.format("HH:mm:ss")) || data.hours[0] || data
+        }
+        if (!data.temp && !data.humidity && !data.icon) {
+            data = data.currentConditions
         }
 
         // Data not found? Stop here.
-        if (!data || !data.datetime) return
-        if (!data.temp && !data.humidity && !data.icon) return
+        if (!data || (!data.temp && !data.humidity && !data.icon)) return null
 
         // Get precipitation details.
         const precipLevel = data.precip || 0
@@ -130,8 +133,6 @@ export class VisualCrossing implements WeatherProvider {
             return
         }
 
-        // Process and return weather summary.
-        processWeatherSummary(result, dDate, preferences)
         return result
     }
 }

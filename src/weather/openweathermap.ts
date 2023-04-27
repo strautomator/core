@@ -1,8 +1,8 @@
 // Strautomator Core: Weather - OpenWeatherMap
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
-import {UserPreferences} from "../users/types"
+import {getSuntimes, weatherSummaryString} from "./utils"
+import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
@@ -22,20 +22,62 @@ export class OpenWeatherMap implements WeatherProvider {
 
     name: string = "openweathermap"
     title: string = "OpenWeatherMap"
-    hoursPast: number = 1
-    hoursFuture: number = 108
+    hoursPast: number = 8760
+    hoursFuture: number = 160
 
     // METHODS
     // --------------------------------------------------------------------------
 
     /**
      * Get current weather conditions for the specified coordinates.
+     * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
-     * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
-        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
+        const isoDate = dDate.toISOString()
+        const utcDate = dDate.utc()
+        const utcNow = dayjs.utc()
+        const diffHours = Math.abs(utcNow.diff(utcDate, "hours"))
+        const isFuture = utcNow.subtract(1, "hours").isBefore(utcDate)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
+
+        try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
+
+            const baseUrl = settings.weather.openweathermap.baseUrl
+            const secret = settings.weather.openweathermap.secret
+            const lang = user.preferences?.language || "en"
+            const basePath = isFuture ? "?" : `/timemachine?dt=${utcDate.unix()}&`
+            const weatherUrl = `${baseUrl}${basePath}appid=${secret}&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}&units=metric&exclude=minutely,alerts`
+
+            // Fetch weather data.
+            logger.debug("OpenWeatherMap.getWeather", weatherUrl)
+            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
+
+            // Parse result.
+            const result = this.toWeatherSummary(res, coordinates, dDate)
+            if (result) {
+                logger.info("OpenWeatherMap.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(coordinates, dDate, result))
+            }
+
+            return result
+        } catch (ex) {
+            logger.error("OpenWeatherMap.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
+            this.stats.errorCount++
+            throw ex
+        }
+    }
+
+    /**
+     * Get air quality for the specified coordinates.
+     * @param user User requesting the data.
+     * @param coordinates Array with latitude and longitude.
+     * @param dDate Date for the weather request (as a DayJS object).
+     */
+    getAirQuality = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<number> => {
+        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -45,27 +87,27 @@ export class OpenWeatherMap implements WeatherProvider {
 
         try {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
-            if (!preferences) preferences = {}
 
-            const baseUrl = settings.weather.openweathermap.baseUrl
+            const baseUrl = settings.weather.openweathermap.aqiBaseUrl
             const secret = settings.weather.openweathermap.secret
-            const lang = preferences.language || "en"
-            const basePath = isFuture ? "forecast" : "weather"
-            const weatherUrl = `${baseUrl}${basePath}?appid=${secret}&units=metric&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}`
+            const aqiUrl = `${baseUrl}?appid=${secret}&lat=${coordinates[0]}&lon=${coordinates[1]}`
 
             // Fetch weather data.
-            logger.debug("OpenWeatherMap.getWeather", weatherUrl)
-            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
+            logger.debug("OpenWeatherMap.getAirQuality", aqiUrl)
+            const res = await this.apiRequest.schedule(() => axiosRequest({url: aqiUrl}))
 
-            // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
-            if (result) {
-                logger.info("OpenWeatherMap.getWeather", weatherSummaryString(coordinates, dDate, result))
+            if (res) {
+                const aiq = this.toAirQualityIndex(res, dDate)
+
+                if (aiq !== null) {
+                    logger.info("OpenWeatherMap.getAirQuality", `User ${user.id} ${user.displayName}`, coordinates.join(", "), dDate.format("lll"), `AIQ: ${aiq}`)
+                    return aiq
+                }
             }
 
-            return result
+            return null
         } catch (ex) {
-            logger.error("OpenWeatherMap.getWeather", coordinates, isoDate, unit, ex)
+            logger.error("OpenWeatherMap.getAirQuality", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }
@@ -73,17 +115,18 @@ export class OpenWeatherMap implements WeatherProvider {
 
     /**
      * Transform data from the OpenWeatherMap API to a WeatherSummary.
-     * @param data Data from OpenWeatherMap.
+     * @param rawData Raw data from OpenWeatherMap.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
      * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
-        if (!data) return
-        if (data.list) {
-            data = data.list.find((d) => d.dt > dDate.utc().unix())
-        }
-        if (!data) return
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+        if (!rawData) return null
+
+        const dt = dDate.utc().unix()
+        const finder = (d) => d.dt >= dt - 1800 && d.dt <= dt + 1800
+        const data = rawData.data?.find(finder) || rawData.hourly?.find(finder) || rawData.daily?.find(finder) || rawData.current
+        if (!data.weather) return null
 
         const weatherData = data.weather[0]
         const code = weatherData.icon.substring(1)
@@ -132,9 +175,23 @@ export class OpenWeatherMap implements WeatherProvider {
             }
         }
 
-        // Process and return weather summary.
-        processWeatherSummary(result, dDate, preferences)
         return result
+    }
+
+    /**
+     * Fetch the AQI from the raw data.
+     * @param rawData Raw data from OpenWeatherMap.
+     * @param dDate The date (as a DayJS object).
+     */
+    private toAirQualityIndex = (rawData: any, dDate: dayjs.Dayjs): number => {
+        if (!rawData) return null
+        let data = rawData.list?.length > 0 ? rawData.list.find((d) => d.dt >= dDate.utc().unix()) || rawData.list[0] : rawData
+
+        if (data.main?.aqi) {
+            return data.main?.aqi
+        }
+
+        return null
     }
 }
 

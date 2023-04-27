@@ -1,8 +1,8 @@
 // Strautomator Core: Weather - Storm Glass
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
-import {UserPreferences} from "../users/types"
+import {getSuntimes, weatherSummaryString} from "./utils"
+import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
@@ -22,7 +22,7 @@ export class StormGlass implements WeatherProvider {
 
     name: string = "stormglass"
     title: string = "Storm Glass"
-    hoursPast: number = 168
+    hoursPast: number = 160
     hoursFuture: number = 0
 
     // METHODS
@@ -30,12 +30,12 @@ export class StormGlass implements WeatherProvider {
 
     /**
      * Get current weather conditions for the specified coordinates and date.
+     * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
-     * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
-        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -45,7 +45,6 @@ export class StormGlass implements WeatherProvider {
 
         try {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
-            if (!preferences) preferences = {}
 
             const baseUrl = settings.weather.stormglass.baseUrl
             const secret = settings.weather.stormglass.secret
@@ -64,14 +63,14 @@ export class StormGlass implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl, headers: headers}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate)
             if (result) {
-                logger.info("StormGlass.getWeather", weatherSummaryString(coordinates, dDate, result))
+                logger.info("StormGlass.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(coordinates, dDate, result))
             }
 
             return result
         } catch (ex) {
-            logger.error("StormGlass.getWeather", coordinates, isoDate, unit, ex)
+            logger.error("StormGlass.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }
@@ -79,23 +78,21 @@ export class StormGlass implements WeatherProvider {
 
     /**
      * Transform data from the Storm Glass API to a WeatherSummary.
-     * @param data Data from Storm Glass.
+     * @param rawData Raw data from Storm Glass.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
      * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
-        if (!data) return
-
-        // Get correct array from response.
-        data = data.hours || data.data
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+        if (!rawData) return null
+        let data = rawData.hours || rawData.data
 
         // Locate weather details for the correct time.
         const timeFilter = dDate.utc().format("YYYY-MM-DDTHH")
         const timeData = data.find((r) => r.time.includes(timeFilter))
 
         // Data for the specified time not found? Stop here.
-        if (!timeData) return
+        if (!timeData) return null
 
         const cloudCover = this.getDataProperty(timeData.cloudCover)
         const precipLevel = this.getDataProperty(timeData.precipitation)
@@ -120,8 +117,6 @@ export class StormGlass implements WeatherProvider {
             }
         }
 
-        // Process and return weather summary.
-        processWeatherSummary(result, dDate, preferences)
         return result
     }
 

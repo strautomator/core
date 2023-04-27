@@ -1,7 +1,7 @@
 // Strautomator Core: Weather
 
 import {ActivityWeather, WeatherProvider, WeatherSummary} from "./types"
-import {apiRateLimiter} from "./utils"
+import {apiRateLimiter, processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import tomorrow from "./tomorrow"
@@ -117,7 +117,7 @@ export class Weather {
                 weather.start = await this.getLocationWeather(user, activity.locationStart, dateStart, provider)
                 weather.end = await this.getLocationWeather(user, activity.locationEnd, dateEnd, provider)
             } catch (innerEx) {
-                logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, innerEx)
+                logger.error("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
             }
 
             // Weather in the middle of the activity is restricted to PRO users and activities longer than 3 hours.
@@ -127,7 +127,7 @@ export class Weather {
                     const dateMid = dayjs(activity.dateStart).add(seconds, "seconds").utcOffset(activity.utcStartOffset)
                     weather.mid = await this.getLocationWeather(user, activity.locationMid, dateMid, provider)
                 } catch (innerEx) {
-                    logger.error("Weather.getActivityWeather", `Activity ${activity.id}`, `User ${user.id} ${user.displayName}`, "Mid location", innerEx)
+                    logger.error("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Mid location", innerEx)
                 }
             }
 
@@ -178,7 +178,7 @@ export class Weather {
 
         // Get provider from parameter, then preferences, finally the default from settings.
         if (!provider) {
-            const defaultProvider = _.sample(settings.weather.defaultProviders)
+            const defaultProvider = user.isPro ? _.sample(settings.weather.defaultProviders.pro) : _.sample(settings.weather.defaultProviders.free)
             provider = preferences && preferences.weatherProvider ? preferences.weatherProvider : defaultProvider
             isDefaultProvider = true
         }
@@ -218,7 +218,7 @@ export class Weather {
             try {
                 providerModule = currentProviders.shift()
 
-                result = await providerModule.getWeather(coordinates, dDate, preferences)
+                result = await providerModule.getWeather(user, coordinates, dDate)
                 if (result) {
                     providerModule.disabledTillDate = null
                     providerModule.stats.repeatedErrors = 0
@@ -258,6 +258,27 @@ export class Weather {
         if (!result) {
             return null
         }
+
+        // Some providers have the AIQ returned by default but some don't, so here we
+        // get the list of providers with AIQ supported to get the value separately.
+        if (!result.aqi) {
+            const aqiProviders = this.providers.filter((p) => p.getAirQuality)
+
+            while (!result.aqi && aqiProviders.length > 0) {
+                try {
+                    providerModule = _.sample(aqiProviders)
+                    result.aqi = await providerModule.getAirQuality(user, coordinates, dDate)
+                } catch (aqiEx) {
+                    if (aqiProviders.length > 0) {
+                        logger.warn("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, `Air quality: ${providerModule.name} failed, will try another`, aqiEx.message)
+                    } else {
+                        logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, `Air quality: ${providerModule.name}`, aqiEx)
+                    }
+                }
+            }
+        }
+
+        processWeatherSummary(result, dDate, preferences)
 
         // Save to cache and return weather results.
         cache.set(`weather`, cacheId, result)

@@ -1,5 +1,7 @@
 // Strautomator Core: Weather types
 
+import {UserData} from "../users/types"
+import dayjs from "../dayjs"
 import Bottleneck from "bottleneck"
 
 /**
@@ -47,14 +49,16 @@ export interface WeatherProvider {
     hoursPast: number
     /** How many days ahead for forecasts? */
     hoursFuture: number
-    /** Get the weather for the specified location and date. */
-    getWeather: Function
     /** API rate limiter, instantiated by the Weather Manager. */
     apiRequest?: Bottleneck
     /** Weather API stats. */
     stats?: WeatherApiStats
     /** Disable this weather provider till the specified date. */
     disabledTillDate?: Date
+    /** Get the weather for the specified location and date. */
+    getWeather?(user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary>
+    /** Optional, get air quality for the specified location and date. */
+    getAirQuality?(user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<number>
 }
 
 /**
@@ -83,6 +87,10 @@ export interface WeatherSummary {
     precipitation?: string
     /** Visibility distance. */
     visibility?: number
+    /** Air Quality Index (numeric value). */
+    aqi?: number
+    /** Air Quality Index (colored circle icon). */
+    aqiIcon?: string
     /** Moon phase (as string). */
     moon?: MoonPhase
     /** Weather unicode icon. */
@@ -91,10 +99,10 @@ export interface WeatherSummary {
     extraData?: {
         /** Day or night? */
         timeOfDay?: "day" | "night"
-        /** Weather icon text. This flag will be removed after the weather summary has processed. */
-        iconText?: string
         /** Precipitation quantity. */
         mmPrecipitation?: number
+        /** Weather icon text. This flag will be removed after the weather summary has processed. */
+        iconText?: string
     }
 }
 

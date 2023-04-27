@@ -65,6 +65,9 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         throw new Error("Missing temperature and humidity")
     }
 
+    // Default preferences.
+    if (!preferences) preferences = {}
+
     try {
         const tempValue = parseFloat(summary.temperature.toString())
         const prcFog = translation("Fog", preferences)
@@ -93,6 +96,8 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
             } else {
                 summary.precipitation = translation("Dry", preferences)
             }
+        } else {
+            summary.precipitation = translation(summary.precipitation, preferences)
         }
 
         summary.precipitation = summary.precipitation.toLowerCase()
@@ -171,56 +176,79 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         summary.moon = getMoonPhase(date)
 
         // Select correct weather icon. Defaults to cloudy.
-        let unicode: string = "2601"
+        let unicodeIcon: string = "2601"
         switch (extraData.iconText) {
             case "Clear":
                 if (extraData.timeOfDay == "day") {
-                    unicode = "2600"
+                    unicodeIcon = "2600"
                 } else if (summary.moon == MoonPhase.Full) {
-                    unicode = "1F316"
+                    unicodeIcon = "1F316"
                 } else {
-                    unicode = "1F312"
+                    unicodeIcon = "1F312"
                 }
                 break
             case "MostlyClear":
-                unicode = "1F324"
+                unicodeIcon = "1F324"
                 break
             case "MostlyCloudy":
                 if (extraData.timeOfDay == "day") {
-                    unicode = "26C5"
+                    unicodeIcon = "26C5"
                 } else {
-                    unicode = "1F319"
+                    unicodeIcon = "1F319"
                 }
                 break
             case "Drizzle":
             case "Rain":
-                unicode = "1F327"
+                unicodeIcon = "1F327"
                 break
             case "Snow":
-                unicode = "2744"
+                unicodeIcon = "2744"
                 break
             case "Sleet":
-                unicode = "1F328"
+                unicodeIcon = "1F328"
                 break
             case "Wind":
             case "Windy":
-                unicode = "1F32C"
+                unicodeIcon = "1F32C"
                 break
             case "Fog":
-                unicode = "1F32B"
+                unicodeIcon = "1F32B"
                 break
             case "Thunderstorm":
-                unicode = "26C8"
+                unicodeIcon = "26C8"
                 break
             case "Tornado":
             case "Hurricane":
-                unicode = "1F32A"
+                unicodeIcon = "1F32A"
                 break
         }
 
         // Convert code to unicode emoji.
-        if (unicode) {
-            summary.icon = String.fromCodePoint(parseInt(unicode, 16))
+        if (unicodeIcon) {
+            summary.icon = String.fromCodePoint(parseInt(unicodeIcon, 16))
+        }
+
+        // Air quality index.
+        if (!_.isNil(summary.aqi)) {
+            let aqiIcon = "1F7E2"
+            switch (summary.aqi) {
+                case 1:
+                    aqiIcon = "1F7E1"
+                    break
+                case 2:
+                    aqiIcon = "1F7E0"
+                    break
+                case 3:
+                    aqiIcon = "1F534"
+                    break
+                case 4:
+                    aqiIcon = "1F7E3"
+                    break
+                case 5:
+                    aqiIcon = "1F7E4"
+            }
+
+            summary.aqiIcon = String.fromCodePoint(parseInt(aqiIcon, 16))
         }
 
         // Summary set? Check if it has a translation. If unset, set one now.

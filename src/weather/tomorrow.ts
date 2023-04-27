@@ -1,11 +1,10 @@
 // Strautomator Core: Weather - Tomorrow.io
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
-import {UserPreferences} from "../users/types"
+import {getSuntimes, weatherSummaryString} from "./utils"
+import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {AxiosResponse} from "axios"
-import {translation} from "../translations"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
@@ -25,19 +24,20 @@ export class Tomorrow implements WeatherProvider {
     name: string = "tomorrow"
     title: string = "Tomorrow.io"
     hoursPast: number = 5
-    hoursFuture: number = 168
+    hoursFuture: number = 160
+    aqiEnabled?: boolean = true
 
     // METHODS
     // --------------------------------------------------------------------------
 
     /**
      * Get current weather conditions for the specified coordinates.
+     * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
-     * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
-        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -47,14 +47,13 @@ export class Tomorrow implements WeatherProvider {
 
         try {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
-            if (!preferences) preferences = {}
 
             const baseUrl = settings.weather.tomorrow.baseUrl
             const secret = settings.weather.tomorrow.secret
             const dateFormat = "YYYY-MM-DDTHH:mm:ss"
             const startTime = utcDate.format(dateFormat) + "Z"
             const endTime = utcDate.add(1, "h").format(dateFormat) + "Z"
-            const fields = `weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover,visibility`
+            const fields = "weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover,visibility,epaIndex"
             const latlon = coordinates.join(",")
             const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
 
@@ -63,14 +62,14 @@ export class Tomorrow implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}, this.rateLimitExtractor))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate)
             if (result) {
-                logger.info("Tomorrow.getWeather", weatherSummaryString(coordinates, dDate, result))
+                logger.info("Tomorrow.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(coordinates, dDate, result))
             }
 
             return result
         } catch (ex) {
-            logger.error("Tomorrow.getWeather", coordinates, isoDate, unit, ex)
+            logger.error("Tomorrow.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }
@@ -78,15 +77,15 @@ export class Tomorrow implements WeatherProvider {
 
     /**
      * Transform data from the Tomorrow API to a WeatherSummary.
-     * @param data Data from Tomorrow.
+     * @param rawData Raw data from Tomorrow.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
      * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
-        if (!data || !data.data || !data.data.timelines) return
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+        if (!rawData?.data?.timelines) return null
+        let data = rawData.data.timelines[0]
 
-        data = data.data.timelines[0]
         const index = dDate.utc().minute() > 30 && data.intervals.length > 1 ? 1 : 0
         data = data.intervals[index].values
 
@@ -114,12 +113,21 @@ export class Tomorrow implements WeatherProvider {
             }
         }
 
+        // Has precipitation?
         if (precipitation) {
-            result.precipitation = translation(precipitation, preferences)
+            result.precipitation = precipitation
         }
 
-        // Process and return weather summary.
-        processWeatherSummary(result, dDate, preferences)
+        // Get correct AQI index.
+        if (data.epaIndex) {
+            if (data.epaIndex > 300) result.aqi = 5
+            else if (data.epaIndex > 200) result.aqi = 4
+            else if (data.epaIndex > 150) result.aqi = 3
+            else if (data.epaIndex > 100) result.aqi = 2
+            else if (data.epaIndex > 50) result.aqi = 1
+            else result.aqi = 0
+        }
+
         return result
     }
 

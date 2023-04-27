@@ -1,8 +1,8 @@
 // Strautomator Core: WeatherAPI.com (NOT WORKING YET)
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
-import {UserPreferences} from "../users/types"
+import {getSuntimes, weatherSummaryString} from "./utils"
+import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import _ from "lodash"
 import logger = require("anyhow")
@@ -31,12 +31,12 @@ export class WeatherAPI implements WeatherProvider {
 
     /**
      * Get current weather conditions for the specified coordinates.
+     * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
-     * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
-        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -46,28 +46,27 @@ export class WeatherAPI implements WeatherProvider {
 
         try {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
-            if (!preferences) preferences = {}
 
             const baseUrl = settings.weather.weatherapi.baseUrl
             const secret = settings.weather.weatherapi.secret
-            const lang = preferences.language || "en"
+            const lang = user.preferences?.language || "en"
             const basePath = isFuture ? "forecast" : "current"
             const unixdt = isFuture ? `&unixdt=${utcDate.unix()}` : ""
-            const weatherUrl = `${baseUrl}${basePath}.json?key=${secret}&lang=${lang}&q=${coordinates.join(",")}${unixdt}`
+            const weatherUrl = `${baseUrl}${basePath}.json?key=${secret}&lang=${lang}&aqi=yes&q=${coordinates.join(",")}${unixdt}`
 
             // Fetch weather data.
             logger.debug("WeatherAPI.getWeather", weatherUrl)
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate)
             if (result) {
-                logger.info("WeatherAPI.getWeather", weatherSummaryString(coordinates, dDate, result))
+                logger.info("WeatherAPI.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(coordinates, dDate, result))
             }
 
             return result
         } catch (ex) {
-            logger.error("WeatherAPI.getWeather", coordinates, isoDate, unit, ex)
+            logger.error("WeatherAPI.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }
@@ -75,14 +74,14 @@ export class WeatherAPI implements WeatherProvider {
 
     /**
      * Transform data from the WeatherAPI API to a WeatherSummary.
-     * @param data Data from WeatherAPI.
+     * @param rawData Raw data from WeatherAPI.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
      * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
-        data = this.filterData(data, dDate)
-        if (!data) return
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+        const data = this.filterData(rawData, dDate)
+        if (!data) return null
 
         // Set wind speed.
         let windSpeed = data.wind_kph || data.maxwind_kph || null
@@ -93,6 +92,9 @@ export class WeatherAPI implements WeatherProvider {
             if (summary == "sunny") summary = "Clear"
             else if (summary.indexOf("sunny") > 0) summary = summary.replace("Sunny", "Clear")
         }
+
+        // Has air quality data?
+        const airQuality = data["air_quality"] || {}
 
         const result: WeatherSummary = {
             provider: this.name,
@@ -106,14 +108,13 @@ export class WeatherAPI implements WeatherProvider {
             precipitation: null,
             cloudCover: data.cloud,
             visibility: data.avgvis_km || data.vis_km || 99,
+            aqi: airQuality["us-epa-index"] || null,
             extraData: {
                 timeOfDay: getSuntimes(coordinates, dDate).timeOfDay,
                 mmPrecipitation: data.precip_mm
             }
         }
 
-        // Process and return weather summary.
-        processWeatherSummary(result, dDate, preferences)
         return result
     }
 
@@ -121,9 +122,7 @@ export class WeatherAPI implements WeatherProvider {
      * Filter the response data from WeatherAPI and get details relevant to the specific date time.
      */
     private filterData = (data: any, dDate: dayjs.Dayjs): any => {
-        if (!data.current && !data.forecast) {
-            return null
-        }
+        if (!data.current && !data.forecast) return null
 
         const dayFormat = "YYYY-MM-DD"
         const hourFormat = "YYYY-MM-DD HH:00"

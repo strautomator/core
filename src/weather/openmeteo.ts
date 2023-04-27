@@ -1,8 +1,8 @@
 // Strautomator Core: Weather - Open-Meteo
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {getSuntimes, processWeatherSummary, weatherSummaryString} from "./utils"
-import {UserPreferences} from "../users/types"
+import {getSuntimes, weatherSummaryString} from "./utils"
+import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
 import dayjs from "../dayjs"
@@ -30,12 +30,12 @@ export class OpenMeteo implements WeatherProvider {
 
     /**
      * Get current weather conditions for the specified coordinates.
+     * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
-     * @param preferences User preferences to get proper weather units.
      */
-    getWeather = async (coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): Promise<WeatherSummary> => {
-        const unit = preferences && preferences.weatherUnit == "f" ? "imperial" : "metric"
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -45,7 +45,6 @@ export class OpenMeteo implements WeatherProvider {
 
         try {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
-            if (!preferences) preferences = {}
 
             const baseUrl = settings.weather.openmeteo.baseUrl
             const dateFormat = dDate.format("YYYY-MM-DD")
@@ -57,14 +56,58 @@ export class OpenMeteo implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate, preferences)
+            const result = this.toWeatherSummary(res, coordinates, dDate)
             if (result) {
-                logger.info("OpenMeteo.getWeather", weatherSummaryString(coordinates, dDate, result))
+                logger.info("OpenMeteo.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(coordinates, dDate, result))
             }
 
             return result
         } catch (ex) {
-            logger.error("OpenMeteo.getWeather", coordinates, isoDate, unit, ex)
+            logger.error("OpenMeteo.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
+            this.stats.errorCount++
+            throw ex
+        }
+    }
+
+    /**
+     * Get air quality for the specified coordinates.
+     * @param user User requesting the data.
+     * @param coordinates Array with latitude and longitude.
+     * @param dDate Date for the weather request (as a DayJS object).
+     */
+    getAirQuality = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<number> => {
+        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
+        const isoDate = dDate.toISOString()
+        const utcDate = dDate.utc()
+        const utcNow = dayjs.utc()
+        const diffHours = Math.abs(utcNow.diff(utcDate, "hours"))
+        const isFuture = utcNow.isBefore(utcDate)
+        const maxHours = isFuture ? this.hoursFuture : this.hoursPast
+
+        try {
+            if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
+
+            const baseUrl = settings.weather.openmeteo.aqiBaseUrl
+            const dateFormat = dDate.format("YYYY-MM-DD")
+            const daysQuery = isFuture ? `start_date=${dateFormat}&end_date=${dateFormat}` : `past_days=${utcNow.dayOfYear() - utcNow.subtract(diffHours, "hours").dayOfYear()}`
+            const aqiUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&hourly=european_aqi,us_aqi`
+
+            // Fetch air quality data.
+            logger.debug("OpenMeteo.getAirQuality", aqiUrl)
+            const res = await this.apiRequest.schedule(() => axiosRequest({url: aqiUrl}))
+
+            if (res) {
+                const aiq = this.toAirQualityIndex(res, dDate)
+
+                if (aiq !== null) {
+                    logger.info("OpenMeteo.getAirQuality", `User ${user.id} ${user.displayName}`, coordinates.join(", "), dDate.format("lll"), `AIQ: ${aiq}`)
+                    return aiq
+                }
+            }
+
+            return null
+        } catch (ex) {
+            logger.error("OpenMeteo.getAirQuality", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }
@@ -72,13 +115,14 @@ export class OpenMeteo implements WeatherProvider {
 
     /**
      * Transform data from the Open-Meteo API to a WeatherSummary.
-     * @param data Data from Open-Meteo.
+     * @param rawData Raw data from Open-Meteo.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
      * @param preferences The user preferences.
      */
-    private toWeatherSummary = (data: any, coordinates: [number, number], dDate: dayjs.Dayjs, preferences: UserPreferences): WeatherSummary => {
-        if (!data || !data.hourly) return
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+        if (!rawData || !rawData.hourly) return null
+        let data = rawData
 
         const utcDate = dDate.utc()
         const hour = utcDate.minute() < 30 ? utcDate.hour() : utcDate.hour() + 1
@@ -90,7 +134,7 @@ export class OpenMeteo implements WeatherProvider {
         const index = data.hourly.time.findIndex((h) => h == exactDateFormat || h == previousDateFormat || h == nextDateFormat)
 
         // No valid hourly index found? Stop here.
-        if (index == -1) return
+        if (index == -1) return null
 
         const result: WeatherSummary = {
             provider: this.name,
@@ -108,9 +152,37 @@ export class OpenMeteo implements WeatherProvider {
             }
         }
 
-        // Process and return weather summary.
-        processWeatherSummary(result, dDate, preferences)
         return result
+    }
+
+    /**
+     * Fetch the AQI from the raw data.
+     * @param rawData Raw data from Open-Meteo.
+     * @param dDate The date (as a DayJS object).
+     */
+    private toAirQualityIndex = (rawData: any, dDate: dayjs.Dayjs): number => {
+        if (!rawData || !rawData.hourly) return null
+        let data = rawData
+
+        const utcDate = dDate.utc()
+        const hour = utcDate.minute() < 30 ? utcDate.hour() : utcDate.hour() + 1
+        const targetDate = utcDate.hour(hour).minute(0)
+        const dateFormat = "YYYY-MM-DDTHH:mm"
+        const exactDateFormat = targetDate.format(dateFormat)
+        const previousDateFormat = targetDate.hour(hour - 1).format(dateFormat)
+        const nextDateFormat = targetDate.hour(hour + 1).format(dateFormat)
+        const index = data.hourly.time.findIndex((h) => h == exactDateFormat || h == previousDateFormat || h == nextDateFormat)
+
+        // No valid hourly index found? Stop here.
+        if (index == -1) return null
+
+        const aqi = data.hourly.european_aqi[index]
+        if (aqi > 300) return 5
+        if (aqi > 200) return 4
+        if (aqi > 150) return 3
+        if (aqi > 100) return 2
+        if (aqi > 50) return 1
+        return 0
     }
 }
 
