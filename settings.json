@@ -457,12 +457,16 @@
         // Cache weather results for 15 minutes. Value set in seconds.
         "cacheDuration": 900,
         // Set the default weather providers.
-        "defaultProviders": ["tomorrow", "openmeteo"],
+        "defaultProviders": {
+            "free": ["openmeteo", "weatherapi"],
+            "pro": ["openmeteo", "tomorrow"]
+        },
         // Provider will temporarily stop requests if it fails more than 5 times in a row.
         "maxRepeatedErrors": 5,
         // Open-Meteo API settings.
         "openmeteo": {
             "baseUrl": "https://api.open-meteo.com/v1/forecast",
+            "aqiBaseUrl": "https://air-quality-api.open-meteo.com/v1/air-quality",
             // Open-Meteo API rate limits.
             "rateLimit": {
                 "maxConcurrent": 4,
@@ -474,12 +478,13 @@
         },
         // OpenWeatherMap API settings.
         "openweathermap": {
-            "baseUrl": "https://api.openweathermap.org/data/2.5/",
+            "baseUrl": "https://api.openweathermap.org/data/3.0/onecall",
+            "aqiBaseUrl": "https://api.openweathermap.org/data/2.5/air_pollution",
             // OpenWeatherMap API rate limits.
             "rateLimit": {
                 "maxConcurrent": 4,
-                "perHour": 300,
-                "perDay": 5000
+                "perHour": 200,
+                "perDay": 1000
             },
             // The OpenWeatherMap API secret MUST be set via secret settings or
             // via the SMU_weather_openweathermap_secret environment variable.
