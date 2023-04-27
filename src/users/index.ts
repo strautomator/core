@@ -824,7 +824,7 @@ export class Users {
 
             if (!_.isNil(user.preferences.weatherProvider) && user.preferences.weatherProvider && !weatherKeys.includes(user.preferences.weatherProvider)) {
                 fields.push(`weatherProvider: ${user.preferences.weatherProvider}`)
-                user.preferences.weatherProvider = _.sample(settings.weather.defaultProviders)
+                user.preferences.weatherProvider = _.sample(settings.weather.defaultProviders.free)
             }
 
             if (!_.isNil(user.preferences.dateResetCounter) && user.preferences.dateResetCounter && !user.preferences.dateResetCounter.includes("-")) {
