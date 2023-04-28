@@ -3,10 +3,10 @@
 import {StravaActivity} from "../strava/types"
 import {transformActivityFields} from "../strava/utils"
 import {UserData} from "../users/types"
+import {TwitterApi} from "twitter-api-v2"
 import * as messages from "./messages"
 import eventManager from "../eventmanager"
 import _ from "lodash"
-import TwitterLite from "twitter-lite"
 import jaul = require("jaul")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
@@ -24,7 +24,7 @@ export class Twitter {
     /**
      * The Twitter client implementation.
      */
-    client: TwitterLite
+    client: TwitterApi
 
     /**
      * The Twitter handle name.
@@ -40,25 +40,25 @@ export class Twitter {
      */
     init = async (quickStart?: boolean): Promise<void> => {
         try {
-            if (!settings.twitter.api.consumerKey) {
-                throw new Error("Missing the twitter.api.consumerKey setting")
+            if (!settings.twitter.api.appKey) {
+                throw new Error("Missing the twitter.api.appKey setting")
             }
-            if (!settings.twitter.api.consumerSecret) {
-                throw new Error("Missing the twitter.api.consumerSecret setting")
+            if (!settings.twitter.api.appSecret) {
+                throw new Error("Missing the twitter.api.appSecret setting")
             }
-            if (!settings.twitter.api.tokenKey) {
-                throw new Error("Missing the twitter.api.tokenKey setting")
+            if (!settings.twitter.api.accessToken) {
+                throw new Error("Missing the twitter.api.accessToken setting")
             }
-            if (!settings.twitter.api.tokenSecret) {
-                throw new Error("Missing the twitter.api.tokenSecret setting")
+            if (!settings.twitter.api.accessSecret) {
+                throw new Error("Missing the twitter.api.accessSecret setting")
             }
 
             // Create client.
-            this.client = new TwitterLite({
-                consumer_key: settings.twitter.api.consumerKey,
-                consumer_secret: settings.twitter.api.consumerSecret,
-                access_token_key: settings.twitter.api.tokenKey,
-                access_token_secret: settings.twitter.api.tokenSecret
+            this.client = new TwitterApi({
+                appKey: settings.twitter.api.appKey,
+                appSecret: settings.twitter.api.appSecret,
+                accessToken: settings.twitter.api.accessToken,
+                accessSecret: settings.twitter.api.accessSecret
             })
 
             // Get user screen name straight away, but only if quickStart was not set.
@@ -135,10 +135,13 @@ export class Twitter {
      */
     getAccountDetails = async (): Promise<any> => {
         try {
-            const res = await this.client.get("account/verify_credentials")
-            this.screenName = res.screen_name
+            await this.client.appLogin()
+
+            const res = await this.client.readOnly.v2.me()
+            this.screenName = res.data.username
 
             logger.info("Twitter.getAccountDetails", `Logged in as ${this.screenName}`)
+            this.postStatus("Hello Twitter API v2!")
             return res
         } catch (ex) {
             logger.error("Twitter.getAccountDetails", ex)
@@ -154,7 +157,7 @@ export class Twitter {
      */
     postStatus = async (status: string): Promise<void> => {
         try {
-            await this.client.post("statuses/update", {status: status})
+            await this.client.readWrite.v2.tweet(status)
             logger.info("Twitter.postStatus", status)
         } catch (ex) {
             logger.error("Twitter.postStatus", status, ex)
