@@ -5,6 +5,7 @@ import {getSuntimes, weatherSummaryString} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
+import _ from "lodash"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -152,26 +153,27 @@ export class OpenWeatherMap implements WeatherProvider {
                 break
         }
 
-        // Get snow or rain.
-        const mmSnow = data.snow ? data.snow["1h"] : 0
-        const mmRain = data.rain ? data.rain["1h"] : 0
+        const mmSnow = data.snow ? data.snow["1h"] || data.snow : null
+        const mmRain = data.rain ? data.rain["1h"] || data.rain : null
+        const mmPrecipitation = _.isNil(mmSnow) ? mmRain : mmSnow
 
+        // Parsed results.
         const result: WeatherSummary = {
             provider: this.name,
             summary: weatherData.description,
-            temperature: data.main.temp,
-            feelsLike: data.main.feels_like,
-            humidity: data.main.humidity,
-            pressure: data.main.pressure,
-            windSpeed: data.wind.speed,
-            windDirection: data.wind.deg,
-            precipitation: data.snow && data.snow["1h"] ? "Snow" : data.rain ? "Rain" : null,
-            cloudCover: data.clouds ? data.clouds.all : null,
+            temperature: data.temp?.day || data.temp,
+            feelsLike: data.feels_like?.day || data.feels_like,
+            humidity: data.humidity,
+            pressure: data.pressure,
+            windSpeed: data.wind_speed,
+            windDirection: data.wind_deg,
+            precipitation: mmSnow > 0 ? "Snow" : mmRain > 0 ? "Rain" : null,
+            cloudCover: data.clouds,
             visibility: data.visibility,
             extraData: {
                 timeOfDay: getSuntimes(coordinates, dDate).timeOfDay,
                 iconText: iconText,
-                mmPrecipitation: mmSnow || mmRain
+                mmPrecipitation: mmPrecipitation || null
             }
         }
 
