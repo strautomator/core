@@ -141,7 +141,6 @@ export class Twitter {
             this.screenName = res.data.username
 
             logger.info("Twitter.getAccountDetails", `Logged in as ${this.screenName}`)
-            this.postStatus("Hello Twitter API v2!")
             return res
         } catch (ex) {
             logger.error("Twitter.getAccountDetails", ex)
