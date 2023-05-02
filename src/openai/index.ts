@@ -103,7 +103,12 @@ export class OpenAI {
                 const arrName = res.choices[0].message.content.split(`"`)
                 const activityName = arrName.length > 1 ? arrName[1] : arrName[0]
 
-                return activityName
+                // Ends with a period, but has no question? Remove it.
+                if (activityName.substring(activityName.length - 1) == "." && !activityName.includes("?")) {
+                    return activityName.substring(0, activityName.length - 1).trim()
+                }
+
+                return activityName.trim()
             }
 
             // Failed to generate the activity name.
