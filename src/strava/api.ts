@@ -345,8 +345,9 @@ export class StravaAPI {
      * @param tokens The user OAuth2 token.
      * @param path The API path.
      * @param params Additional parameters to be passed, optional.
+     * @param preProcessor Optional pre-processing method to be executed before the result is cached and returned.
      */
-    get = async (tokens: StravaTokens, path: string, params?: any) => {
+    get = async (tokens: StravaTokens, path: string, params?: any, preProcessor?: Function) => {
         try {
             const now = dayjs()
             const arrPath = path.split("/")
@@ -371,6 +372,11 @@ export class StravaAPI {
             }
 
             const result = await this.makeRequest(tokens, "GET", path, params)
+
+            // Needs pre-processing?
+            if (result && preProcessor) {
+                preProcessor(result)
+            }
 
             // Response should be cached?
             if (shouldCache && result) {
