@@ -453,6 +453,8 @@
         // Users can request an archive download once every 10 days.
         "archiveDownloadDays": 10
     },
+    // Weather settings. The rate limits set here should be enough for basic usage using free accounts,
+    // but should be updated in production when used with a paid plan.
     "weather": {
         // Cache weather results for 15 minutes. Value set in seconds.
         "cacheDuration": 900,
