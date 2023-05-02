@@ -71,9 +71,13 @@ export const axiosRequest = async (options: AxiosConfig, rateLimitExtractor?: (r
 
         // Make request and check for possible rate limits.
         const res: AxiosResponse = await axios(options)
-        await rateLimitDelay(res, urlInfo, rateLimitExtractor)
+        if (!res) {
+            logger.warn("Axios.axiosRequest", options.method, logUrl, "Empty response object")
+            return null
+        }
 
-        // Return true if response was a 204 with no body, otherwise return response body.
+        // Check limits and return true if response was a 204 with no body, otherwise return response body.
+        await rateLimitDelay(res, urlInfo, rateLimitExtractor)
         return res.status == 204 && !res.data ? true : options.returnResponse ? res : res.data
     } catch (ex) {
         const message = `${ex.code} ${ex.message}`.toUpperCase()
@@ -93,9 +97,14 @@ export const axiosRequest = async (options: AxiosConfig, rateLimitExtractor?: (r
 
                 // Retry the request.
                 const res = await axios(options)
-                await rateLimitDelay(res, urlInfo, rateLimitExtractor)
+                if (!res) {
+                    logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed once, then got an empty response")
+                } else {
+                    logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed once, retrying worked")
+                }
 
-                logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed once, retrying worked")
+                // Check limits and return true if response was a 204 with no body, otherwise return response body.
+                await rateLimitDelay(res, urlInfo, rateLimitExtractor)
                 return res.status == 204 && !res.data ? true : options.returnResponse ? res : res.data
             } catch (innerEx) {
                 logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed twice, will not retry")
