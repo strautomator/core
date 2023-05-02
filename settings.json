@@ -405,6 +405,10 @@
             "clubs-group-events": 1200,
             "routes": 3600
         },
+        // Do not process club events with more than 2 years of age (past or future).
+        "clubs": {
+            "maxAgeDays": 730
+        },
         "ftp": {
             // Estimated FTP will go down by 1% for each retroactive week of no activities.
             "idleLossPerWeek": 0.01,

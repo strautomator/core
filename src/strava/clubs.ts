@@ -54,19 +54,40 @@ export class StravaClubs {
             logger.info("Strava.getClub", `User ${user.id} ${user.displayName}`, `Club ${id}: ${club.name} @ ${club.country}`)
             return club
         } catch (ex) {
-            logger.error("Strava.getClub", `User ${user.id} ${user.displayName}`, id, ex)
+            logger.error("Strava.getClub", `User ${user.id} ${user.displayName}`, `Club ${id}`, ex)
             throw ex
         }
     }
 
     /**
      * Get list of events for the specified club.
+     * Older events and far-future events will be removed from the response.
      * @param user User data.
      * @param id The club ID.
      */
     getClubEvents = async (user: UserData, id: string): Promise<StravaClubEvent[]> => {
         try {
-            const data = await api.get(user.stravaTokens, `clubs/${id}/group_events`)
+            const now = dayjs()
+            const dateFormat = "YYYY-MM-DDTHH:mm:ssZ"
+            const maxDate = now.add(settings.strava.clubs.maxAgeDays, "days").format(dateFormat)
+            const minDate = now.subtract(settings.strava.clubs.maxAgeDays, "days").format(dateFormat)
+
+            // Helper to discard events that are out of the allowed event range.
+            const preProcessor = (clubEvents: any) => {
+                try {
+                    const totalCount = clubEvents.length
+                    const result = clubEvents.filter((ce) => ce.upcoming_occurrences.find((o) => o < maxDate && o > minDate))
+                    if (result.length < totalCount) {
+                        logger.info("Strava.getClubEvents.preProcessor", `User ${user.id} ${user.displayName}`, `Club ${id}`, `Discarded ${totalCount - result.length} events`)
+                    }
+                    return result
+                } catch (preEx) {
+                    logger.error("Strava.getClubEvents.preProcessor", `User ${user.id} ${user.displayName}`, `Club ${id}`, preEx)
+                    return clubEvents
+                }
+            }
+
+            const data = await api.get(user.stravaTokens, `clubs/${id}/group_events`, null, preProcessor)
             if (!data) return []
 
             const clubEvents: StravaClubEvent[] = data.map((d) => toStravaClubEvent(d))
@@ -74,7 +95,7 @@ export class StravaClubs {
             logger.info("Strava.getClubEvents", `User ${user.id} ${user.displayName}`, `Club ${id} has ${clubEvents.length} events`)
             return clubEvents
         } catch (ex) {
-            logger.error("Strava.getClubEvents", `User ${user.id} ${user.displayName}`, id, ex)
+            logger.error("Strava.getClubEvents", `User ${user.id} ${user.displayName}`, `Club ${id}`, ex)
             throw ex
         }
     }
