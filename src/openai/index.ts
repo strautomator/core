@@ -68,6 +68,9 @@ export class OpenAI {
                 } else {
                     arrPrompt.push(`The weather was ${weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "mixed"}.`)
                 }
+                if (weatherSummaries.start?.aqi > 3 || weatherSummaries.end?.aqi > 3) {
+                    arrPrompt.push("The air quality index was very unhealthy.")
+                }
             }
 
             // Avoid boilerplate around the actual answer.
