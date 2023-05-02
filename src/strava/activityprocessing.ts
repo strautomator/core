@@ -1,4 +1,4 @@
-// Strautomator Core: Strava Activities
+// Strautomator Core: Strava Activity Processing
 
 import {StravaActivity, StravaActivityFilter, StravaProcessedActivity, StravaRideType, StravaRunType} from "./types"
 import {RecipeData} from "../recipes/types"
@@ -17,12 +17,12 @@ import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
- * Strava activities manager.
+ * Strava activity processing manager.
  */
-export class StravaActivities {
+export class StravaActivityProcessing {
     private constructor() {}
-    private static _instance: StravaActivities
-    static get Instance(): StravaActivities {
+    private static _instance: StravaActivityProcessing
+    static get Instance(): StravaActivityProcessing {
         return this._instance || (this._instance = new this())
     }
 
@@ -429,6 +429,7 @@ export class StravaActivities {
             activity.id = activityId
             activity.user = {id: user.id, displayName: user.displayName}
             activity.dateQueued = activity.dateQueued || new Date()
+            activity.retryCount = (activity.retryCount || 0) + 1
 
             // Part of a batch processing? Flag it.
             if (batch) {
@@ -458,7 +459,7 @@ export class StravaActivities {
      * and if so, process all relevant queued activities.
      */
     checkQueuedActivities = async (): Promise<void> => {
-        const minDate = dayjs().subtract(settings.strava.delayedProcessingInterval, "seconds")
+        const minDate = dayjs().subtract(settings.strava.processingQueue.delayedInterval, "seconds")
 
         if (minDate.isAfter(this.oldestQueueDate)) {
             await this.processQueuedActivities()
@@ -475,7 +476,7 @@ export class StravaActivities {
      */
     getQueuedActivities = async (beforeDate: Date, batchSize?: number): Promise<StravaProcessedActivity[]> => {
         const logDate = `Before ${dayjs(beforeDate).format("lll")}`
-        if (!batchSize) batchSize = settings.strava.queueBatchSize
+        if (!batchSize) batchSize = settings.strava.processingQueue.batchSize
 
         // Get queued activities from the database.
         try {
@@ -506,13 +507,13 @@ export class StravaActivities {
      */
     processQueuedActivities = async (batchSize?: number): Promise<void> => {
         const usersCache: {[id: string]: UserData} = {}
-        if (!batchSize) batchSize = settings.strava.queueBatchSize
+        if (!batchSize) batchSize = settings.strava.processingQueue.batchSize
 
         // Reset oldest queued activity date.
         this.oldestQueueDate = null
 
         try {
-            const beforeDate = dayjs().subtract(settings.strava.delayedProcessingInterval, "seconds").toDate()
+            const beforeDate = dayjs().subtract(settings.strava.processingQueue.delayedInterval, "seconds").toDate()
             const activities = await this.getQueuedActivities(beforeDate, batchSize)
             let processedCount = 0
 
@@ -538,7 +539,13 @@ export class StravaActivities {
                         processedCount++
                     }
                 } catch (activityEx) {
-                    logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${activity.id} from user ${activity.user.id}`)
+                    if (activity.retryCount >= settings.strava.processingQueue.retry) {
+                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${activity.id} from user ${activity.user.id} too many times`)
+                        await this.deleteQueuedActivity(activity)
+                    } else {
+                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${activity.id} from user ${activity.user.id}, will retry`)
+                        await database.increment("activities", activity.id.toString(), "retryCount")
+                    }
                 }
             }
 
@@ -573,4 +580,4 @@ export class StravaActivities {
 }
 
 // Exports...
-export default StravaActivities.Instance
+export default StravaActivityProcessing.Instance
