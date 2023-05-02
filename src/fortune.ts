@@ -60,10 +60,10 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     let usingWeather = false
     let weatherSummaries: ActivityWeather
 
-    // Weather based checks for 30% of non-PRO and 90% of PRO users, but only
-    // for activities that happened on the last 2 days.
-    const rndWeather = user.isPro ? 0.91 : 0.31
-    if (activity.hasLocation && now.subtract(2, "days").isBefore(activity.dateEnd) && Math.random() < rndWeather) {
+    // Weather based checks for around 45% of non-PRO and 95% of PRO users, but only
+    // for activities that happened on the last 3 days.
+    const rndWeather = user.isPro ? 0.95 : 0.45
+    if (activity.hasLocation && now.subtract(3, "days").isBefore(activity.dateEnd) && Math.random() <= rndWeather) {
         const language = user.preferences.language
 
         // Force English language, fetch weather summaries for activity,
@@ -78,7 +78,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         const aiName = await openai.generateActivityName(user, activity, weatherSummaries)
 
         if (aiName) {
-            logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, `${usingWeather ? "with" : "withour"} weather`, "Via OpenAI", aiName)
+            logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, "Via OpenAI", aiName)
             return aiName
         }
     }
