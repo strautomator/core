@@ -69,7 +69,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         // Force English language, fetch weather summaries for activity,
         // then reset the user language back to its default.
         user.preferences.language = "en"
-        weatherSummaries = await weather.getActivityWeather(user, activity)
+        weatherSummaries = await weather.getActivityWeather(user, activity, true)
         user.preferences.language = language
     }
 

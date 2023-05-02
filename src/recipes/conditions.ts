@@ -351,7 +351,8 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
 
     // Get activity weather.
     const weatherProp = prop.split(".")[1]
-    const weatherSummary = await weather.getActivityWeather(user, activity)
+    const aqiNeeded = weatherProp == "aqi"
+    const weatherSummary = await weather.getActivityWeather(user, activity, aqiNeeded)
 
     // Weather could not be fetched? Stop here.
     if (!weatherSummary) {

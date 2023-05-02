@@ -179,7 +179,8 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
  */
 export const addWeatherTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
     try {
-        const weatherSummary = await weather.getActivityWeather(user, activity)
+        const aqiNeeded = processedValue.includes("${weather.") && processedValue.includes(".aqi")
+        const weatherSummary = await weather.getActivityWeather(user, activity, aqiNeeded)
 
         if (!weatherSummary) {
             logger.warn("Recipes.addWeatherTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "Got no valid activity weather")
