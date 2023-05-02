@@ -427,15 +427,19 @@
             // A maximum of 15 routes can be zipped for downloading.
             "zipLimit": 15
         },
-        // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
-        "delayedProcessingInterval": 600,
-        // Only a single batch operation per user every 24 hours.
-        "queueBatchPerHours": 24,
-        // Default batch size when processing queued activities.
-        "queueBatchSize": 55,
-        // How long can activities stayed queued for processing?
-        // By default 2 and a half days, value set in seconds.
-        "maxQueueAge": 216000
+        "processingQueue": {
+            // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
+            "delayedInterval": 600,
+            // A single batch operation per user per 24 hours.
+            "batchPerHours": 24,
+            // Default batch size when processing queued activities.
+            "batchSize": 55,
+            // How long can activities stayed queued for processing?
+            // By default 2 and a half days, value set in seconds.
+            "maxAge": 216000,
+            // Retry processing queued activities twice.
+            "retry": 2
+        }
     },
     "twitter": {
         // Around 85% chances of posting interesting activities on Twitter for users that have opted in.
