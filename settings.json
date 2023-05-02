@@ -437,8 +437,8 @@
             // How long can activities stayed queued for processing?
             // By default 2 and a half days, value set in seconds.
             "maxAge": 216000,
-            // Retry processing queued activities twice.
-            "retry": 2
+            // Retry processing queued activities up to 5 times.
+            "retry": 5
         }
     },
     "twitter": {
