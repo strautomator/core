@@ -161,7 +161,7 @@ export class Komoot {
             const index = data.indexOf("www.komoot.")
             if (index < 0) return null
 
-            const separatorIndex = data.substring(index + 12, index + 100).search(/[\s\n]/g)
+            const separatorIndex = data.substring(index + 12, index + 100).search(/[\s\n\:]/g)
             const routeUrl = separatorIndex > 0 ? data.substring(index, index + separatorIndex + 12) : data.substring(index)
 
             if (routeUrl.includes("/tour/")) {
