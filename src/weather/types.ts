@@ -119,3 +119,19 @@ export interface WeatherApiStats {
     /** Date of last request. */
     lastRequest: Date
 }
+
+/**
+ * Weather request options.
+ */
+export interface WeatherRequestOptions {
+    /** User requesting the weather data. */
+    user: UserData
+    /** Coordinates. */
+    coordinates: [number, number]
+    /** DayJS object with the date. */
+    dDate: dayjs.Dayjs
+    /** Also get air quality data? */
+    aqi?: boolean
+    /** Preferred weather provider name. */
+    provider?: string
+}
