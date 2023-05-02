@@ -233,7 +233,7 @@ export const startup = async (quickStart?: boolean) => {
 
             // Cleanup old queued activities every hour.
             const cleanupQueuedActivities = async () => {
-                const beforeDate = dayjs().subtract(settings.strava.maxQueueAge, "seconds").toDate()
+                const beforeDate = dayjs().subtract(settings.strava.processingQueue.maxAge, "seconds").toDate()
                 const activities = await strava.activityProcessing.getQueuedActivities(beforeDate)
 
                 for (let activity of activities) {
