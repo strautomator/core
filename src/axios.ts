@@ -62,6 +62,7 @@ export const axiosRequest = async (options: AxiosConfig, rateLimitExtractor?: (r
 
     try {
         if (!options.method) options.method = "GET"
+        if (!options.timeout) options.timeout = settings.axios.timeout
         if (!options.headers) options.headers = {}
 
         // User agent defaults to app title and version.
