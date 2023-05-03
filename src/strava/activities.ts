@@ -159,10 +159,12 @@ export class StravaActivities {
             logger.info("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, activity.name, timeStart)
             return activity
         } catch (ex) {
+            const errMessage = ex.toString().toLowerCase()
+
             if (!user) {
                 logger.error("Strava.getActivity", "Missing user", `Activity ${id}`, ex)
-            } else if (ex.toString().includes("404")) {
-                logger.warn("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
+            } else if (errMessage.includes("404") && errMessage.includes("not found")) {
+                logger.warn("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, "Not found")
             } else {
                 logger.error("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
             }
