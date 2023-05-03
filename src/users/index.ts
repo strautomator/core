@@ -5,10 +5,12 @@ import {PayPalSubscription} from "../paypal/types"
 import {GitHubSubscription} from "../github/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 import {encryptData} from "../database/crypto"
+import {FieldValue} from "@google-cloud/firestore"
 import userSubscriptions from "./subscriptions"
 import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
+import notifications from "../notifications"
 import _ from "lodash"
 import crypto from "crypto"
 import logger from "anyhow"
@@ -42,6 +44,7 @@ export class Users {
         eventManager.on("GitHub.subscriptionUpdated", this.onGitHubSubscription)
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
         eventManager.on("Strava.tokenFailure", this.onStravaTokenFailure)
+        eventManager.on("Strava.missingPermission", this.onStravaMissingPermission)
     }
 
     /**
@@ -209,6 +212,44 @@ export class Users {
             await this.update(updatedUser)
         } catch (ex) {
             logger.error("Users.onStravaTokenFailure", `Failed to email user about invalid token ${maskedToken}`)
+        }
+    }
+
+    /**
+     * When user hasn't authorized Strautomator to write to the Strava account.
+     * @param tokens Set of Strava tokens that failed due to missing permissions.
+     */
+    private onStravaMissingPermission = async (tokens: StravaTokens): Promise<void> => {
+        if (!tokens) {
+            logger.error("Users.onStravaMissingPermission", "Missing tokens")
+            return
+        }
+
+        // Masked token used on warning logs.
+        const token = tokens.accessToken || tokens.previousAccessToken
+        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
+
+        try {
+            const user = await this.getByToken(tokens)
+
+            if (!user) {
+                logger.warn("Users.onStravaMissingPermission", `No user found for token ${maskedToken}`)
+                return
+            }
+
+            // Write not suspended yet? Do it now and notify the user.
+            if (!user.writeSuspended) {
+                const title = "Missing Strava permissions"
+                const body = "You haven't authorized Strautomator to make changes to your Strava account yet. Please authenticate again."
+                const href = "https://strautomator.com/auth/login"
+                const expiry = dayjs().add(30, "days").toDate()
+                await notifications.createNotification(user, {title: title, body: body, href: href, auth: true, dateExpiry: expiry})
+
+                const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, writeSuspended: true}
+                await this.update(updatedUser)
+            }
+        } catch (ex) {
+            logger.error("Notifications.onStravaMissingPermission", `Failed to notify user for token ${maskedToken}`)
         }
     }
 
@@ -437,8 +478,7 @@ export class Users {
                 id: profile.id,
                 profile: profile,
                 stravaTokens: stravaTokens,
-                dateLogin: now,
-                reauth: 0
+                dateLogin: now
             }
 
             // Fetch or create document on database.
@@ -475,6 +515,12 @@ export class Users {
 
                 userData.dateLastActivity = existingData.dateLastActivity
 
+                // Remove the reauth flags.
+                if (_.isNumber(existingData.reauth)) {
+                    userData.reauth = FieldValue.delete() as any
+                }
+
+                // Update recipe count.
                 if (existingData.recipes) {
                     userData.recipeCount = Object.keys(existingData.recipes).length
                 }
@@ -509,10 +555,12 @@ export class Users {
                 // Triggered via user login? Force reset the suspended flag.
                 if (login) {
                     if (userData.suspended) {
-                        logger.error("Users.upsert", `${userData.id} ${userData.displayName}`, "Reactivated, suspended = false")
+                        logger.warn("Users.upsert", `${userData.id} ${userData.displayName}`, "Reactivated, suspended = false")
+                        userData.suspended = FieldValue.delete() as any
                     }
-
-                    userData.suspended = false
+                    if (existingData.writeSuspended) {
+                        userData.writeSuspended = FieldValue.delete() as any
+                    }
                 }
             }
 
