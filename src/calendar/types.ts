@@ -16,6 +16,8 @@ export interface CalendarOptions {
     dateFrom?: dayjs.Dayjs
     /** Ending date (as DayJS), defaults to the futureCalendarDays setting. */
     dateTo?: dayjs.Dayjs
+    /** Force a shorter cache duration? */
+    shorterCache?: boolean
     /** Exclude commutes? Default is false. */
     excludeCommutes?: boolean
     /** Exclude club events which user hasn't joined to? */

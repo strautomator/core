@@ -136,8 +136,11 @@ export class Calendar {
                     const cacheSize = metadata.size
                     const onlyClubs = options.clubs && !options.activities
 
-                    // Default cache duration. Half the cache duration for single-club calendars.
+                    // Calculate the correct cache duration.
                     let cacheDuration = user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
+                    if (user.isPro && options.shorterCache) {
+                        cacheDuration = cacheDuration / 2
+                    }
                     if (onlyClubs && options.clubIds?.length == 1) {
                         cacheDuration = cacheDuration / 2
                     }
