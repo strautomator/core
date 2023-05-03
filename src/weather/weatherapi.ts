@@ -1,7 +1,7 @@
 // Strautomator Core: WeatherAPI.com (NOT WORKING YET)
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {getSuntimes, weatherSummaryString} from "./utils"
+import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import _ from "lodash"
@@ -60,10 +60,6 @@ export class WeatherAPI implements WeatherProvider {
 
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate)
-            if (result) {
-                logger.info("WeatherAPI.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(coordinates, dDate, result))
-            }
-
             return result
         } catch (ex) {
             logger.error("WeatherAPI.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)

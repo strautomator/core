@@ -1,7 +1,7 @@
 // Strautomator Core: Weather - Open-Meteo
 
 import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
-import {getSuntimes, weatherSummaryString} from "./utils"
+import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
@@ -57,10 +57,6 @@ export class OpenMeteo implements WeatherProvider {
 
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate)
-            if (result) {
-                logger.info("OpenMeteo.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(coordinates, dDate, result))
-            }
-
             return result
         } catch (ex) {
             logger.error("OpenMeteo.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)

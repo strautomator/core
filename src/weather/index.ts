@@ -1,7 +1,7 @@
 // Strautomator Core: Weather
 
 import {ActivityWeather, WeatherProvider, WeatherRequestOptions, WeatherSummary} from "./types"
-import {apiRateLimiter, processWeatherSummary} from "./utils"
+import {apiRateLimiter, processWeatherSummary, weatherSummaryString} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import tomorrow from "./tomorrow"
@@ -280,7 +280,8 @@ export class Weather {
 
         // Save to cache and return weather results.
         cache.set(`weather`, cacheId, result)
-        logger.info("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, result.provider, `${result.icon} ${result.summary}`)
+        logger.info("OpenWeatherMap.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(options.coordinates, options.dDate, result))
+
         return result
     }
 }
