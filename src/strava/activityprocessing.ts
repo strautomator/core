@@ -163,13 +163,9 @@ export class StravaActivityProcessing {
                 return null
             }
 
-            // User suspended or missing write permissions? Stop here.
+            // User suspended? Stop here.
             if (user.suspended) {
                 logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
-                return null
-            }
-            if (user.writeSuspended) {
-                logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName} is write suspended, won't process activity ${activityId}`)
                 return null
             }
 
@@ -228,6 +224,12 @@ export class StravaActivityProcessing {
 
                 // Remove duplicates from list of updated fields.
                 activity.updatedFields = _.uniq(activity.updatedFields)
+
+                // Write suspended (possibly missing permissions)? Stop here.
+                if (user.writeSuspended) {
+                    logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "User.writeSuspended, won't update the activity")
+                    return null
+                }
 
                 // Save, and if it fails try again once.
                 try {

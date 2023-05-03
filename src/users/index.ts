@@ -240,7 +240,7 @@ export class Users {
             // Write not suspended yet? Do it now and notify the user.
             if (!user.writeSuspended) {
                 const title = "Missing Strava permissions"
-                const body = "You haven't authorized Strautomator to make changes to your Strava account yet. Please authenticate again."
+                const body = "You haven't authorized Strautomator to make changes to your Strava account (missing write permissions). Please login again."
                 const href = "https://strautomator.com/auth/login"
                 const expiry = dayjs().add(30, "days").toDate()
                 await notifications.createNotification(user, {title: title, body: body, href: href, auth: true, dateExpiry: expiry})
@@ -554,11 +554,11 @@ export class Users {
 
                 // Triggered via user login? Force reset the suspended flag.
                 if (login) {
-                    if (userData.suspended) {
+                    if (!_.isNil(userData.suspended)) {
                         logger.warn("Users.upsert", `${userData.id} ${userData.displayName}`, "Reactivated, suspended = false")
                         userData.suspended = FieldValue.delete() as any
                     }
-                    if (existingData.writeSuspended) {
+                    if (!_.isNil(existingData.writeSuspended)) {
                         userData.writeSuspended = FieldValue.delete() as any
                     }
                 }

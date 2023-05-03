@@ -298,10 +298,10 @@ export class StravaAPI {
 
             return res
         } catch (ex) {
-            const accessDenied = token && ex.response && ex.response.status == 401
+            const accessDenied = token && ex.response?.status == 401
 
             // Has a error response data? Add it to the exception message.
-            if (ex.response && ex.response.data) {
+            if (ex.response?.data) {
                 let details: any
 
                 if (_.isArray(ex.response.data)) {
@@ -329,7 +329,7 @@ export class StravaAPI {
             // Access denied? Dispatch the relevant events.
             if (accessDenied) {
                 if (ex.message.includes("_permission")) {
-                    eventManager.emit("Strava.missingPermission", token)
+                    eventManager.emit("Strava.missingPermission", tokens)
                 }
 
                 eventManager.emit("Strava.tokenFailure", token)
@@ -347,7 +347,7 @@ export class StravaAPI {
      * @param params Additional parameters to be passed, optional.
      * @param preProcessor Optional pre-processing method to be executed before the result is cached and returned.
      */
-    get = async (tokens: StravaTokens, path: string, params?: any, preProcessor?: Function) => {
+    get = async (tokens: StravaTokens, path: string, params?: any, preProcessor?: (result: any) => any) => {
         try {
             const now = dayjs()
             const arrPath = path.split("/")
