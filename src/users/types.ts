@@ -60,9 +60,11 @@ export interface UserData {
     recipeCount?: number
     /** Processed activities counter. */
     activityCount?: number
-    /** Temporarily disable processing user activities? */
+    /** Temporarily disable the user? */
     suspended?: boolean
-    /** User needs to reauthenticate with Strava? Email is sent if reauth is 2. */
+    /** Temporarily disable writing to Strava? */
+    writeSuspended?: boolean
+    /** User needs to reauthenticate with Strava? */
     reauth?: number
 }
 
