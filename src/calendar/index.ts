@@ -134,15 +134,20 @@ export class Calendar {
                     const [metadata] = await cachedFile.getMetadata()
                     const cacheTimestamp = dayjs.utc(metadata.timeCreated).valueOf()
                     const cacheSize = metadata.size
+                    const onlyClubs = options.clubs && !options.activities
+
+                    // Default cache duration. Half the cache duration for single-club calendars.
+                    let cacheDuration = user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
+                    if (onlyClubs && options.clubIds?.length == 1) {
+                        cacheDuration = cacheDuration / 2
+                    }
 
                     // Additional cache validation.
-                    const cacheDuration = user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
                     const expiryDate = nowUtc.subtract(cacheDuration, "seconds").toDate()
                     const maxExpiryDate = nowUtc.subtract(settings.calendar.maxCacheDuration + cacheDuration, "seconds").toDate()
                     const notExpired = expiryDate.valueOf() < cacheTimestamp
                     const lastActivity = user.dateLastActivity ? user.dateLastActivity.valueOf() : 0
                     const notChanged = lastActivity < cacheTimestamp && maxExpiryDate.valueOf() <= cacheTimestamp
-                    const onlyClubs = options.clubs && !options.activities
 
                     // Return cached calendar if it has not expired, and has not changed
                     // or if calendar is for club events only.
@@ -150,7 +155,7 @@ export class Calendar {
                         logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `${(cacheSize / 1000 / 1024).toFixed(2)} MB`)
                         return storage.getUrl("calendar", cacheId)
                     } else {
-                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `Cache invalidated, will generate a new calendar`)
+                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, "Cache invalidated, will generate a new calendar")
                     }
                 } catch (cacheEx) {
                     logger.error("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, cacheEx)
