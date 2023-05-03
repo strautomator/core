@@ -146,7 +146,7 @@ export class Komoot {
 
             return result
         } catch (ex) {
-            logger.warn("Komoot.getRoute", routeUrl, ex, `Added to the invalid cache`)
+            logger.warn("Komoot.getRoute", routeUrl, ex, "Added to the invalid cache")
             cache.set("komoot-invalid", routeUrl, true)
             return null
         }

@@ -163,9 +163,13 @@ export class StravaActivityProcessing {
                 return null
             }
 
-            // User suspended? Stop here.
+            // User suspended or missing write permissions? Stop here.
             if (user.suspended) {
                 logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
+                return null
+            }
+            if (user.writeSuspended) {
+                logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName} is write suspended, won't process activity ${activityId}`)
                 return null
             }
 
@@ -173,7 +177,7 @@ export class StravaActivityProcessing {
             try {
                 activity = await stravaActivities.getActivity(user, activityId)
             } catch (ex) {
-                const status = ex.response ? ex.response.status : null
+                const status = ex.response?.status || ex.status || null
 
                 if (status == 404) {
                     logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} not found`)
@@ -532,7 +536,7 @@ export class StravaActivityProcessing {
 
                     const processed = await this.processActivity(usersCache[activity.user.id], activity.id, true)
 
-                    // Queued activity had no matching recipes? Delete it.
+                    // Queued activity is invalid or had no matching recipes? Delete it.
                     if (!processed) {
                         await this.deleteQueuedActivity(activity)
                     } else {
