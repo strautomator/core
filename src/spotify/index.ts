@@ -5,6 +5,7 @@ import {toSpotifyTrack} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
+import {FieldValue} from "@google-cloud/firestore"
 import {Request} from "express"
 import users from "../users"
 import _ from "lodash"
@@ -357,7 +358,13 @@ export class Spotify {
     saveProfile = async (user: UserData, profile: SpotifyProfile): Promise<void> => {
         try {
             user.spotify = profile
-            await users.update({id: user.id, displayName: user.displayName, spotify: profile})
+
+            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, spotify: profile}
+            if (user.spotifyAuthState) {
+                data.spotifyAuthState = FieldValue.delete() as any
+            }
+
+            await users.update(data)
         } catch (ex) {
             logger.error("Spotify.saveProfile", `User ${user.id} ${user.displayName}`, `ID ${profile.id}`, ex)
         }
