@@ -60,9 +60,9 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     let usingWeather = false
     let weatherSummaries: ActivityWeather
 
-    // Weather based checks for around 45% of non-PRO and 95% of PRO users, but only
+    // Weather based checks for around 55% of non-PRO and 95% of PRO users, but only
     // for activities that happened on the last 3 days.
-    const rndWeather = user.isPro ? 0.95 : 0.45
+    const rndWeather = user.isPro ? 0.95 : 0.55
     if (activity.hasLocation && now.subtract(3, "days").isBefore(activity.dateEnd) && Math.random() <= rndWeather) {
         const language = user.preferences.language
 
@@ -70,6 +70,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         // then reset the user language back to its default.
         user.preferences.language = "en"
         weatherSummaries = await weather.getActivityWeather(user, activity, true)
+        usingWeather = true
         user.preferences.language = language
     }
 
@@ -78,7 +79,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         const aiName = await openai.generateActivityName(user, activity, weatherSummaries)
 
         if (aiName) {
-            logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, "Via OpenAI", aiName)
+            logger.info("Fortune.getActivityFortune", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, "Via OpenAI", aiName)
             return aiName
         }
     }
@@ -289,8 +290,6 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         if (wPrefixes.length > 0) {
             prefixes = prefixes.map((p) => `${_.sample(wPrefixes)} ${p}`)
         }
-
-        usingWeather = true
     }
 
     // No uniqe names or names? Maybe just use the basic stuff, 10% chances.
@@ -315,7 +314,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     }
 
     result = result ? result.charAt(0).toUpperCase() + result.slice(1) : _.sample(fortuneCookies)
-    logger.info("Fortune.getActivityFortune", `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, result)
+    logger.info("Fortune.getActivityFortune", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, result)
 
     return result
 }
