@@ -556,10 +556,10 @@ export interface StravaActivityFilter {
  * Strava activity query filter (used to fetch activities).
  */
 export interface StravaActivityQuery {
-    /** Get only activities after timestamp. */
-    after?: dayjs.Dayjs
-    /** Get only activities before timestamp. */
-    before?: dayjs.Dayjs
+    /** Get only activities after timestamp (DayJS or epoch). */
+    after?: dayjs.Dayjs | number
+    /** Get only activities before timestamp (DayJS or epoch). */
+    before?: dayjs.Dayjs | number
     /** Current page. */
     page?: number
     /** Activities per page. */

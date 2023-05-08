@@ -39,12 +39,20 @@ export class StravaActivities {
 
         // Parse activities query.
         if (query.after) {
-            arrLogQuery.push(`After ${query.after.format("lll")}`)
-            query.after = (query.after.unix() - 1) as any
+            if (_.isNumber(query.after)) {
+                arrLogQuery.push(`After ${query.after}`)
+            } else {
+                arrLogQuery.push(`After ${query.after.format("lll")}`)
+                query.after = (query.after.unix() - 1) as any
+            }
         }
         if (query.before) {
-            arrLogQuery.push(`Before ${query.before.format("lll")}`)
-            query.before = (query.before.unix() + 1) as any
+            if (_.isNumber(query.before)) {
+                arrLogQuery.push(`After ${query.before}`)
+            } else {
+                arrLogQuery.push(`Before ${query.before.format("lll")}`)
+                query.before = query.before.unix() + 1
+            }
         }
         if (query.per_page) {
             arrLogQuery.push(`${query.per_page} per page`)
