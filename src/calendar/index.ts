@@ -100,9 +100,9 @@ export class Calendar {
             const nowUtc = dayjs.utc()
             const pastDays = user.isPro ? settings.plans.pro.pastCalendarDays : settings.plans.free.pastCalendarDays
             const futureDays = user.isPro ? settings.plans.pro.futureCalendarDays : settings.plans.free.futureCalendarDays
-            const minDate = nowUtc.startOf("day").subtract(pastDays, "days")
-            const maxDate = nowUtc.endOf("day").add(futureDays, "days")
-            const defaultFromDate = nowUtc.subtract(settings.plans.free.pastCalendarDays, "days")
+            const minDate = nowUtc.startOf("day").subtract(pastDays, "days").subtract(1, "millisecond")
+            const maxDate = nowUtc.endOf("day").add(futureDays, "days").subtract(1, "millisecond")
+            const defaultFromDate = nowUtc.subtract(settings.plans.free.pastCalendarDays, "days").startOf("day")
             let dateFrom = options.dateFrom ? dayjs(options.dateFrom) : defaultFromDate
             let dateTo = options.dateTo ? dayjs(options.dateTo) : maxDate
 
