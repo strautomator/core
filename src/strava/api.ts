@@ -392,7 +392,7 @@ export class StravaAPI {
                     Object.keys(cacheData).forEach((k) => cacheData[k] === null && delete cacheData[k])
                     await database.set("strava-cache", cacheData, cacheId)
                 } catch (cacheEx) {
-                    logger.error("Strava.get", `Failed to save to cache: ${cacheId}`, cacheEx)
+                    logger.warn("Strava.get", `Failed to save to cache: ${cacheId}`, cacheEx)
                 }
             }
 
