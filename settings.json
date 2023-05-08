@@ -242,8 +242,8 @@
         "api": {
             "baseUrl": "https://api.openai.com/v1/chat/completions"
         },
-        // Limit to 23 tokens per response.
-        "maxTokens": 23
+        // Limit to 24 tokens per response.
+        "maxTokens": 24
     },
     "paypal": {
         "api": {
