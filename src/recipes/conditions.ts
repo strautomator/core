@@ -458,9 +458,17 @@ export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, 
     const op = condition.operator
     const value = condition.value as boolean
 
-    const now = dayjs().utc()
-    const lastActivityDate = dayjs(user.dateLastActivity || user.dateRegistered).utc()
-    const activityDate = dayjs(activity.dateStart).utc()
+    let now = dayjs().utc()
+    let activityDate = dayjs(activity.dateStart).utc()
+    let lastActivityDate = dayjs(user.dateLastActivity || user.dateRegistered).utc()
+
+    // Consider the activity timezone when calculating the dates.
+    if (activity.utcStartOffset) {
+        now = now.add(activity.utcStartOffset, "minutes")
+        activityDate = activityDate.add(activity.utcStartOffset, "minutes")
+        lastActivityDate = lastActivityDate.add(activity.utcStartOffset, "minutes")
+    }
+
     let isFirst = activityDate.dayOfYear() > lastActivityDate.dayOfYear() || activityDate.year() > lastActivityDate.year()
     let valid = false
 
