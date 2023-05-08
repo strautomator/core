@@ -24,6 +24,7 @@ build:
 
 # Update dependencies and set new version
 update:
+	-ncu -u -x axios,chalk,flatbush
 	-ncu -u --target minor
 	npm version $(shell date '+%y.%-V%u.1%H%M') --force --allow-same-version --no-git-tag-version
 	npm install
