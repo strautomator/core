@@ -46,7 +46,7 @@ export class OpenAI {
      */
     generateActivityName = async (user: UserData, activity: StravaActivity, weatherSummaries?: ActivityWeather): Promise<string> => {
         try {
-            const adj = _.sample(["cool", "funny", "exquisite", "silly", "sarcastic", "ironic", "mocking", "very cool", "very funny", "very silly"])
+            const adj = _.sample(["cool", "funny", "exquisite", "silly", "sarcastic", "ironic", "mocking", "very cool", "very funny", "very silly", "unique"])
             const arrPrompt = [`Please generate a single ${adj} name for my Strava ${activity.commute ? "commute" : "activity"}.`]
 
             if (activity.distance > 0 && activity.movingTime > 0) {
@@ -85,7 +85,9 @@ export class OpenAI {
                 data: {
                     model: "gpt-3.5-turbo",
                     messages: [{role: "user", content: content}],
-                    max_tokens: settings.openai.maxTokens
+                    max_tokens: settings.openai.maxTokens,
+                    temperature: 1,
+                    top_p: 1
                 }
             }
 
