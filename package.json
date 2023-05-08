@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "23.191.11956",
+    "version": "23.191.12029",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -11,7 +11,7 @@
         "url": "https://github.com/strautomator/core.git"
     },
     "scripts": {
-        "postinstall": "tsc"
+        "prepare": "tsc"
     },
     "dependencies": {
         "@google-cloud/firestore": "^6.5.0",
