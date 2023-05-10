@@ -36,9 +36,9 @@
     "axios": {
         // User agent used to emulate a browser.
         "uaBrowser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
-        // Start throttling requests if we reach over 95% of the extracted quota. Value in percent (0 to 100).
-        "backoffThreshold": 95,
-        // Forced back-off base delay when about to hit API rate limits.
+        // Start throttling requests if we reach over 92% of the extracted quota. Value in percent (0 to 100).
+        "backoffThreshold": 92,
+        // Forced back-off base delay when we're about to hit API rate limits.
         // Value set in milliseconds, will increase as we get closer to the limits.
         "backoffInterval": 500,
         // Retry axios requests after 2 seconds. Value set in milliseconds.
