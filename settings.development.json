@@ -87,10 +87,10 @@
         },
         // Shorter cache durations on dev.
         "cacheDuration": {
-            "athletes-stats": 30,
-            "clubs": 180,
-            "clubs-group-events": 180,
-            "routes": 180
+            "athletes-stats": 20,
+            "clubs": 60,
+            "clubs-group-events": 60,
+            "routes": 60
         },
         // Enabling test mode will prevent activities from being written to Strava.
         // They will be logged to the console instead.
