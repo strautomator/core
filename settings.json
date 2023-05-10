@@ -400,12 +400,12 @@
             "verifyToken": null
             // The clientId and clientSecret must be set
         },
-        // Some Strava resources might be cached in memory. Duration in seconds.
+        // Some Strava resources might be cached. Duration in seconds.
         "cacheDuration": {
             "athletes-stats": 120,
             "clubs": 3600,
             "clubs-group-events": 1200,
-            "routes": 3600
+            "routes": 7200
         },
         // Do not process club events with more than 2 years of age (past or future).
         "clubs": {
