@@ -67,8 +67,7 @@ export const EmailTemplates = {
             "<p>" +
             "Hi ${userName}!<br><br>" +
             "It looks like the connection between Strautomator and your Strava account has expired.<br>" +
-            "If you wish to keep using Strautomator, please reauthenticate at <a href='${appUrl}auth/login'>${appUrl}auth/login</a>" +
-            "" +
+            'If you wish to keep using Strautomator, please reauthenticate at <a href="${appUrl}auth/login">${appUrl}auth/login</a>' +
             "</p>" +
             "<p>" +
             "<small>Technical details: the OAuth2 refresh token that we have is not valid any longer.</small>" +
@@ -82,7 +81,8 @@ export const EmailTemplates = {
             "<p>" +
             "Hi ${userName}!<br><br>" +
             "It might have been a while since you last checked your account on Strautomator... and there are some unread notifications for you:<br><br>-" +
-            "${notifications}</p>" +
+            "${notifications}" +
+            "</p>" +
             "<p>" +
             'Please go to <a href="${appUrl}account/notifications">My Notifications</a> for more details.' +
             "</p>"
@@ -94,8 +94,8 @@ export const EmailTemplates = {
         body:
             "<p>" +
             "Hi ${userName}!<br><br>" +
-            "Thanks for your support! Your Strautomator ${subscriptionSource} subscription was activated and you now have a PRO account." +
-            "If you have any feature suggestions or critical feedback, I'm all ears, just get back to me by replying to this email 🙂" +
+            "Thanks for your support! Your Strautomator ${subscriptionSource} subscription was activated and you now have a PRO account.<br>" +
+            "If you have any feature suggestions or critical feedback, I'm all ears, just get back to me by replying to this email. 🙂" +
             "</p>" +
             "<p>" +
             "For your reference, this is your subscription ID: ${subscriptionId}" +
@@ -112,10 +112,25 @@ export const EmailTemplates = {
         body:
             "<p>" +
             "Hi ${userName}!<br><br>" +
-            "Your Strautomator PRO subscription status switched to <strong>${subscriptionStatus}</strong>, and your account was downgraded to the free plan.<br /<br>" +
+            "Your Strautomator PRO subscription status switched to <strong>${subscriptionStatus}</strong>, and your account was downgraded to the free plan.<br>" +
             "If you have created more automations or GearWear configurations than the free plan allows, please note that some of them will not work, and you will need to manually remove those." +
+            "</p>" +
             "<p>" +
             'You can <a href="${appUrl}billing">subscribe</a> again at any time. If you need help or more details about Strautomator subscriptions, please reply to this email.' +
+            "</p>"
+    },
+
+    // User was suspended.
+    UserSuspended: {
+        subject: "Your account was suspended",
+        body:
+            "<p>" +
+            "Hi ${userName}!<br><br>" +
+            "Your Strautomator account was automatically suspended due to repeated failures to fetch your Strava data.<br>" +
+            "Technical reason: ${reason}" +
+            "</p>" +
+            "<p>" +
+            'To reactivate your account, please login again at <a href="${appUrl}auth/login">${appUrl}auth/login</a>' +
             "</p>"
     }
 }

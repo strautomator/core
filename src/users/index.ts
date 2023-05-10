@@ -206,7 +206,7 @@ export class Users {
                 mailer.send(options)
             } else if (user.reauth >= settings.oauth.tokenFailuresDisable) {
                 logger.warn("Users.onStravaTokenFailure", `User ${user.id} ${user.displayName} will be suspended due to too many token failures`)
-                await this.suspend(user, "Too many token failures")
+                await this.suspend(user, "Too many Strava token failures")
             }
 
             await this.update(updatedUser)
@@ -574,7 +574,7 @@ export class Users {
 
             // If a new user, publish the user creation event.
             if (!exists) {
-                logger.info("Users.upsert", `${userData.id} ${userData.displayName}`, `New registration`)
+                logger.info("Users.upsert", `${userData.id} ${userData.displayName}`, "New registration")
                 eventManager.emit("Users.create", userData)
             } else {
                 logger.info("Users.upsert", `${userData.id} ${userData.displayName}`, "Updated")
@@ -673,14 +673,36 @@ export class Users {
     /**
      * Suspend / deactivate the specified user.
      * @param user The user to be deactivate.
-     * @param reason Optional reason for suspension.
+     * @param reason Reason for suspension.
      */
-    suspend = async (user: UserData, reason?: string): Promise<void> => {
+    suspend = async (user: UserData, reason: string): Promise<void> => {
         try {
+            if (user.isPro) {
+                logger.warn("Users.suspend", user.id, user.displayName, reason, "Abort, PRO users cannot be suspended")
+                return
+            }
+
             await database.merge("users", {id: user.id, suspended: true})
-            logger.info("Users.suspend", user.id, user.displayName, reason || "No reason given")
+            logger.info("Users.suspend", user.id, user.displayName, reason)
+
+            // Alert the user via email.
+            if (user.email) {
+                const data = {
+                    userId: user.id,
+                    userName: user.profile.firstName || user.displayName,
+                    reason: reason
+                }
+                const options = {
+                    to: user.email,
+                    template: "UserSuspended",
+                    data: data
+                }
+
+                // Send suspension email in async mode (no need to wait for the result).
+                mailer.send(options)
+            }
         } catch (ex) {
-            logger.error("Users.suspend", user.id, user.displayName, ex)
+            logger.error("Users.suspend", user.id, user.displayName, reason, ex)
         }
     }
 
