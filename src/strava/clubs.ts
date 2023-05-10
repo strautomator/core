@@ -67,18 +67,22 @@ export class StravaClubs {
      */
     getClubEvents = async (user: UserData, id: string): Promise<StravaClubEvent[]> => {
         try {
-            const now = dayjs()
-            const dateFormat = "YYYY-MM-DDTHH:mm:ssZ"
-            const maxDate = now.add(settings.strava.clubs.maxAgeDays, "days").format(dateFormat)
-            const minDate = now.subtract(settings.strava.clubs.maxAgeDays, "days").format(dateFormat)
+            const now = dayjs().utc()
+            const maxDate = now.add(settings.strava.clubs.maxAgeDays, "days")
+            const minDate = now.subtract(settings.strava.clubs.maxAgeDays, "days")
 
             // Helper to discard events that are out of the allowed event range.
             const preProcessor = (clubEvents: any): void => {
                 try {
                     const totalCount = clubEvents.length
-                    _.remove(clubEvents, (ce: any) => ce.upcoming_occurrences.find((o) => o < maxDate && o > minDate))
+                    _.remove(clubEvents, (ce: any) => {
+                        return !ce.upcoming_occurrences.find((o) => {
+                            const eventDate = dayjs(o)
+                            return eventDate.isBefore(maxDate) && eventDate.isAfter(minDate)
+                        })
+                    })
                     if (clubEvents.length < totalCount) {
-                        logger.info("Strava.getClubEvents.preProcessor", `User ${user.id} ${user.displayName}`, `Club ${id}`, `Discarded ${totalCount - clubEvents.length} events`)
+                        logger.info("Strava.getClubEvents.preProcessor", `User ${user.id} ${user.displayName}`, `Club ${id}`, `Discarded ${totalCount - clubEvents.length} out of ${totalCount} events`)
                     }
                 } catch (preEx) {
                     logger.error("Strava.getClubEvents.preProcessor", `User ${user.id} ${user.displayName}`, `Club ${id}`, preEx)
