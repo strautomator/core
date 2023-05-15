@@ -613,11 +613,13 @@ export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
 }
 
 /**
- * Process the activity and add the necessary suffixes to its fields.
+ * Process the activity and add the necessary suffixes (if needed) to its fields.
  * @param user The user owning the activity.
  * @param activity The Strava activity to be transformed.
  */
 export const transformActivityFields = (user: UserData, activity: StravaActivity): void => {
+    const noSuffixes = user.preferences?.noSuffixes || false
+
     for (let prop of recipePropertyList) {
         let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
 
@@ -652,7 +654,7 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
         }
 
         // Append suffixes.
-        if (suffix && !_.isNil(activity[prop.value]) && !_.isDate(activity[prop.value])) {
+        if (suffix && !noSuffixes && !_.isNil(activity[prop.value]) && !_.isDate(activity[prop.value])) {
             activity[prop.value] = `${activity[prop.value]}${suffix}`
         }
     }
