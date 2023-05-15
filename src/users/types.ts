@@ -94,6 +94,8 @@ export interface UserPreferences {
     weatherUnit?: "c" | "f"
     /** Wind speed unit. */
     windSpeedUnit?: "m/s" | "kph" | "mph"
+    /** Omit suffixes when replacing activity tags? */
+    noSuffixes?: boolean
     /** Privacy mode: do not save processed activities and records. */
     privacyMode?: boolean
 }
