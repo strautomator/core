@@ -86,17 +86,17 @@ export class Twitter {
 
             // Parameters to decide if the ride was "impressive" or not.
             const imperial: boolean = user.profile.units == "imperial"
-            const rideDistance: number = imperial ? 100 : 160
+            const rideDistance: number = imperial ? 125 : 200
             const rideSpeed: number = imperial ? 25 : 40
-            const runDistance: number = imperial ? 25 : 40
-            const runSpeed: number = imperial ? 11 : 18
+            const runDistance: number = imperial ? 26 : 42
+            const runSpeed: number = imperial ? 12 : 20
             let messageTemplates: string[] = null
 
             // Rides.
             if (activity.type == "Ride") {
                 if (activity.distance >= rideDistance) {
                     messageTemplates = messages.RideLongDistance
-                } else if (activity.speedAvg >= rideSpeed && activity.distance >= 20) {
+                } else if (activity.speedAvg >= rideSpeed && activity.distance >= 40) {
                     messageTemplates = messages.RideFast
                 }
             }
@@ -117,10 +117,11 @@ export class Twitter {
             }
 
             // Only a few percent of interesting rides should be actually posted to Twitter.
-            if (Math.random() <= settings.twitter.activityThreshold) {
+            const lottery = Math.random()
+            if (lottery <= settings.twitter.activityThreshold) {
                 await this.postActivity(user, activity, _.sample(messageTemplates))
             } else {
-                logger.info("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Did not win in the lottery :-(")
+                logger.info("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Did not win in the lottery (${lottery.toFixed(0.1)})`)
             }
         } catch (ex) {
             logger.error("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
