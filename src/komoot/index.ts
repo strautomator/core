@@ -5,6 +5,7 @@ import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import database from "../database"
 import dayjs from "../dayjs"
+import _ from "lodash"
 import cache = require("bitecache")
 import logger = require("anyhow")
 const settings = require("setmeup").settings
@@ -47,7 +48,7 @@ export class Komoot {
             const res = await axiosRequest(options)
             return res ? res.data : null
         } catch (ex) {
-            logger.error("Komoot.makeRequest", path, ex)
+            logger.debug("Komoot.makeRequest", path, ex)
             throw ex
         }
     }
@@ -99,7 +100,7 @@ export class Komoot {
             const query = iQuery > 0 ? routeUrl.substring(iQuery) : ""
             const html = await this.makeRequest(`tour/${tourId}${query}`)
             if (!html) {
-                throw new Error(`Could not fetch tour ${tourId}, likely is private`)
+                throw new Error(`Could not fetch tour ${tourId}, likely it's private`)
             }
 
             // Try parsing the start location.
@@ -142,11 +143,11 @@ export class Komoot {
             }
 
             await database.set("komoot", result, result.id)
-            logger.info("Komoot.getRoute", tourId, `Distance: ${result.distance || "?"} km`, `Duration: ${result.estimatedTime || "?"} s`)
+            logger.info("Komoot.getRoute", `User ${user.id} ${user.displayName}`, tourId, `Distance: ${result.distance || "?"} km`, `Duration: ${result.estimatedTime || "?"} s`)
 
             return result
         } catch (ex) {
-            logger.warn("Komoot.getRoute", routeUrl, ex, "Added to the invalid cache")
+            logger.error("Komoot.getRoute", `User ${user.id} ${user.displayName}`, routeUrl, ex)
             cache.set("komoot-invalid", routeUrl, true)
             return null
         }
@@ -161,7 +162,17 @@ export class Komoot {
             const index = data.indexOf("www.komoot.")
             if (index < 0) return null
 
-            const separatorIndex = data.substring(index + 12, index + 100).search(/[\s\n\:]/g)
+            const baseString = data.substring(index + 12, index + 100)
+
+            // Get the index of a new line, colon, space, or query reference, whatever comes first.
+            const sepNewLine = baseString.indexOf("\n")
+            const sepCol = baseString.indexOf(":")
+            const sepSpace = baseString.indexOf(" ")
+            const sepRef = baseString.indexOf("&ref=")
+            const separators = [sepNewLine, sepCol, sepSpace, sepRef].filter((s) => s > 0)
+            const separatorIndex = separators.length > 0 ? _.min(separators) : 0
+
+            // Extract the URL according to the separator index.
             const routeUrl = separatorIndex > 0 ? data.substring(index, index + separatorIndex + 12) : data.substring(index)
 
             if (routeUrl.includes("/tour/")) {
