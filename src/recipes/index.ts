@@ -99,7 +99,7 @@ export class Recipes {
             if (_.isArray(recipe.actions)) {
                 recipe.actions = recipe.actions.filter((a) => !_.isEmpty(a))
             } else {
-                throw new Error("Missing recipe actions")
+                throw new Error("Missing or invalid recipe actions list")
             }
 
             if (_.isArray(recipe.conditions)) {
@@ -138,7 +138,7 @@ export class Recipes {
                         throw new Error(`Missing condition property`)
                     }
                     if (!Object.values(RecipeOperator).includes(condition.operator)) {
-                        throw new Error(`Invalid condition operator: ${condition.operator}`)
+                        throw new Error(`Invalid condition operator "${condition.operator}"`)
                     }
                     if (cValue === null || cValue === "") {
                         throw new Error(`Missing condition value`)
@@ -152,8 +152,11 @@ export class Recipes {
 
                     // Check numbers.
                     const propSpecs = recipePropertyList.find((p) => p.value == condition.property)
+                    if (!propSpecs) {
+                        throw new Error(`Condition property "${condition.property}" is not valid`)
+                    }
                     if (propSpecs && propSpecs.type == "number" && isNaN(condition.value as any)) {
-                        throw new Error(`Condition ${condition.property} must be a valid number`)
+                        throw new Error(`Condition property "${condition.property}" must be a valid number`)
                     }
 
                     // Check for non-schema fields.
