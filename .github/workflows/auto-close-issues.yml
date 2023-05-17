@@ -1,0 +1,21 @@
+name: Close inactive issues
+on:
+    schedule:
+        - cron: "0 10 * * *"
+jobs:
+    close-issues:
+        runs-on: ubuntu-latest
+        permissions:
+            issues: write
+            pull-requests: write
+        steps:
+            - uses: actions/stale@v5
+              with:
+                  days-before-issue-stale: 30
+                  days-before-issue-close: 7
+                  stale-issue-label: "stale"
+                  stale-issue-message: "Issue flagged as stale for being inactive for 30 days, please report status if this is still relevant."
+                  close-issue-message: "Issue closed due to inactivity, feel free to update and re-open it if necessary."
+                  days-before-pr-stale: -1
+                  days-before-pr-close: -1
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
