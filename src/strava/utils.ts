@@ -85,6 +85,12 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     activity.hasLocation = activity.locationStart?.length > 0 || activity.locationEnd?.length > 0
     activity.hasCadence = activity.cadenceAvg && activity.cadenceAvg > 0
 
+    // Cadence as SPM.
+    const spmSports = [StravaSport.Hike, StravaSport.Run, StravaSport.TrailRun, StravaSport.VirtualRun, StravaSport.Walk]
+    if (activity.hasCadence && spmSports.includes(activity.sportType)) {
+        activity.cadenceSpm = activity.cadenceAvg * 2
+    }
+
     if (data.workout_type && data.workout_type != 0 && data.workout_type != 10) {
         activity.workoutType = data.workout_type
     }

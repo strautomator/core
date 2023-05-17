@@ -103,8 +103,10 @@ export interface StravaActivity {
     hrAvg?: number
     /** Maximum heart rate. */
     hrMax?: number
-    /** Average cadence. */
+    /** Average cadence (RPM). */
     cadenceAvg?: number
+    /** Average cadence (SPM). */
+    cadenceSpm?: number
     /** Has cadence data? */
     hasCadence?: boolean
     /** Calories. */

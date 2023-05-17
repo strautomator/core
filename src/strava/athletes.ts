@@ -41,7 +41,7 @@ export class StravaAthletes {
             logger.info("Strava.getAthlete", `ID ${profile.id}`, profile.username || profile.firstName || profile.lastName)
             return profile
         } catch (ex) {
-            if (deauthCheck && ex.response && ex.response.status == 401) {
+            if (deauthCheck && ex.response?.status == 401) {
                 return null
             }
 
