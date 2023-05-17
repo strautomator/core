@@ -150,13 +150,16 @@ export class Recipes {
                         throw new Error(`Condition friendly value is too long (max length is ${settings.recipes.maxLength.conditionValue})`)
                     }
 
-                    // Check numbers.
+                    // Check valid operators / types.
                     const propSpecs = recipePropertyList.find((p) => p.value == condition.property)
                     if (!propSpecs) {
                         throw new Error(`Condition property "${condition.property}" is not valid`)
                     }
-                    if (propSpecs && propSpecs.type == "number" && isNaN(condition.value as any)) {
+                    if (propSpecs.type == "number" && isNaN(condition.value as any)) {
                         throw new Error(`Condition property "${condition.property}" must be a valid number`)
+                    }
+                    if (propSpecs.type == "boolean" && ![true, false, 1, 0].includes(condition.value as any)) {
+                        throw new Error(`Condition property "${condition.property}" must be a boolean`)
                     }
 
                     // Check for non-schema fields.
