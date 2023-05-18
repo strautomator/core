@@ -167,9 +167,9 @@ export class Komoot {
             // Get the index of a new line, colon, space, or query reference, whatever comes first.
             const sepNewLine = baseString.indexOf("\n")
             const sepCol = baseString.indexOf(":")
+            const sepPeriod = baseString.indexOf(".")
             const sepSpace = baseString.indexOf(" ")
-            const sepRef = baseString.indexOf("&ref=")
-            const separators = [sepNewLine, sepCol, sepSpace, sepRef].filter((s) => s > 0)
+            const separators = [sepNewLine, sepCol, sepPeriod, sepSpace].filter((s) => s > 0)
             const separatorIndex = separators.length > 0 ? _.min(separators) : 0
 
             // Extract the URL according to the separator index.
