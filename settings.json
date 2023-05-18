@@ -439,10 +439,10 @@
             // A single batch operation per user per 24 hours.
             "batchPerHours": 24,
             // Default batch size when processing queued activities.
-            "batchSize": 55,
+            "batchSize": 50,
             // How long can activities stayed queued for processing?
-            // By default 2 and a half days, value set in seconds.
-            "maxAge": 216000,
+            // By default 4 days, value set in seconds.
+            "maxAge": 345600,
             // Retry processing queued activities up to 5 times.
             "retry": 5
         }
