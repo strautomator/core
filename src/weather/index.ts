@@ -109,7 +109,7 @@ export class Weather {
             }
 
             const dateStart = dayjs(activity.dateStart).utcOffset(activity.utcStartOffset)
-            const dateEnd = dayjs(activity.dateStart).utcOffset(activity.utcStartOffset)
+            const dateEnd = dayjs(activity.dateEnd).utcOffset(activity.utcStartOffset)
 
             // Fetch weather for the start and end locations of the activity.
             let weather: ActivityWeather = {}
@@ -137,7 +137,7 @@ export class Weather {
             }
 
             const startSummary = weather.start ? `Start ${dateStart.format("LT")}, ${weather.start.provider}: ${weather.start.summary}` : "No weather for start location"
-            const endSummary = weather.end ? `End ${dateStart.format("LT")}, ${weather.end.provider}: ${weather.end.summary}` : "No weather for end location"
+            const endSummary = weather.end ? `End ${dateEnd.format("LT")}, ${weather.end.provider}: ${weather.end.summary}` : "No weather for end location"
             logger.info("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, startSummary, endSummary)
 
             return weather
@@ -152,10 +152,12 @@ export class Weather {
      * @param options The weather request options.
      */
     getLocationWeather = async (options: WeatherRequestOptions): Promise<WeatherSummary> => {
+        const userLog = options.user ? `User ${options.user.id} ${options.user.displayName}` : "Unknown user"
+        const coordinatesLog = options.coordinates?.join(", ") || "no coordinates"
+        const dateLog = options.dDate?.format("lll") || "no date"
+
         if (!options.dDate || !options.coordinates || options.coordinates.length != 2 || isNaN(options.coordinates[0]) || isNaN(options.coordinates[1])) {
-            const coordinatesLog = options.coordinates?.join(", ") || "no coordinates"
-            const dateLog = options.dDate?.format("lll") || "no date"
-            logger.warn("Weather.getLocationWeather", coordinatesLog, dateLog, "Missing coordinates or date, won't fetch")
+            logger.warn("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, "Missing coordinates or date, won't fetch")
             return null
         }
 
@@ -168,11 +170,9 @@ export class Weather {
 
         const user = options.user
         const preferences = user.preferences
-        const logDate = options.dDate.format("lll")
         const utcDate = options.dDate.utc()
         const utcNow = dayjs.utc()
         const hours = utcNow.diff(utcDate, "hours")
-        const latlon = options.coordinates.join(", ")
 
         // Get provider from parameter, then preferences, finally the default from settings.
         if (!options.provider) {
@@ -181,11 +181,11 @@ export class Weather {
             isDefaultProvider = true
         }
 
-        // Look on cache first.
-        const cacheId = `${options.coordinates.join("-")}-${options.dDate.valueOf() / 1000}${options.aqi ? "-aqi" : ""}`
+        // Look on cache first. Cache is rounded to 5 minutes.
+        const cacheId = `${options.coordinates.join("-")}-${Math.round(options.dDate.valueOf() / 1000 / 300)}${options.aqi ? "-aqi" : ""}`
         const cached: WeatherSummary = cache.get(`weather`, cacheId)
         if (cached && (isDefaultProvider || cached.provider == options.provider)) {
-            logger.info("Weather.getLocationWeather.fromCache", latlon, logDate, cached.provider, cached.summary)
+            logger.info("Weather.getLocationWeather.fromCache", userLog, coordinatesLog, dateLog, cached.provider, cached.summary)
             return cached
         }
 
@@ -199,7 +199,7 @@ export class Weather {
 
         // No providers available at the moment? Stop here.
         if (availableProviders.length == 0) {
-            logger.warn("Weather.getLocationWeather", latlon, logDate, "No weather providers available for that query")
+            logger.warn("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, "No weather providers available for that query")
             return null
         }
 
@@ -240,9 +240,9 @@ export class Weather {
                 // Still has other providers to try and fetch the weather?
                 if (currentProviders.length > 0) {
                     providerModule = currentProviders[1]
-                    logger.warn("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, `${failedProviderName} failed, will try another`, ex.message)
+                    logger.warn("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, `${failedProviderName} failed, will try another`, ex.message)
                 } else {
-                    logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, failedProviderName, ex)
+                    logger.error("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, failedProviderName, ex)
                 }
             }
         }
@@ -268,9 +268,9 @@ export class Weather {
                     result.aqi = await providerModule.getAirQuality(options.user, options.coordinates, options.dDate)
                 } catch (aqiEx) {
                     if (aqiProviders.length > 0) {
-                        logger.warn("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, `Air quality: ${providerModule.name} failed, will try another`, aqiEx.message)
+                        logger.warn("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, `Air quality: ${providerModule.name} failed, will try another`, aqiEx.message)
                     } else {
-                        logger.error("Weather.getLocationWeather", `User ${user.id} ${user.displayName}`, latlon, logDate, `Air quality: ${providerModule.name}`, aqiEx)
+                        logger.error("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, `Air quality: ${providerModule.name}`, aqiEx)
                     }
                 }
             }
