@@ -25,6 +25,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         id: data.id,
         type: data.type || data.sport_type,
         sportType: data.sport_type || data.type,
+        workoutType: data.workout_type && data.workout_type != 0 && data.workout_type != 10 ? data.workout_type : null,
         name: data.name,
         description: data.description,
         flagged: data.flagged ? true : false,
@@ -33,8 +34,9 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         hideHome: data.hide_from_home ? true : false,
         trainer: data.trainer ? true : false,
         dateStart: startDate.toDate(),
+        dateEnd: data.elapsed_time ? startDate.add(data.elapsed_time, "s").toDate() : null,
         weekOfYear: startDate.week(),
-        utcStartOffset: data.utc_offset,
+        utcStartOffset: data.utc_offset ? data.utc_offset / 60 : 0,
         totalTime: data.elapsed_time,
         movingTime: data.moving_time || data.elapsed_time,
         locationStart: data.start_latlng,
@@ -46,12 +48,16 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         wattsKg: data.average_watts && user.profile.weight ? parseFloat((data.average_watts / user.profile.weight).toFixed(1)) : null,
         hrAvg: data.average_heartrate ? Math.round(data.average_heartrate) : null,
         hrMax: data.max_heartrate ? Math.round(data.max_heartrate) : null,
+        hasCadence: data.average_cadence > 0,
         cadenceAvg: data.average_cadence || null,
+        cadenceSpm: data.average_cadence ? data.average_cadence * 2 : null,
         calories: data.calories || null,
         relativeEffort: data.suffer_score || null,
+        perceivedExertion: data.perceived_exertion || null,
         device: data.device_name || null,
         manual: data.manual,
         hasPhotos: data.photos && data.photos.count > 0 ? true : false,
+        privateNote: data.private_note || null,
         updatedFields: []
     }
 
@@ -65,41 +71,29 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
 
     // Get coordinates from polyline, and make sure start and end locations are
     // populated if coming empty from the Strava API for whatever reason.
-    if (activity.polyline) {
-        const coordinates = polyline.decode(activity.polyline)
+    if (data.map) {
+        activity.polyline = data.map.polyline
 
-        if (coordinates.length > 0) {
-            if (!activity.locationStart || !activity.locationStart.length) {
-                activity.locationStart = coordinates[0]
-            }
-            if (!activity.locationEnd || !activity.locationEnd.length) {
-                activity.locationEnd = coordinates[coordinates.length - 1]
-            }
+        if (activity.polyline) {
+            const coordinates = polyline.decode(activity.polyline)
 
-            // Calculate activity mid point.
-            activity.locationMid = coordinates[Math.round(coordinates.length / 2)]
+            if (coordinates.length > 0) {
+                if (!activity.locationStart || !activity.locationStart.length) {
+                    activity.locationStart = coordinates[0]
+                }
+                if (!activity.locationEnd || !activity.locationEnd.length) {
+                    activity.locationEnd = coordinates[coordinates.length - 1]
+                }
+
+                // Calculate activity mid point.
+                activity.locationMid = coordinates[Math.round(coordinates.length / 2)]
+            }
         }
     }
 
-    // Extra optional fields.
+    // Has location data?
     activity.hasLocation = activity.locationStart?.length > 0 || activity.locationEnd?.length > 0
-    activity.hasCadence = activity.cadenceAvg && activity.cadenceAvg > 0
 
-    // Cadence as SPM.
-    const spmSports = [StravaSport.Hike, StravaSport.Run, StravaSport.TrailRun, StravaSport.VirtualRun, StravaSport.Walk]
-    if (activity.hasCadence && spmSports.includes(activity.sportType)) {
-        activity.cadenceSpm = activity.cadenceAvg * 2
-    }
-
-    if (data.workout_type && data.workout_type != 0 && data.workout_type != 10) {
-        activity.workoutType = data.workout_type
-    }
-    if (data.private_note) {
-        activity.privateNote = data.private_note
-    }
-    if (data.perceived_exertion) {
-        activity.perceivedExertion = data.perceived_exertion
-    }
     if (data.stats_visibility && data.stats_visibility.length > 0) {
         for (let sv of data.stats_visibility) {
             if (sv.type == "pace") activity.hideStatPace = sv.visibility == "only_me"
@@ -110,35 +104,12 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         }
     }
 
-    // Strava returns offset in seconds, but we store in minutes.
-    if (activity.utcStartOffset) {
-        activity.utcStartOffset = activity.utcStartOffset / 60
-    }
-
-    // Set end date.
-    if (data.elapsed_time) {
-        activity.dateEnd = startDate.add(data.elapsed_time, "s").toDate()
-    }
-
     // Set activity gear.
     const gearId = data.gear && data.gear.id ? data.gear.id : data.gear_id
     if (gearId) {
         activity.gear = activity.gear = _.find(profile.bikes, {id: gearId}) || _.find(profile.shoes, {id: gearId})
     } else if (data.gear) {
         activity.gear = toStravaGear(profile, data.gear.id)
-    }
-
-    // Set polyline.
-    if (data.map) {
-        activity.polyline = data.map.polyline
-    }
-
-    // Activity laps.
-    const laps: StravaLap[] = data.laps && data.laps.length > 0 ? [] : null
-    if (laps) {
-        for (let lap of data.laps) {
-            laps.push({distance: lap.distance, totalTime: lap.elapsed_time, movingTime: lap.moving_time, speed: lap.average_speed})
-        }
     }
 
     // Climbing ratio multiplier in metric is 19m / 1km.
@@ -201,16 +172,18 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         activity.speedUnit = user.profile.units == "imperial" ? "mi/h" : "km/h"
     }
 
-    // Set lap distances and speed.
+    // Activity laps.
+    const laps: StravaLap[] = data.laps && data.laps.length > 0 ? [] : null
     if (laps) {
-        laps.forEach((lap) => {
-            lap.distance = parseFloat(((lap.distance / 1000) * distanceMultiplier).toFixed(1))
-            lap.speed = parseFloat((lap.speed * 3.6 * distanceMultiplier).toFixed(1))
-        })
-    }
+        for (let lap of data.laps) {
+            laps.push({
+                distance: parseFloat(((lap.distance / 1000) * distanceMultiplier).toFixed(1)),
+                speed: parseFloat((lap.average_speed * 3.6 * distanceMultiplier).toFixed(1)),
+                totalTime: lap.elapsed_time,
+                movingTime: lap.moving_time || lap.elapsed_time
+            })
+        }
 
-    // Lap summaries.
-    if (laps) {
         activity.lapCount = laps.length
 
         const lapDistances = _.map(laps, "distance")
@@ -272,7 +245,8 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     // Get activity emoticon.
     activity.icon = getSportIcon(activity)
 
-    return activity
+    // Remove nulls before returning the activity data.
+    return _.omitBy(activity, (v) => v === null) as StravaActivity
 }
 
 /**
