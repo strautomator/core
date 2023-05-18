@@ -95,16 +95,19 @@ export class Weather {
      * @param aqi Also get air quality data?
      */
     getActivityWeather = async (user: UserData, activity: StravaActivity, aqi: boolean): Promise<ActivityWeather> => {
+        const userLog = `User ${user.id} ${user.displayName}`
+        const activityLog = `Activity ${activity.id}`
+
         try {
             if (!activity.hasLocation) {
-                logger.warn("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "No start / end location, can't fetch weather")
+                logger.warn("Weather.getActivityWeather", userLog, activityLog, "No start / end location, can't fetch weather")
                 return null
             }
 
             // Stop right here if activity happened too long ago.
             const minDate = dayjs.utc().subtract(this.maxHoursPast, "hours")
             if (minDate.isAfter(activity.dateEnd)) {
-                logger.warn("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Happened before ${minDate.format("lll")}, can't fetch weather`)
+                logger.warn("Weather.getActivityWeather", userLog, activityLog, `Happened before ${minDate.format("lll")}, can't fetch weather`)
                 return null
             }
 
@@ -115,9 +118,9 @@ export class Weather {
             let weather: ActivityWeather = {}
             try {
                 weather.start = await this.getLocationWeather({user: user, coordinates: activity.locationStart, dDate: dateStart, aqi: aqi})
-                weather.end = await this.getLocationWeather({user: user, coordinates: activity.locationStart, dDate: dateEnd, aqi: aqi})
+                weather.end = await this.getLocationWeather({user: user, coordinates: activity.locationEnd, dDate: dateEnd, aqi: aqi})
             } catch (innerEx) {
-                logger.error("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
+                logger.error("Weather.getActivityWeather", userLog, activityLog, innerEx)
             }
 
             // Weather in the middle of the activity is restricted to PRO users and activities longer than 3 hours.
@@ -127,7 +130,7 @@ export class Weather {
                     const dateMid = dayjs(activity.dateStart).add(seconds, "seconds").utcOffset(activity.utcStartOffset)
                     weather.mid = await this.getLocationWeather({user: user, coordinates: activity.locationStart, dDate: dateMid, aqi: aqi})
                 } catch (innerEx) {
-                    logger.error("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Mid location", innerEx)
+                    logger.error("Weather.getActivityWeather", userLog, activityLog, "Mid location", innerEx)
                 }
             }
 
@@ -138,11 +141,11 @@ export class Weather {
 
             const startSummary = weather.start ? `Start ${dateStart.format("LT")}, ${weather.start.provider}: ${weather.start.summary}` : "No weather for start location"
             const endSummary = weather.end ? `End ${dateEnd.format("LT")}, ${weather.end.provider}: ${weather.end.summary}` : "No weather for end location"
-            logger.info("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, startSummary, endSummary)
+            logger.info("Weather.getActivityWeather", userLog, activityLog, startSummary, endSummary)
 
             return weather
         } catch (ex) {
-            logger.error("Weather.getActivityWeather", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Weather.getActivityWeather", userLog, activityLog, ex)
             return null
         }
     }
