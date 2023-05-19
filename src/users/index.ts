@@ -554,7 +554,7 @@ export class Users {
 
                 // Triggered via user login? Force reset the suspended flag.
                 if (login) {
-                    if (!_.isNil(userData.suspended)) {
+                    if (!_.isNil(existingData.suspended)) {
                         logger.warn("Users.upsert", `${userData.id} ${userData.displayName}`, "Reactivated, suspended = false")
                         userData.suspended = FieldValue.delete() as any
                     }
