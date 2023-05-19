@@ -37,7 +37,11 @@ export const fortuneCookies: string[] = [
     "Constipated people don’t give a crap.",
     "All generalizations are false.",
     "Hello world!",
-    "I tried to set my password to 'beef stew' but it wasn't stroganoff."
+    "I tried to set my password to 'beef stew' but it wasn't stroganoff.",
+    "A brilliant idea will come to you in the shower. Just don't forget the shampoo.",
+    "Warning: The fortune you seek is in another cookie. Keep eating.",
+    "Your luckiest number is 404. Don't worry, it's just hiding from you.",
+    "You will discover the true meaning of procrastination... tomorrow."
 ]
 
 /**
@@ -82,6 +86,8 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
             logger.info("Fortune.getActivityFortune", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, "Via OpenAI", aiName)
             return aiName
         }
+
+        logger.warn("Fortune.getActivityFortune", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "OpenAI failed, fallback to template")
     }
 
     // Rounded activity properties.
