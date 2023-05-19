@@ -50,7 +50,7 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
 }
 
 /**
- * Process the passed weather summary to transformand add missing fields.
+ * Process the passed weather summary to transform and add missing fields.
  * Numeric data passed as string will be untouched, while actual numbers
  * will be processed (converting to proper units and adding the suffixes).
  * @param summary The weather summary to be processed.

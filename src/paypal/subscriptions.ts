@@ -220,7 +220,7 @@ export class PayPalSubscriptions {
     // --------------------------------------------------------------------------
 
     /**
-     * Get subsccription details from PayPal.
+     * Get subscription details from PayPal.
      * @param id The corresponding subscription ID.
      */
     getSubscription = async (id: string): Promise<PayPalSubscription> => {

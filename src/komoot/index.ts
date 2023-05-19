@@ -57,7 +57,7 @@ export class Komoot {
     // --------------------------------------------------------------------------
 
     /**
-     * Ge route details from Komoot. No exeception will be thrown if the URL is invalid.
+     * Ge route details from Komoot. No exception will be thrown if the URL is invalid.
      * @param user The user requesting the route details.
      * @param routeUrl The Komoot route URL.
      */

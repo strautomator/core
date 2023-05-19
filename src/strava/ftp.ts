@@ -283,7 +283,7 @@ export class StravaFtp {
     getPowerIntervals = async (user: UserData, activity: StravaActivity): Promise<StravaActivityPerformance> => {
         try {
             if (!activity.hasPower && !activity.wattsAvg) {
-                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Abort, activity nas no power data")
+                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Abort, activity has no power data")
                 return null
             }
             if (activity.movingTime < 60) {

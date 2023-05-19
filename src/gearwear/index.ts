@@ -264,7 +264,7 @@ export class GearWear {
                 throw new Error(`Gear ${gearwear.id} does not exist`)
             }
 
-            // Validate configuration before proceeeding.
+            // Validate configuration before proceeding.
             this.validate(user, gearwear)
 
             // Get names of the components registered.
@@ -393,11 +393,11 @@ export class GearWear {
 
     /**
      * Process recent activities for the specified user and increase the relevant GearWear distance.
-     * Returns the number of processed actvities for the user.
+     * Returns the number of processed activities for the user.
      * @param user The user to fetch activities for.
      * @param configs List of GearWear configurations.
-     * @param dDateFrom Get activities that occured after this timestamp.
-     * @param dDateTo Get activities that occured before this timestamp.
+     * @param dDateFrom Get activities that occurred after this timestamp.
+     * @param dDateTo Get activities that occurred before this timestamp.
      */
     processUserActivities = async (user: UserData, configs: GearWearConfig[], dDateFrom: dayjs.Dayjs, dDateTo: dayjs.Dayjs): Promise<number> => {
         let dateString = `${dDateFrom.format("ll")} to ${dDateTo.format("ll")}`

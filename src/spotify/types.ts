@@ -36,7 +36,7 @@ export interface SpotifyTrack {
     name: string
     /** Track artists. */
     artists: string[]
-    /** Track title (combination of artits + track name). */
+    /** Track title (combination of artist + track name). */
     title: string
     /** Track duration string. */
     duration: string

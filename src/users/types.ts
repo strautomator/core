@@ -82,13 +82,13 @@ export interface UserPreferences {
     language?: "en" | "de" | "es" | "fr" | "pt"
     /** Delay processing activities? */
     delayedProcessing?: boolean
-    /** How many days to delay the calculations of new GearWeat mileage / hours. */
+    /** How many days to delay the calculations of new GearWear mileage / hours. */
     gearwearDelayDays?: number
     /** Opt in to have activities shared on Strautomator's Twitter? */
     twitterShare?: boolean
     /** Reset recipe counters every year? Set using the format MM-DD, or false to disable. */
     dateResetCounter?: string | false
-    /** Prefered weather provider. */
+    /** Preferred weather provider. */
     weatherProvider?: "tomorrow" | "openweathermap" | "stormglass" | "visualcrossing" | "weatherapi" | "openmeteo"
     /** Weather temperature unit. */
     weatherUnit?: "c" | "f"

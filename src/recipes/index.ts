@@ -246,7 +246,7 @@ export class Recipes {
         else {
             logger.info("Recipes.evaluate", `User ${user.id}`, `Activity ${activity.id}`, `Recipe ${recipe.id} - ${recipe.title}`, operatorLog, `${recipe.conditions.length} conditions`)
 
-            // Group conditions by property type, so we can evaluate on an ordely basis
+            // Group conditions by property type, so we can evaluate on an orderly basis
             // and apply the samePropertyOp operator.
             const groupedConditions = Object.entries(_.groupBy(recipe.conditions, "property")) as any
             let gProperty: string

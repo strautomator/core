@@ -133,7 +133,7 @@ export class StravaAthletes {
         const minMovingTime = settings.strava.records.minMovingTimeAvg
         let hasNewRecord = false
 
-        // Iterate the passed activites to check for new records.
+        // Iterate the passed activities to check for new records.
         for (let activity of activities) {
             try {
                 if (!user.isPro && !settings.plans.free.recordSports.includes(activity.sportType)) {

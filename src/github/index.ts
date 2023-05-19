@@ -66,12 +66,12 @@ export class GitHub {
             // Build list of last commits.
             for (let c of commits) {
                 const arrGitRepo = c.commit.tree.url.replace("https://api.github.com/repos/", "").split("/").slice(0, 2)
-                unsortedResults.push({repo: arrGitRepo.join("/"), message: c.commit.message, dateCommited: dayjs(c.commit.committer.date).toDate()})
+                unsortedResults.push({repo: arrGitRepo.join("/"), message: c.commit.message, dateCommitted: dayjs(c.commit.committer.date).toDate()})
             }
 
-            const results = _.orderBy(unsortedResults, "dateCommited", "desc")
+            const results = _.orderBy(unsortedResults, "dateCommitted", "desc")
             cache.set("github-commits", "last", results)
-            logger.info("GitHub.getLastCommits", `Last commit on ${dayjs(results[0].dateCommited).format("lll")}`)
+            logger.info("GitHub.getLastCommits", `Last commit on ${dayjs(results[0].dateCommitted).format("lll")}`)
 
             return results
         } catch (ex) {
@@ -142,7 +142,7 @@ export class GitHub {
                 details.push(`Amount: ${data.sponsorship.tier.monthly_price_in_dollars} USD`)
             }
 
-            // Abort here if sponsorship webhook is missing crutial data.
+            // Abort here if sponsorship webhook is missing crucial data.
             if (!data.action || !data.sponsorship) {
                 logger.warn("GitHub.processWebhook", "Missing sponsorship details", details.join(", "))
                 return

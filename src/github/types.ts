@@ -22,7 +22,7 @@ export interface GitHubCommit {
     /** Commit message. */
     message: string
     /** Commit date. */
-    dateCommited: Date
+    dateCommitted: Date
 }
 
 /**

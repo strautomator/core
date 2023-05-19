@@ -17,7 +17,7 @@ export class StravaWebhooks {
     }
 
     /**
-     * Copy of current webook registered on Strava.
+     * Copy of current webhook registered on Strava.
      */
     current: StravaWebhook = null
 
@@ -58,7 +58,7 @@ export class StravaWebhooks {
                 dateUpdated: dayjs.utc(data.updated_at).toDate()
             }
 
-            // Set as curent webhook.
+            // Set as current webhook.
             this.current = webhook
             logger.info("Strava.getWebhook", `ID ${webhook.id}`, webhook.callbackUrl)
 

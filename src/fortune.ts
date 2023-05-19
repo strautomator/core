@@ -140,8 +140,8 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
             uniqueNames.push("legs are pumping hard")
         } else if (activity.wattsAvg < 80 && activity.wattsAvg > 0) {
             uniqueNames.push("easy does it")
-            uniqueNames.push("soft pedalling")
-            uniqueNames.push("smoooth")
+            uniqueNames.push("soft pedaling")
+            uniqueNames.push("smooth")
         }
 
         if (activity.distance > 0 && activity.elevationGain > 0 && activity.climbingRatio < 0.15) {
@@ -292,7 +292,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         }
     }
 
-    // No uniqe names or names? Maybe just use the basic stuff, 10% chances.
+    // No unique names or names? Maybe just use the basic stuff, 10% chances.
     if (uniqueNames.length == 0 && names.length == 0 && Math.random() < 0.11) {
         if (isRide) {
             names.push("ride")

@@ -23,7 +23,7 @@ export interface StravaActivity {
     privateNote?: string
     /** Is the activity private? */
     private?: boolean
-    /** Marked as coomute? */
+    /** Marked as commute? */
     commute?: boolean
     /** Activity hidden on the home feed? */
     hideHome?: boolean
@@ -73,7 +73,7 @@ export interface StravaActivity {
     locationStart?: [number, number]
     /** End location (latitude and longitude). */
     locationEnd?: [number, number]
-    /** Falh-time location (latitude and longitude). */
+    /** Half-time location (latitude and longitude). */
     locationMid?: [number, number]
     /** Map encoded as polyline. */
     polyline?: string
@@ -115,7 +115,7 @@ export interface StravaActivity {
     relativeEffort?: number
     /** Perceived exertion, where 1 is easy and 10 is max effort.  */
     perceivedExertion?: number
-    /** Training sress score. */
+    /** Training stress score. */
     tss?: number
     /** Average temperature. */
     temperature?: number
@@ -267,7 +267,7 @@ export interface StravaLap {
  * Strava athlete details.
  */
 export interface StravaProfile {
-    /** Athlee ID, the same as the user ID stored on the database. */
+    /** Athlete ID, the same as the user ID stored on the database. */
     id?: string
     /** Athlete's username. */
     username: string
@@ -690,6 +690,6 @@ export enum StravaMapStyle {
 }
 
 /**
- * List of activity properties that are trackerd for records.
+ * List of activity properties that are tracked for records.
  */
 export const StravaTrackedRecords = ["distance", "movingTime", "elevationGain", "speedMax", "speedAvg", "hrMax", "hrAvg", "wattsMax", "wattsAvg", "calories"]

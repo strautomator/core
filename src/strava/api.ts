@@ -279,7 +279,7 @@ export class StravaAPI {
                 options.headers["Authorization"] = `Bearer ${token}`
             }
 
-            // Additonal parameters were passed?
+            // Additional parameters were passed?
             if (params) {
                 const urlParams = new URLSearchParams(params)
                 options.url += `?${urlParams.toString()}`

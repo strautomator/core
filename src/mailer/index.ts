@@ -32,7 +32,7 @@ export class Mailer {
 
     /**
      * Init the Email Manager.
-     * @param quickStart If true, will not validate SMTP cconnection, default is false.
+     * @param quickStart If true, will not validate SMTP connection, default is false.
      */
     init = async (quickStart?: boolean): Promise<void> => {
         try {

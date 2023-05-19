@@ -206,7 +206,7 @@ export class StravaActivities {
     /**
      * Updates a single activity on Strava.
      * @param user Owner of the activity.
-     * @param activity The ativity data.
+     * @param activity The activity data.
      */
     setActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
         const data: any = {}

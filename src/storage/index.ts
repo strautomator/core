@@ -187,7 +187,7 @@ export class Storage {
     }
 
     /**
-     * Delete the specified file from the storage buket.
+     * Delete the specified file from the storage bucket.
      * @param bucketKey Key or name of the storage bucket.
      * @param filename The full filename.
      */

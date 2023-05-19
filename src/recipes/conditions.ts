@@ -294,7 +294,7 @@ export const checkNewRecords = (activity: StravaActivity, condition: RecipeCondi
 }
 
 /**
- * Check if the passed date is on the specified week day (0 = Sunday, 6 = Satiurday).
+ * Check if the passed date is on the specified week day (0 = Sunday, 6 = Saturday).
  * @param activity The Strava activity to be checked.
  * @param condition The weekday based recipe condition.
  */

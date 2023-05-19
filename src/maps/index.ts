@@ -111,7 +111,7 @@ export class Maps {
                 return cached
             }
 
-            // Get geocoded result fromn the specified provider.
+            // Get geocoded result from the specified provider.
             const results = provider == "google" ? await this.getGeocode_Google(address, region) : await this.getGeocode_LocationIQ(address, region)
             if (results) {
                 cache.set("maps", `${region}-${addressId}`, results)

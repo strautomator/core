@@ -152,7 +152,7 @@ export class Notifications {
     }
 
     /**
-     * Create a notification to the speicified user. It will NOT create a new notification
+     * Create a notification to the specified user. It will NOT create a new notification
      * if the contents are the same as the last notification created for the user.
      * @param user The user to get notifications for.
      * @param notification Notification options and data.

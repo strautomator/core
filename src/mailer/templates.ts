@@ -17,7 +17,7 @@ export const EmailTemplates = {
         body:
             "<p>" +
             "Hello there!<br><br>" +
-            "Just to let you know that one of your automations failed to execute properly, so you might waant to double check its configuration." +
+            "Just to let you know that one of your automations failed to execute properly, so you might want to double check its configuration." +
             "</p>" +
             "<p>" +
             "<strong>${recipeTitle}</strong><br>" +

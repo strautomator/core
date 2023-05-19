@@ -85,7 +85,7 @@ export class PayPal {
 
             await this.loadFromCache()
 
-            // Load live data if quickstart was not set.
+            // Load live data if quickStart was not set.
             if (!quickStart) {
                 this.loadLive()
             }

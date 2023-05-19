@@ -49,7 +49,7 @@ export class PayPalWebhooks {
     }
 
     /**
-     * Registr a new webhook on PayPal.
+     * Register a new webhook on PayPal.
      */
     createWebhook = async (): Promise<PayPalWebhook> => {
         try {

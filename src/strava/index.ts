@@ -37,7 +37,7 @@ export class Strava {
     activityProcessing = stravaActivityProcessing
 
     /**
-     * Atlhete methods.
+     * Athlete methods.
      */
     athletes = stravaAthletes
 

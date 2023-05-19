@@ -369,7 +369,7 @@ export class Users {
 
     /**
      * Get the user for the passed access token.
-     * @param tokens The user's Strava access and refrsh token tokens.
+     * @param tokens The user's Strava access and refresh token tokens.
      * @param userId Optional user ID to log in case it fails.
      */
     getByToken = async (tokens: StravaTokens, userId?: string): Promise<UserData> => {
