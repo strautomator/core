@@ -99,10 +99,10 @@ export class GearWear {
 
             let gear = _.find(user.profile.bikes, {id: gearwear.id}) || _.find(user.profile.shoes, {id: gearwear.id})
 
+            // Make sure the components were set.
             if (!gear) {
                 throw new Error(`User has no gear ID ${gearwear.id}`)
             }
-
             if (!gearwear.components) {
                 throw new Error("Missing gear components")
             }
@@ -235,7 +235,7 @@ export class GearWear {
                 }
             }
 
-            // Update changes to thethe database.
+            // Update changes to the database.
             if (gearCount > 0) {
                 await database.merge("users", newData)
                 logger.info("Users.refreshGearDetails", user.id, user.displayName, `Refreshed ${gearCount} gear details`)
