@@ -51,13 +51,15 @@ export class Database {
                 throw new Error("Missing the mandatory database.crypto.key setting")
             }
 
-            const options: FirebaseFirestore.Settings = {projectId: settings.gcp.projectId}
+            const options: FirebaseFirestore.Settings = {
+                projectId: settings.gcp.projectId,
+                ignoreUndefinedProperties: dbOptions.ignoreUndefinedProperties
+            }
             if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
                 options.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
             }
 
             this.firestore = new Firestore(options)
-            this.firestore.settings({ignoreUndefinedProperties: dbOptions.ignoreUndefinedProperties})
             this.collectionSuffix = dbOptions.collectionSuffix || ""
 
             // Setup bitecache.
@@ -109,9 +111,7 @@ export class Database {
 
             return result.writeTime.seconds
         } catch (ex) {
-            if (ex.toString().includes("DEADLINE_EXCEEDED")) {
-                await jaul.io.sleep(deadlineTimeout)
-
+            if (this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData)
                 cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
 
@@ -145,9 +145,7 @@ export class Database {
 
             return result.writeTime.seconds
         } catch (ex) {
-            if (ex.toString().includes("DEADLINE_EXCEEDED")) {
-                await jaul.io.sleep(deadlineTimeout)
-
+            if (this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData, {merge: true})
                 cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
 
@@ -272,7 +270,7 @@ export class Database {
             }
         }
 
-        // Return the snapshop count.
+        // Return the snapshot count.
         const snapshot = await filteredTable.count().get()
         return snapshot.data().count
     }
@@ -282,7 +280,7 @@ export class Database {
      * @param collection Name of the collection.
      * @param id Document ID.
      * @param field Name of the field that should be incremented.
-     * @param value Optional increment valud, default is 1, can also be negative.
+     * @param value Optional increment value, default is 1, can also be negative.
      */
     increment = async (collection: string, id: string, field: string, value?: number): Promise<void> => {
         const colname = `${collection}${this.collectionSuffix}`
@@ -301,8 +299,7 @@ export class Database {
         try {
             await doc.update(data)
         } catch (ex) {
-            if (ex.toString().includes("DEADLINE_EXCEEDED")) {
-                await jaul.io.sleep(deadlineTimeout)
+            if (this.isRetryable(ex)) {
                 await doc.update(data)
             } else {
                 throw ex
@@ -323,7 +320,7 @@ export class Database {
             throw new Error("A valid queryList or ID is mandatory")
         }
 
-        // Check ir an actual ID was passed, or a query list.
+        // Check if an actual ID was passed, or a query list.
         if (_.isString(queryOrId)) {
             const id = queryOrId as string
             cache.del(`database${this.collectionSuffix}`, `${collection}-${id}`)
@@ -406,7 +403,7 @@ export class Database {
          * @param collection Name of the collection.
          * @param id Document ID.
          * @param field Name of the field that should be incremented.
-         * @param value Optional increment valud, default is 1, can also be negative.
+         * @param value Optional increment value, default is 1, can also be negative.
          */
         increment: async (id: string, field: string, value?: number): Promise<void> => {
             const collection = "app-state"
@@ -464,6 +461,23 @@ export class Database {
         }
 
         return data
+    }
+
+    /**
+     * Helper to check if a database operation is retryable.
+     * @param err Firestore exception.
+     */
+    isRetryable = async (err: Error): Promise<boolean> => {
+        try {
+            const message = err.toString()
+            if (message.includes("DEADLINE_EXCEEDED") || message.includes("RST_STREAM")) {
+                await jaul.io.sleep(deadlineTimeout)
+                return true
+            }
+        } catch (ex) {
+            logger.error("Database.isRetryable", err, ex)
+        }
+        return false
     }
 }
 
