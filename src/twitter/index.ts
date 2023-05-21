@@ -82,7 +82,14 @@ export class Twitter {
      */
     onStravaActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
         try {
-            if (!user.preferences.twitterShare || user.preferences.privacyMode) return
+            if (!user.preferences.twitterShare || user.preferences.privacyMode || user.displayName == "anonymous") {
+                return
+            }
+
+            // Avoid posting activities that might have been manually created or have bogus data.
+            if (!activity.hasCadence && !activity.hasPower && (!activity.hrAvg || activity.hrAvg < 100)) {
+                return
+            }
 
             // Parameters to decide if the ride was "impressive" or not.
             const imperial: boolean = user.profile.units == "imperial"
