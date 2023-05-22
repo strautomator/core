@@ -8,6 +8,7 @@ import dayjs from "../dayjs"
 import _ from "lodash"
 import cache = require("bitecache")
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
 /**
@@ -143,11 +144,11 @@ export class Komoot {
             }
 
             await database.set("komoot", result, result.id)
-            logger.info("Komoot.getRoute", `User ${user.id} ${user.displayName}`, tourId, `Distance: ${result.distance || "?"} km`, `Duration: ${result.estimatedTime || "?"} s`)
+            logger.info("Komoot.getRoute", logHelper.user(user), tourId, `Distance: ${result.distance || "?"} km`, `Duration: ${result.estimatedTime || "?"} s`)
 
             return result
         } catch (ex) {
-            logger.error("Komoot.getRoute", `User ${user.id} ${user.displayName}`, routeUrl, ex)
+            logger.error("Komoot.getRoute", logHelper.user(user), routeUrl, ex)
             cache.set("komoot-invalid", routeUrl, true)
             return null
         }
@@ -169,12 +170,21 @@ export class Komoot {
             const sepCol = baseString.indexOf(":")
             const sepPeriod = baseString.indexOf(".")
             const sepSpace = baseString.indexOf(" ")
-            const separators = [sepNewLine, sepCol, sepPeriod, sepSpace].filter((s) => s > 0)
-            const separatorIndex = separators.length > 0 ? _.min(separators) : 0
+            const allSeparators = [sepNewLine, sepCol, sepPeriod, sepSpace]
+
+            // Only consider the ref= as a separator in case it comes after the token in the query.
+            const sepRef = baseString.indexOf("ref=")
+            const sepToken = baseString.indexOf("token=")
+            if (sepRef >= sepToken) {
+                allSeparators.push(sepRef)
+            }
 
             // Extract the URL according to the separator index.
+            const separators = allSeparators.filter((s) => s > 0)
+            const separatorIndex = separators.length > 0 ? _.min(separators) : 0
             const routeUrl = separatorIndex > 0 ? data.substring(index, index + separatorIndex + 12) : data.substring(index)
 
+            // Found it?
             if (routeUrl.includes("/tour/")) {
                 return routeUrl.trim()
             }
