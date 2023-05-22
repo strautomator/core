@@ -349,7 +349,7 @@ export class GearWear {
                     const user = await users.getById(userId)
 
                     if (user.suspended) {
-                        logger.warn("GearWear.processRecentActivities", `User ${user.id} ${user.displayName} is suspended, will not process`)
+                        logger.warn("GearWear.processRecentActivities", `${logHelper.user(user)} is suspended, will not process`)
                         continue
                     }
 

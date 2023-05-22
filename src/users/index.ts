@@ -206,7 +206,7 @@ export class Users {
                 // Send email in async mode (no need to wait).
                 mailer.send(options)
             } else if (user.reauth >= settings.oauth.tokenFailuresDisable) {
-                logger.warn("Users.onStravaTokenFailure", `User ${user.id} ${user.displayName} will be suspended due to too many token failures`)
+                logger.warn("Users.onStravaTokenFailure", logHelper.user(user), `User suspended due to too many token failures`)
                 await this.suspend(user, "Too many Strava token failures")
             }
 

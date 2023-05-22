@@ -85,7 +85,7 @@ export class StravaActivityProcessing {
 
         try {
             if (user.suspended || !user.recipes || Object.keys(user.recipes).length == 0) {
-                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName} is suspended or has no recipes, won't process`)
+                logger.info("Strava.processActivity", logHelper.user(user), "User suspended or has no recipes, won't process")
                 return null
             }
 
@@ -155,13 +155,13 @@ export class StravaActivityProcessing {
 
             // If user has no recipes? Stop here.
             if (!user.recipes || Object.keys(user.recipes).length == 0) {
-                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName} has no recipes, won't process activity ${activityId}`)
+                logger.info("Strava.processActivity", logHelper.user(user), `No recipes, won't process activity ${activityId}`)
                 return null
             }
 
             // User suspended? Stop here.
             if (user.suspended) {
-                logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
+                logger.warn("Strava.processActivity", logHelper.user(user), `User suspended, won't process activity ${activityId}`)
                 return null
             }
 
@@ -415,7 +415,7 @@ export class StravaActivityProcessing {
      */
     queueActivity = async (user: UserData, activityId: number, batch?: boolean): Promise<void> => {
         if (user.suspended) {
-            logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName} is suspended, won't process activity ${activityId}`)
+            logger.warn("Strava.queueActivity", logHelper.user(user), `User suspended, won't process activity ${activityId}`)
             return
         }
 

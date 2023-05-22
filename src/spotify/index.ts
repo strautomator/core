@@ -253,7 +253,7 @@ export class Spotify {
                 await this.saveProfile(user, user.spotify)
             }
         } catch (ex) {
-            logger.error("Spotify.validateTokens", `User ${user.id}`, ex)
+            logger.error("Spotify.validateTokens", logHelper.user(user), ex)
         }
 
         return tokens

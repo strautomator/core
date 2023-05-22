@@ -228,7 +228,7 @@ export class Recipes {
 
         // Recipe disabled? Stop here.
         if (recipe.disabled) {
-            logger.info("Recipes.evaluate", `User ${user.id}`, logHelper.activity(activity), logHelper.recipe(recipe), "Recipe is disabled")
+            logger.info("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Recipe is disabled")
             return false
         }
 

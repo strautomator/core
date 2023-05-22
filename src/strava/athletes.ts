@@ -111,7 +111,7 @@ export class StravaAthletes {
      */
     checkActivityRecords = async (user: UserData, activities: StravaActivity[]): Promise<StravaAthleteRecords> => {
         if (user.suspended) {
-            logger.warn("Strava.checkActivityRecords", `User ${user.id} ${user.displayName} is suspended`)
+            logger.warn("Strava.checkActivityRecords", logHelper.user(user), `User suspended, won't check`)
             return null
         }
         if (user.preferences.privacyMode) {
@@ -211,7 +211,7 @@ export class StravaAthletes {
                     logger.info("Strava.getAthleteRecords", logHelper.user(user), `${count} records`)
                 }
             } else {
-                logger.debug("Strava.getAthleteRecords", `User ${user.id} ${user.displayName} has no records saved`)
+                logger.debug("Strava.getAthleteRecords", logHelper.user(user), "User has no records saved")
             }
 
             return records || null
