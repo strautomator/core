@@ -92,6 +92,10 @@
             "clubs-group-events": 60,
             "routes": 60
         },
+        // Faster delayed processing on dev, just 2 minutes.
+        "processingQueue": {
+            "delayedInterval": 120
+        },
         // Enabling test mode will prevent activities from being written to Strava.
         // They will be logged to the console instead.
         "testMode": false
