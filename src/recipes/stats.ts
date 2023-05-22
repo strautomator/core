@@ -45,7 +45,7 @@ export class RecipeStats {
                 }
 
                 const lastTrigger = dayjs(stats.dateLastTrigger).format("lll")
-                logger.debug("RecipeStats.getStats", logHelper.user(user), `Recipe ${recipe.id}`, `${stats.activityCount} activities`, `Last triggered: ${lastTrigger}`)
+                logger.debug("RecipeStats.getStats", logHelper.user(user), logHelper.recipe(recipe), `${stats.activityCount} activities`, `Last triggered: ${lastTrigger}`)
                 return stats
             } else {
                 const arrStats: RecipeStatsData[] = await database.search("recipe-stats", ["userId", "==", user.id])
@@ -63,7 +63,7 @@ export class RecipeStats {
                 return arrStats
             }
         } catch (ex) {
-            const recipeLog = recipe ? `Recipe ${recipe.id}` : `All recipes`
+            const recipeLog = recipe ? logHelper.recipe(recipe) : "All recipes"
             logger.error("RecipeStats.getStats", logHelper.user(user), recipeLog, ex)
             throw ex
         }
@@ -112,7 +112,7 @@ export class RecipeStats {
                     counter: 0
                 }
 
-                logger.info("RecipeStats.updateStats", logHelper.user(user), `Recipe ${recipe.id}`, "Created new recipe stats")
+                logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), "Created new recipe stats")
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
 
@@ -134,7 +134,7 @@ export class RecipeStats {
                 // Remove activity IDs from the stats.
                 if (stats.activities.length > settings.recipes.maxActivityIds) {
                     const removedId = stats.activities.shift()
-                    logger.info("RecipeStats.updateStats", logHelper.user(user), `Recipe ${recipe.id}`, `Activity ${removedId} removed from list`)
+                    logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${removedId} removed from list`)
                 }
             }
 
@@ -152,9 +152,9 @@ export class RecipeStats {
 
             // Save stats to the database.
             await database.merge("recipe-stats", stats, doc)
-            logger.info("RecipeStats.updateStats", logHelper.user(user), `Recipe ${recipe.id}`, `Added activity ${activity.id}`)
+            logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Added activity ${activity.id}`)
         } catch (ex) {
-            logger.error("RecipeStats.updateStats", logHelper.user(user), `Recipe ${recipe.id}`, logHelper.activity(activity), ex)
+            logger.error("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), logHelper.activity(activity), ex)
         }
     }
 
@@ -174,7 +174,7 @@ export class RecipeStats {
 
             // If not existing, create a new stats object.
             if (!exists) {
-                logger.warn("RecipeStats.archiveStats", logHelper.user(user), `Recipe ${recipe.id}`, `Stats not found, can't archive`)
+                logger.warn("RecipeStats.archiveStats", logHelper.user(user), logHelper.recipe(recipe), `Stats not found, can't archive`)
                 return
             }
 
@@ -183,9 +183,9 @@ export class RecipeStats {
 
             // Save archived stats to the database.
             await database.merge("recipe-stats", stats, doc)
-            logger.info("RecipeStats.archiveStats", logHelper.user(user), `Recipe ${recipe.id}`, "Archived")
+            logger.info("RecipeStats.archiveStats", logHelper.user(user), logHelper.recipe(recipe), "Archived")
         } catch (ex) {
-            logger.error("RecipeStats.archiveStats", logHelper.user(user), `Recipe ${recipe.id}`, ex)
+            logger.error("RecipeStats.archiveStats", logHelper.user(user), logHelper.recipe(recipe), ex)
         }
     }
 
@@ -230,18 +230,18 @@ export class RecipeStats {
                     counter: counter
                 }
 
-                logger.info("RecipeStats.setCounter", logHelper.user(user), `Recipe ${recipe.id}`, `Created new recipe stats`)
+                logger.info("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Created new recipe stats`)
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
                 stats.counter = counter
 
-                logger.info("RecipeStats.setCounter", logHelper.user(user), `Recipe ${recipe.id}`, `Counter ${counter ? counter : "reset to 0"}`)
+                logger.info("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Counter ${counter ? counter : "reset to 0"}`)
             }
 
             // Update the counter on the database.
             await database.merge("recipe-stats", stats, doc)
         } catch (ex) {
-            logger.error("RecipeStats.setCounter", logHelper.user(user), `Recipe ${recipe.id}`, `Counter ${counter}`, ex)
+            logger.error("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Counter ${counter}`, ex)
         }
     }
 }

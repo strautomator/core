@@ -228,7 +228,7 @@ export class Recipes {
 
         // Recipe disabled? Stop here.
         if (recipe.disabled) {
-            logger.info("Recipes.evaluate", `User ${user.id}`, logHelper.activity(activity), `Recipe ${recipe.id} - ${recipe.title}`, "Recipe is disabled")
+            logger.info("Recipes.evaluate", `User ${user.id}`, logHelper.activity(activity), logHelper.recipe(recipe), "Recipe is disabled")
             return false
         }
 
@@ -245,7 +245,7 @@ export class Recipes {
         }
         // Otherwise iterate conditions and evaluate each one.
         else {
-            logger.info("Recipes.evaluate", `User ${user.id}`, logHelper.activity(activity), `Recipe ${recipe.id} - ${recipe.title}`, operatorLog, `${recipe.conditions.length} conditions`)
+            logger.info("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), operatorLog, "Evaluating")
 
             // Group conditions by property type, so we can evaluate on an orderly basis
             // and apply the samePropertyOp operator.
@@ -257,7 +257,7 @@ export class Recipes {
 
             // Evaluate conditions, grouping them by same type.
             for ([gProperty, conditions] of groupedConditions) {
-                logger.debug("Recipes.evaluate", `User ${user.id}`, logHelper.activity(activity), `Recipe ${recipe.id}`, `Processing conditions: ${gProperty}`)
+                logger.debug("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Processing conditions: ${gProperty}`)
 
                 let sameValid = recipe.samePropertyOp == "OR" ? false : true
 
@@ -290,13 +290,13 @@ export class Recipes {
                 else if (_.isArray(conditionProp)) conditionProp = conditionProp.length
 
                 let logValue = conditionProp ? `Not a match: ${conditionProp}` : "Not a match"
-                logger.info("Recipes.evaluate", `User ${user.id}`, logHelper.activity(activity), `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, logValue)
+                logger.info("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `${condition.property} ${condition.operator} ${condition.value}`, logValue)
                 return false
             }
         }
 
         const logEvaluated = recipe.defaultFor ? `default for ${recipe.defaultFor}` : recipe.conditions.map((c) => `${c.property}: ${activity[c.property] ? activity[c.property].id || activity[c.property] : c.value}`).join(" | ")
-        logger.info("Recipes.evaluate", `User ${user.id}`, logHelper.activity(activity), `Recipe ${recipe.id} - ${recipe.title}`, operatorLog, logEvaluated)
+        logger.info("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), logEvaluated)
 
         // Sort recipe actions, webhook should come last.
         const sortedActions = _.sortBy(recipe.actions, ["type"])
@@ -397,10 +397,10 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            logger.debug("Recipes.checkCondition", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`)
+            logger.debug("Recipes.checkCondition", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `${condition.property} ${condition.operator} ${condition.value}`)
             return true
         } catch (ex) {
-            logger.error("Recipes.checkCondition", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, `${condition.property} ${condition.operator} ${condition.value}`, ex)
+            logger.error("Recipes.checkCondition", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `${condition.property} ${condition.operator} ${condition.value}`, ex)
             return false
         }
     }

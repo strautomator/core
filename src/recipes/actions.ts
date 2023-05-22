@@ -184,7 +184,7 @@ export const addWeatherTags = async (user: UserData, activity: StravaActivity, r
         const weatherSummary = await weather.getActivityWeather(user, activity, aqiNeeded)
 
         if (!weatherSummary) {
-            logger.warn("Recipes.addWeatherTags", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, "Got no valid activity weather")
+            logger.warn("Recipes.addWeatherTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Got no valid activity weather")
             processedValue = jaul.data.replaceTags(processedValue, "", "weather.start.")
             processedValue = jaul.data.replaceTags(processedValue, "", "weather.end.")
             processedValue = jaul.data.replaceTags(processedValue, "", "weather.")
@@ -206,7 +206,7 @@ export const addWeatherTags = async (user: UserData, activity: StravaActivity, r
             processedValue = jaul.data.replaceTags(processedValue, weatherSummary.mid || weatherSummary.end || weatherSummary.end || "", "weather.")
         }
     } catch (ex) {
-        logger.warn("Recipes.addWeatherTags", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, ex)
+        logger.warn("Recipes.addWeatherTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
 
     return processedValue
@@ -224,7 +224,7 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
         const tracks = await spotify.getActivityTracks(user, activity)
 
         if (!tracks || tracks.length == 0) {
-            logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, "No Spotify tracks returned for the activity")
+            logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "No Spotify tracks returned for the activity")
             processedValue = jaul.data.replaceTags(processedValue, "", "spotify.")
             return processedValue
         }
@@ -247,7 +247,7 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
 
         processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.")
     } catch (ex) {
-        logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, ex)
+        logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
 
     return processedValue
@@ -312,7 +312,7 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
         if (!gear) {
             throw new Error(`Gear ID ${action.value} not found`)
         } else if ((isRide && shoe) || (isRun && bike)) {
-            logger.info("Recipes.gearAction", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, `Gear ${action.value} not valid for type ${activity.type}`)
+            logger.info("Recipes.gearAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Gear ${action.value} not valid for type ${activity.type}`)
             return false
         } else {
             activity.gear = gear
@@ -370,7 +370,7 @@ export const workoutTypeAction = async (user: UserData, activity: StravaActivity
         }
 
         if (abortMessage) {
-            logger.info("Recipes.workoutTypeAction", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, abortMessage)
+            logger.info("Recipes.workoutTypeAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), abortMessage)
             return false
         }
 
