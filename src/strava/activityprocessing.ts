@@ -13,6 +13,7 @@ import recipes from "../recipes"
 import users from "../users"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -25,11 +26,6 @@ export class StravaActivityProcessing {
     static get Instance(): StravaActivityProcessing {
         return this._instance || (this._instance = new this())
     }
-
-    /**
-     * Holds the date of the oldest queued activity to be processed.
-     */
-    oldestQueueDate: Date = null
 
     // PROCESSING ACTIVITIES
     // --------------------------------------------------------------------------
@@ -63,11 +59,11 @@ export class StravaActivityProcessing {
             }
 
             const activities = await database.search("activities", where, ["dateProcessed", "desc"], limit)
-            logger.info("Strava.getProcessedActivities", `User ${user.id} ${user.displayName}`, `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
+            logger.info("Strava.getProcessedActivities", logHelper.user(user), `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
 
             return activities
         } catch (ex) {
-            logger.error("Strava.getProcessedActivities", `User ${user.id} ${user.displayName}`, dateFrom, dateTo, ex)
+            logger.error("Strava.getProcessedActivities", logHelper.user(user), dateFrom, dateTo, ex)
         }
     }
 
@@ -104,7 +100,7 @@ export class StravaActivityProcessing {
             const activities = await stravaActivities.getActivities(user, {after: dDateFrom, before: dDateTo})
 
             if (activities.length == 0) {
-                logger.warn("Strava.batchProcessActivities", `User ${user.id} ${user.displayName}`, dateLog, "No activities for that date range")
+                logger.warn("Strava.batchProcessActivities", logHelper.user(user), dateLog, "No activities for that date range")
                 return 0
             }
 
@@ -127,18 +123,18 @@ export class StravaActivityProcessing {
                         activityCount++
                     }
                 } catch (innerEx) {
-                    logger.error("Strava.batchProcessActivities", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
+                    logger.error("Strava.batchProcessActivities", logHelper.user(user), logHelper.activity(activity), innerEx)
                 }
             }
 
             // Update user with the current date.
             await users.update({id: user.id, displayName: user.displayName, dateLastBatchProcessing: now.toDate()})
 
-            logger.info("Strava.batchProcessActivities", `User ${user.id} ${user.displayName}`, dateLog, `Queued ${activities.length} activities`)
+            logger.info("Strava.batchProcessActivities", logHelper.user(user), dateLog, `Queued ${activities.length} activities`)
 
             return activityCount
         } catch (ex) {
-            logger.error("Strava.batchProcessActivities", `User ${user.id} ${user.displayName}`, dateLog, ex)
+            logger.error("Strava.batchProcessActivities", logHelper.user(user), dateLog, ex)
             throw ex
         }
     }
@@ -176,7 +172,7 @@ export class StravaActivityProcessing {
                 const status = ex.response?.status || ex.status || null
 
                 if (status == 404) {
-                    logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} not found`)
+                    logger.warn("Strava.processActivity", logHelper.user(user), `Activity ${activityId} not found`)
                     return null
                 }
 
@@ -206,12 +202,12 @@ export class StravaActivityProcessing {
                         recipeIds.push(recipe.id)
 
                         if (recipe.killSwitch) {
-                            logger.debug("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `Recipe ${recipe.id} kill switch`)
+                            logger.debug("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, `Recipe ${recipe.id} kill switch`)
                             break
                         }
                     }
                 } catch (innerEx) {
-                    logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, innerEx)
+                    logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, innerEx)
                 }
             }
 
@@ -220,14 +216,14 @@ export class StravaActivityProcessing {
                 const actions = []
                 recipeIds.forEach((rid) => user.recipes[rid].actions.forEach((a) => actions.push(a.type)))
 
-                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`, `Actions: ${_.uniq(actions).join(", ")}`)
+                logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`, `Actions: ${_.uniq(actions).join(", ")}`)
 
                 // Remove duplicates from list of updated fields.
                 activity.updatedFields = _.uniq(activity.updatedFields)
 
                 // Write suspended (possibly missing permissions)? Stop here.
                 if (user.writeSuspended) {
-                    logger.warn("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "User.writeSuspended, won't update the activity")
+                    logger.warn("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "User.writeSuspended, won't update the activity")
                     return null
                 }
 
@@ -235,7 +231,7 @@ export class StravaActivityProcessing {
                 try {
                     await stravaActivities.setActivity(user, activity)
                 } catch (ex) {
-                    logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
+                    logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, ex)
                     saveError = ex.friendlyMessage || ex.message || ex
 
                     // Create notification for user in case the activity exists but could not be processed.
@@ -264,12 +260,12 @@ export class StravaActivityProcessing {
 
                     return await this.saveProcessedActivity(user, activity, recipeIds, saveError)
                 } catch (ex) {
-                    logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "Not saved to database", ex)
+                    logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Not saved to database", ex)
                 } finally {
                     eventManager.emit("Strava.processActivity", user, activity)
                 }
             } else {
-                logger.info("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, `No matching recipes`)
+                logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, `No matching recipes`)
             }
 
             // Check for FTP updates in case user has opted-in and the activity happened in the last few days.
@@ -281,10 +277,10 @@ export class StravaActivityProcessing {
                     await stravaFtp.processFtp(user, [activity], true)
                 }
             } catch (ftpEx) {
-                logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, "Failed to auto-update FTP", ftpEx)
+                logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Failed to auto-update FTP", ftpEx)
             }
         } catch (ex) {
-            logger.error("Strava.processActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
+            logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, ex)
             throw ex
         }
 
@@ -347,7 +343,7 @@ export class StravaActivityProcessing {
 
             // Linkback added to activity?
             if (activity.linkback) {
-                logger.info("Strava.linkback", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`)
+                logger.info("Strava.linkback", logHelper.user(user), logHelper.activity(activity))
                 data.linkback = true
             }
 
@@ -362,7 +358,7 @@ export class StravaActivityProcessing {
 
             return data
         } catch (ex) {
-            logger.error("Strava.saveProcessedActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Strava.saveProcessedActivity", logHelper.user(user), logHelper.activity(activity), ex)
             throw ex
         }
     }
@@ -380,7 +376,7 @@ export class StravaActivityProcessing {
 
         if (!ageDays) ageDays = 0
 
-        const userLog = user ? `User ${user.id} ${user.displayName}` : "All users"
+        const userLog = user ? logHelper.user(user) : "All users"
         const sinceLog = ageDays > 0 ? `Older than ${ageDays} days` : "Since the beginning"
         const where: any[] = []
 
@@ -434,7 +430,6 @@ export class StravaActivityProcessing {
             activity.id = activityId
             activity.user = {id: user.id, displayName: user.displayName}
             activity.dateQueued = activity.dateQueued || new Date()
-            activity.retryCount = (activity.retryCount || 0) + 1
 
             // Part of a batch processing? Flag it.
             if (batch) {
@@ -444,33 +439,13 @@ export class StravaActivityProcessing {
             await database.set("activities", activity, activityId.toString())
 
             if (existing) {
-                logger.warn("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} already queued or processed`)
+                logger.warn("Strava.queueActivity", logHelper.user(user), `Activity ${activityId} already queued or processed`)
             } else {
-                logger.info("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId} queued`)
-
-                // If no queued activities were added since the last processed queue, set current date as the oldest.
-                if (!this.oldestQueueDate) {
-                    this.oldestQueueDate = new Date()
-                }
+                logger.info("Strava.queueActivity", logHelper.user(user), `Activity ${activityId} queued`)
             }
         } catch (ex) {
-            logger.error("Strava.queueActivity", `User ${user.id} ${user.displayName}`, `Activity ${activityId}`, ex)
+            logger.error("Strava.queueActivity", logHelper.user(user), `Activity ${activityId}`, ex)
             throw ex
-        }
-    }
-
-    /**
-     * Check if the oldest activity queued in memory has reached the time threshold,
-     * and if so, process all relevant queued activities.
-     */
-    checkQueuedActivities = async (): Promise<void> => {
-        const minDate = dayjs().subtract(settings.strava.processingQueue.delayedInterval, "seconds")
-
-        if (minDate.isAfter(this.oldestQueueDate)) {
-            await this.processQueuedActivities()
-        } else {
-            const dateLog = this.oldestQueueDate ? this.oldestQueueDate.toString() : "none"
-            logger.debug("Strava.checkQueuedActivities", "Nothing to be processed at the moment", `oldestQueueDate = ${dateLog}`)
         }
     }
 
@@ -514,21 +489,42 @@ export class StravaActivityProcessing {
         const usersCache: {[id: string]: UserData} = {}
         if (!batchSize) batchSize = settings.strava.processingQueue.batchSize
 
-        // Reset oldest queued activity date.
-        this.oldestQueueDate = null
-
         try {
-            const beforeDate = dayjs().subtract(settings.strava.processingQueue.delayedInterval, "seconds").toDate()
-            const activities = await this.getQueuedActivities(beforeDate, batchSize)
+            const now = dayjs()
+            const processingCutDate = now.subtract(settings.strava.processingQueue.maxAge / 2, "seconds").toDate()
+            const beforeDate = now.subtract(settings.strava.processingQueue.delayedInterval, "seconds").toDate()
+            const queuedActivities = await this.getQueuedActivities(beforeDate, batchSize)
+
+            // Filter activities that are not currently being processed, or that have been queued for at least
+            // half of the maximum allowed queue age regardless of the processing flag.
+            const activities = queuedActivities.filter((a) => !a.processing || a.dateQueued < processingCutDate)
             let processedCount = 0
 
             // No activities to be processed? Stop here.
             if (activities.length == 0) {
-                logger.debug("Strava.processQueuedActivities", `Batch size: ${batchSize}`, `No queued activities to be processed`)
+                logger.debug("Strava.processQueuedActivities", `Batch size: ${batchSize}`, "No queued activities to be processed")
                 return
             }
 
-            // Process each of the queued activities.
+            // Check if we have activities from that batch which are already being processed by another job.
+            const skipped = queuedActivities.length - activities.length
+            const skipLog = skipped > 0 ? `, skipping ${skipped} already processing` : ""
+            logger.info("Strava.processQueuedActivities", `Will process ${activities.length} activities${skipLog}`)
+
+            // First we set the processing flag on the queued activities to avoid double-processing.
+            for (let activity of activities) {
+                try {
+                    if (_.isNil(activity.retryCount)) {
+                        activity.retryCount = 0
+                    }
+
+                    await database.merge("activities", {id: activity.id, processing: true})
+                } catch (innerEx) {
+                    logger.error("Strava.processQueuedActivities", `Failed to set the processing flag for activity ${activity.id} from user ${activity.user.id}`, innerEx)
+                }
+            }
+
+            // Now we process each of the queued activities separately.
             for (let activity of activities) {
                 try {
                     if (!usersCache[activity.user.id]) {
@@ -549,7 +545,7 @@ export class StravaActivityProcessing {
                         await this.deleteQueuedActivity(activity)
                     } else {
                         logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${activity.id} from user ${activity.user.id}, will retry`)
-                        await database.increment("activities", activity.id.toString(), "retryCount")
+                        await database.merge("activities", {id: activity.id, processing: false, retryCount: activity.retryCount + 1})
                     }
                 }
             }
@@ -573,12 +569,12 @@ export class StravaActivityProcessing {
             const count = await database.delete("activities", activity.id.toString())
 
             if (count > 0) {
-                logger.info("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `Activity ${activity.id} deleted`)
+                logger.info("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `${logHelper.activity(activity)} deleted`)
             } else {
-                logger.warn("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `Activity ${activity.id} not previously saved`)
+                logger.warn("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `${logHelper.activity(activity)} not previously saved`)
             }
         } catch (ex) {
-            logger.error("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, logHelper.activity(activity), ex)
             throw ex
         }
     }
