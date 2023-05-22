@@ -225,11 +225,11 @@ export const startup = async (quickStart?: boolean) => {
         try {
             logger.warn("Strautomator.startup", "Setting up cron jobs directly")
 
-            // Process queued activities every 5 minutes.
+            // Process queued activities every 10 minutes.
             const processQueuedActivities = async () => {
                 await strava.activityProcessing.processQueuedActivities()
             }
-            setInterval(processQueuedActivities, 1000 * 60 * 5)
+            setInterval(processQueuedActivities, 1000 * 60 * 10)
 
             // Cleanup old queued activities every hour.
             const cleanupQueuedActivities = async () => {
