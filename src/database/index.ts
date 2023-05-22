@@ -66,7 +66,12 @@ export class Database {
             cache.setup(`database${this.collectionSuffix}`, dbOptions.cacheDuration)
 
             const logSuffix = this.collectionSuffix ? `Collections suffixd with "${this.collectionSuffix}"` : "No collection suffix"
-            logger.info("Database.init", customLog, logSuffix)
+
+            if (settings.database.writeDisabled) {
+                logger.warn("Database.init", customLog, logSuffix, "Database in read-only mode, writeDisable = true")
+            } else {
+                logger.info("Database.init", customLog, logSuffix)
+            }
         } catch (ex) {
             logger.error("Database.init", ex)
             throw ex
@@ -96,6 +101,11 @@ export class Database {
      * @param id Unique ID of the document.
      */
     set = async (collection: string, data: any, id: string): Promise<number> => {
+        if (settings.database.writeDisabled) {
+            logger.warn("Database.set", collection, JSON.stringify(data, null, 0), id, "WRITE DISABLED")
+            return
+        }
+
         const colname = `${collection}${this.collectionSuffix}`
         const table = this.firestore.collection(colname)
         const doc = table.doc(id)
@@ -129,6 +139,11 @@ export class Database {
      * @param doc The document reference, optional, if not set will fetch from database based on ID.
      */
     merge = async (collection: string, data: any, doc?: DocumentReference): Promise<number> => {
+        if (settings.database.writeDisabled) {
+            logger.warn("Database.merge", collection, JSON.stringify(data, null, 0), "WRITE DISABLED")
+            return
+        }
+
         const encryptedData = _.cloneDeep(data)
         cryptoProcess(encryptedData, true)
 
@@ -283,6 +298,11 @@ export class Database {
      * @param value Optional increment value, default is 1, can also be negative.
      */
     increment = async (collection: string, id: string, field: string, value?: number): Promise<void> => {
+        if (settings.database.writeDisabled) {
+            logger.warn("Database.increment", collection, id, field, value || 1, "WRITE DISABLED")
+            return
+        }
+
         const colname = `${collection}${this.collectionSuffix}`
         const table = this.firestore.collection(colname)
         const doc = table.doc(id)
@@ -314,6 +334,11 @@ export class Database {
      * @param queryOrId ID or query / queries in the format [property, operator, value].
      */
     delete = async (collection: string, queryOrId: string | any[]): Promise<number> => {
+        if (settings.database.writeDisabled) {
+            logger.warn("Database.delete", collection, JSON.stringify(queryOrId, null, 0), "WRITE DISABLED")
+            return
+        }
+
         const colname = `${collection}${this.collectionSuffix}`
 
         if (!queryOrId || queryOrId.length < 1) {
@@ -385,6 +410,11 @@ export class Database {
          * @param replace Replace full object instead of merging.
          */
         set: async (id: string, data: any, replace?: boolean): Promise<void> => {
+            if (settings.database.writeDisabled) {
+                logger.warn("Database.appState.set", id, JSON.stringify(data, null, 0), replace || false, "WRITE DISABLED")
+                return
+            }
+
             const encryptedData = _.cloneDeep(data)
             cryptoProcess(encryptedData, true)
 
@@ -406,6 +436,11 @@ export class Database {
          * @param value Optional increment value, default is 1, can also be negative.
          */
         increment: async (id: string, field: string, value?: number): Promise<void> => {
+            if (settings.database.writeDisabled) {
+                logger.warn("Database.appState.increment", id, field, value || 0, "WRITE DISABLED")
+                return
+            }
+
             const collection = "app-state"
             const colname = `${collection}${this.collectionSuffix}`
             const table = this.firestore.collection(colname)

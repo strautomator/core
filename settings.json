@@ -101,7 +101,9 @@
             "iv": null
         },
         // Ignore undefined properties?
-        "ignoreUndefinedProperties": true
+        "ignoreUndefinedProperties": true,
+        // Disable writing to the database? Useful while troubleshooting data from production.
+        "writeDisabled": false
     },
     "faq": {
         // Download questions from the database twice a day by default. Value set in seconds.
