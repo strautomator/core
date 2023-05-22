@@ -7,6 +7,7 @@ import api from "./api"
 import logger = require("anyhow")
 import * as logHelper from "../loghelper"
 import JSZip = require("jszip")
+const settings = require("setmeup").settings
 
 /**
  * Strava routes manager.
@@ -77,6 +78,12 @@ export class StravaRoutes {
 
             if (!user.isPro) {
                 throw new Error("GPX downloads are available to PRO users only")
+            }
+
+            // Limit amount of routes that can be zipped.
+            if (routeIds.length > settings.strava.routes.zipLimit) {
+                logger.warn("Strava.zipGPX", logHelper.user(user), `Only first ${settings.strava.routes.zipLimit} of the passed ${routeIds.length} routes will be processed`)
+                routeIds = routeIds.slice(0, settings.strava.routes.zipLimit)
             }
 
             // Add the individual routes to the ZIP file.

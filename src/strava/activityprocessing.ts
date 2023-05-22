@@ -488,6 +488,7 @@ export class StravaActivityProcessing {
     processQueuedActivities = async (batchSize?: number): Promise<void> => {
         const usersCache: {[id: string]: UserData} = {}
         if (!batchSize) batchSize = settings.strava.processingQueue.batchSize
+        const logBatchSize = `Batch size: ${batchSize}`
 
         try {
             const now = dayjs()
@@ -502,14 +503,14 @@ export class StravaActivityProcessing {
 
             // No activities to be processed? Stop here.
             if (activities.length == 0) {
-                logger.debug("Strava.processQueuedActivities", `Batch size: ${batchSize}`, "No queued activities to be processed")
+                logger.debug("Strava.processQueuedActivities", logBatchSize, "No queued activities to be processed")
                 return
             }
 
             // Check if we have activities from that batch which are already being processed by another job.
             const skipped = queuedActivities.length - activities.length
             const skipLog = skipped > 0 ? `, skipping ${skipped} already processing` : ""
-            logger.info("Strava.processQueuedActivities", `Will process ${activities.length} activities${skipLog}`)
+            logger.info("Strava.processQueuedActivities", logBatchSize, `Will process ${activities.length} activities${skipLog}`)
 
             // First we set the processing flag on the queued activities to avoid double-processing.
             for (let activity of activities) {
@@ -551,12 +552,12 @@ export class StravaActivityProcessing {
             }
 
             if (processedCount > 0) {
-                logger.info("Strava.processQueuedActivities", `Batch size: ${batchSize}`, `Processed ${processedCount} out of ${activities.length} queued activities`)
+                logger.info("Strava.processQueuedActivities", logBatchSize, `Processed ${processedCount} out of ${activities.length} queued activities`)
             } else {
-                logger.debug("Strava.processQueuedActivities", `Batch size: ${batchSize}`, `No processed activities out of ${activities.length} queued activities`)
+                logger.debug("Strava.processQueuedActivities", logBatchSize, `No processed activities out of ${activities.length} queued activities`)
             }
         } catch (ex) {
-            logger.error("Strava.processQueuedActivities", `Batch size: ${batchSize}`, ex)
+            logger.error("Strava.processQueuedActivities", logBatchSize, ex)
         }
     }
 
