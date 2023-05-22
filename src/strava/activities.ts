@@ -7,6 +7,7 @@ import stravaAthletes from "./athletes"
 import api from "./api"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -20,11 +21,6 @@ export class StravaActivities {
         return this._instance || (this._instance = new this())
     }
 
-    /**
-     * Holds the date of the oldest queued activity to be processed.
-     */
-    oldestQueueDate: Date = null
-
     // GET ACTIVITIES
     // --------------------------------------------------------------------------
 
@@ -32,9 +28,8 @@ export class StravaActivities {
      * Get list of activities from Strava.
      * @param user The owner of the activity.
      * @param query Query options.
-     * @param checkRecords If true, new records will be checked against the resulting activities.
      */
-    getActivities = async (user: UserData, query: StravaActivityQuery, checkRecords?: boolean): Promise<StravaActivity[]> => {
+    getActivities = async (user: UserData, query: StravaActivityQuery): Promise<StravaActivity[]> => {
         const arrLogQuery = []
 
         // Parse activities query.
@@ -95,21 +90,16 @@ export class StravaActivities {
                         break
                     }
                 } catch (innerEx) {
-                    logger.error("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Page ${query.page}`, innerEx)
+                    logger.error("Strava.getActivities", logHelper.user(user), logQuery, `Page ${query.page}`, innerEx)
                     query.page = 0
                 }
             }
 
-            logger.info("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, `Got ${activities.length} activities`)
-
-            // Check new records?
-            if (checkRecords) {
-                stravaAthletes.checkActivityRecords(user, activities)
-            }
+            logger.info("Strava.getActivities", logHelper.user(user), logQuery, `Got ${activities.length} activities`)
 
             return activities
         } catch (ex) {
-            logger.error("Strava.getActivities", `User ${user.id} ${user.displayName}`, logQuery, ex)
+            logger.error("Strava.getActivities", logHelper.user(user), logQuery, ex)
             throw ex
         }
     }
@@ -159,12 +149,14 @@ export class StravaActivities {
             let timeStart
             if (activity.dateStart) {
                 const activityDate = dayjs(activity.dateStart)
-                timeStart = `Local ${activityDate.format("LTS")}, UTC ${activityDate.utc().format("LTS")}`
+                const utcDate = activityDate.utc().format("LTS")
+                const localDate = activityDate.add(activity.utcStartOffset || 0, "minutes").format("LTS")
+                timeStart = `UTC ${utcDate}, Local ${localDate}`
             } else {
                 timeStart = "No dateStart"
             }
 
-            logger.info("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, activity.name, timeStart)
+            logger.info("Strava.getActivity", logHelper.user(user), `Activity ${id}`, activity.name, timeStart)
             return activity
         } catch (ex) {
             const errMessage = ex.toString().toLowerCase()
@@ -172,9 +164,9 @@ export class StravaActivities {
             if (!user) {
                 logger.error("Strava.getActivity", "Missing user", `Activity ${id}`, ex)
             } else if (errMessage.includes("404") && errMessage.includes("not found")) {
-                logger.warn("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, "Not found")
+                logger.warn("Strava.getActivity", logHelper.user(user), `Activity ${id}`, "Not found")
             } else {
-                logger.error("Strava.getActivity", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
+                logger.error("Strava.getActivity", logHelper.user(user), `Activity ${id}`, ex)
             }
 
             throw ex
@@ -192,10 +184,10 @@ export class StravaActivities {
             const data = await api.get(tokens, `activities/${id}/streams`, {keys: "watts", key_by_type: true})
             const keys = Object.keys(data)
 
-            logger.info("Strava.getStreams", `User ${user.id} ${user.displayName}`, `Activity ${id}`, keys.join(", "))
+            logger.info("Strava.getStreams", logHelper.user(user), `Activity ${id}`, keys.join(", "))
             return data
         } catch (ex) {
-            logger.error("Strava.getStreams", `User ${user.id} ${user.displayName}`, `Activity ${id}`, ex)
+            logger.error("Strava.getStreams", logHelper.user(user), `Activity ${id}`, ex)
             throw ex
         }
     }

@@ -8,6 +8,7 @@ import weather from "./weather"
 import dayjs from "./dayjs"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "./loghelper"
 
 /**
  * Random funny quotes.
@@ -83,11 +84,11 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         const aiName = await openai.generateActivityName(user, activity, weatherSummaries)
 
         if (aiName) {
-            logger.info("Fortune.getActivityFortune", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, "Via OpenAI", aiName)
+            logger.info("Fortune.getActivityFortune", logHelper.user(user), logHelper.activity(activity), `${usingWeather ? "with" : "without"} weather`, "Via OpenAI", aiName)
             return aiName
         }
 
-        logger.warn("Fortune.getActivityFortune", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "OpenAI failed, fallback to template")
+        logger.warn("Fortune.getActivityFortune", logHelper.user(user), logHelper.activity(activity), "OpenAI failed, fallback to template")
     }
 
     // Rounded activity properties.
@@ -320,7 +321,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     }
 
     result = result ? result.charAt(0).toUpperCase() + result.slice(1) : _.sample(fortuneCookies)
-    logger.info("Fortune.getActivityFortune", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${usingWeather ? "with" : "without"} weather`, result)
+    logger.info("Fortune.getActivityFortune", logHelper.user(user), logHelper.activity(activity), `${usingWeather ? "with" : "without"} weather`, result)
 
     return result
 }

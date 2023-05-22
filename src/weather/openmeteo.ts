@@ -5,6 +5,7 @@ import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -59,7 +60,7 @@ export class OpenMeteo implements WeatherProvider {
             const result = this.toWeatherSummary(res, coordinates, dDate)
             return result
         } catch (ex) {
-            logger.error("OpenMeteo.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
+            logger.error("OpenMeteo.getWeather", logHelper.user(user), coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }
@@ -96,14 +97,14 @@ export class OpenMeteo implements WeatherProvider {
                 const aiq = this.toAirQualityIndex(res, dDate)
 
                 if (aiq !== null) {
-                    logger.info("OpenMeteo.getAirQuality", `User ${user.id} ${user.displayName}`, coordinates.join(", "), dDate.format("lll"), `AIQ: ${aiq}`)
+                    logger.info("OpenMeteo.getAirQuality", logHelper.user(user), coordinates.join(", "), dDate.format("lll"), `AIQ: ${aiq}`)
                     return aiq
                 }
             }
 
             return null
         } catch (ex) {
-            logger.error("OpenMeteo.getAirQuality", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
+            logger.error("OpenMeteo.getAirQuality", logHelper.user(user), coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }

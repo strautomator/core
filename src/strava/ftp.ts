@@ -8,6 +8,7 @@ import api from "./api"
 import users from "../users"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -54,7 +55,7 @@ export class StravaFtp {
 
             // No valid activities? Stop here.
             if (activityCount == 0) {
-                logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "No recent activities with power, can't estimate")
+                logger.info("Strava.estimateFtp", logHelper.user(user), "No recent activities with power, can't estimate")
                 return null
             }
 
@@ -63,7 +64,7 @@ export class StravaFtp {
                 const athlete = await stravaAthletes.getAthlete(user.stravaTokens)
                 user.profile.ftp = athlete.ftp
             } catch (athleteEx) {
-                logger.warn("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, "Could not get latest athlete data, will use the cache")
+                logger.warn("Strava.estimateFtp", logHelper.user(user), "Could not get latest athlete data, will use the cache")
             }
 
             let listWatts: number[] = []
@@ -89,7 +90,7 @@ export class StravaFtp {
 
                     // Low effort activities (less than 60% FTP or current best activity) are not processed.
                     if (watts < user.profile.ftp * 0.6 || watts < maxWatts * 0.6) {
-                        logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Activity ${a.id} power is too low: (${watts}), won't process`)
+                        logger.info("Strava.estimateFtp", logHelper.user(user), `Activity ${a.id} power is too low: (${watts}), won't process`)
                         return
                     }
 
@@ -133,7 +134,7 @@ export class StravaFtp {
 
                     listWatts.push(power)
                 } catch (activityEx) {
-                    logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Activity ${a.id}`, activityEx)
+                    logger.error("Strava.estimateFtp", logHelper.user(user), `Activity ${a.id}`, activityEx)
                 }
             }
 
@@ -177,7 +178,7 @@ export class StravaFtp {
             // Round FTP, looks nicer.
             ftpWatts = Math.round(ftpWatts)
 
-            logger.info("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `Estimated FTP from ${activityCount} activities: ${ftpWatts}w, current ${currentWatts}w, best activity ${bestActivity.id}`)
+            logger.info("Strava.estimateFtp", logHelper.user(user), `Estimated FTP from ${activityCount} activities: ${ftpWatts}w, current ${currentWatts}w, best activity ${bestActivity.id}`)
 
             return {
                 ftpWatts: ftpWatts,
@@ -189,7 +190,7 @@ export class StravaFtp {
                 recentlyUpdated: recentlyUpdated
             }
         } catch (ex) {
-            logger.error("Strava.estimateFtp", `User ${user.id} ${user.displayName}`, `${activityCount} activities`, ex)
+            logger.error("Strava.estimateFtp", logHelper.user(user), `${activityCount} activities`, ex)
             throw ex
         }
     }
@@ -216,7 +217,7 @@ export class StravaFtp {
                     const lastUpdate = dayjs(user.ftpStatus.dateUpdated).unix()
 
                     if (lastUpdate >= sinceLast) {
-                        logger.warn("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`, `Abort, FTP was updated recently`)
+                        logger.warn("Strava.saveFtp", logHelper.user(user), `FTP ${ftp}`, `Abort, FTP was updated recently`)
                         return false
                     }
                 }
@@ -224,7 +225,7 @@ export class StravaFtp {
                 // Only update the FTP if it was changed by a minimum threshold.
                 const percentChanged = (ftp - user.profile.ftp) / ((ftp + user.profile.ftp) / 2)
                 if (percentChanged < settings.strava.ftp.saveThreshold) {
-                    logger.warn("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `Only ${(percentChanged * 100).toFixed(1)}% changed, won't update`)
+                    logger.warn("Strava.saveFtp", logHelper.user(user), `Only ${(percentChanged * 100).toFixed(1)}% changed, won't update`)
                     return false
                 }
             }
@@ -238,11 +239,11 @@ export class StravaFtp {
             // All good? Update FTP on Strava and save date to the database.
             await api.put(user.stravaTokens, "athlete", {ftp: ftp})
             await users.update({id: user.id, displayName: user.displayName, ftpStatus: ftpStatus})
-            logger.info("Strava.saveFtp", `User ${user.id} ${user.displayName}`, `FTP ${ftp}`)
+            logger.info("Strava.saveFtp", logHelper.user(user), `FTP ${ftp}`)
 
             return true
         } catch (ex) {
-            logger.error("Strava.saveFtp", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.saveFtp", logHelper.user(user), ex)
         }
     }
 
@@ -257,18 +258,18 @@ export class StravaFtp {
             const ftpEstimation = await this.estimateFtp(user, activities, skipIntervals)
 
             if (!ftpEstimation) {
-                logger.warn("Strava.processFtp", `User ${user.id} ${user.displayName}`, "Could not estimate the user's FTP")
+                logger.warn("Strava.processFtp", logHelper.user(user), "Could not estimate the user's FTP")
                 return
             }
 
             if (ftpEstimation.recentlyUpdated) {
-                logger.warn("Strava.processFtp", `User ${user.id} ${user.displayName}`, "FTP already updated recently")
+                logger.warn("Strava.processFtp", logHelper.user(user), "FTP already updated recently")
                 return
             }
 
             await this.saveFtp(user, ftpEstimation)
         } catch (ex) {
-            logger.error("Strava.processFtp", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.processFtp", logHelper.user(user), ex)
         }
     }
 
@@ -283,11 +284,11 @@ export class StravaFtp {
     getPowerIntervals = async (user: UserData, activity: StravaActivity): Promise<StravaActivityPerformance> => {
         try {
             if (!activity.hasPower && !activity.wattsAvg) {
-                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Abort, activity has no power data")
+                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), "Abort, activity has no power data")
                 return null
             }
             if (activity.movingTime < 60) {
-                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Abort, activity is too short")
+                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), "Abort, activity is too short")
                 return null
             }
 
@@ -295,11 +296,11 @@ export class StravaFtp {
 
             // Missing or not enough power data points? Stop here.
             if (!streams.watts || !streams.watts.data || streams.watts.data.length < 60) {
-                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Abort, not enough data points`)
+                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), `Abort, not enough data points`)
                 return null
             }
             if (streams.watts.resolution == "low" || streams.watts.data.length < activity.movingTime * 0.8) {
-                logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Abort, resolution not good enough`)
+                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), `Abort, resolution not good enough`)
                 return null
             }
 
@@ -335,11 +336,11 @@ export class StravaFtp {
             }
 
             const logResult = Object.entries(result).map((r) => `${r[0].replace("power", "")}: ${r[1]}`)
-            logger.info("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, logResult.join(", "))
+            logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), logResult.join(", "))
 
             return result
         } catch (ex) {
-            logger.error("Strava.getPowerIntervals", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), ex)
         }
     }
 }

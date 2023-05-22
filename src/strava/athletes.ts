@@ -8,6 +8,7 @@ import api from "./api"
 import database from "../database"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
 /**
@@ -70,11 +71,11 @@ export class StravaAthletes {
             if (stats.allSwimTotals) arrStats.push([stats.allSwimTotals, "Swim"])
 
             const statsLog = arrStats.map((s: [StravaTotals, string]) => `${s[1]}: ${s[0].count} - ${s[0].distance} ${units}`)
-            logger.info("Strava.getProfileStats", `User ${user.id} ${user.displayName}`, statsLog.join(" | "))
+            logger.info("Strava.getProfileStats", logHelper.user(user), statsLog.join(" | "))
 
             return stats
         } catch (ex) {
-            logger.error("Strava.getProfileStats", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.getProfileStats", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -91,10 +92,10 @@ export class StravaAthletes {
             const data = await api.get(user.stravaTokens, `gear/${id}`)
             const gear = toStravaGear(user.profile, data)
 
-            logger.info("Strava.getGear", `User ${user.id} ${user.displayName}`, `Gear ${id}: ${gear.name} - distance ${gear.distance}`)
+            logger.info("Strava.getGear", logHelper.user(user), `Gear ${id}: ${gear.name} - distance ${gear.distance}`)
             return gear
         } catch (ex) {
-            logger.error("Strava.getGear", `User ${user.id} ${user.displayName}`, id, ex)
+            logger.error("Strava.getGear", logHelper.user(user), id, ex)
             throw ex
         }
     }
@@ -114,18 +115,18 @@ export class StravaAthletes {
             return null
         }
         if (user.preferences.privacyMode) {
-            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "User has opted in for privacy mode")
+            logger.debug("Strava.checkActivityRecords", logHelper.user(user), "User has opted in for privacy mode")
             return null
         }
         if (!activities || activities.length == 0) {
-            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "No activities to be checked")
+            logger.debug("Strava.checkActivityRecords", logHelper.user(user), "No activities to be checked")
             return null
         }
 
         // Only proceed if athlete has the records document initialized.
         const allRecords = await this.getAthleteRecords(user)
         if (!allRecords) {
-            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, "No previous records found, will not proceed")
+            logger.debug("Strava.checkActivityRecords", logHelper.user(user), "No previous records found, will not proceed")
             return null
         }
 
@@ -137,7 +138,7 @@ export class StravaAthletes {
         for (let activity of activities) {
             try {
                 if (!user.isPro && !settings.plans.free.recordSports.includes(activity.sportType)) {
-                    logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id} ${activity.sportType} not tracked on free accounts`)
+                    logger.debug("Strava.checkActivityRecords", logHelper.user(user), `${logHelper.activity(activity)} ${activity.sportType} not tracked on free accounts`)
                     continue
                 }
 
@@ -157,7 +158,7 @@ export class StravaAthletes {
                     // activity longer than the minMovingTimeAvg setting?
                     if (activity[prop] && activity[prop] > currentValue) {
                         if (prop.includes("Avg") && activity.movingTime < minMovingTime) {
-                            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, prop, `Activity ${activity.id} has less than ${minMovingTime}`)
+                            logger.debug("Strava.checkActivityRecords", logHelper.user(user), prop, `${logHelper.activity(activity)} has less than ${minMovingTime}`)
                             continue
                         }
 
@@ -180,7 +181,7 @@ export class StravaAthletes {
                     }
                 }
             } catch (ex) {
-                logger.error("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+                logger.error("Strava.checkActivityRecords", logHelper.user(user), logHelper.activity(activity), ex)
             }
         }
 
@@ -189,7 +190,7 @@ export class StravaAthletes {
             await this.setAthleteRecords(user, result)
             return result
         } else {
-            logger.debug("Strava.checkActivityRecords", `User ${user.id} ${user.displayName}`, `${activities.length} activities`, `No new records`)
+            logger.debug("Strava.checkActivityRecords", logHelper.user(user), `${activities.length} activities`, `No new records`)
             return null
         }
     }
@@ -207,7 +208,7 @@ export class StravaAthletes {
                 const count = _.sum(entries.map((entry) => Object.keys(entry[1]).length))
 
                 if (count > 0) {
-                    logger.info("Strava.getAthleteRecords", `User ${user.id} ${user.displayName}`, `${count} records`)
+                    logger.info("Strava.getAthleteRecords", logHelper.user(user), `${count} records`)
                 }
             } else {
                 logger.debug("Strava.getAthleteRecords", `User ${user.id} ${user.displayName} has no records saved`)
@@ -215,7 +216,7 @@ export class StravaAthletes {
 
             return records || null
         } catch (ex) {
-            logger.error("Strava.getAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.getAthleteRecords", logHelper.user(user), ex)
         }
     }
 
@@ -227,7 +228,7 @@ export class StravaAthletes {
     setAthleteRecords = async (user: UserData, records: StravaAthleteRecords): Promise<void> => {
         try {
             if (!records) {
-                logger.info("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, "No new records to be saved")
+                logger.info("Strava.setAthleteRecords", logHelper.user(user), "No new records to be saved")
                 return
             }
 
@@ -236,14 +237,14 @@ export class StravaAthletes {
             // Log new records by sport.
             for (let sport of sports) {
                 const recordsLog = _.map(_.toPairs(records[sport]), (r) => `${r[0]}=${r[1]["value"]}`).join(" | ")
-                logger.info("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, sport, recordsLog)
+                logger.info("Strava.setAthleteRecords", logHelper.user(user), sport, recordsLog)
             }
 
             // Set document ID and save to the database.
             records.id = user.id as any
             await database.merge("athlete-records", records)
         } catch (ex) {
-            logger.error("Strava.setAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.setAthleteRecords", logHelper.user(user), ex)
         }
     }
 
@@ -254,7 +255,7 @@ export class StravaAthletes {
     prepareAthleteRecords = async (user: UserData): Promise<void> => {
         try {
             if (user.preferences.privacyMode) {
-                logger.info("Strava.prepareAthleteRecords", `User ${user.id} ${user.displayName}`, "User has opted in for privacy mode")
+                logger.info("Strava.prepareAthleteRecords", logHelper.user(user), "User has opted in for privacy mode")
                 return
             }
 
@@ -290,12 +291,12 @@ export class StravaAthletes {
                 }
             }
 
-            logger.info("Strava.prepareAthleteRecords", `User ${user.id} ${user.displayName}`, `${sportCount || "no"} baseline sports created`)
+            logger.info("Strava.prepareAthleteRecords", logHelper.user(user), `${sportCount || "no"} baseline sports created`)
 
             // Save base document to the database.
             await database.set("athlete-records", records, user.id)
         } catch (ex) {
-            logger.error("Strava.prepareAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.prepareAthleteRecords", logHelper.user(user), ex)
         }
     }
 
@@ -307,11 +308,11 @@ export class StravaAthletes {
     deleteAthleteRecords = async (user: UserData): Promise<boolean> => {
         try {
             const count = await database.delete("athlete-records", user.id)
-            logger.info("Strava.deleteAthleteRecords", `User ${user.id} ${user.displayName}`, `${count ? "Deleted" : "No records to delete"}`)
+            logger.info("Strava.deleteAthleteRecords", logHelper.user(user), `${count ? "Deleted" : "No records to delete"}`)
 
             return count > 0
         } catch (ex) {
-            logger.error("Strava.deleteAthleteRecords", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.deleteAthleteRecords", logHelper.user(user), ex)
             return false
         }
     }

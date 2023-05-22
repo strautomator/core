@@ -14,6 +14,7 @@ import database from "../database"
 import eventManager from "../eventmanager"
 import dayjs from "../dayjs"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
 /**
@@ -98,14 +99,14 @@ export class Strava {
             const tokens = user.stravaTokens
             await this.revokeToken(user.id, tokens.accessToken, tokens.refreshToken)
         } catch (ex) {
-            logger.error("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, "Failed to revoke Strava token")
+            logger.error("Strava.onUsersDelete", logHelper.user(user), "Failed to revoke Strava token")
         }
 
         try {
             await this.activityProcessing.deleteProcessedActivities(user)
             await this.athletes.deleteAthleteRecords(user)
         } catch (ex) {
-            logger.error("Strava.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.onUsersDelete", logHelper.user(user), ex)
         }
     }
 

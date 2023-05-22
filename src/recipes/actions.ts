@@ -16,13 +16,14 @@ import weather from "../weather"
 import _ from "lodash"
 import jaul = require("jaul")
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
 /**
  * Helper to log and alert users about failed actions.
  */
 const failedAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction, error: any): Promise<void> => {
-    logger.error("Recipes.failedAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, error)
+    logger.error("Recipes.failedAction", logHelper.user(user), logHelper.activity(activity), `${recipe.id} - ${action.type}`, error)
 
     try {
         const errorMessage = error.message || error.description || error
@@ -35,7 +36,7 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
         const notification = {userId: user.id, title: title, body: body, recipeId: recipe.id, activityId: activity.id}
         await notifications.createNotification(user, notification)
     } catch (ex) {
-        logger.error("Recipes.failedAction.exception", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `${recipe.id} - ${action.type}`, ex)
+        logger.error("Recipes.failedAction.exception", logHelper.user(user), logHelper.activity(activity), `${recipe.id} - ${action.type}`, ex)
     }
 }
 
@@ -72,7 +73,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
                         const address = await maps.getReverseGeocode(activity.locationStart, "locationiq")
                         cityObj.cityStart = address?.city ? address.city : ""
                     } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, recipe.id, "Failed to geocode the cityStart")
+                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "Failed to geocode the cityStart")
                     }
                 }
                 if (hasCityMid) {
@@ -80,7 +81,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
                         const address = await maps.getReverseGeocode(activity.locationMid, "locationiq")
                         cityObj.cityMid = address?.city ? address.city : ""
                     } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, recipe.id, "Failed to geocode the cityMid")
+                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "Failed to geocode the cityMid")
                     }
                 }
                 if (hasCityEnd) {
@@ -88,7 +89,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
                         const address = await maps.getReverseGeocode(activity.locationEnd, "locationiq")
                         cityObj.cityEnd = address?.city ? address.city : ""
                     } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, recipe.id, "Failed to geocode the cityEnd")
+                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "Failed to geocode the cityEnd")
                     }
                 }
             }
@@ -119,7 +120,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
         // Empty value? Stop here.
         if (processedValue === null || processedValue.toString().trim() === "") {
-            logger.warn("Recipes.defaultAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Processed action value is empty")
+            logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), "Processed action value is empty")
             return true
         }
 
@@ -183,7 +184,7 @@ export const addWeatherTags = async (user: UserData, activity: StravaActivity, r
         const weatherSummary = await weather.getActivityWeather(user, activity, aqiNeeded)
 
         if (!weatherSummary) {
-            logger.warn("Recipes.addWeatherTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "Got no valid activity weather")
+            logger.warn("Recipes.addWeatherTags", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, "Got no valid activity weather")
             processedValue = jaul.data.replaceTags(processedValue, "", "weather.start.")
             processedValue = jaul.data.replaceTags(processedValue, "", "weather.end.")
             processedValue = jaul.data.replaceTags(processedValue, "", "weather.")
@@ -205,7 +206,7 @@ export const addWeatherTags = async (user: UserData, activity: StravaActivity, r
             processedValue = jaul.data.replaceTags(processedValue, weatherSummary.mid || weatherSummary.end || weatherSummary.end || "", "weather.")
         }
     } catch (ex) {
-        logger.warn("Recipes.addWeatherTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, ex)
+        logger.warn("Recipes.addWeatherTags", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, ex)
     }
 
     return processedValue
@@ -223,7 +224,7 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
         const tracks = await spotify.getActivityTracks(user, activity)
 
         if (!tracks || tracks.length == 0) {
-            logger.warn("Recipes.addSpotifyTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, "No Spotify tracks returned for the activity")
+            logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, "No Spotify tracks returned for the activity")
             processedValue = jaul.data.replaceTags(processedValue, "", "spotify.")
             return processedValue
         }
@@ -246,7 +247,7 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
 
         processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.")
     } catch (ex) {
-        logger.warn("Recipes.addSpotifyTags", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, ex)
+        logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, ex)
     }
 
     return processedValue
@@ -311,7 +312,7 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
         if (!gear) {
             throw new Error(`Gear ID ${action.value} not found`)
         } else if ((isRide && shoe) || (isRun && bike)) {
-            logger.info("Recipes.gearAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, `Gear ${action.value} not valid for type ${activity.type}`)
+            logger.info("Recipes.gearAction", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, `Gear ${action.value} not valid for type ${activity.type}`)
             return false
         } else {
             activity.gear = gear
@@ -369,7 +370,7 @@ export const workoutTypeAction = async (user: UserData, activity: StravaActivity
         }
 
         if (abortMessage) {
-            logger.info("Recipes.workoutTypeAction", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Recipe ${recipe.id}`, abortMessage)
+            logger.info("Recipes.workoutTypeAction", logHelper.user(user), logHelper.activity(activity), `Recipe ${recipe.id}`, abortMessage)
             return false
         }
 

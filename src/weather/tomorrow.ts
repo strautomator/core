@@ -6,6 +6,7 @@ import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {AxiosResponse} from "axios"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -65,7 +66,7 @@ export class Tomorrow implements WeatherProvider {
             const result = this.toWeatherSummary(res, coordinates, dDate)
             return result
         } catch (ex) {
-            logger.error("Tomorrow.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
+            logger.error("Tomorrow.getWeather", logHelper.user(user), coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }

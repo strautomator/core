@@ -8,6 +8,7 @@ import users from "../users"
 import dayjs from "../dayjs"
 import path from "path"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import JSZip = require("jszip")
 import _ from "lodash"
 const settings = require("setmeup").settings
@@ -44,10 +45,10 @@ export class GDPR {
 
             if (file) {
                 await file.delete()
-                logger.info("GDPR.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted archive: ${filename}`)
+                logger.info("GDPR.onUsersDelete", logHelper.user(user), `Deleted archive: ${filename}`)
             }
         } catch (ex) {
-            logger.error("GDPR.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("GDPR.onUsersDelete", logHelper.user(user), ex)
         }
     }
 
@@ -78,7 +79,7 @@ export class GDPR {
             if (diffDays < minDays) {
                 const signedUrl = await storage.getUrl("gdpr", filename, saveAs)
                 if (signedUrl) {
-                    logger.info("GDPR.generateArchive.fromCache", `User ${user.id} ${user.displayName}`, "From cache")
+                    logger.info("GDPR.generateArchive.fromCache", logHelper.user(user), "From cache")
                     return signedUrl
                 }
             }
@@ -129,11 +130,11 @@ export class GDPR {
             await storage.setFile("gdpr", filename, result, "application/zip")
             await users.update({id: user.id, displayName: user.displayName, dateLastArchiveGenerated: now.toDate()})
 
-            logger.info("GDPR.generateArchive", `User ${user.id} ${user.displayName}`, `Size: ${size} KB`)
+            logger.info("GDPR.generateArchive", logHelper.user(user), `Size: ${size} KB`)
 
             return await storage.getUrl("gdpr", filename, saveAs)
         } catch (ex) {
-            logger.error("GDPR.generateArchive", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("GDPR.generateArchive", logHelper.user(user), ex)
             throw ex
         }
     }

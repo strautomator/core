@@ -12,6 +12,7 @@ import _ from "lodash"
 import crypto from "crypto"
 import cache from "bitecache"
 import logger from "anyhow"
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
@@ -87,7 +88,7 @@ export class Spotify {
         const state = `${user.id}-${authState}`
 
         await users.update({id: user.id, displayName: user.displayName, spotifyAuthState: authState})
-        logger.info("Spotify.generateAuthUrl", `User ${user.id} ${user.displayName}`, `State: ${authState}`)
+        logger.info("Spotify.generateAuthUrl", logHelper.user(user), `State: ${authState}`)
 
         return `${settings.spotify.api.authUrl}?client_id=${settings.spotify.api.clientId}&redirect_uri=${baseUrl}spotify/auth/callback&response_type=code&scope=${settings.spotify.api.scopes}&state=${state}`
     }
@@ -131,7 +132,7 @@ export class Spotify {
 
             return profile
         } catch (ex) {
-            logger.error("Spotify.processAuthCode", user ? `User ${user.id} ${user.displayName}` : "Unknown user", ex)
+            logger.error("Spotify.processAuthCode", user ? logHelper.user(user) : "Unknown user", ex)
             throw ex
         }
     }
@@ -177,10 +178,10 @@ export class Spotify {
                 tokens.refreshToken = res.refresh_token
             }
 
-            logger.info("Spotify.getToken", `User ${user.id} ${user.displayName}`, "Got new tokens")
+            logger.info("Spotify.getToken", logHelper.user(user), "Got new tokens")
             return tokens
         } catch (ex) {
-            logger.error("Spotify.getToken", user ? `User ${user.id} ${user.displayName}` : "Unknown user", ex)
+            logger.error("Spotify.getToken", user ? logHelper.user(user) : "Unknown user", ex)
             throw ex
         }
     }
@@ -228,10 +229,10 @@ export class Spotify {
                 tokens.refreshToken = res.refresh_token
             }
 
-            logger.info("Spotify.refreshToken", `User ${user.id} ${user.displayName}`, "Refreshed tokens")
+            logger.info("Spotify.refreshToken", logHelper.user(user), "Refreshed tokens")
             return tokens
         } catch (ex) {
-            logger.error("Spotify.refreshToken", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Spotify.refreshToken", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -271,7 +272,7 @@ export class Spotify {
             const cacheId = `profile-${user.id}`
             const cached: SpotifyProfile = cache.get("spotify", cacheId)
             if (cached) {
-                logger.info("Spotify.getProfile", `User ${user.id} ${user.displayName}`, `ID ${cached.id}`, "From cache")
+                logger.info("Spotify.getProfile", logHelper.user(user), `ID ${cached.id}`, "From cache")
                 return cached
             }
 
@@ -288,10 +289,10 @@ export class Spotify {
 
             // Save to cache and return the user profile.
             cache.set("spotify", cacheId, profile)
-            logger.info("Spotify.getProfile", `User ${user.id} ${user.displayName}`, `ID ${profile.id}`)
+            logger.info("Spotify.getProfile", logHelper.user(user), `ID ${profile.id}`)
             return profile
         } catch (ex) {
-            logger.error("Spotify.getProfile", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Spotify.getProfile", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -311,7 +312,7 @@ export class Spotify {
             const cacheId = `tracks-${activity.id}`
             const cached: SpotifyTrack[] = cache.get("spotify", cacheId)
             if (cached) {
-                logger.info("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Got ${cached.length || "no"} tracks`, "From cache")
+                logger.info("Spotify.getActivityTracks", logHelper.user(user), logHelper.activity(activity), `Got ${cached.length || "no"} tracks`, "From cache")
                 return cached
             }
 
@@ -339,10 +340,10 @@ export class Spotify {
 
             // Save to cache and return list of activity tracks.
             cache.set("spotify", cacheId, tracks)
-            logger.info("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Got ${tracks.length || "no"} tracks`)
+            logger.info("Spotify.getActivityTracks", logHelper.user(user), logHelper.activity(activity), `Got ${tracks.length || "no"} tracks`)
             return tracks
         } catch (ex) {
-            logger.error("Spotify.getActivityTracks", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Spotify.getActivityTracks", logHelper.user(user), logHelper.activity(activity), ex)
             return null
         }
     }
@@ -366,7 +367,7 @@ export class Spotify {
 
             await users.update(data)
         } catch (ex) {
-            logger.error("Spotify.saveProfile", `User ${user.id} ${user.displayName}`, `ID ${profile.id}`, ex)
+            logger.error("Spotify.saveProfile", logHelper.user(user), `ID ${profile.id}`, ex)
         }
     }
 }

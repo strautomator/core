@@ -5,6 +5,7 @@ import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -69,7 +70,7 @@ export class VisualCrossing implements WeatherProvider {
             const result = this.toWeatherSummary(res, coordinates, dDate)
             return result
         } catch (ex) {
-            logger.error("VisualCrossing.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
+            logger.error("VisualCrossing.getWeather", logHelper.user(user), coordinates, isoDate, unit, ex)
             throw ex
         }
     }

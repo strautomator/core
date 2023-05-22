@@ -5,6 +5,7 @@ import {toStravaRoute} from "./utils"
 import {UserData} from "../users/types"
 import api from "./api"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import JSZip = require("jszip")
 
 /**
@@ -32,10 +33,10 @@ export class StravaRoutes {
 
             const route = toStravaRoute(user, data)
 
-            logger.info("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${idString}: ${route.name}`)
+            logger.info("Strava.getRoute", logHelper.user(user), `Route ${idString}: ${route.name}`)
             return route
         } catch (ex) {
-            logger.error("Strava.getRoute", `User ${user.id} ${user.displayName}`, `Route ${idString}`, ex)
+            logger.error("Strava.getRoute", logHelper.user(user), `Route ${idString}`, ex)
             throw ex
         }
     }
@@ -50,14 +51,14 @@ export class StravaRoutes {
             const data = await api.get(user.stravaTokens, `routes/${idString}/export_gpx`)
 
             if (!data) {
-                logger.info("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${idString}: no GPX`)
+                logger.info("Strava.getGPX", logHelper.user(user), `Route ${idString}: no GPX`)
                 return null
             }
 
-            logger.info("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${idString}: length ${data.toString().length}`)
+            logger.info("Strava.getGPX", logHelper.user(user), `Route ${idString}: length ${data.toString().length}`)
             return data
         } catch (ex) {
-            logger.error("Strava.getGPX", `User ${user.id} ${user.displayName}`, `Route ${idString}`, ex)
+            logger.error("Strava.getGPX", logHelper.user(user), `Route ${idString}`, ex)
             throw ex
         }
     }
@@ -88,11 +89,11 @@ export class StravaRoutes {
             }
 
             const result = zip.generateNodeStream({type: "nodebuffer", streamFiles: true})
-            logger.info("Strava.zipGPX", `User ${user.id} ${user.displayName}`, `Routes: ${routeIds.join(", ")}`)
+            logger.info("Strava.zipGPX", logHelper.user(user), `Routes: ${routeIds.join(", ")}`)
 
             return result
         } catch (ex) {
-            logger.error("Strava.zipGPX", `User ${user.id} ${user.displayName}`, `Routes: ${routeIds.join(", ")}`, ex)
+            logger.error("Strava.zipGPX", logHelper.user(user), `Routes: ${routeIds.join(", ")}`, ex)
             throw ex
         }
     }

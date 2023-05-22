@@ -5,6 +5,7 @@ import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import _ from "lodash"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
@@ -61,7 +62,7 @@ export class OpenWeatherMap implements WeatherProvider {
             const result = this.toWeatherSummary(res, coordinates, dDate)
             return result
         } catch (ex) {
-            logger.error("OpenWeatherMap.getWeather", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
+            logger.error("OpenWeatherMap.getWeather", logHelper.user(user), coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }
@@ -97,14 +98,14 @@ export class OpenWeatherMap implements WeatherProvider {
                 const aiq = this.toAirQualityIndex(res, dDate)
 
                 if (aiq !== null) {
-                    logger.info("OpenWeatherMap.getAirQuality", `User ${user.id} ${user.displayName}`, coordinates.join(", "), dDate.format("lll"), `AIQ: ${aiq}`)
+                    logger.info("OpenWeatherMap.getAirQuality", logHelper.user(user), coordinates.join(", "), dDate.format("lll"), `AIQ: ${aiq}`)
                     return aiq
                 }
             }
 
             return null
         } catch (ex) {
-            logger.error("OpenWeatherMap.getAirQuality", `User ${user.id} ${user.displayName}`, coordinates, isoDate, unit, ex)
+            logger.error("OpenWeatherMap.getAirQuality", logHelper.user(user), coordinates, isoDate, unit, ex)
             this.stats.errorCount++
             throw ex
         }

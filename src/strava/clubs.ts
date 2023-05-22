@@ -9,6 +9,7 @@ import komoot from "../komoot"
 import dayjs from "../dayjs"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
 /**
@@ -33,10 +34,10 @@ export class StravaClubs {
             const data: any[] = await api.get(user.stravaTokens, "athlete/clubs")
             const clubs: StravaClub[] = data.map((d) => toStravaClub(d))
 
-            logger.info("Strava.getClubs", `User ${user.id} ${user.displayName}`, `Got ${clubs.length} clubs`)
+            logger.info("Strava.getClubs", logHelper.user(user), `Got ${clubs.length} clubs`)
             return clubs
         } catch (ex) {
-            logger.error("Strava.getClubs", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Strava.getClubs", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -51,10 +52,10 @@ export class StravaClubs {
             const data = await api.get(user.stravaTokens, `clubs/${id}/group_events`)
             const club = toStravaClub(data)
 
-            logger.info("Strava.getClub", `User ${user.id} ${user.displayName}`, `Club ${id}: ${club.name} @ ${club.country}`)
+            logger.info("Strava.getClub", logHelper.user(user), `Club ${id}: ${club.name} @ ${club.country}`)
             return club
         } catch (ex) {
-            logger.error("Strava.getClub", `User ${user.id} ${user.displayName}`, `Club ${id}`, ex)
+            logger.error("Strava.getClub", logHelper.user(user), `Club ${id}`, ex)
             throw ex
         }
     }
@@ -82,10 +83,10 @@ export class StravaClubs {
                         })
                     })
                     if (clubEvents.length < totalCount) {
-                        logger.info("Strava.getClubEvents.preProcessor", `User ${user.id} ${user.displayName}`, `Club ${id}`, `Discarded ${totalCount - clubEvents.length} out of ${totalCount} events`)
+                        logger.info("Strava.getClubEvents.preProcessor", logHelper.user(user), `Club ${id}`, `Discarded ${totalCount - clubEvents.length} out of ${totalCount} events`)
                     }
                 } catch (preEx) {
-                    logger.error("Strava.getClubEvents.preProcessor", `User ${user.id} ${user.displayName}`, `Club ${id}`, preEx)
+                    logger.error("Strava.getClubEvents.preProcessor", logHelper.user(user), `Club ${id}`, preEx)
                 }
             }
 
@@ -94,10 +95,10 @@ export class StravaClubs {
 
             const clubEvents: StravaClubEvent[] = data.map((d) => toStravaClubEvent(d))
 
-            logger.info("Strava.getClubEvents", `User ${user.id} ${user.displayName}`, `Club ${id} has ${clubEvents.length} events`)
+            logger.info("Strava.getClubEvents", logHelper.user(user), `Club ${id} has ${clubEvents.length} events`)
             return clubEvents
         } catch (ex) {
-            logger.error("Strava.getClubEvents", `User ${user.id} ${user.displayName}`, `Club ${id}`, ex)
+            logger.error("Strava.getClubEvents", logHelper.user(user), `Club ${id}`, ex)
             throw ex
         }
     }
@@ -140,7 +141,7 @@ export class StravaClubs {
                         try {
                             event.route = await stravaRoutes.getRoute(user, event.route.idString)
                         } catch (routeEx) {
-                            logger.warn("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Event ${event.title}`, "Failed to get route details")
+                            logger.warn("Strava.getUpcomingClubEvents", logHelper.user(user), `Event ${event.title}`, "Failed to get route details")
                         }
                     }
                     // PRO users also get Komoot route parsing.
@@ -151,7 +152,7 @@ export class StravaClubs {
                             const kRoute = await komoot.getRoute(user, url)
 
                             if (kRoute) {
-                                logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Event ${event.title}`, `Komoot route: ${kRoute.id}`)
+                                logger.info("Strava.getUpcomingClubEvents", logHelper.user(user), `Event ${event.title}`, `Komoot route: ${kRoute.id}`)
                                 event.komootRoute = kRoute
                             }
                         }
@@ -169,10 +170,10 @@ export class StravaClubs {
                 await Promise.all(clubs.splice(0, batchSize).map(getEvents))
             }
 
-            logger.info("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, countries.join(", "), `${result.length || "No"} upcoming events`)
+            logger.info("Strava.getUpcomingClubEvents", logHelper.user(user), `Next ${days} days`, countries.join(", "), `${result.length || "No"} upcoming events`)
             return _.sortBy(result, (r) => r.dates[0])
         } catch (ex) {
-            logger.error("Strava.getUpcomingClubEvents", `User ${user.id} ${user.displayName}`, `Next ${days} days`, countries.join(", "), ex)
+            logger.error("Strava.getUpcomingClubEvents", logHelper.user(user), `Next ${days} days`, countries.join(", "), ex)
             throw ex
         }
     }

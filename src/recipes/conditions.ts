@@ -9,6 +9,7 @@ import strava from "../strava"
 import weather from "../weather"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 import polyline = require("@mapbox/polyline")
 
@@ -45,7 +46,7 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition):
         return true
     }
 
-    logger.debug("Recipes.checkText", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkText", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -62,7 +63,7 @@ export const checkBoolean = (activity: StravaActivity, condition: RecipeConditio
         return true
     }
 
-    logger.debug("Recipes.checkBoolean", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkBoolean", logHelper.activity(activity), condition, "Failed")
     return valid
 }
 
@@ -111,7 +112,7 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
         return true
     }
 
-    logger.debug("Recipes.checkNumber", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkNumber", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -154,7 +155,7 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
         }
     }
 
-    logger.debug("Recipes.checkLocation", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkLocation", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -214,7 +215,7 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         return true
     }
 
-    logger.debug("Recipes.checkTimestamp", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkTimestamp", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -242,7 +243,7 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
         return true
     }
 
-    logger.debug("Recipes.checkSportType", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkSportType", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -270,7 +271,7 @@ export const checkGear = (activity: StravaActivity, condition: RecipeCondition):
         return true
     }
 
-    logger.debug("Recipes.checkGear", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkGear", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -289,7 +290,7 @@ export const checkNewRecords = (activity: StravaActivity, condition: RecipeCondi
         return true
     }
 
-    logger.debug("Recipes.checkNewRecords", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkNewRecords", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -328,7 +329,7 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
         return true
     }
 
-    logger.debug("Recipes.checkWeekday", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkWeekday", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -345,7 +346,7 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
 
     // If activity has no valid location data, stop right here.
     if (!activity.hasLocation) {
-        logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Activity has no location data")
+        logger.debug("Recipes.checkWeather", logHelper.activity(activity), condition, "Activity has no location data")
         return false
     }
 
@@ -356,7 +357,7 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
 
     // Weather could not be fetched? Stop here.
     if (!weatherSummary) {
-        logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed to fetch weather")
+        logger.debug("Recipes.checkWeather", logHelper.activity(activity), condition, "Failed to fetch weather")
         return false
     }
 
@@ -394,7 +395,7 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
         return true
     }
 
-    logger.debug("Recipes.checkWeather", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkWeather", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -410,7 +411,7 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
 
     // If user has no Spotify account linked, stop here.
     if (!user.spotify) {
-        logger.debug("Recipes.checkSpotify", `Activity ${activity.id}`, condition, "Skipped, user has no Spotify")
+        logger.debug("Recipes.checkSpotify", logHelper.activity(activity), condition, "Skipped, user has no Spotify")
         return false
     }
 
@@ -442,7 +443,7 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
         }
     }
 
-    logger.debug("Recipes.checkSpotify", `Activity ${activity.id}`, condition, "Failed")
+    logger.debug("Recipes.checkSpotify", logHelper.activity(activity), condition, "Failed")
     return false
 }
 
@@ -499,6 +500,6 @@ export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, 
         return true
     }
 
-    logger.debug("Recipes.checkFirstOfDay", `Activity ${activity.id}`, condition, sameLog, "Failed")
+    logger.debug("Recipes.checkFirstOfDay", logHelper.activity(activity), condition, sameLog, "Failed")
     return false
 }

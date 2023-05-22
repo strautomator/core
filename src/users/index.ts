@@ -14,6 +14,7 @@ import notifications from "../notifications"
 import _ from "lodash"
 import crypto from "crypto"
 import logger from "anyhow"
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -187,7 +188,7 @@ export class Users {
             user.reauth++
 
             const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, reauth: user.reauth}
-            logger.warn("Strava.onStravaTokenFailure", `User ${user.id} ${user.displayName}`, `Reauth count: ${user.reauth}`)
+            logger.warn("Strava.onStravaTokenFailure", logHelper.user(user), `Reauth count: ${user.reauth}`)
 
             // User has an email address? Contact asking to connect to Strautomator again,
             // and if it fails too many times, disable the user.
@@ -662,7 +663,7 @@ export class Users {
 
             // Delete user from database first.
             await database.delete("users", user.id)
-            logger.warn("Users.delete", `User ${user.id} ${user.displayName}`, `${user.isPro ? "PRO" : "Free"} account deleted`)
+            logger.warn("Users.delete", logHelper.user(user), `${user.isPro ? "PRO" : "Free"} account deleted`)
 
             // Publish delete event so related contents can be removed as well.
             eventManager.emit("Users.delete", user)

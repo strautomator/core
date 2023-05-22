@@ -6,6 +6,7 @@ import {ActivityWeather} from "../weather/types"
 import {axiosRequest} from "../axios"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
 
@@ -95,7 +96,7 @@ export class OpenAI {
             options.headers["Authorization"] = `Bearer ${settings.openai.api.key}`
             options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
-            logger.debug("OpenAI.generateActivityName", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Prompt: ${content}`)
+            logger.debug("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), `Prompt: ${content}`)
 
             // Here we go!
             const res = await axiosRequest(options)
@@ -114,10 +115,10 @@ export class OpenAI {
             }
 
             // Failed to generate the activity name.
-            logger.warn("OpenAI.generateActivityName", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Failed to generate")
+            logger.warn("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), "Failed to generate")
             return null
         } catch (ex) {
-            logger.error("OpenAI.generateActivityName", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), ex)
             return null
         }
     }

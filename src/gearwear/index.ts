@@ -11,6 +11,7 @@ import strava from "../strava"
 import users from "../users"
 import _ from "lodash"
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -72,10 +73,10 @@ export class GearWear {
             const counter = await database.delete("gearwear", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("GearWear.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} GearWear configs`)
+                logger.info("GearWear.onUsersDelete", logHelper.user(user), `Deleted ${counter} GearWear configs`)
             }
         } catch (ex) {
-            logger.error("GearWear.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("GearWear.onUsersDelete", logHelper.user(user), ex)
         }
     }
 
@@ -135,13 +136,13 @@ export class GearWear {
                 const compFields = Object.keys(comp)
                 for (let key of compFields) {
                     if (!validCompFields.includes(key)) {
-                        logger.error("GearWear.validate", `User ${user.id} ${user.displayName}`, `Gear ${gearwear.id} - ${comp.name}`, `Removed invalid field: ${key}`)
+                        logger.error("GearWear.validate", logHelper.user(user), `Gear ${gearwear.id} - ${comp.name}`, `Removed invalid field: ${key}`)
                         delete comp[key]
                     }
                 }
             }
         } catch (ex) {
-            logger.error("GearWear.validate", `User ${user.id} ${user.displayName}`, JSON.stringify(gearwear, null, 0), ex)
+            logger.error("GearWear.validate", logHelper.user(user), JSON.stringify(gearwear, null, 0), ex)
             throw ex
         }
     }
@@ -177,14 +178,14 @@ export class GearWear {
             if (!includeExpired) {
                 const allGear = _.concat(user.profile.bikes || [], user.profile.shoes || [])
                 _.remove(result, (g) => !_.find(allGear, {id: g.id}))
-                logger.info("GearWear.getForUser", `User ${user.id} ${user.displayName}`, `${result.length} active GearWear configurations`)
+                logger.info("GearWear.getForUser", logHelper.user(user), `${result.length} active GearWear configurations`)
             } else {
-                logger.info("GearWear.getForUser", `User ${user.id} ${user.displayName}`, `${result.length} total GearWear configurations`)
+                logger.info("GearWear.getForUser", logHelper.user(user), `${result.length} total GearWear configurations`)
             }
 
             return result
         } catch (ex) {
-            logger.error("GearWear.getForUser", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("GearWear.getForUser", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -272,16 +273,16 @@ export class GearWear {
 
             // Set registration date, if user does not exist yet.
             if (!exists) {
-                logger.info("GearWear.upsert", `User ${user.id} ${user.displayName}`, `New configuration for ${gearwear.id}`)
+                logger.info("GearWear.upsert", logHelper.user(user), `New configuration for ${gearwear.id}`)
             }
 
             // Save user to the database.
             await database.merge("gearwear", gearwear, doc)
-            logger.info("GearWear.upsert", `User ${user.id} ${user.displayName}`, `Gear ${gearwear.id} - ${gear.name}`, `Components: ${componentNames}`)
+            logger.info("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id} - ${gear.name}`, `Components: ${componentNames}`)
 
             return gearwear
         } catch (ex) {
-            logger.error("GearWear.upsert", `User ${user.id} ${user.displayName}`, `Gear ${gearwear.id}`, ex)
+            logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, ex)
             throw ex
         }
     }
@@ -408,11 +409,11 @@ export class GearWear {
 
             // No recent activities found? Stop here.
             if (activities.length == 0) {
-                logger.info("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, `No activities to process`)
+                logger.info("GearWear.processUserActivities", logHelper.user(user), dateString, `No activities to process`)
                 return 0
             }
 
-            logger.info("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, `Processing ${activities.length} activities`)
+            logger.info("GearWear.processUserActivities", logHelper.user(user), dateString, `Processing ${activities.length} activities`)
 
             // Iterate user's gearwear configurations and process activities for each one of them.
             for (let config of configs) {
@@ -421,7 +422,7 @@ export class GearWear {
                 count += gearActivities.length
             }
         } catch (ex) {
-            logger.error("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, ex)
+            logger.error("GearWear.processUserActivities", logHelper.user(user), dateString, ex)
         }
 
         // Iterate all GearWear configurations and remove the updating flag (if it was set).
@@ -432,7 +433,7 @@ export class GearWear {
                     await database.set("gearwear", config, config.id)
                 }
             } catch (ex) {
-                logger.error("GearWear.processUserActivities", `User ${user.id} ${user.displayName}`, dateString, `Gear ${config.id}`, ex)
+                logger.error("GearWear.processUserActivities", logHelper.user(user), dateString, `Gear ${config.id}`, ex)
             }
         }
 
@@ -448,7 +449,7 @@ export class GearWear {
     updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
         try {
             if (!activities || activities.length == 0) {
-                logger.debug("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `No activities to process`)
+                logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `No activities to process`)
                 return
             }
 
@@ -470,13 +471,13 @@ export class GearWear {
 
                     // Stop here if activity has no valid distance and time.
                     if (!distance && !activity.movingTime) {
-                        logger.warn("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Activity ${activity.id} nas no distance or time`)
+                        logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} nas no distance or time`)
                         continue
                     }
 
                     // Make sure we don't process the same activity again in case the user has changed the delay preference.
                     if (config.lastUpdate && config.lastUpdate.activities.includes(activity.id)) {
-                        logger.warn("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Activity ${activity.id} was already processed`)
+                        logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} was already processed`)
                         continue
                     }
 
@@ -489,7 +490,7 @@ export class GearWear {
                     // Iterate and update distance on gear components.
                     for ([id, component] of Object.entries(config.components)) {
                         if (component.disabled) {
-                            logger.warn("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${component.name} (DISABLED)`, `Activity ${activity.id}`, "Not updated")
+                            logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name} (DISABLED)`, logHelper.activity(activity), "Not updated")
                             continue
                         }
 
@@ -498,7 +499,7 @@ export class GearWear {
                         // If component was recently updated (last 2 days), then do not update the tracking
                         // as the activity was still for the previous component.
                         if (historyLength > 0 && component.history[historyLength - 1].date > activity.dateStart) {
-                            logger.warn("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${component.name} (REPLACED)`, `Replaced recently so won't update the tracking for activity ${activity.id}`)
+                            logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name} (REPLACED)`, `Replaced recently so won't update the tracking for activity ${activity.id}`)
                             continue
                         }
 
@@ -542,7 +543,7 @@ export class GearWear {
                         }
                     }
                 } catch (innerEx) {
-                    logger.error("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Activity ${activity.id}`, innerEx)
+                    logger.error("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, logHelper.activity(activity), innerEx)
                 }
             }
 
@@ -559,9 +560,9 @@ export class GearWear {
             await database.set("gearwear", config, config.id)
 
             const units = user.profile.units == "imperial" ? "mi" : "km"
-            logger.info("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, `Added ${totalDistance.toFixed(1)} ${units}, ${(totalTime / 3600).toFixed(1)} hours`)
+            logger.info("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `Added ${totalDistance.toFixed(1)} ${units}, ${(totalTime / 3600).toFixed(1)} hours`)
         } catch (ex) {
-            logger.error("GearWear.updateTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, ex)
+            logger.error("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, ex)
         }
     }
 
@@ -585,7 +586,7 @@ export class GearWear {
 
             // If current distance and time are 0, then do nothing.
             if (currentDistance < 1 && currentTime < 1) {
-                logger.warn("GearWear.resetTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${componentName}`, "Distance and time are 0, will not reset")
+                logger.warn("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, "Distance and time are 0, will not reset")
                 return
             }
 
@@ -607,7 +608,7 @@ export class GearWear {
 
             // Save to the database and log.
             await database.set("gearwear", config, config.id)
-            logger.info("GearWear.resetTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${componentName}`, `Resetting distance ${currentDistance} and ${hours} hours`)
+            logger.info("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, `Resetting distance ${currentDistance} and ${hours} hours`)
 
             // Clear pending gear notifications (mark them as read) if user has no email set.
             if (!user.email) {
@@ -618,11 +619,11 @@ export class GearWear {
                         await notifications.markAsRead(user, n.id)
                     }
 
-                    logger.info("GearWear.resetTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id}`, "Marked pending notifications as read")
+                    logger.info("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id}`, "Marked pending notifications as read")
                 }
             }
         } catch (ex) {
-            logger.error("GearWear.resetTracking", `User ${user.id} ${user.displayName}`, `Gear ${config.id} - ${componentName}`, ex)
+            logger.error("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, ex)
         }
     }
 
@@ -674,7 +675,7 @@ export class GearWear {
                     to: user.email
                 })
 
-                logger.info("GearWear.triggerAlert.email", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, reminder ? "Reminder sent" : "Alert sent")
+                logger.info("GearWear.triggerAlert.email", logHelper.user(user), logGear, logHelper.activity(activity), logDistance, reminder ? "Reminder sent" : "Alert sent")
             } else if (!reminder) {
                 const nOptions = {
                     title: `Gear alert: ${gear.name} - ${component.name}`,
@@ -685,10 +686,10 @@ export class GearWear {
                 }
                 await notifications.createNotification(user, nOptions)
 
-                logger.info("GearWear.triggerAlert.notification", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, logDistance, "Notification created")
+                logger.info("GearWear.triggerAlert.notification", logHelper.user(user), logGear, logHelper.activity(activity), logDistance, "Notification created")
             }
         } catch (ex) {
-            logger.error("GearWear.triggerAlert", `User ${user.id} ${user.displayName}`, logGear, `Activity ${activity.id}`, ex)
+            logger.error("GearWear.triggerAlert", logHelper.user(user), logGear, logHelper.activity(activity), ex)
         }
     }
 }

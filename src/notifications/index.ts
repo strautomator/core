@@ -9,6 +9,7 @@ import users from "../users"
 import _ from "lodash"
 import cache = require("bitecache")
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -50,10 +51,10 @@ export class Notifications {
             const counter = await database.delete("notifications", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("Notifications.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${counter} notifications`)
+                logger.info("Notifications.onUsersDelete", logHelper.user(user), `Deleted ${counter} notifications`)
             }
         } catch (ex) {
-            logger.error("Notifications.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Notifications.onUsersDelete", logHelper.user(user), ex)
         }
     }
 
@@ -101,14 +102,14 @@ export class Notifications {
             cache.set("notifications", `${user.id}-${all}`, result)
 
             if (result.length > 0) {
-                logger.info("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, `Got ${result.length} notification(s)`)
+                logger.info("Notifications.getForUser", logHelper.user(user), whichLog, `Got ${result.length} notification(s)`)
             } else {
-                logger.debug("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, `Got no notification(s)`)
+                logger.debug("Notifications.getForUser", logHelper.user(user), whichLog, `Got no notification(s)`)
             }
 
             return result
         } catch (ex) {
-            logger.error("Notifications.getForUser", `User ${user.id} ${user.displayName}`, whichLog, ex)
+            logger.error("Notifications.getForUser", logHelper.user(user), whichLog, ex)
             throw ex
         }
     }
@@ -139,14 +140,14 @@ export class Notifications {
             const result = await database.search("notifications", queries)
 
             if (result.length > 0) {
-                logger.info("Notifications.getForGear", `User ${user.id} ${user.displayName}`, `Gear ${gearId}`, whichLog, `Got ${result.length} notification(s)`)
+                logger.info("Notifications.getForGear", logHelper.user(user), `Gear ${gearId}`, whichLog, `Got ${result.length} notification(s)`)
             } else {
-                logger.debug("Notifications.getForGear", `User ${user.id} ${user.displayName}`, `Gear ${gearId}`, whichLog, `Got no notification(s)`)
+                logger.debug("Notifications.getForGear", logHelper.user(user), `Gear ${gearId}`, whichLog, `Got no notification(s)`)
             }
 
             return result
         } catch (ex) {
-            logger.error("Notifications.getForGear", `User ${user.id} ${user.displayName}`, `Gear ${gearId}`, whichLog, ex)
+            logger.error("Notifications.getForGear", logHelper.user(user), `Gear ${gearId}`, whichLog, ex)
             throw ex
         }
     }
@@ -171,7 +172,7 @@ export class Notifications {
                 const last = lastNotifications[0]
 
                 if (!last.read && last.dateExpiry > new Date() && last.title == notification.title && last.body == notification.body) {
-                    logger.warn("Notifications.createNotification", `User ${user.id} ${user.displayName}`, `Duplicate of ${last.id}`, notification.title, "Will not create")
+                    logger.warn("Notifications.createNotification", logHelper.user(user), `Duplicate of ${last.id}`, notification.title, "Will not create")
                     return
                 }
             }
@@ -200,9 +201,9 @@ export class Notifications {
 
             // Save to database and log.
             await database.set("notifications", notification, notification.id)
-            logger.info("Notifications.createNotification", `User ${user.id} ${user.displayName}`, `Message ID ${notification.id}`, notification.title, logDetails.join(", "))
+            logger.info("Notifications.createNotification", logHelper.user(user), `Message ID ${notification.id}`, notification.title, logDetails.join(", "))
         } catch (ex) {
-            logger.error("Notifications.createNotification", `User ${user.id} ${user.displayName}`, notification.title, ex)
+            logger.error("Notifications.createNotification", logHelper.user(user), notification.title, ex)
         }
     }
 
@@ -288,9 +289,9 @@ export class Notifications {
                             }
 
                             await mailer.send(options)
-                            logger.info("Notifications.sendEmailReminders", `User ${user.id} ${user.displayName}`, `${list.length} unread notifications, email sent`)
+                            logger.info("Notifications.sendEmailReminders", logHelper.user(user), `${list.length} unread notifications, email sent`)
                         } else {
-                            logger.info("Notifications.sendEmailReminders", `User ${user.id} ${user.displayName}`, `${list.length} unread notifications, but no user email set`)
+                            logger.info("Notifications.sendEmailReminders", logHelper.user(user), `${list.length} unread notifications, but no user email set`)
                         }
                     }
                 } catch (innerEx) {

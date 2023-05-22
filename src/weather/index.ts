@@ -13,6 +13,7 @@ import weatherapi from "./weatherapi"
 import _ from "lodash"
 import cache = require("bitecache")
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -95,8 +96,8 @@ export class Weather {
      * @param aqi Also get air quality data?
      */
     getActivityWeather = async (user: UserData, activity: StravaActivity, aqi: boolean): Promise<ActivityWeather> => {
-        const userLog = `User ${user.id} ${user.displayName}`
-        const activityLog = `Activity ${activity.id}`
+        const userLog = logHelper.user(user)
+        const activityLog = logHelper.activity(activity)
 
         try {
             if (!activity.hasLocation) {
@@ -283,7 +284,7 @@ export class Weather {
 
         // Save to cache and return weather results.
         cache.set(`weather`, cacheId, result)
-        logger.info("OpenWeatherMap.getWeather", `User ${user.id} ${user.displayName}`, weatherSummaryString(options.coordinates, options.dDate, result))
+        logger.info("OpenWeatherMap.getWeather", logHelper.user(user), weatherSummaryString(options.coordinates, options.dDate, result))
 
         return result
     }

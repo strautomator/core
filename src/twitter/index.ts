@@ -9,6 +9,7 @@ import eventManager from "../eventmanager"
 import _ from "lodash"
 import jaul = require("jaul")
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
 /**
@@ -119,7 +120,7 @@ export class Twitter {
 
             // Nothing interesting to post?
             if (!messageTemplates) {
-                logger.debug("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, "Not interesting, won't post")
+                logger.debug("Twitter.onStravaActivity", logHelper.user(user), logHelper.activity(activity), "Not interesting, won't post")
                 return
             }
 
@@ -128,10 +129,10 @@ export class Twitter {
             if (lottery <= settings.twitter.activityThreshold) {
                 await this.postActivity(user, activity, _.sample(messageTemplates))
             } else {
-                logger.info("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Did not win in the lottery (${lottery.toFixed(0.1)})`)
+                logger.info("Twitter.onStravaActivity", logHelper.user(user), logHelper.activity(activity), `Did not win in the lottery (${lottery.toFixed(0.1)})`)
             }
         } catch (ex) {
-            logger.error("Twitter.onStravaActivity", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, ex)
+            logger.error("Twitter.onStravaActivity", logHelper.user(user), logHelper.activity(activity), ex)
         }
     }
 
@@ -187,7 +188,7 @@ export class Twitter {
 
             await this.postStatus(`${message} https://strava.com/activities/${activity.id}`)
         } catch (ex) {
-            logger.error("Twitter.postActivity", `User ${user.id} ${user.displayName}`, `Activity ${sourceActivity.id}`, ex)
+            logger.error("Twitter.postActivity", logHelper.user(user), `Activity ${sourceActivity.id}`, ex)
         }
     }
 }

@@ -49,7 +49,7 @@ setmeup.readOnly = true
 // Init in-memory cache.
 import cache = require("bitecache")
 
-// Load Core modules.
+// Load Core modules and event manager.
 import {Database} from "./database"
 export const database: Database = Database.Instance
 import {Storage} from "./storage"
@@ -92,12 +92,10 @@ import {FAQ} from "./faq"
 export const faq: FAQ = FAQ.Instance
 import {GDPR} from "./gdpr"
 export const gdpr: GDPR = GDPR.Instance
-
-// Export event manager.
 import {EventManager} from "./eventmanager"
 export const events: EventManager = EventManager.Instance
 
-// Export types.
+// Export types and helpers.
 export * from "./gearwear/types"
 export * from "./recipes/types"
 export * from "./strava/types"
@@ -111,6 +109,7 @@ export * from "./github/types"
 export * from "./paypal/types"
 export * from "./weather/types"
 export * from "./fortune"
+export * as logHelper from "./loghelper"
 
 // Import the custom dayjs implementation.
 import dayjs from "./dayjs"

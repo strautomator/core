@@ -17,6 +17,7 @@ import strava from "../strava"
 import ical, {ICalCalendar, ICalAttendeeType, ICalAttendeeRole, ICalAttendeeStatus, ICalEventData} from "ical-generator"
 import jaul = require("jaul")
 import logger = require("anyhow")
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
@@ -64,10 +65,10 @@ export class Calendar {
                     await file.delete()
                 }
 
-                logger.info("Calendar.onUsersDelete", `User ${user.id} ${user.displayName}`, `Deleted ${count} cached calendars`)
+                logger.info("Calendar.onUsersDelete", logHelper.user(user), `Deleted ${count} cached calendars`)
             }
         } catch (ex) {
-            logger.error("Calendar.onUsersDelete", `User ${user.id} ${user.displayName}`, ex)
+            logger.error("Calendar.onUsersDelete", logHelper.user(user), ex)
         }
     }
 
@@ -108,11 +109,11 @@ export class Calendar {
 
             // Date validation checks.
             if (minDate.isAfter(dateFrom)) {
-                logger.warn("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `Force setting past days to ${pastDays}`)
+                logger.warn("Calendar.generate", logHelper.user(user), `${optionsLog}`, `Force setting past days to ${pastDays}`)
                 dateFrom = minDate
             }
             if (maxDate.isAfter(dateTo)) {
-                logger.warn("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `Force setting future days to ${futureDays}`)
+                logger.warn("Calendar.generate", logHelper.user(user), `${optionsLog}`, `Force setting future days to ${futureDays}`)
                 dateTo = maxDate
             }
 
@@ -155,17 +156,17 @@ export class Calendar {
                     // Return cached calendar if it has not expired, and has not changed
                     // or if calendar is for club events only.
                     if (notExpired && (notChanged || onlyClubs)) {
-                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, `${(cacheSize / 1000 / 1024).toFixed(2)} MB`)
+                        logger.info("Calendar.generate.fromCache", logHelper.user(user), optionsLog, `${(cacheSize / 1000 / 1024).toFixed(2)} MB`)
                         return storage.getUrl("calendar", cacheId)
                     } else {
-                        logger.info("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, "Cache invalidated, will generate a new calendar")
+                        logger.info("Calendar.generate.fromCache", logHelper.user(user), optionsLog, "Cache invalidated, will generate a new calendar")
                     }
                 } catch (cacheEx) {
-                    logger.error("Calendar.generate.fromCache", `User ${user.id} ${user.displayName}`, optionsLog, cacheEx)
+                    logger.error("Calendar.generate.fromCache", logHelper.user(user), optionsLog, cacheEx)
                 }
             }
 
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, optionsLog)
+            logger.info("Calendar.generate", logHelper.user(user), optionsLog)
 
             // Set calendar name based on passed filters.
             let calName = settings.calendar.name
@@ -222,18 +223,18 @@ export class Calendar {
             try {
                 await storage.setFile("calendar", cacheId, output, "text/calendar")
             } catch (saveEx) {
-                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, "Failed to save to the cache")
+                logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, "Failed to save to the cache")
             }
 
-            logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
+            logger.info("Calendar.generate", logHelper.user(user), `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
 
             return storage.getUrl("calendar", cacheId)
         } catch (ex) {
             if (cachedFile) {
-                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex, "Fallback to cached calendar")
+                logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, ex, "Fallback to cached calendar")
                 return storage.getUrl("calendar", cacheId)
             } else {
-                logger.error("Calendar.generate", `User ${user.id} ${user.displayName}`, `${optionsLog}`, ex)
+                logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, ex)
                 throw ex
             }
         }
@@ -264,7 +265,7 @@ export class Calendar {
                 // For whatever reason Strava sometimes returned no dates on activities, so adding this extra check here
                 // that should go away once the root cause is identified.
                 if (!activity.dateStart || !activity.dateEnd) {
-                    logger.info("Calendar.generate", `User ${user.id} ${user.displayName}`, `Activity ${activity.id} has no start or end date`)
+                    logger.info("Calendar.generate", logHelper.user(user), `${logHelper.activity(activity)} has no start or end date`)
                     continue
                 }
 
@@ -342,22 +343,22 @@ export class Calendar {
 
                                 locationString = Object.values(address).join(", ")
                             } catch (locationEx) {
-                                logger.error("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, `Can't fetch address for ${locationString}`)
+                                logger.error("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), `Can't fetch address for ${locationString}`)
                             }
                         }
 
                         event.location(locationString)
                     }
                 } catch (innerEx) {
-                    logger.error("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, `Activity ${activity.id}`, innerEx)
+                    logger.error("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), innerEx)
                 }
 
                 eventCount++
             }
 
-            logger.debug("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, optionsLog, `Got ${eventCount} activity events`)
+            logger.debug("Calendar.buildActivities", logHelper.user(user), optionsLog, `Got ${eventCount} activity events`)
         } catch (ex) {
-            logger.error("Calendar.buildActivities", `User ${user.id} ${user.displayName}`, optionsLog, ex)
+            logger.error("Calendar.buildActivities", logHelper.user(user), optionsLog, ex)
         }
     }
 
@@ -378,7 +379,7 @@ export class Calendar {
             // Helper to process club events.
             const getEvents = async (club: StravaClub) => {
                 if (!options.includeAllCountries && club.country != user.profile.country) {
-                    logger.debug("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Club ${club.id} from another country (${club.country}), skip it`)
+                    logger.debug("Calendar.buildClubs", logHelper.user(user), `Club ${club.id} from another country (${club.country}), skip it`)
                     return
                 }
 
@@ -398,7 +399,7 @@ export class Calendar {
                             try {
                                 clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.idString)
                             } catch (routeEx) {
-                                logger.warn("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, `Failed to fetch route for event ${clubEvent.id}`)
+                                logger.warn("Calendar.buildClubs", logHelper.user(user), `Failed to fetch route for event ${clubEvent.id}`)
                             }
                         } else if (user.isPro && clubEvent.description && clubEvent.description.length > 30) {
                             const url = komoot.extractRouteUrl(clubEvent.description)
@@ -407,7 +408,7 @@ export class Calendar {
                                 const kRoute = await komoot.getRoute(user, url)
 
                                 if (kRoute) {
-                                    logger.info("Strava.buildClubs", `User ${user.id} ${user.displayName}`, `Event ${clubEvent.title}`, `Komoot route: ${kRoute.id}`)
+                                    logger.info("Strava.buildClubs", logHelper.user(user), `Event ${clubEvent.title}`, `Komoot route: ${kRoute.id}`)
                                     clubEvent.komootRoute = kRoute
                                 }
                             }
@@ -500,9 +501,9 @@ export class Calendar {
                 await Promise.all(clubs.splice(0, batchSize).map(getEvents))
             }
 
-            logger.debug("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, optionsLog, `Got ${eventCount} club events`)
+            logger.debug("Calendar.buildClubs", logHelper.user(user), optionsLog, `Got ${eventCount} club events`)
         } catch (ex) {
-            logger.error("Calendar.buildClubs", `User ${user.id} ${user.displayName}`, optionsLog, ex)
+            logger.error("Calendar.buildClubs", logHelper.user(user), optionsLog, ex)
         }
     }
 }
