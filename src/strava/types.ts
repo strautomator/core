@@ -221,6 +221,8 @@ export interface StravaProcessedActivity {
     queued?: boolean
     /** Is the (old) activity part of a batch processing? */
     batch?: boolean
+    /** Is it processing right now? */
+    processing?: boolean
     /** How many times the service tried processing this activity? */
     retryCount?: number
     /** List of new records. */
