@@ -17,14 +17,18 @@
         // Hashtag used on social media.
         "hashtag": "#strautomator.com",
         // Express trust proxy settings.
-        "trustProxy": 1
+        "trustProxy": 2
     },
     "api": {
         // API is rate limited to 900 requests per minute per instance by default. If you wish to disable
         // rate limiting altogether, set "rateLimit" to false.
         "rateLimit": {
+            "statusCode": 429,
             "max": 900,
-            "windowMs": 60000
+            "windowMs": 60000,
+            "standardHeaders": true,
+            "legacyHeaders": false,
+            "message": "Too many request, please try again later"
         },
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
