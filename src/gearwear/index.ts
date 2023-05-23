@@ -665,7 +665,8 @@ export class GearWear {
                     currentDistance: component.currentDistance,
                     currentTime: Math.round(hours * 10) / 10,
                     alertDetails: alertDetails.join(", "),
-                    resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(component.name)}`
+                    resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(component.name)}`,
+                    affiliateLink: `${settings.affiliates.baseUrl}s/${component.name.replace(/[^a-zA-Z ]/g, "")}`
                 }
 
                 // Dispatch email to user.

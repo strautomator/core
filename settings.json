@@ -33,6 +33,9 @@
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
     },
+    "affiliates": {
+        "baseUrl": "https://links.devv.com/"
+    },
     "announcements": {
         // Active announcements should be cached for up to 120 minutes.
         "cacheDuration": 7200
