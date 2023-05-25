@@ -174,7 +174,7 @@ export class RecipeStats {
 
             // If not existing, create a new stats object.
             if (!exists) {
-                logger.warn("RecipeStats.archiveStats", logHelper.user(user), logHelper.recipe(recipe), `Stats not found, can't archive`)
+                logger.warn("RecipeStats.archiveStats", logHelper.user(user), logHelper.recipe(recipe), "Stats not found")
                 return
             }
 
