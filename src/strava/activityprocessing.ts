@@ -85,7 +85,7 @@ export class StravaActivityProcessing {
 
         try {
             if (user.suspended || !user.recipes || Object.keys(user.recipes).length == 0) {
-                logger.info("Strava.processActivity", logHelper.user(user), "User suspended or has no recipes, won't process")
+                logger.info("Strava.batchProcessActivities", logHelper.user(user), "User suspended or has no recipes, won't process")
                 return null
             }
 
@@ -170,6 +170,7 @@ export class StravaActivityProcessing {
                 activity = await stravaActivities.getActivity(user, activityId)
             } catch (ex) {
                 const status = ex.response?.status || ex.status || null
+                const message = ex.message || ex.toString()
 
                 if (status == 404) {
                     logger.warn("Strava.processActivity", logHelper.user(user), `Activity ${activityId} not found`)
@@ -178,7 +179,7 @@ export class StravaActivityProcessing {
 
                 // Add the activity to the queue to retry processing it later.
                 if (!queued) {
-                    await this.queueActivity(user, activityId)
+                    await this.queueActivity(user, activityId, false, `${status}: ${message}`)
                 }
 
                 throw ex
@@ -412,8 +413,9 @@ export class StravaActivityProcessing {
      * @param user The activity's owner (user).
      * @param activityId The activity's unique ID.
      * @param batch Queued as part of a batch processing for old activities?
+     * @param error Queued because of a processing error?
      */
-    queueActivity = async (user: UserData, activityId: number, batch?: boolean): Promise<void> => {
+    queueActivity = async (user: UserData, activityId: number, batch?: boolean, error?: any): Promise<void> => {
         if (user.suspended) {
             logger.warn("Strava.queueActivity", logHelper.user(user), `User suspended, won't process activity ${activityId}`)
             return
@@ -434,6 +436,11 @@ export class StravaActivityProcessing {
             // Part of a batch processing? Flag it.
             if (batch) {
                 activity.batch = true
+            }
+
+            // Previously failed due to an error? Set it.
+            if (error) {
+                activity.error = error
             }
 
             await database.set("activities", activity, activityId.toString())
