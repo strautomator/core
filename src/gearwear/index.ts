@@ -656,6 +656,7 @@ export class GearWear {
             // User has email set? Send via email, otherwise create a notification.
             if (user.email) {
                 const template = reminder ? "GearWearReminder" : "GearWearAlert"
+                const compName = encodeURIComponent(component.name)
                 const data = {
                     units: units,
                     userId: user.id,
@@ -665,8 +666,8 @@ export class GearWear {
                     currentDistance: component.currentDistance,
                     currentTime: Math.round(hours * 10) / 10,
                     alertDetails: alertDetails.join(", "),
-                    resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(component.name)}`,
-                    affiliateLink: `${settings.affiliates.baseUrl}s/${component.name.replace(/[^a-zA-Z ]/g, "")}`
+                    resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${compName}`,
+                    affiliateLink: `${settings.affiliates.baseUrl}s/${compName}`
                 }
 
                 // Dispatch email to user.
