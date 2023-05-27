@@ -159,7 +159,7 @@ export class Calendar {
                         logger.info("Calendar.generate.fromCache", logHelper.user(user), optionsLog, `${(cacheSize / 1000 / 1024).toFixed(2)} MB`)
                         return storage.getUrl("calendar", cacheId)
                     } else {
-                        logger.info("Calendar.generate.fromCache", logHelper.user(user), optionsLog, "Cache invalidated, will generate a new calendar")
+                        logger.info("Calendar.generate.fromCache", logHelper.user(user), optionsLog, "Cache invalidated")
                     }
                 } catch (cacheEx) {
                     logger.error("Calendar.generate.fromCache", logHelper.user(user), optionsLog, cacheEx)
