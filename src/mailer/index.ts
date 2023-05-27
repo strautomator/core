@@ -102,20 +102,18 @@ export class Mailer {
         let sendingOptions: nodemailer.SendMailOptions
 
         try {
-            if (options.template) {
-                const template = EmailTemplates[options.template]
+            const template = options.template ? EmailTemplates[options.template] : null
 
-                // If a template was passed, make sure it's valid.
-                if (!template) {
-                    throw new Error(`Invalid template: ${options.template}`)
-                }
+            // If a template was passed, make sure it's valid.
+            if (!template && options.template) {
+                throw new Error(`Invalid template: ${options.template}`)
+            }
 
-                // Template has a body defined?
+            // Extract body and subject.
+            if (template) {
                 if (template.body) {
                     body = template.body
                 }
-
-                // Template has a subject defined?
                 if (template.subject) {
                     subject = template.subject
                 }
@@ -132,8 +130,24 @@ export class Mailer {
                 throw new Error(`Missing email subject`)
             }
 
-            // Replace keywords on the email template and subject.
+            // Data was passed? Replace tags in body and subject.
             if (options.data) {
+                if (template.tags) {
+                    const entries = Object.entries(template.tags)
+                    let tag: string
+                    let values: any
+
+                    // If the template has its own tags, replace them with
+                    // the correct value based on the ID sent via the data.
+                    for ([tag, values] of entries) {
+                        const dataTag = options.data[tag]
+                        if (dataTag) {
+                            options.data[tag] = values[dataTag] || ""
+                        }
+                    }
+                }
+
+                // Replace keywords on the email template and subject.
                 body = jaul.data.replaceTags(body, options.data)
                 subject = jaul.data.replaceTags(subject, options.data)
             }
