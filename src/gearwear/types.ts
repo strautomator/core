@@ -45,7 +45,7 @@ export interface GearWearConfig {
 export interface GearWearComponent {
     /** Name of the component being tracked. */
     name: string
-    /** How many acitivites were counted for this component. */
+    /** How many activities were counted for this component. */
     activityCount: number
     /** Current distance of the component. */
     currentDistance: number
@@ -55,8 +55,12 @@ export interface GearWearComponent {
     alertDistance?: number
     /** Alert time (in seconds) of the components. Zero means disabled. */
     alertTime?: number
+    /** Alert when it reaches a specific percentage of the target mileage / hours. */
+    preAlertPercent?: number
     /** Date when an alert was last sent to user. */
-    dateAlertSent: Date
+    dateAlertSent?: Date
+    /** Date when a pre alert was last sent to the user. */
+    datePreAlertSent?: Date
     /** Dates and distances when user has triggered the distance reset. */
     history: GearWearReset[]
     /** Is the component currently disabled? */

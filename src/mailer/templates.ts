@@ -30,12 +30,33 @@ export const EmailTemplates = {
             "</p>"
     },
 
+    // Pre alert reminder sent to user when a gear component has reached a certain % of the target usage.
+    GearWearPreAlert: {
+        subject: "${gearName} - ${component} (GearWear notification)",
+        body:
+            "<p>" +
+            "This is a friendly reminder that this component has now reached ${usage}% of its target usage.<br>-<br>" +
+            "<strong>${gearName} - ${component}</strong><br>" +
+            "Currently with ${currentDistance} ${units}, ${currentTime} hours" +
+            "</p>" +
+            "<p>" +
+            "This is a good time to double check if everything is in order with the component. ${tips}" +
+            "</p>",
+        tags: {
+            tips: {
+                chain: "For instance, check the chain stretch and if all pins are rolling freely.",
+                tires: "For instance, you might want to swap the front and rear tires to better distribute their wear.",
+                cassette: "For instance, you might want to remove the cassette from the wheel to properly clean and inspect it."
+            }
+        }
+    },
+
     // Alert sent to user when a gear component has passed the defined distance.
     GearWearAlert: {
         subject: "${gearName} - ${component} (GearWear alert)",
         body:
             "<p>" +
-            "It's about time to replace this component... 🙂<br>-<br>" +
+            "It's about time to replace this component!<br>-<br>" +
             "<strong>${gearName} - ${component}</strong><br>" +
             "Currently with ${currentDistance} ${units}, ${currentTime} hours<br>" +
             "Alert on: ${alertDetails}<br>-" +
@@ -53,13 +74,13 @@ export const EmailTemplates = {
         subject: "${gearName} - ${component} (GearWear reminder)",
         body:
             "<p>" +
-            "This is a quick reminder that you haven't reset the distance for the component below... 🙂<br>-<br>" +
+            "This is a friendly reminder that you haven't reset the usage for the component below.<br>-<br>" +
             "<strong>${gearName} - ${component}</strong><br>" +
             "Currently with ${currentDistance} ${units}, ${currentTime} hours<br>" +
             "Alert on: ${alertDetails}<br>-" +
             "</p>" +
             "<p>" +
-            'To reset the current tracking, please <a href="${resetLink}">click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component. You can also edit the component and increase the alert threshold, if needed.' +
+            'To reset the current tracking, please <a href="${resetLink}">click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component.' +
             "</p>" +
             "<p>" +
             'To buy replacement parts, check the <a href="${affiliateLink}">best deals on our affiliate stores</a>.' +

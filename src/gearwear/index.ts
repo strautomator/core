@@ -3,6 +3,7 @@
 import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
+import {FieldValue} from "@google-cloud/firestore"
 import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
@@ -118,6 +119,9 @@ export class GearWear {
                 }
                 if (comp.alertTime > 0 && comp.alertTime < 72000) {
                     throw new Error("Minimum accepted alert time is 20 hours (72000)")
+                }
+                if (comp.preAlertPercent > 0 && comp.preAlertPercent < 50) {
+                    throw new Error("Pre alert reminder minimum threshold is 50%")
                 }
 
                 // The disabled flag must be true or false.
@@ -380,8 +384,8 @@ export class GearWear {
             state = {
                 recentActivityCount: activityCount,
                 recentUserCount: userCount,
-                dateLastProcessed: dayjs.utc().toDate(),
-                processing: false
+                dateLastProcessed: today.toDate(),
+                processing: FieldValue.delete() as any
             }
 
             await database.appState.set("gearwear", state)
@@ -453,10 +457,10 @@ export class GearWear {
                 return
             }
 
+            // GearWear processing data.
+            const now = dayjs.utc()
             let id: string
             let component: GearWearComponent
-
-            // Total distance and hours added to the gear components.
             let activityIds: number[] = []
             let totalDistance: number = 0
             let totalTime: number = 0
@@ -495,17 +499,15 @@ export class GearWear {
                         }
 
                         const historyLength = component.history ? component.history.length : 0
+                        const minReminderDate = now.subtract(settings.gearwear.reminderDays, "days")
+                        const isReminder = dayjs.utc(component.dateAlertSent).isBefore(minReminderDate)
 
                         // If component was recently updated (last 2 days), then do not update the tracking
                         // as the activity was still for the previous component.
                         if (historyLength > 0 && component.history[historyLength - 1].date > activity.dateStart) {
-                            logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name} (REPLACED)`, `Replaced recently so won't update the tracking for activity ${activity.id}`)
+                            logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, `Replaced recently so won't update the tracking for activity ${activity.id}`)
                             continue
                         }
-
-                        const minReminderDate = dayjs.utc().subtract(settings.gearwear.reminderDays, "days")
-                        const reminderDistance = component.alertDistance * settings.gearwear.reminderThreshold
-                        const reminderTime = component.alertTime * settings.gearwear.reminderThreshold
 
                         // Increase activity count.
                         if (!component.activityCount) component.activityCount = 0
@@ -523,22 +525,34 @@ export class GearWear {
                         component.currentDistance = Math.round(component.currentDistance * 10) / 10
                         component.currentTime = Math.round(component.currentTime * 10) / 10
 
-                        // Check if component has reached the initial or reminder distance thresholds to
-                        // send an alert to the user.
-                        if (component.alertDistance > 0 && component.currentDistance >= component.alertDistance) {
-                            if (!component.dateAlertSent) {
-                                this.triggerAlert(user, component, activity)
-                            } else if (component.currentDistance >= reminderDistance && dayjs.utc(component.dateAlertSent).isBefore(minReminderDate)) {
-                                this.triggerAlert(user, component, activity, true)
+                        // Check if component has reached the pre alert threshold, alert, or if it needs to
+                        // send a reminder based on the mileage.
+                        if (component.alertDistance > 0) {
+                            const reminderDistance = component.alertDistance * settings.gearwear.reminderThreshold
+
+                            if (!component.datePreAlertSent && component.preAlertPercent && component.currentDistance / component.alertDistance >= component.preAlertPercent) {
+                                this.notify(user, component, activity, "PreAlert")
+                            } else if (component.currentDistance >= component.alertDistance) {
+                                if (!component.dateAlertSent) {
+                                    this.notify(user, component, activity, "Alert")
+                                } else if (component.currentDistance >= reminderDistance && isReminder) {
+                                    this.notify(user, component, activity, "Reminder")
+                                }
                             }
                         }
 
-                        // Do the same, but for time tracking.
-                        if (component.alertTime > 0 && component.currentTime >= component.alertTime) {
-                            if (!component.dateAlertSent) {
-                                this.triggerAlert(user, component, activity)
-                            } else if (component.currentTime >= reminderTime && dayjs.utc(component.dateAlertSent).isBefore(minReminderDate)) {
-                                this.triggerAlert(user, component, activity, true)
+                        // Do the same, but for time based (hours) tracking.
+                        if (component.alertTime > 0) {
+                            const reminderTime = component.alertTime * settings.gearwear.reminderThreshold
+
+                            if (!component.datePreAlertSent && component.preAlertPercent && component.currentTime / component.alertTime >= component.preAlertPercent) {
+                                this.notify(user, component, activity, "PreAlert")
+                            } else if (component.currentTime >= component.alertTime) {
+                                if (!component.dateAlertSent) {
+                                    this.notify(user, component, activity, "Alert")
+                                } else if (component.currentTime >= reminderTime && isReminder) {
+                                    this.notify(user, component, activity, "Reminder")
+                                }
                             }
                         }
                     }
@@ -547,10 +561,10 @@ export class GearWear {
                 }
             }
 
-            // Set lastUpdate details on the GearWear config.
+            // Set update details on the GearWear config.
             config.updating = false
             config.lastUpdate = {
-                date: dayjs.utc().toDate(),
+                date: now.toDate(),
                 activities: activityIds,
                 distance: totalDistance,
                 time: totalTime
@@ -580,6 +594,8 @@ export class GearWear {
                 throw new Error(`Component not found in: ${config.components.map((c) => c.name).join(", ")}`)
             }
 
+            const now = dayjs.utc()
+            const dateFormat = "YYYY-MM-DD"
             const currentDistance = component.currentDistance
             const currentTime = component.currentTime
             const hours = Math.round(currentTime / 3600)
@@ -590,20 +606,25 @@ export class GearWear {
                 return
             }
 
-            // Make sure history array is initialized.
+            // Make sure history array is initialized, and do not proceed if there was already
+            // a reset triggered today.
             if (!component.history) {
                 component.history = []
+            } else if (component.history.find((h) => dayjs(h.date).format(dateFormat) == now.format(dateFormat))) {
+                logger.warn("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, "Already reset today, will not reset again")
+                return
             }
 
             // Reset the actual distance / time / activity count.
-            component.dateAlertSent = null
+            component.datePreAlertSent = FieldValue.delete() as any
+            component.dateAlertSent = FieldValue.delete() as any
             component.currentDistance = 0
             component.currentTime = 0
             component.activityCount = 0
 
             // Only update the history if privacy mode is not enabled.
             if (!user.preferences.privacyMode) {
-                component.history.push({date: dayjs.utc().toDate(), distance: currentDistance, time: currentTime})
+                component.history.push({date: now.toDate(), distance: currentDistance, time: currentTime})
             }
 
             // Save to the database and log.
@@ -632,21 +653,37 @@ export class GearWear {
      * @param user The user owner of the component.
      * @param component The component that has reached the alert distance.
      * @param activity The Strava activity that triggered the distance alert.
-     * @param reminder If true it means it's a second alert (reminder) being sent.
      */
-    triggerAlert = async (user: UserData, component: GearWearComponent, activity: StravaActivity, reminder?: boolean): Promise<void> => {
+    notify = async (user: UserData, component: GearWearComponent, activity: StravaActivity, alertType: "PreAlert" | "Alert" | "Reminder"): Promise<void> => {
         const units = user.profile.units == "imperial" ? "mi" : "km"
-        const logDistance = `Distance ${component.alertDistance} / ${component.currentDistance} ${units}`
+        const logDistance = `Distance ${component.currentDistance} / ${component.alertDistance} ${units}`
         const logGear = `Gear ${activity.gear.id} - ${component.name}`
+        const now = dayjs.utc()
+
+        // Check if an alert was recently sent, and if so, stop here.
+        const minReminderDate = now.subtract(settings.gearwear.reminderDays, "days")
+        const datePreAlertSent = component.datePreAlertSent ? dayjs.utc(component.datePreAlertSent) : null
+        const dateAlertSent = component.dateAlertSent ? dayjs.utc(component.dateAlertSent) : null
+        if (datePreAlertSent?.isAfter(minReminderDate) || dateAlertSent?.isAfter(minReminderDate)) {
+            logger.warn("GearWear.notify", logHelper.user(user), logGear, "User was already notified recently")
+            return
+        }
 
         try {
-            component.dateAlertSent = dayjs.utc().toDate()
+            if (alertType == "PreAlert") {
+                component.datePreAlertSent = now.toDate()
+            } else {
+                component.dateAlertSent = now.toDate()
+            }
 
             // Get bike or shoe details.
             const hours = component.currentTime / 3600
             const bike = _.find(user.profile.bikes, {id: activity.gear.id})
             const shoe = _.find(user.profile.shoes, {id: activity.gear.id})
             const gear: StravaGear = bike || shoe
+
+            // Calculate usage from 0 to 100% (or more, if surpassed the alert threshold).
+            const usage = (component.alertDistance ? component.currentDistance / component.alertDistance : component.currentTime / component.alertTime) * 100
 
             // Get alert details (distance and time).
             const alertDetails = []
@@ -655,7 +692,7 @@ export class GearWear {
 
             // User has email set? Send via email, otherwise create a notification.
             if (user.email) {
-                const template = reminder ? "GearWearReminder" : "GearWearAlert"
+                const template = `GearWear${alertType}`
                 const compName = encodeURIComponent(component.name)
                 const data = {
                     units: units,
@@ -665,9 +702,11 @@ export class GearWear {
                     component: component.name,
                     currentDistance: component.currentDistance,
                     currentTime: Math.round(hours * 10) / 10,
+                    usage: Math.round(usage),
                     alertDetails: alertDetails.join(", "),
                     resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${compName}`,
-                    affiliateLink: `${settings.affiliates.baseUrl}s/${compName}`
+                    affiliateLink: `${settings.affiliates.baseUrl}s/${compName}`,
+                    tips: component.name.toLowerCase().replace(/ /g, "")
                 }
 
                 // Dispatch email to user.
@@ -677,8 +716,8 @@ export class GearWear {
                     to: user.email
                 })
 
-                logger.info("GearWear.triggerAlert.email", logHelper.user(user), logGear, logHelper.activity(activity), logDistance, reminder ? "Reminder sent" : "Alert sent")
-            } else if (!reminder) {
+                logger.info("GearWear.notify.email", logHelper.user(user), logGear, logHelper.activity(activity), logDistance, `${alertType} sent`)
+            } else if (alertType == "Alert") {
                 const nOptions = {
                     title: `Gear alert: ${gear.name} - ${component.name}`,
                     body: `This component has now passed its target usage: ${alertDetails.join(", ")}`,
@@ -688,10 +727,10 @@ export class GearWear {
                 }
                 await notifications.createNotification(user, nOptions)
 
-                logger.info("GearWear.triggerAlert.notification", logHelper.user(user), logGear, logHelper.activity(activity), logDistance, "Notification created")
+                logger.info("GearWear.notify.notification", logHelper.user(user), logGear, logHelper.activity(activity), logDistance, "Notification created")
             }
         } catch (ex) {
-            logger.error("GearWear.triggerAlert", logHelper.user(user), logGear, logHelper.activity(activity), ex)
+            logger.error("GearWear.notify", logHelper.user(user), logGear, logHelper.activity(activity), ex)
         }
     }
 }
