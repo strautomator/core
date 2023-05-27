@@ -95,14 +95,14 @@ export class StravaFtp {
                     }
 
                     // FTP ranges from 94% to 100% from 20 minutes to 1 hour, and then
-                    // 103% for each extra hour of activity time.
+                    // 103.5% for each extra hour of activity time.
                     if (a.movingTime <= 3600) {
                         const perc = ((3600 - a.movingTime) / 60 / 8) * 0.011
                         power = Math.round(watts * (1 - perc))
                     } else {
                         const extraHours = Math.floor(a.movingTime / 3600) - 1
-                        const fraction = 1 + 0.03 * ((a.movingTime % 3600) / 60 / 60)
-                        const factor = 1.03 ** extraHours * fraction
+                        const fraction = 1 + 0.035 * ((a.movingTime % 3600) / 60 / 60)
+                        const factor = 1.035 ** extraHours * fraction
                         power = watts * factor
                     }
 
@@ -153,7 +153,7 @@ export class StravaFtp {
             // Otherwise get the weighted or current value itself, whatever is the lowest.
             if (currentWatts && currentWatts > maxWatts) {
                 const maxWattsWeight = [maxWatts, 1]
-                const currentWattsWeight = [currentWatts, 5]
+                const currentWattsWeight = [currentWatts, 6]
                 const ftpWeights = [maxWattsWeight, currentWattsWeight]
                 const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
                 ftpWatts = ftpTotalSum / ftpWeightSum
