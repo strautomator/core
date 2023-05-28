@@ -3,7 +3,6 @@
 import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
-import {FieldValue} from "@google-cloud/firestore"
 import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
@@ -110,7 +109,7 @@ export class GearWear {
             }
 
             // Valid component fields.
-            const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "dateAlertSent", "activityCount", "history", "disabled"]
+            const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "preAlertPercent", "datePreAlertSent", "dateAlertSent", "activityCount", "history", "disabled"]
 
             // Validate individual components.
             for (let comp of gearwear.components) {
@@ -314,8 +313,9 @@ export class GearWear {
     processRecentActivities = async (): Promise<void> => {
         try {
             let state: GearWearDbState = await database.appState.get("gearwear")
-            let lastRunDate: dayjs.Dayjs = dayjs().subtract(1, "year")
+
             let today = dayjs.utc()
+            let lastRunDate: dayjs.Dayjs = today.subtract(1, "year")
 
             // First we check if method is currently processing or if it already ran successfully today.
             // If so, log a warning and abort execution.
@@ -347,14 +347,13 @@ export class GearWear {
             const gearwearList = await database.search("gearwear", null, ["userId", "asc"])
             const userIds = _.uniq(_.map(gearwearList, "userId"))
 
-            // Iterate user IDs to get user data and process recent activities for that particular user.
-            for (let userId of userIds) {
+            // Helper function to process GearWear for the specified user.
+            const processForUser = async (userId: string) => {
                 try {
                     const user = await users.getById(userId)
-
                     if (user.suspended) {
                         logger.warn("GearWear.processRecentActivities", `${logHelper.user(user)} is suspended, will not process`)
-                        continue
+                        return
                     }
 
                     // Get activities timespan.
@@ -376,8 +375,14 @@ export class GearWear {
                         userCount++
                     }
                 } catch (userEx) {
-                    logger.error("GearWear.processRecentActivities", `Failed to process activities for user ${userId}`)
+                    logger.error("GearWear.processRecentActivities", `Failed to process for user ${userId}`)
                 }
+            }
+
+            // Process GearWear for users in batches.
+            const batchSize = settings.functions.batchSize
+            while (userIds.length) {
+                await Promise.all(userIds.splice(0, batchSize).map(processForUser))
             }
 
             // Save gearwear state to the database.
@@ -385,7 +390,7 @@ export class GearWear {
                 recentActivityCount: activityCount,
                 recentUserCount: userCount,
                 dateLastProcessed: today.toDate(),
-                processing: FieldValue.delete() as any
+                processing: false
             }
 
             await database.appState.set("gearwear", state)
@@ -452,18 +457,28 @@ export class GearWear {
      */
     updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
         try {
+            const now = dayjs.utc()
+
+            // Stop here if no activities were passed.
             if (!activities || activities.length == 0) {
                 logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `No activities to process`)
                 return
             }
 
+            // Stop here if all components are disabled.
+            const disabledCount = config.components.filter((c) => c.disabled).length
+            if (config.components.length == disabledCount) {
+                logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, "All components are disabled, will not proceed")
+                return
+            }
+
             // GearWear processing data.
-            const now = dayjs.utc()
+
             let id: string
             let component: GearWearComponent
             let activityIds: number[] = []
-            let totalDistance: number = 0
-            let totalTime: number = 0
+            let totalDistance = 0
+            let totalTime = 0
 
             // Set the updating flag to avoid edits by the user while distance is updated.
             config.updating = true
@@ -494,7 +509,7 @@ export class GearWear {
                     // Iterate and update distance on gear components.
                     for ([id, component] of Object.entries(config.components)) {
                         if (component.disabled) {
-                            logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name} (DISABLED)`, logHelper.activity(activity), "Not updated")
+                            logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, logHelper.activity(activity), "Not updated, component is disabled")
                             continue
                         }
 
@@ -529,14 +544,15 @@ export class GearWear {
                         // send a reminder based on the mileage.
                         if (component.alertDistance > 0) {
                             const reminderDistance = component.alertDistance * settings.gearwear.reminderThreshold
+                            const usagePercent = (component.currentDistance / component.alertDistance) * 100
 
-                            if (!component.datePreAlertSent && component.preAlertPercent && component.currentDistance / component.alertDistance >= component.preAlertPercent) {
-                                this.notify(user, component, activity, "PreAlert")
+                            if (!component.datePreAlertSent && component.preAlertPercent && usagePercent >= component.preAlertPercent) {
+                                await this.notify(user, component, activity, "PreAlert")
                             } else if (component.currentDistance >= component.alertDistance) {
                                 if (!component.dateAlertSent) {
-                                    this.notify(user, component, activity, "Alert")
+                                    await this.notify(user, component, activity, "Alert")
                                 } else if (component.currentDistance >= reminderDistance && isReminder) {
-                                    this.notify(user, component, activity, "Reminder")
+                                    await this.notify(user, component, activity, "Reminder")
                                 }
                             }
                         }
@@ -544,14 +560,15 @@ export class GearWear {
                         // Do the same, but for time based (hours) tracking.
                         if (component.alertTime > 0) {
                             const reminderTime = component.alertTime * settings.gearwear.reminderThreshold
+                            const usagePercent = component.currentTime / component.alertTime
 
-                            if (!component.datePreAlertSent && component.preAlertPercent && component.currentTime / component.alertTime >= component.preAlertPercent) {
-                                this.notify(user, component, activity, "PreAlert")
+                            if (!component.datePreAlertSent && component.preAlertPercent && usagePercent >= component.preAlertPercent) {
+                                await this.notify(user, component, activity, "PreAlert")
                             } else if (component.currentTime >= component.alertTime) {
                                 if (!component.dateAlertSent) {
-                                    this.notify(user, component, activity, "Alert")
+                                    await this.notify(user, component, activity, "Alert")
                                 } else if (component.currentTime >= reminderTime && isReminder) {
-                                    this.notify(user, component, activity, "Reminder")
+                                    await this.notify(user, component, activity, "Reminder")
                                 }
                             }
                         }
@@ -566,15 +583,16 @@ export class GearWear {
             config.lastUpdate = {
                 date: now.toDate(),
                 activities: activityIds,
-                distance: totalDistance,
+                distance: parseFloat(totalDistance.toFixed(1)),
                 time: totalTime
             }
 
             // Save config to the database.
             await database.set("gearwear", config, config.id)
 
+            const updatedCount = config.components.length - disabledCount
             const units = user.profile.units == "imperial" ? "mi" : "km"
-            logger.info("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `Added ${totalDistance.toFixed(1)} ${units}, ${(totalTime / 3600).toFixed(1)} hours`)
+            logger.info("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${updatedCount} components`, `Added ${totalDistance.toFixed(1)} ${units}, ${(totalTime / 3600).toFixed(1)} hours`)
         } catch (ex) {
             logger.error("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, ex)
         }
@@ -616,8 +634,8 @@ export class GearWear {
             }
 
             // Reset the actual distance / time / activity count.
-            component.datePreAlertSent = FieldValue.delete() as any
-            component.dateAlertSent = FieldValue.delete() as any
+            component.datePreAlertSent = null
+            component.dateAlertSent = null
             component.currentDistance = 0
             component.currentTime = 0
             component.activityCount = 0

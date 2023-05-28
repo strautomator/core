@@ -57,10 +57,10 @@ export interface GearWearComponent {
     alertTime?: number
     /** Alert when it reaches a specific percentage of the target mileage / hours. */
     preAlertPercent?: number
-    /** Date when an alert was last sent to user. */
-    dateAlertSent?: Date
     /** Date when a pre alert was last sent to the user. */
     datePreAlertSent?: Date
+    /** Date when an alert was last sent to user. */
+    dateAlertSent?: Date
     /** Dates and distances when user has triggered the distance reset. */
     history: GearWearReset[]
     /** Is the component currently disabled? */
