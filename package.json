@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "23.217.12037",
+    "version": "23.221.12253",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -28,7 +28,7 @@
         "jaul": "^1.7.0",
         "jszip": "^3.10.1",
         "lodash": "^4.17.21",
-        "nodemailer": "^6.9.2",
+        "nodemailer": "^6.9.3",
         "paypal-rest-sdk": "^1.8.1",
         "setmeup": "^1.9.0",
         "twitter-api-v2": "^1.14.3",
