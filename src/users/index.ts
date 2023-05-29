@@ -657,7 +657,7 @@ export class Users {
      */
     delete = async (user: UserData): Promise<void> => {
         try {
-            if (!user || !user.id || !user.stravaTokens) {
+            if (!user || !user.id) {
                 throw new Error("Missing required user details")
             }
 

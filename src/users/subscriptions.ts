@@ -101,16 +101,13 @@ export class UserSubscriptions {
         try {
             const user: UserData = await database.get("users", subscription.userId)
 
-            // Maybe user was already removed?
+            // Check if the subscription data on the user details should be removed.
             if (!user) {
-                throw new Error("User not found")
-            }
-
-            // Remove the subscription reference from the user data.
-            if (user.subscription) {
-                await database.merge("users", {id: subscription.userId, subscription: null})
-            } else {
+                logger.warn("UserSubscriptions.delete", `User ${subscription.userId}`, subscription.id, "User not found")
+            } else if (!user.subscription) {
                 logger.warn("UserSubscriptions.delete", `User ${subscription.userId}`, subscription.id, "User has no subscription attached")
+            } else {
+                await database.merge("users", {id: subscription.userId, subscription: null})
             }
 
             // Delete subscription details from the database.

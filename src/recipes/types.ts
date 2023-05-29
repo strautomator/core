@@ -70,10 +70,10 @@ export interface RecipeStatsData {
     activityCount?: number
     /** Custom counter that can be used on activity name and description. */
     counter?: number
-    /** Failed execution counter (gets reset if recipe executes sucessfully). */
+    /** Failed execution counter (gets reset if recipe executes successfully). */
     recentFailures?: number
-    /** Recipe stats archived? */
-    archived?: boolean
+    /** Date when the recipe stats was archived. */
+    dateArchived?: Date
 }
 
 /**

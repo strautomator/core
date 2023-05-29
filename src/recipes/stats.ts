@@ -163,8 +163,8 @@ export class RecipeStats {
      * @param user The user to have activity count incremented.
      * @param recipe The recipe which should have its stats archived.
      */
-    archiveStats = async (user: UserData, recipe: RecipeData): Promise<void> => {
-        const id = `${user.id}-${recipe.id}`
+    archiveStats = async (user: UserData, recipeId: string): Promise<void> => {
+        const id = `${user.id}-${recipeId}`
 
         try {
             const doc = database.doc("recipe-stats", id)
@@ -174,18 +174,18 @@ export class RecipeStats {
 
             // If not existing, create a new stats object.
             if (!exists) {
-                logger.warn("RecipeStats.archiveStats", logHelper.user(user), logHelper.recipe(recipe), "Stats not found")
+                logger.warn("RecipeStats.archiveStats", logHelper.user(user), `Recipe ${recipeId}`, "Stats not found")
                 return
             }
 
             stats = docSnapshot.data() as RecipeStatsData
-            stats.archived = true
+            stats.dateArchived = new Date()
 
             // Save archived stats to the database.
             await database.merge("recipe-stats", stats, doc)
-            logger.info("RecipeStats.archiveStats", logHelper.user(user), logHelper.recipe(recipe), "Archived")
+            logger.info("RecipeStats.archiveStats", logHelper.user(user), `Recipe ${recipeId}`, "Archived")
         } catch (ex) {
-            logger.error("RecipeStats.archiveStats", logHelper.user(user), logHelper.recipe(recipe), ex)
+            logger.error("RecipeStats.archiveStats", logHelper.user(user), `Recipe ${recipeId}`, ex)
         }
     }
 
