@@ -411,9 +411,10 @@
         },
         // Some Strava resources might be cached. Duration in seconds.
         "cacheDuration": {
-            "athletes-stats": 120,
+            "activities-streams": 1814400,
+            "athletes-stats": 180,
             "clubs": 3600,
-            "clubs-group-events": 1200,
+            "clubs-group-events": 1800,
             "routes": 7200
         },
         // Do not process club events with more than 2 years of age (past or future).
