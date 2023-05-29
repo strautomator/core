@@ -112,6 +112,10 @@
         // Download questions from the database twice a day by default. Value set in seconds.
         "refreshInterval": 43200
     },
+    "functions": {
+        // Scheduled functions default batch size.
+        "batchSize": 8
+    },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
         // or via the SMU_gcp_projectId environment variable.
