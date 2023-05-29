@@ -206,6 +206,19 @@ export class RecipeStats {
     }
 
     /**
+     * Delete recipe stats that have been archived for too long.
+     */
+    deleteArchivedStats = async (): Promise<void> => {
+        try {
+            const maxDate = dayjs.utc().subtract(settings.users.idleDays.suspended, "days")
+            const count = await database.delete("recipe-stats", ["dateArchived", "<", maxDate])
+            logger.info("RecipeStats.deleteArchivedStats", `Deleted ${count} archived recipe stats`)
+        } catch (ex) {
+            logger.error("RecipeStats.deleteArchivedStats", ex)
+        }
+    }
+
+    /**
      * Manually set the recipe stats counter.
      * @param user The user to have activity count incremented.
      * @param recipe The recipe to be updated.
