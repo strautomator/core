@@ -428,8 +428,8 @@
         "ftp": {
             // Estimated FTP will go down by 1% for each retroactive week of no activities.
             "idleLossPerWeek": 0.01,
-            // User's FTP will be estimated based on activities from the last 12 weeks.
-            "weeks": 12,
+            // User's FTP will be estimated based on activities from the last 10 weeks.
+            "weeks": 10,
             // FTP can be updated only once every 24 hours.
             "sinceLastHours": 24,
             // FTP must have changed by at least 2% to be updated automatically
