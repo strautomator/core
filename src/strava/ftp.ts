@@ -296,11 +296,11 @@ export class StravaFtp {
 
             // Missing or not enough power data points? Stop here.
             if (!streams.watts || !streams.watts.data || streams.watts.data.length < 60) {
-                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), `Abort, not enough data points`)
+                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), "Abort, not enough data points")
                 return null
             }
             if (streams.watts.resolution == "low" || streams.watts.data.length < activity.movingTime * 0.8) {
-                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), `Abort, resolution not good enough`)
+                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), "Abort, resolution not good enough")
                 return null
             }
 

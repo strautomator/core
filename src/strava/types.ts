@@ -164,15 +164,9 @@ export interface StravaActivityPerformance {
 }
 
 /**
- * Combined activity streams.
+ * Combined activity streams. At the moment allowing only watts to be used.
  */
 export interface StravaActivityStreams {
-    /** Distance data points. */
-    distance?: StravaStream
-    /** Heart rate data points. */
-    heartrate?: StravaStream
-    /** Time data points. */
-    time?: StravaStream
     /** Power data points. */
     watts?: StravaStream
 }

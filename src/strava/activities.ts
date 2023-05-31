@@ -181,10 +181,23 @@ export class StravaActivities {
     getStreams = async (user: UserData, id: number | string): Promise<StravaActivityStreams> => {
         try {
             const tokens = user.stravaTokens
-            const data = await api.get(tokens, `activities/${id}/streams`, {keys: "watts", key_by_type: true})
-            const keys = Object.keys(data)
 
-            logger.info("Strava.getStreams", logHelper.user(user), `Activity ${id}`, keys.join(", "))
+            // At the moment we only use the "watts" stream, so we discard everything else from the response.
+            const preProcessor = (streams: any): void => {
+                try {
+                    const originalKeys = Object.keys(streams)
+                    for (let key of originalKeys) {
+                        if (key != "watts") {
+                            delete streams[key]
+                        }
+                    }
+                } catch (preEx) {
+                    logger.error("Strava.getStreams.preProcessor", logHelper.user(user), `Activity ${id}`, preEx)
+                }
+            }
+
+            const data: StravaActivityStreams = await api.get(tokens, `activities/${id}/streams`, {keys: "watts", key_by_type: true}, preProcessor)
+            logger.info("Strava.getStreams", logHelper.user(user), `Activity ${id}`, data.watts?.data ? `${data.watts.data.length} data points` : "No data points")
             return data
         } catch (ex) {
             logger.error("Strava.getStreams", logHelper.user(user), `Activity ${id}`, ex)
