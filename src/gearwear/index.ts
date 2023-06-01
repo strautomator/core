@@ -609,7 +609,7 @@ export class GearWear {
             const component: GearWearComponent = _.find(config.components, {name: componentName})
 
             if (!component) {
-                throw new Error(`Component not found in: ${config.components.map((c) => c.name).join(", ")}`)
+                throw new Error(`Component ${componentName} not found in: ${config.components.map((c) => c.name).join(", ")}`)
             }
 
             const now = dayjs.utc()
