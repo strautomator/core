@@ -321,7 +321,7 @@ export class GearWear {
             // If so, log a warning and abort execution.
             if (state) {
                 if (state.processing) {
-                    logger.warn("GearWear.processRecentActivities", "Abort", `Another execution is happening right now`)
+                    logger.warn("GearWear.processRecentActivities", "Abort, another execution has already started")
                     return
                 }
 

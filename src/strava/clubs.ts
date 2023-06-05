@@ -115,7 +115,7 @@ export class StravaClubs {
     getUpcomingClubEvents = async (user: UserData, days: number, countries?: string[]): Promise<StravaClubEvent[]> => {
         try {
             const today = dayjs()
-            const maxDate = dayjs().add(days, "days").endOf("day")
+            const maxDate = today.add(days, "days").endOf("day")
             const result: StravaClubEvent[] = []
 
             // Default to all countries.
