@@ -42,7 +42,15 @@ export const fortuneCookies: string[] = [
     "A brilliant idea will come to you in the shower. Just don't forget the shampoo.",
     "Warning: The fortune you seek is in another cookie. Keep eating.",
     "Your luckiest number is 404. Don't worry, it's just hiding from you.",
-    "You will discover the true meaning of procrastination... tomorrow."
+    "You will discover the true meaning of procrastination... tomorrow.",
+    "There is a difference between knowing the path and riding the path.",
+    "Bad spellers of the world untie!",
+    "Confidence is 10% hard work and 90% delusion.",
+    "Life is too short for traffic.",
+    "I'm still an atheist, thank God.",
+    "Getting there isn't half the fun - it's all the fun.",
+    "Do or do not. There is no try.",
+    "Two wrongs don't make a right, but they make a good excuse."
 ]
 
 /**
