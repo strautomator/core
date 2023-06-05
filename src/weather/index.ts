@@ -1,7 +1,7 @@
 // Strautomator Core: Weather
 
-import {ActivityWeather, WeatherProvider, WeatherRequestOptions, WeatherSummary} from "./types"
-import {apiRateLimiter, processWeatherSummary, weatherSummaryString} from "./utils"
+import {ActivityWeather, WeatherProvider, WeatherRequestOptions, WeatherRoundTo, WeatherSummary} from "./types"
+import {apiRateLimiter, processWeatherSummary} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import tomorrow from "./tomorrow"
@@ -94,8 +94,9 @@ export class Weather {
      * @param user The user requesting a weather report.
      * @param activity The Strava activity.
      * @param aqi Also get air quality data?
+     * @param provider Optional, give preference to the specified provider.
      */
-    getActivityWeather = async (user: UserData, activity: StravaActivity, aqi: boolean): Promise<ActivityWeather> => {
+    getActivityWeather = async (user: UserData, activity: StravaActivity, aqi: boolean, provider?: string): Promise<ActivityWeather> => {
         const userLog = logHelper.user(user)
         const activityLog = logHelper.activity(activity)
 
@@ -118,8 +119,8 @@ export class Weather {
             // Fetch weather for the start and end locations of the activity.
             let weather: ActivityWeather = {}
             try {
-                weather.start = await this.getLocationWeather({user: user, coordinates: activity.locationStart, dDate: dateStart, aqi: aqi})
-                weather.end = await this.getLocationWeather({user: user, coordinates: activity.locationEnd, dDate: dateEnd, aqi: aqi})
+                weather.start = await this.getLocationWeather({user: user, coordinates: activity.locationStart, dDate: dateStart, aqi: aqi, roundTo: WeatherRoundTo.PreviousHour, provider: provider})
+                weather.end = await this.getLocationWeather({user: user, coordinates: activity.locationEnd, dDate: dateEnd, aqi: aqi, roundTo: WeatherRoundTo.NextHour, provider: weather.start?.provider || provider || null})
             } catch (innerEx) {
                 logger.error("Weather.getActivityWeather", userLog, activityLog, innerEx)
             }
@@ -129,7 +130,7 @@ export class Weather {
                 try {
                     const seconds = activity.totalTime / 2
                     const dateMid = dayjs(activity.dateStart).add(seconds, "seconds").utcOffset(activity.utcStartOffset)
-                    weather.mid = await this.getLocationWeather({user: user, coordinates: activity.locationStart, dDate: dateMid, aqi: aqi})
+                    weather.mid = await this.getLocationWeather({user: user, coordinates: activity.locationStart, dDate: dateMid, aqi: aqi, provider: weather.start?.provider || provider || null})
                 } catch (innerEx) {
                     logger.error("Weather.getActivityWeather", userLog, activityLog, "Mid location", innerEx)
                 }
@@ -140,8 +141,8 @@ export class Weather {
                 throw new Error("Failed to get the activity weather")
             }
 
-            const startSummary = weather.start ? `Start ${dateStart.format("LT")}, ${weather.start.provider}: ${weather.start.summary}` : "No weather for start location"
-            const endSummary = weather.end ? `End ${dateEnd.format("LT")}, ${weather.end.provider}: ${weather.end.summary}` : "No weather for end location"
+            const startSummary = weather.start ? `Start ${dateStart.format("LT")}, ${weather.start.provider}: ${weather.start.temperature} - ${weather.start.summary}` : "No weather for start location"
+            const endSummary = weather.end ? `End ${dateEnd.format("LT")}, ${weather.end.provider}: ${weather.end.temperature} - ${weather.end.summary}` : "No weather for end location"
             logger.info("Weather.getActivityWeather", userLog, activityLog, startSummary, endSummary)
 
             return weather
@@ -189,7 +190,7 @@ export class Weather {
         const cacheId = `${options.coordinates.join("-")}-${Math.round(options.dDate.valueOf() / 1000 / 300)}${options.aqi ? "-aqi" : ""}`
         const cached: WeatherSummary = cache.get(`weather`, cacheId)
         if (cached && (isDefaultProvider || cached.provider == options.provider)) {
-            logger.info("Weather.getLocationWeather.fromCache", userLog, coordinatesLog, dateLog, cached.provider, cached.summary)
+            logger.info("Weather.getLocationWeather.fromCache", userLog, coordinatesLog, dateLog, cached.provider, `${cached.temperature} - ${cached.summary}`)
             return cached
         }
 
@@ -284,7 +285,7 @@ export class Weather {
 
         // Save to cache and return weather results.
         cache.set(`weather`, cacheId, result)
-        logger.info("OpenWeatherMap.getWeather", logHelper.user(user), weatherSummaryString(options.coordinates, options.dDate, result))
+        logger.info("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, result.provider, `${result.temperature} - ${result.summary}`)
 
         return result
     }
