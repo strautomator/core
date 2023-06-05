@@ -130,8 +130,18 @@ export interface WeatherRequestOptions {
     coordinates: [number, number]
     /** DayJS object with the date. */
     dDate: dayjs.Dayjs
+    /** Rounding preference in case exact time forecast was not found. */
+    roundTo?: WeatherRoundTo
     /** Also get air quality data? */
     aqi?: boolean
     /** Preferred weather provider name. */
     provider?: string
+}
+
+/**
+ * Use the weather forecast for the next or previous hour.
+ */
+export enum WeatherRoundTo {
+    PreviousHour = "previous",
+    NextHour = "next"
 }
