@@ -116,6 +116,11 @@
         // Scheduled functions default batch size.
         "batchSize": 8
     },
+    "garmin": {
+        "api": {
+            "baseUrl": "https://apis.garmin.com/"
+        }
+    },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
         // or via the SMU_gcp_projectId environment variable.
@@ -482,13 +487,16 @@
     "weather": {
         // Cache weather results for 15 minutes. Value set in seconds.
         "cacheDuration": 900,
+        // Provider will temporarily stop requests if it fails more than 5 times in a row.
+        "maxRepeatedErrors": 5,
+        // When fetching weather, add a buffer of 30 minutes before and 60 after the target date.
+        "dateSubtractMinutes": 30,
+        "dateAddMinutes": 60,
         // Set the default weather providers.
         "defaultProviders": {
             "free": ["openmeteo", "weatherapi"],
             "pro": ["openmeteo", "tomorrow"]
         },
-        // Provider will temporarily stop requests if it fails more than 5 times in a row.
-        "maxRepeatedErrors": 5,
         // Open-Meteo API settings.
         "openmeteo": {
             "baseUrl": "https://api.open-meteo.com/v1/forecast",
