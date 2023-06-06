@@ -1,6 +1,6 @@
 // Strautomator Core: WeatherAPI.com (NOT WORKING YET)
 
-import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
+import {WeatherApiStats, WeatherProvider, WeatherRoundTo, WeatherSummary} from "./types"
 import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
@@ -35,8 +35,9 @@ export class WeatherAPI implements WeatherProvider {
      * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
+     * @param roundTo Round to the previous or next hour?
      */
-    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<WeatherSummary> => {
         const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
@@ -60,7 +61,7 @@ export class WeatherAPI implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate)
+            const result = this.toWeatherSummary(res, coordinates, dDate, roundTo)
             return result
         } catch (ex) {
             logger.error("WeatherAPI.getWeather", logHelper.user(user), coordinates, isoDate, unit, ex)
@@ -74,10 +75,10 @@ export class WeatherAPI implements WeatherProvider {
      * @param rawData Raw data from WeatherAPI.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
-     * @param preferences The user preferences.
+     * @param roundTo Round to the previous or next hour?
      */
-    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
-        const data = this.filterData(rawData, dDate)
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): WeatherSummary => {
+        const data = this.filterData(rawData, dDate, roundTo)
         if (!data) return null
 
         // Set wind speed.
@@ -118,7 +119,7 @@ export class WeatherAPI implements WeatherProvider {
     /**
      * Filter the response data from WeatherAPI and get details relevant to the specific date time.
      */
-    private filterData = (data: any, dDate: dayjs.Dayjs): any => {
+    private filterData = (data: any, dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): any => {
         if (!data.current && !data.forecast) return null
 
         const dayFormat = "YYYY-MM-DD"
@@ -126,13 +127,15 @@ export class WeatherAPI implements WeatherProvider {
         let result = null
 
         if (data.forecast) {
-            result = _.find(data.forecast.forecastday, {date: dDate.format(dayFormat)})
+            result = _.find(data.forecast.forecastday, {date: dDate.utc().format(dayFormat)})
 
             // Try finding the particular hour.
             if (result) {
-                let hourData = _.find(result.hour, {time: dDate.format(hourFormat)})
-                if (!hourData) hourData = _.find(result.hour, {time: dDate.subtract(1, "h").format(hourFormat)})
-                if (!hourData) hourData = _.find(result.hour, {time: dDate.add(1, "h").format(hourFormat)})
+                let bestDate = dDate
+                if (bestDate.minute() > 50 || (dDate.minute() > 30 && roundTo == WeatherRoundTo.NextHour)) {
+                    bestDate = bestDate.add(1, "hour")
+                }
+                let hourData = _.find(result.hour, {time: bestDate.format(hourFormat)}) || _.find(result.hour, {time: bestDate.subtract(1, "h").format(hourFormat)})
                 result = hourData || result.day
             }
         } else {

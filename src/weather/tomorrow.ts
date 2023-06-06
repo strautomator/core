@@ -1,6 +1,6 @@
 // Strautomator Core: Weather - Tomorrow.io
 
-import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
+import {WeatherApiStats, WeatherProvider, WeatherRoundTo, WeatherSummary} from "./types"
 import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
@@ -36,8 +36,9 @@ export class Tomorrow implements WeatherProvider {
      * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
+     * @param roundTo Round to the previous or next hour?
      */
-    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<WeatherSummary> => {
         const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
@@ -52,8 +53,8 @@ export class Tomorrow implements WeatherProvider {
             const baseUrl = settings.weather.tomorrow.baseUrl
             const secret = settings.weather.tomorrow.secret
             const dateFormat = "YYYY-MM-DDTHH:mm:ss"
-            const startTime = utcDate.format(dateFormat) + "Z"
-            const endTime = utcDate.add(1, "h").format(dateFormat) + "Z"
+            const startTime = utcDate.subtract(settings.weather.dateSubtractMinutes, "minutes").format(dateFormat) + "Z"
+            const endTime = utcDate.add(settings.weather.dateAddMinutes, "minutes").format(dateFormat) + "Z"
             const fields = "weatherCode,temperature,humidity,windSpeed,windDirection,pressureSurfaceLevel,precipitationType,cloudCover,visibility,epaIndex"
             const latlon = coordinates.join(",")
             const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
@@ -63,7 +64,7 @@ export class Tomorrow implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}, this.rateLimitExtractor))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate)
+            const result = this.toWeatherSummary(res, coordinates, dDate, roundTo)
             return result
         } catch (ex) {
             logger.error("Tomorrow.getWeather", logHelper.user(user), coordinates, isoDate, unit, ex)
@@ -77,13 +78,13 @@ export class Tomorrow implements WeatherProvider {
      * @param rawData Raw data from Tomorrow.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
-     * @param preferences The user preferences.
+     * @param roundTo Round to the previous or next hour?
      */
-    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): WeatherSummary => {
         if (!rawData?.data?.timelines) return null
         let data = rawData.data.timelines[0]
 
-        const index = dDate.utc().minute() > 30 && data.intervals.length > 1 ? 1 : 0
+        const index = dDate.utc().minute() > 30 && roundTo == WeatherRoundTo.NextHour && data.intervals.length > 1 ? 1 : 0
         data = data.intervals[index].values
 
         const hasPrecip = data.precipitationType && data.precipitationType > 0

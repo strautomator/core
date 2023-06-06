@@ -221,7 +221,7 @@ export class Weather {
             try {
                 providerModule = currentProviders.shift()
 
-                result = await providerModule.getWeather(user, options.coordinates, options.dDate)
+                result = await providerModule.getWeather(user, options.coordinates, options.dDate, options.roundTo)
                 if (result) {
                     providerModule.disabledTillDate = null
                     providerModule.stats.repeatedErrors = 0
@@ -270,7 +270,7 @@ export class Weather {
             while (!result.aqi && aqiProviders.length > 0) {
                 try {
                     providerModule = _.sample(aqiProviders)
-                    result.aqi = await providerModule.getAirQuality(options.user, options.coordinates, options.dDate)
+                    result.aqi = await providerModule.getAirQuality(options.user, options.coordinates, options.dDate, options.roundTo)
                 } catch (aqiEx) {
                     if (aqiProviders.length > 0) {
                         logger.warn("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, `Air quality: ${providerModule.name} failed, will try another`, aqiEx.message)

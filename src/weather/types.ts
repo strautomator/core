@@ -56,9 +56,9 @@ export interface WeatherProvider {
     /** Disable this weather provider till the specified date. */
     disabledTillDate?: Date
     /** Get the weather for the specified location and date. */
-    getWeather?(user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary>
+    getWeather?(user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<WeatherSummary>
     /** Optional, get air quality for the specified location and date. */
-    getAirQuality?(user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<number>
+    getAirQuality?(user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<number>
 }
 
 /**

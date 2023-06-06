@@ -1,6 +1,6 @@
 // Strautomator Core: Weather - OpenWeatherMap
 
-import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
+import {WeatherApiStats, WeatherProvider, WeatherRoundTo, WeatherSummary} from "./types"
 import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
@@ -35,8 +35,9 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
+     * @param roundTo Round to the previous or next hour?
      */
-    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<WeatherSummary> => {
         const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
@@ -59,7 +60,7 @@ export class OpenWeatherMap implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate)
+            const result = this.toWeatherSummary(res, coordinates, dDate, roundTo)
             return result
         } catch (ex) {
             logger.error("OpenWeatherMap.getWeather", logHelper.user(user), coordinates, isoDate, unit, ex)
@@ -73,8 +74,9 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
+     * @param roundTo Round to the previous or next hour?
      */
-    getAirQuality = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<number> => {
+    getAirQuality = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<number> => {
         const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
@@ -88,14 +90,16 @@ export class OpenWeatherMap implements WeatherProvider {
 
             const baseUrl = settings.weather.openweathermap.aqiBaseUrl
             const secret = settings.weather.openweathermap.secret
-            const aqiUrl = `${baseUrl}?appid=${secret}&lat=${coordinates[0]}&lon=${coordinates[1]}`
+            const startTime = utcDate.subtract(settings.weather.dateSubtractMinutes, "minutes").unix()
+            const endTime = utcDate.add(settings.weather.dateAddMinutes, "minutes").unix()
+            const aqiUrl = `${baseUrl}?appid=${secret}&lat=${coordinates[0]}&lon=${coordinates[1]}&start=${startTime}&end=${endTime}`
 
             // Fetch weather data.
             logger.debug("OpenWeatherMap.getAirQuality", aqiUrl)
             const res = await this.apiRequest.schedule(() => axiosRequest({url: aqiUrl}))
 
             if (res) {
-                const aiq = this.toAirQualityIndex(res, dDate)
+                const aiq = this.toAirQualityIndex(res, dDate, roundTo)
 
                 if (aiq !== null) {
                     logger.info("OpenWeatherMap.getAirQuality", logHelper.user(user), coordinates.join(", "), dDate.format("lll"), `AIQ: ${aiq}`)
@@ -116,13 +120,14 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param rawData Raw data from OpenWeatherMap.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
-     * @param preferences The user preferences.
+     * @param roundTo Round to the previous or next hour?
      */
-    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): WeatherSummary => {
         if (!rawData) return null
 
         const dt = dDate.utc().unix()
-        const finder = (d) => d.dt >= dt - 1800 && d.dt <= dt + 1800
+        const subtractor = roundTo == WeatherRoundTo.NextHour ? 0 : 1800
+        const finder = (d) => d.dt >= dt - subtractor && d.dt <= dt + 1800
         const data = rawData.data?.find(finder) || rawData.hourly?.find(finder) || rawData.daily?.find(finder) || rawData.current
         if (!data.weather) return null
 
@@ -181,10 +186,15 @@ export class OpenWeatherMap implements WeatherProvider {
      * Fetch the AQI from the raw data.
      * @param rawData Raw data from OpenWeatherMap.
      * @param dDate The date (as a DayJS object).
+     * @param roundTo Round to the previous or next hour?
      */
-    private toAirQualityIndex = (rawData: any, dDate: dayjs.Dayjs): number => {
+    private toAirQualityIndex = (rawData: any, dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): number => {
         if (!rawData) return null
-        let data = rawData.list?.length > 0 ? rawData.list.find((d) => d.dt >= dDate.utc().unix()) || rawData.list[0] : rawData
+
+        const dt = dDate.utc().unix()
+        const subtractor = roundTo == WeatherRoundTo.NextHour ? 0 : 1800
+        const finder = (d) => d.dt >= dt - subtractor && d.dt <= dt + 1800
+        let data = rawData.list?.length > 0 ? rawData.list.find(finder) || rawData.list[0] : rawData
 
         if (data.main?.aqi) {
             return data.main?.aqi

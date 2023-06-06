@@ -31,6 +31,7 @@ export class VisualCrossing implements WeatherProvider {
 
     /**
      * Get current weather conditions for the specified coordinates and date.
+     * Dates are handled in the local timezone according to the coordinates.
      * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).

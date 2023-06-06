@@ -1,6 +1,6 @@
 // Strautomator Core: Weather - Open-Meteo
 
-import {WeatherApiStats, WeatherProvider, WeatherSummary} from "./types"
+import {WeatherApiStats, WeatherProvider, WeatherRoundTo, WeatherSummary} from "./types"
 import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
@@ -34,8 +34,9 @@ export class OpenMeteo implements WeatherProvider {
      * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
+     * @param roundTo Round to the previous or next hour?
      */
-    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
+    getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<WeatherSummary> => {
         const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
@@ -48,7 +49,7 @@ export class OpenMeteo implements WeatherProvider {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.openmeteo.baseUrl
-            const dateFormat = dDate.format("YYYY-MM-DD")
+            const dateFormat = utcDate.format("YYYY-MM-DD")
             const daysQuery = isFuture ? `start_date=${dateFormat}&end_date=${dateFormat}` : `past_days=${utcNow.dayOfYear() - utcNow.subtract(diffHours, "hours").dayOfYear()}`
             const weatherUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,pressure_msl,precipitation,weathercode,snow_depth,cloudcover,windspeed_10m,windspeed_80m,winddirection_10m,winddirection_80m,windgusts_10m&windspeed_unit=ms&current_weather=true`
 
@@ -57,7 +58,7 @@ export class OpenMeteo implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}))
 
             // Parse result.
-            const result = this.toWeatherSummary(res, coordinates, dDate)
+            const result = this.toWeatherSummary(res, coordinates, dDate, roundTo)
             return result
         } catch (ex) {
             logger.error("OpenMeteo.getWeather", logHelper.user(user), coordinates, isoDate, unit, ex)
@@ -71,8 +72,9 @@ export class OpenMeteo implements WeatherProvider {
      * @param user User requesting the data.
      * @param coordinates Array with latitude and longitude.
      * @param dDate Date for the weather request (as a DayJS object).
+     * @param roundTo Round to the previous or next hour?
      */
-    getAirQuality = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<number> => {
+    getAirQuality = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<number> => {
         const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
@@ -85,7 +87,7 @@ export class OpenMeteo implements WeatherProvider {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.openmeteo.aqiBaseUrl
-            const dateFormat = dDate.format("YYYY-MM-DD")
+            const dateFormat = utcDate.format("YYYY-MM-DD")
             const daysQuery = isFuture ? `start_date=${dateFormat}&end_date=${dateFormat}` : `past_days=${utcNow.dayOfYear() - utcNow.subtract(diffHours, "hours").dayOfYear()}`
             const aqiUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&hourly=european_aqi,us_aqi`
 
@@ -94,7 +96,7 @@ export class OpenMeteo implements WeatherProvider {
             const res = await this.apiRequest.schedule(() => axiosRequest({url: aqiUrl}))
 
             if (res) {
-                const aiq = this.toAirQualityIndex(res, dDate)
+                const aiq = this.toAirQualityIndex(res, dDate, roundTo)
 
                 if (aiq !== null) {
                     logger.info("OpenMeteo.getAirQuality", logHelper.user(user), coordinates.join(", "), dDate.format("lll"), `AIQ: ${aiq}`)
@@ -115,14 +117,14 @@ export class OpenMeteo implements WeatherProvider {
      * @param rawData Raw data from Open-Meteo.
      * @param coordinates Array with latitude and longitude.
      * @param dDate The date (as a DayJS object).
-     * @param preferences The user preferences.
+     * @param roundTo Round to the previous or next hour?
      */
-    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs): WeatherSummary => {
+    private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): WeatherSummary => {
         if (!rawData || !rawData.hourly) return null
         let data = rawData
 
         const utcDate = dDate.utc()
-        const hour = utcDate.minute() < 30 ? utcDate.hour() : utcDate.hour() + 1
+        const hour = utcDate.minute() > 30 && roundTo == WeatherRoundTo.NextHour ? utcDate.hour() + 1 : utcDate.hour()
         const targetDate = utcDate.hour(hour).minute(0)
         const dateFormat = "YYYY-MM-DDTHH:mm"
         const exactDateFormat = targetDate.format(dateFormat)
@@ -156,13 +158,14 @@ export class OpenMeteo implements WeatherProvider {
      * Fetch the AQI from the raw data.
      * @param rawData Raw data from Open-Meteo.
      * @param dDate The date (as a DayJS object).
+     * @param roundTo Round to the previous or next hour?
      */
-    private toAirQualityIndex = (rawData: any, dDate: dayjs.Dayjs): number => {
+    private toAirQualityIndex = (rawData: any, dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): number => {
         if (!rawData || !rawData.hourly) return null
         let data = rawData
 
         const utcDate = dDate.utc()
-        const hour = utcDate.minute() < 30 ? utcDate.hour() : utcDate.hour() + 1
+        const hour = utcDate.minute() > 30 && roundTo == WeatherRoundTo.NextHour ? utcDate.hour() + 1 : utcDate.hour()
         const targetDate = utcDate.hour(hour).minute(0)
         const dateFormat = "YYYY-MM-DDTHH:mm"
         const exactDateFormat = targetDate.format(dateFormat)
