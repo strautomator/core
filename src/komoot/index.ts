@@ -85,9 +85,9 @@ export class Komoot {
             }
 
             // Check if route details are available in the database cache first.
-            const fromCache = await database.get("komoot", tourId)
+            const fromCache: KomootRoute = await database.get("komoot", tourId)
             if (fromCache && dayjs(fromCache.dateCached).add(settings.komoot.maxCacheDuration, "seconds").isAfter(now)) {
-                logger.info("Komoot.getRoute.fromCache", tourId, `Distance: ${fromCache.distance}km`, `Duration: ${fromCache.estimatedTime}s`)
+                logger.info("Komoot.getRoute.fromCache", tourId, `Distance: ${fromCache.distance}km`, `Duration: ${fromCache.totalTime}s`)
                 return fromCache
             }
 
@@ -129,22 +129,29 @@ export class Komoot {
             }
 
             // Try parsing the duration. As durations in Kommot are usually VERY conservative,
-            // we're removing around 5% of the final estimated time here.
+            // we're removing around 6% of the final estimated time here.
             const iDuration = html.indexOf("Duration: ") + 10
             if (iDuration > 10) {
-                const duration = html.substring(iDuration, html.indexOf(" h", iDuration))
-                const arrDuration = duration.trim().split(":")
-                result.estimatedTime = parseInt(arrDuration[0]) * 60 * 57 + parseInt(arrDuration[1]) * 57
+                const htmlDuration = html.substring(iDuration, html.indexOf(" h", iDuration))
+                const arrDuration = htmlDuration.trim().split(":")
+                result.movingTime = parseInt(arrDuration[0]) * 60 * 54 + parseInt(arrDuration[1]) * 54
+
+                // Set total time rounded to 15 minutes.
+                const secondsEstimated = result.movingTime * settings.routes.estimatedTimeMultiplier
+                const secondsExtraBreaks = Math.floor(result.movingTime / 10800) * settings.routes.extraTimePer3Hours
+                const duration = dayjs.duration(secondsEstimated + secondsExtraBreaks, "seconds")
+                const toQuarter = 15 - (duration.minutes() % 15)
+                result.totalTime = duration.add(toQuarter, "minutes").asSeconds()
             }
 
-            if (result.distance || result.estimatedTime) {
+            if (result.distance || result.totalTime) {
                 result.dateExpiry = now.add(settings.komoot.maxCacheDuration, "seconds").toDate()
             } else {
                 result.dateExpiry = now.add(settings.komoot.cacheDuration, "seconds").toDate()
             }
 
             await database.set("komoot", result, result.id)
-            logger.info("Komoot.getRoute", logHelper.user(user), tourId, `Distance: ${result.distance || "?"} km`, `Duration: ${result.estimatedTime || "?"} s`)
+            logger.info("Komoot.getRoute", logHelper.user(user), tourId, `Distance: ${result.distance || "?"} km`, `Duration: ${result.totalTime || "?"} s`)
 
             return result
         } catch (ex) {

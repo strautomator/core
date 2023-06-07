@@ -8,8 +8,10 @@ export interface KomootRoute {
     id: string
     /** Total distance. */
     distance?: number
-    /** Expected duration. */
-    estimatedTime?: number
+    /** Estimated moving time in seconds. */
+    movingTime?: number
+    /** Estimated total time with breaks, in seconds. */
+    totalTime?: number
     /** Starting location as coordinates. */
     locationStart?: [number, number]
     /** Starting location as coordinates. */

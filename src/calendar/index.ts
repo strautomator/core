@@ -421,19 +421,11 @@ export class Calendar {
                         let endDate: Date
 
                         const evTimestamp = Math.round(eventDate.valueOf() / 1000)
-                        const estimatedTime = clubEvent.route ? clubEvent.route.estimatedTime : clubEvent.komootRoute ? clubEvent.komootRoute.estimatedTime : 0
+                        const estimatedTime = clubEvent.route ? clubEvent.route.totalTime : clubEvent.komootRoute ? clubEvent.komootRoute.totalTime : 0
 
-                        // Upcoming event has a route with estimated time? Use it as the end date,
-                        // with some added time for breaks / stops. Otherwise defaults to 15 minutes.
+                        // Upcoming event has a route with estimated time? Use it for the end date, otherwise defaults to 15min.
                         if (eventDate > today && estimatedTime > 0) {
-                            const secondsEstimated = estimatedTime * 1.05
-                            const secondsExtraBrakes = Math.floor(estimatedTime / 7200) * 60 * 20
-                            const totalAddedSeconds = clubEvent.type == "Ride" ? secondsEstimated + secondsExtraBrakes : secondsEstimated + 300
-                            const targetDate = dayjs(eventDate).add(totalAddedSeconds, "seconds")
-
-                            // Round to 15min.
-                            const toQuarter = 15 - (targetDate.minute() % 15)
-                            endDate = targetDate.add(toQuarter, "minutes").toDate()
+                            endDate = dayjs(eventDate).add(estimatedTime, "seconds").toDate()
                         } else {
                             endDate = dayjs(eventDate).add(settings.calendar.defaultDurationMinutes, "minutes").toDate()
                         }

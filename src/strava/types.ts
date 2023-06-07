@@ -491,7 +491,9 @@ export interface StravaRoute {
     /** Total elevation gain. */
     elevationGain?: number
     /** Estimated moving time in seconds. */
-    estimatedTime?: number
+    movingTime?: number
+    /** Estimated total time with breaks, in seconds. */
+    totalTime?: number
     /** Route encoded polyline. */
     polyline?: string
     /** Starting location as coordinates. */

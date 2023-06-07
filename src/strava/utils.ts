@@ -7,6 +7,7 @@ import maps from "../maps"
 import dayjs from "../dayjs"
 import _ from "lodash"
 import polyline = require("@mapbox/polyline")
+const settings = require("setmeup").settings
 
 // Feet and miles ratio.
 const rFeet = 3.28084
@@ -464,7 +465,7 @@ export function toStravaClubEvent(data: any): StravaClubEvent {
 
     // Club event has a route defined? Set the base route details. Further details
     // can be fetched using the route ID later on.
-    if (data.route && data.route.id_str) {
+    if (data.route?.id_str) {
         clubEvent.route = {
             id: data.route.id,
             idString: data.route.id_str,
@@ -474,6 +475,8 @@ export function toStravaClubEvent(data: any): StravaClubEvent {
             clubEvent.route.polyline = data.route.map.polyline || data.route.map.summary_polyline
         }
     }
+
+    // Estimated time.
 
     // Who's organizing it?
     if (data.organizing_athlete) {
@@ -505,9 +508,16 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
         type: data.type == 1 ? StravaSport.Ride : StravaSport.Run
     }
 
-    // Estimated moving time available?
+    // Estimated moving time available? Also estimate the total time.
     if (data.estimated_moving_time) {
-        route.estimatedTime = data.estimated_moving_time
+        route.movingTime = data.estimated_moving_time
+
+        // Set total time rounded to 15 minutes.
+        const secondsEstimated = route.movingTime * settings.routes.estimatedTimeMultiplier
+        const secondsExtraBreaks = Math.floor(route.movingTime / 10800) * settings.routes.extraTimePer3Hours
+        const duration = dayjs.duration(secondsEstimated + secondsExtraBreaks, "seconds")
+        const toQuarter = 15 - (duration.minutes() % 15)
+        route.totalTime = duration.add(toQuarter, "minutes").asSeconds()
     }
 
     // Terrain type available?

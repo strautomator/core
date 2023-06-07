@@ -81,9 +81,9 @@ export class StravaRoutes {
             }
 
             // Limit amount of routes that can be zipped.
-            if (routeIds.length > settings.strava.routes.zipLimit) {
-                logger.warn("Strava.zipGPX", logHelper.user(user), `Only first ${settings.strava.routes.zipLimit} of the passed ${routeIds.length} routes will be processed`)
-                routeIds = routeIds.slice(0, settings.strava.routes.zipLimit)
+            if (routeIds.length > settings.routes.zipLimit) {
+                logger.warn("Strava.zipGPX", logHelper.user(user), `Only first ${settings.routes.zipLimit} of the passed ${routeIds.length} routes will be processed`)
+                routeIds = routeIds.slice(0, settings.routes.zipLimit)
             }
 
             // Add the individual routes to the ZIP file.
