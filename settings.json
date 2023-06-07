@@ -367,6 +367,15 @@
             "timeout": 5000
         }
     },
+
+    "routes": {
+        // Total estimated route times considering brakes, will add a total of 5% to the
+        // estimated moving time and another 30min (in seconds) for every 3 hours of riding / running.
+        "estimatedTimeMultiplier": 1.05,
+        "extraTimePer3Hours": 1800,
+        // A maximum of 15 routes can be zipped for downloading.
+        "zipLimit": 15
+    },
     // Spotify integration. The "clientId" and "clientSecret" must be set via secret settings
     // or via the SMU_spotify_api_clientId and SMU_spotify_api_clientSecret environment variables.
     "spotify": {
@@ -447,10 +456,6 @@
         "records": {
             // For "average" records, consider only the activities that have at least 20 minutes of moving time.
             "minMovingTimeAvg": 1200
-        },
-        "routes": {
-            // A maximum of 15 routes can be zipped for downloading.
-            "zipLimit": 15
         },
         "processingQueue": {
             // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
