@@ -178,7 +178,8 @@ export class Komoot {
             const sepPeriod = baseString.indexOf(".")
             const sepParen = baseString.indexOf(")")
             const sepSpace = baseString.indexOf(" ")
-            const allSeparators = [sepNewLine, sepCol, sepPeriod, sepParen, sepSpace]
+            const sepParty = baseString.indexOf("Party")
+            const allSeparators = [sepNewLine, sepCol, sepPeriod, sepParen, sepSpace, sepParty]
 
             // Only consider the ref= as a separator in case it comes after the token in the query.
             const sepRef = baseString.indexOf("ref=")
