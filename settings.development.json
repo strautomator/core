@@ -15,8 +15,8 @@
         "debug": false
     },
     "announcements": {
-        // Active announcements should be cached for only 1 minute on dev.
-        "cacheDuration": 60
+        // Active announcements should be cached for only 30 seconds on dev.
+        "cacheDuration": 30
     },
     // Beta environment on dev.
     "beta": {
