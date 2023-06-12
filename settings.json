@@ -37,8 +37,8 @@
         "baseUrl": "https://links.devv.com/"
     },
     "announcements": {
-        // Active announcements should be cached for up to 120 minutes.
-        "cacheDuration": 7200
+        // Active announcements should be cached for up to 60 minutes.
+        "cacheDuration": 3600
     },
     "axios": {
         // User agent used to emulate a browser.
