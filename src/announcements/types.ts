@@ -20,8 +20,16 @@ export interface Announcement {
     readCount?: number
     /** Is it about a new feature? */
     newFeature?: boolean
+    /** Affiliate link? */
+    affiliate?: boolean
     /** Targeting Free users only? */
     isFree?: boolean
     /** Targeting PRO users only? */
     isPro?: boolean
+    /** Only to users who have bikes in Strava. */
+    hasBikes?: boolean
+    /** Only to users who have shoes in Strava. */
+    hasShoes?: boolean
+    /** Restrict to uses from specific countries? */
+    countries?: string[]
 }
