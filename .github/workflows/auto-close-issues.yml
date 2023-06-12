@@ -11,10 +11,10 @@ jobs:
         steps:
             - uses: actions/stale@v5
               with:
-                  days-before-issue-stale: 30
-                  days-before-issue-close: 7
+                  days-before-issue-stale: 28
+                  days-before-issue-close: 3
                   stale-issue-label: "stale"
-                  stale-issue-message: "Issue flagged as stale for being inactive for 30 days, please report status if this is still relevant."
+                  stale-issue-message: "Issue flagged as stale for being inactive for 28 days, please report status if this is still relevant."
                   close-issue-message: "Issue closed due to inactivity, feel free to update and re-open it if necessary."
                   days-before-pr-stale: -1
                   days-before-pr-close: -1
