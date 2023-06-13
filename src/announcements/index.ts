@@ -121,7 +121,7 @@ export class Announcements {
             } else {
                 await database.increment("announcements", id, "readCount")
                 cache.set("announcements", `${id}-${user.id}`, true)
-                logger.info("Announcements.setReadCount", id, logHelper.user(user))
+                logger.info("Announcements.setReadCount", id, logHelper.user(user), user.isPro ? "PRO" : "Free")
             }
         } catch (ex) {
             logger.error("Announcements.setReadCount", id, ex)
