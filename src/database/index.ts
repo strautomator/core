@@ -363,7 +363,7 @@ export class Database {
 
             // Delete documents.
             const snapshot = await filteredTable.get()
-            snapshot.forEach((doc) => doc.ref.delete())
+            snapshot.forEach(async (doc) => await doc.ref.delete())
 
             const arrLogQuery = _.flatten(where).map((i) => (_.isDate(i) ? dayjs(i).format("lll") : i))
             const logQuery = arrLogQuery.join(" ")
