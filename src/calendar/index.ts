@@ -299,6 +299,8 @@ export class Calendar {
                             arrDetails.push(subDetails.join(" - "))
                         }
                     }
+
+                    arrDetails.push(`\nhttps://www.strava.com/activities/${activity.id}`)
                 }
 
                 // Replace boolean tags with yes or no.
