@@ -170,7 +170,7 @@ export class Komoot {
             const index = data.indexOf("www.komoot.")
             if (index < 0) return null
 
-            const baseString = data.substring(index + 12, index + 100)
+            const baseString = data.substring(index + 12, index + 120)
 
             // Get the index of a new line, colon, space, or query reference, whatever comes first.
             const sepNewLine = baseString.indexOf("\n")
