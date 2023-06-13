@@ -606,7 +606,7 @@ export class GearWear {
      */
     resetTracking = async (user: UserData, config: GearWearConfig, componentName: string): Promise<void> => {
         try {
-            const component: GearWearComponent = _.find(config.components, {name: componentName})
+            const component: GearWearComponent = _.find(config.components, {name: componentName}) || _.find(config.components, {name: decodeURIComponent(componentName)})
 
             if (!component) {
                 throw new Error(`Component not found in: ${config.components.map((c) => c.name).join(", ")}`)
