@@ -361,14 +361,22 @@ export class Database {
                 filteredTable = filteredTable.where(query[0], query[1], query[2])
             }
 
-            // Delete documents.
-            const snapshot = await filteredTable.get()
-            snapshot.forEach(async (doc) => await doc.ref.delete())
-
             const arrLogQuery = _.flatten(where).map((i) => (_.isDate(i) ? dayjs(i).format("lll") : i))
             const logQuery = arrLogQuery.join(" ")
-            logger.info("Database.delete", collection, logQuery, `Deleted ${snapshot.size} documents`)
 
+            // Fetch snapshot to be deleted.
+            const snapshot = await filteredTable.get()
+            if (snapshot.size == 0) {
+                logger.info("Database.delete", collection, logQuery, "No documents to delete")
+                return 0
+            }
+
+            // Batch delete documents.
+            const batch = this.firestore.batch()
+            snapshot.forEach(async (doc) => batch.delete(doc.ref))
+            await batch.commit()
+
+            logger.info("Database.delete", collection, logQuery, `Deleted ${snapshot.size} documents`)
             return snapshot.size
         }
     }
