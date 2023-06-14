@@ -45,7 +45,7 @@
         "uaBrowser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
         // Start throttling requests if we reach over 90% of the extracted quota. Value in percent (0 to 100).
         "backoffThreshold": 90,
-        // Forced back-off base delay when we're about to hit API rate limits.
+        // Back-off base delay when we're about to hit API rate limits.
         // Value set in milliseconds, will increase as we get closer to the limits.
         "backoffInterval": 500,
         // Retry axios requests after 2 seconds. Value set in milliseconds.
@@ -560,9 +560,9 @@
             "baseUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/",
             /// Visual Crossing API rate limits.
             "rateLimit": {
-                "maxConcurrent": 4,
-                "perHour": 450,
-                "perDay": 900
+                "maxConcurrent": 2,
+                "perHour": 400,
+                "perDay": 800
             },
             // The Visual Crossing API secret MUST be set via secret settings or
             // via the SMU_weather_visualcrossing_secret environment variable.
