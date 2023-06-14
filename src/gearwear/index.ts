@@ -513,13 +513,15 @@ export class GearWear {
                             continue
                         }
 
-                        const historyLength = component.history ? component.history.length : 0
+                        const historyLength = component.history?.length || 0
                         const minReminderDate = now.subtract(settings.gearwear.reminderDays, "days")
                         const isReminder = dayjs.utc(component.dateAlertSent).isBefore(minReminderDate)
 
-                        // If component was recently updated (last 2 days), then do not update the tracking
+                        // If component was recently reset, then do not update the tracking
                         // as the activity was still for the previous component.
-                        if (historyLength > 0 && component.history[historyLength - 1].date > activity.dateStart) {
+                        const historyDates = historyLength > 0 ? component.history.map((h) => dayjs(h.date).utc().valueOf()) : []
+                        const mostRecentTimestamp = _.max(historyDates) || 0
+                        if (mostRecentTimestamp >= activity.dateStart.valueOf()) {
                             logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, `Replaced recently so won't update the tracking for activity ${activity.id}`)
                             continue
                         }
