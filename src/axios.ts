@@ -33,19 +33,25 @@ export const rateLimitDelay = async (res: AxiosResponse, urlInfo: URL, rateLimit
     if (res.headers && rateLimitExtractor) {
         try {
             const usedQuota = rateLimitExtractor(res)
-            const modQuota = usedQuota % 5
+            const modQuota = usedQuota % 2
 
-            if (usedQuota > settings.axios.backoffThreshold / 3 && (modQuota === 0 || modQuota === 3)) {
+            if (usedQuota > settings.axios.backoffThreshold / 2 && modQuota == 0) {
                 logger.warn("Axios.rateLimitDelay", logUrl, `Used ${usedQuota.toFixed(1)}% of API quota`)
             }
-            if (usedQuota > settings.axios.backoffThreshold) {
-                const multiplier = (usedQuota - settings.axios.backoffThreshold) * 1.3
-                await jaul.io.sleep(Math.round(settings.axios.backoffInterval * multiplier))
+            if (usedQuota >= settings.axios.backoffThreshold) {
+                const multiplier = (usedQuota - settings.axios.backoffThreshold) * 1.5
+                const delay = Math.round(settings.axios.backoffInterval * multiplier)
+                await jaul.io.sleep(delay)
+
+                if (modQuota == 1) {
+                    logger.warn("Axios.rateLimitDelay", logUrl, `Used ${usedQuota.toFixed(1)}% of API quota`, `Delayed ${delay}ms`)
+                }
             }
         } catch (headerEx) {
             logger.warn("Axios.rateLimitDelay", logUrl, "Failed to extract the rate limits", headerEx)
         }
-    } else if (res.status == 429) {
+    }
+    if (res.status == 429) {
         logger.warn("Axios.rateLimitDelay", logUrl, "Rate limited")
         await jaul.io.sleep(settings.axios.retryInterval)
     }
