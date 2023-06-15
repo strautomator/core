@@ -55,11 +55,11 @@ export class StravaPerformance {
             // at least 1/2 of the default fitness level weeks value.
             const minDate = now.subtract(settings.strava.fitnessLevel.weeks / 2, "weeks")
             if (activities.length >= 4 && activities.find((a) => minDate.isAfter(a.dateStart))) {
-                const currentLevel = user.fitnessLevel
                 const fitnessLevel = await this.estimateFitnessLevel(user, activities)
 
-                if (fitnessLevel != currentLevel) {
-                    await users.update({id: user.id, displayName: user.displayName, fitnessLevel: user.fitnessLevel})
+                if (fitnessLevel != user.fitnessLevel) {
+                    user.fitnessLevel = fitnessLevel
+                    await users.update({id: user.id, displayName: user.displayName, fitnessLevel: fitnessLevel})
                 }
             }
         } catch (ex) {
