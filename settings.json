@@ -564,7 +564,7 @@
             "baseUrl": "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/",
             /// Visual Crossing API rate limits.
             "rateLimit": {
-                "maxConcurrent": 2,
+                "maxConcurrent": 1,
                 "perHour": 400,
                 "perDay": 800
             },
