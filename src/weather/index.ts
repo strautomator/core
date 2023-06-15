@@ -230,14 +230,18 @@ export class Weather {
                 }
             } catch (ex) {
                 const failedProviderName = providerModule.name
+                const status = ex.response?.status || 500
                 providerModule.stats.repeatedErrors++
 
-                // Daily rate limit reached, or too many consecutive errors?
-                if (ex.response?.status == 402) {
+                // Rate limits reached, or too many consecutive errors?
+                if (status == 402) {
                     providerModule.disabledTillDate = utcNow.endOf("day").add(1, "hour").toDate()
                     logger.warn("Weather.getLocationWeather", failedProviderName, "Daily quota reached")
-                } else if (providerModule.stats.repeatedErrors > settings.weather.maxRepeatedErrors) {
+                } else if (status == 429) {
                     providerModule.disabledTillDate = utcNow.add(1, "hour").toDate()
+                    logger.warn("Weather.getLocationWeather", failedProviderName, "Hourly quota reached")
+                } else if (providerModule.stats.repeatedErrors >= settings.weather.maxRepeatedErrors) {
+                    providerModule.disabledTillDate = utcNow.add(8, "hours").toDate()
                     providerModule.stats.repeatedErrors = 0
                     logger.warn("Weather.getLocationWeather", failedProviderName, "Temporarily disabled, too many repeated errors")
                 }
