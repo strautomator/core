@@ -367,12 +367,9 @@
             "timeout": 5000
         }
     },
-
     "routes": {
-        // Total estimated route times considering brakes, will add a total of 5% to the
-        // estimated moving time and another 30min (in seconds) for every 3 hours of riding / running.
-        "estimatedTimeMultiplier": 1.05,
-        "extraTimePer3Hours": 1800,
+        // Total estimated route will add 40min (in seconds) for every 3 hours of riding / running..
+        "extraTimePer3Hours": 2400,
         // A maximum of 15 routes can be zipped for downloading.
         "zipLimit": 15
     },
@@ -448,6 +445,13 @@
             "sinceLastHours": 24,
             // FTP must have changed by at least 2% to be updated automatically
             "saveThreshold": 0.02
+        },
+        "fitnessLevel": {
+            // Fitness levels will be estimated based on activities from the last 12 weeks by default.
+            "weeks": 12,
+            // Minimum activity time (ride and run), in seconds, to consider for the fitness level estimation.
+            "minRunTime": 720,
+            "minRideTime": 1200
         },
         "processedActivities": {
             // Processed activity details will be deleted from the database after 2 years. Value set in days.
