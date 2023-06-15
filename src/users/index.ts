@@ -620,10 +620,13 @@ export class Users {
                     logs.push("Suspended")
                 }
                 if (user.dateLastActivity) {
-                    logs.push(dayjs(user.dateLastActivity).format("lll"))
+                    logs.push(`Last activity: ${dayjs(user.dateLastActivity).utc().format("lll")}`)
                 }
                 if (user.ftpStatus) {
-                    logs.push("FTP")
+                    logs.push(`Previous FTP: ${user.ftpStatus.previousFtp || 0}`)
+                }
+                if (user.fitnessLevel) {
+                    logs.push(`Fitness level: ${user.fitnessLevel}`)
                 }
                 if (user.calendarTemplate) {
                     logs.push("Calendar template")
@@ -632,10 +635,10 @@ export class Users {
                     logs.push("Strava tokens")
                 }
                 if (user.profile) {
-                    if (user.profile.bikes && user.profile.bikes.length > 0) {
+                    if (user.profile.bikes?.length > 0) {
                         logs.push("Bikes")
                     }
-                    if (user.profile.shoes && user.profile.shoes.length > 0) {
+                    if (user.profile.shoes?.length > 0) {
                         logs.push("Shoes")
                     }
                 }
