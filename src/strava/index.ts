@@ -6,7 +6,7 @@ import stravaActivities from "./activities"
 import stravaActivityProcessing from "./activityprocessing"
 import stravaAthletes from "./athletes"
 import stravaClubs from "./clubs"
-import stravaFtp from "./ftp"
+import stravaPerformance from "./performance"
 import stravaRoutes from "./routes"
 import stravaWebhooks from "./webhooks"
 import api from "./api"
@@ -48,9 +48,9 @@ export class Strava {
     clubs = stravaClubs
 
     /**
-     * FTP methods.
+     * Performance methods.
      */
-    ftp = stravaFtp
+    performance = stravaPerformance
 
     /**
      * Route methods.

@@ -1,5 +1,6 @@
 // Strautomator Core: Strava types
 
+import {Route} from "../routes/types"
 import {KomootRoute} from "../komoot/types"
 import dayjs from "dayjs"
 
@@ -291,6 +292,8 @@ export interface StravaProfile {
     ftp?: number
     /** User's weight (in kg). */
     weight?: number
+    /** User biological sex. */
+    sex?: "M" | "F"
 }
 
 /**
@@ -475,33 +478,15 @@ export interface StravaClubEvent {
 /**
  * A strava Route.
  */
-export interface StravaRoute {
-    /** ID of the route. */
-    id: string
+export interface StravaRoute extends Route {
     /** String version of the route ID, must be used on the API endpoints. */
     idString?: string
-    /** Name of the route. */
-    name?: string
-    /** Description of the route. */
-    description?: string
     /** Ride or Run. */
     type?: StravaSport
-    /** Route distance. */
-    distance?: number
     /** Total elevation gain. */
     elevationGain?: number
-    /** Estimated moving time in seconds. */
-    movingTime?: number
-    /** Estimated total time with breaks, in seconds. */
-    totalTime?: number
     /** Route encoded polyline. */
     polyline?: string
-    /** Starting location as coordinates. */
-    locationStart?: [number, number]
-    /** Starting location as coordinates. */
-    locationEnd?: [number, number]
-    /** Mid point location as coordinates. */
-    locationMid?: [number, number]
     /** Terrain type. */
     terrain?: StravaRouteTerrain
 }
@@ -685,6 +670,17 @@ export enum StravaMapStyle {
     BlackLivesMatter = "black_lives_matter",
     Pride = "pride",
     SupportUkraine = "ukraine"
+}
+
+/**
+ * Calculated fitness levels, from 1 (untrained) to 5 (elite).
+ */
+export enum StravaFitnessLevel {
+    Untrained = 1,
+    Average = 2,
+    Athletic = 3,
+    Pro = 4,
+    Elite = 5
 }
 
 /**

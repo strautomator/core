@@ -5,7 +5,7 @@ import {RecipeData} from "../recipes/types"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
-import stravaFtp from "./ftp"
+import stravaPerformance from "./performance"
 import database from "../database"
 import eventManager from "../eventmanager"
 import notifications from "../notifications"
@@ -275,7 +275,7 @@ export class StravaActivityProcessing {
                 const powerIncreased = activity.hasPower && activity.wattsWeighted >= user.profile.ftp
                 const isRecent = dayjs().utc().subtract(2, "days").isBefore(activity.dateStart)
                 if (shouldUpdateFtp && powerIncreased && isRecent) {
-                    await stravaFtp.processFtp(user, [activity], true)
+                    await stravaPerformance.processPerformance(user, [activity], true)
                 }
             } catch (ftpEx) {
                 logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Failed to auto-update FTP", ftpEx)
