@@ -172,7 +172,7 @@ export class Spotify {
             // New token details.
             const tokens: SpotifyTokens = {
                 accessToken: res.access_token,
-                expiresAt: now.add(res.expires_in - 120, "seconds").unix()
+                expiresAt: now.add(res.expires_in - 180, "seconds").unix()
             }
             if (res.refresh_token) {
                 tokens.refreshToken = res.refresh_token
@@ -223,7 +223,7 @@ export class Spotify {
             // New token details.
             const tokens: SpotifyTokens = {
                 accessToken: res.access_token,
-                expiresAt: now.add(res.expires_in - 120, "seconds").unix()
+                expiresAt: now.add(res.expires_in - 180, "seconds").unix()
             }
             if (res.refresh_token) {
                 tokens.refreshToken = res.refresh_token

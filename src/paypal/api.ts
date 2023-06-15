@@ -108,7 +108,7 @@ export class PayPalAPI {
             // Set auth token and expiry timestamp.
             this.auth = {
                 accessToken: res.access_token,
-                expiresAt: expiresIn + dayjs().unix() - 120
+                expiresAt: expiresIn + dayjs().unix() - 180
             }
 
             logger.info("PayPal.authenticate", "Got a new token")

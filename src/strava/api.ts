@@ -111,7 +111,7 @@ export class StravaAPI {
             const tokens: StravaTokens = {
                 accessToken: res.access_token,
                 refreshToken: res.refresh_token,
-                expiresAt: res.expires_at
+                expiresAt: res.expires_at - 180
             }
 
             if (res.athlete) {
@@ -166,7 +166,7 @@ export class StravaAPI {
             const tokens: StravaTokens = {
                 accessToken: res.access_token,
                 refreshToken: res.refresh_token,
-                expiresAt: res.expires_at
+                expiresAt: res.expires_at - 180
             }
 
             // Publish event only if noEmit is not set.
