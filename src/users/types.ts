@@ -2,7 +2,7 @@
 
 import {RecipeData} from "../recipes/types"
 import {SpotifyProfile} from "../spotify/types"
-import {StravaProfile, StravaTokens} from "../strava/types"
+import {StravaFitnessLevel, StravaProfile, StravaTokens} from "../strava/types"
 
 /**
  * Key-value list of recipes.
@@ -24,6 +24,8 @@ export interface UserData {
     isPro?: boolean
     /** User profile data from Strava. */
     profile: StravaProfile
+    /** Estimated fitness level. */
+    fitnessLevel?: StravaFitnessLevel
     /** User strava access and refresh tokens. */
     stravaTokens?: StravaTokens
     /** User email, optional. */
