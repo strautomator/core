@@ -93,7 +93,7 @@ export const axiosRequest = async (options: AxiosConfig, rateLimitExtractor?: (r
         const accessDenied = ex.response && [401, 403].includes(ex.response.status)
 
         // Abort if the stopStatus is set.
-        if (options.abortStatus && options.abortStatus.includes(ex.response.status)) {
+        if (options.abortStatus?.includes(ex.response.status)) {
             return null
         }
 
