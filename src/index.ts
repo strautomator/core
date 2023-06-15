@@ -62,6 +62,8 @@ import {Maps} from "./maps"
 export const maps: Maps = Maps.Instance
 import {PayPal} from "./paypal"
 export const paypal: PayPal = PayPal.Instance
+import {Routes} from "./routes"
+export const routes: Routes = Routes.Instance
 import {Strava} from "./strava"
 export const strava: Strava = Strava.Instance
 import {Komoot} from "./komoot"
@@ -98,6 +100,7 @@ export const events: EventManager = EventManager.Instance
 // Export types and helpers.
 export * from "./gearwear/types"
 export * from "./recipes/types"
+export * from "./routes/types"
 export * from "./strava/types"
 export * from "./komoot/types"
 export * from "./spotify/types"
