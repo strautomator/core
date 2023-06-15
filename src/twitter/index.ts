@@ -5,6 +5,7 @@ import {transformActivityFields} from "../strava/utils"
 import {UserData} from "../users/types"
 import {TwitterApi} from "twitter-api-v2"
 import * as messages from "./messages"
+import database from "../database"
 import eventManager from "../eventmanager"
 import _ from "lodash"
 import jaul = require("jaul")
@@ -62,10 +63,19 @@ export class Twitter {
                 accessSecret: settings.twitter.api.accessSecret
             })
 
+            // Load data from database cache first.
+            const fromCache = await database.appState.get("twitter")
+            if (fromCache) {
+                this.screenName = fromCache.screenName
+                logger.info("Twitter.init", `Screen name from cache: ${this.screenName}`)
+            }
+
             // Get user screen name straight away, but only if quickStart was not set.
             if (!quickStart) {
+                await this.client.appLogin()
                 await this.getAccountDetails()
-            } else {
+            } else if (!this.screenName) {
+                await this.client.appLogin()
                 this.getAccountDetails()
             }
 
@@ -144,12 +154,15 @@ export class Twitter {
      */
     getAccountDetails = async (): Promise<any> => {
         try {
-            await this.client.appLogin()
-
             const res = await this.client.readOnly.v2.me()
-            this.screenName = res.data.username
 
-            logger.info("Twitter.getAccountDetails", `Logged in as ${this.screenName}`)
+            // Screen name updated? Save to database cache.
+            if (this.screenName != res.data.username) {
+                this.screenName = res.data.username
+                await database.appState.set("twitter", {screenName: res.data.username})
+            }
+
+            logger.info("Twitter.getAccountDetails", `Logged as ${this.screenName}`)
             return res
         } catch (ex) {
             logger.error("Twitter.getAccountDetails", ex)
