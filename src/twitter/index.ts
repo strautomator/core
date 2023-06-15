@@ -101,7 +101,7 @@ export class Twitter {
             let messageTemplates: string[] = null
 
             // Rides.
-            if (activity.type == "Ride") {
+            if (activity.sportType.includes("Ride")) {
                 if (activity.distance >= rideDistance) {
                     messageTemplates = messages.RideLongDistance
                 } else if (activity.speedAvg >= rideSpeed && activity.distance >= 40) {
@@ -110,7 +110,7 @@ export class Twitter {
             }
 
             // Runs.
-            else if (activity.type == "Run") {
+            else if (activity.sportType.includes("Run") || activity.sportType == "Hike") {
                 if (activity.distance >= runDistance) {
                     messageTemplates = messages.RunLongDistance
                 } else if (activity.speedAvg >= runSpeed && activity.distance >= 5) {

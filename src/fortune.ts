@@ -61,8 +61,8 @@ export const fortuneCookies: string[] = [
 export const getActivityFortune = async (user: UserData, activity: StravaActivity): Promise<string> => {
     const now = dayjs.utc()
     const imperial = user.profile.units == "imperial"
-    const isRide = activity.type == StravaSport.Ride || activity.type == StravaSport.VirtualRide || activity.type == StravaSport.EBikeRide
-    const isRun = activity.type == StravaSport.Run || activity.type == StravaSport.Walk
+    const isRide = activity.sportType == StravaSport.Ride || activity.sportType == StravaSport.VirtualRide || activity.sportType == StravaSport.EBikeRide
+    const isRun = activity.sportType == StravaSport.Run || activity.sportType == StravaSport.Walk
     let prefixes = ["", "delightful", "amazing", "great", "", "just your regular", "crazy", "superb", "", "magnificent", "marvellous", "exotic", ""]
     let names = []
     let uniqueNames = []
@@ -105,7 +105,7 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     const elevationGainR = Math.round(activity.elevationGain)
 
     // Virtual ride prefix.
-    if (activity.type == StravaSport.VirtualRide) {
+    if (activity.sportType == StravaSport.VirtualRide) {
         prefixes.push("virtual:")
         prefixes.unshift("virtual:")
     }

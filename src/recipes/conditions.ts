@@ -229,7 +229,7 @@ export const checkSportType = (activity: StravaActivity, condition: RecipeCondit
     let valid = false
 
     // Sport and parsed condition value.
-    const sportType = activity.sportType ? activity.sportType.toString() : ""
+    const sportType = activity.sportType?.toString() || ""
     const arrValue = condition.value.toString().split(",")
 
     // Check sport type.

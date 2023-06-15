@@ -301,8 +301,8 @@ export const mapStyleAction = async (user: UserData, activity: StravaActivity, r
  */
 export const gearAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        const isRide = activity.type == "Ride" || activity.type == "VirtualRide" || activity.type == "EBikeRide"
-        const isRun = activity.type == "Run" || activity.type == "VirtualRun" || activity.type == "Walk"
+        const isRide = activity.sportType.includes("Ride")
+        const isRun = activity.sportType.includes("Run") || activity.sportType == "Walk" || activity.sportType == "Hike"
         const bike = _.find(user.profile.bikes, {id: action.value})
         const shoe = _.find(user.profile.shoes, {id: action.value})
         const none: StravaGear = action.value === "none" ? {id: "none", name: "None"} : null
@@ -312,7 +312,7 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
         if (!gear) {
             throw new Error(`Gear ID ${action.value} not found`)
         } else if ((isRide && shoe) || (isRun && bike)) {
-            logger.info("Recipes.gearAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Gear ${action.value} not valid for type ${activity.type}`)
+            logger.info("Recipes.gearAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Gear ${action.value} not valid for type ${activity.sportType}`)
             return false
         } else {
             activity.gear = gear
