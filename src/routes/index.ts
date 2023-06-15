@@ -30,10 +30,11 @@ export class Routes {
     process = async (user: UserData, route: Route): Promise<void> => {
         try {
             const multipliers = {
-                [StravaFitnessLevel.Untrained]: 1.14,
+                [StravaFitnessLevel.Untrained]: 1.12,
                 [StravaFitnessLevel.Average]: 1.06,
                 [StravaFitnessLevel.Athletic]: 1.02,
-                [StravaFitnessLevel.Pro]: 0.96
+                [StravaFitnessLevel.Pro]: 0.99,
+                [StravaFitnessLevel.Elite]: 0.97
             }
 
             // No total time set? Estimate it now, using different multipliers depending on the user's fitness level.
