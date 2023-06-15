@@ -4,6 +4,7 @@ import {KomootRoute} from "./types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import database from "../database"
+import routes from "../routes"
 import dayjs from "../dayjs"
 import _ from "lodash"
 import cache = require("bitecache")
@@ -99,6 +100,9 @@ export class Komoot {
 
             const iQuery = routeUrl.indexOf("?")
             const query = iQuery > 0 ? routeUrl.substring(iQuery) : ""
+
+            // Set the route URL and request it from Komoot.
+            result.url = `${settings.komoot.baseUrl}tour/${tourId}${query}`
             const html = await this.makeRequest(`tour/${tourId}${query}`)
             if (!html) {
                 throw new Error(`Could not fetch tour ${tourId}, likely it's private`)
@@ -128,22 +132,19 @@ export class Komoot {
                 result.distance = parseFloat(result.distance.toFixed(1))
             }
 
-            // Try parsing the duration. As durations in Kommot are usually VERY conservative,
-            // we're removing around 6% of the final estimated time here.
+            // Try parsing the duration. Durations in Kommot are usually VERY conservative,
+            // we're removing around 2% of the final estimated moving time here.
             const iDuration = html.indexOf("Duration: ") + 10
             if (iDuration > 10) {
                 const htmlDuration = html.substring(iDuration, html.indexOf(" h", iDuration))
                 const arrDuration = htmlDuration.trim().split(":")
-                result.movingTime = parseInt(arrDuration[0]) * 60 * 54 + parseInt(arrDuration[1]) * 54
-
-                // Set total time rounded to 15 minutes.
-                const secondsEstimated = result.movingTime * settings.routes.estimatedTimeMultiplier
-                const secondsExtraBreaks = Math.floor(result.movingTime / 10800) * settings.routes.extraTimePer3Hours
-                const duration = dayjs.duration(secondsEstimated + secondsExtraBreaks, "seconds")
-                const toQuarter = 15 - (duration.minutes() % 15)
-                result.totalTime = duration.add(toQuarter, "minutes").asSeconds()
+                result.movingTime = parseInt(arrDuration[0]) * 60 * 58 + parseInt(arrDuration[1]) * 58
             }
 
+            // Process additional details.
+            routes.process(user, result)
+
+            // Set expiration date.
             if (result.distance || result.totalTime) {
                 result.dateExpiry = now.add(settings.komoot.maxCacheDuration, "seconds").toDate()
             } else {

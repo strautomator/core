@@ -4,10 +4,10 @@ import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaLap, Stra
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import maps from "../maps"
+import routes from "../routes"
 import dayjs from "../dayjs"
 import _ from "lodash"
 import polyline = require("@mapbox/polyline")
-const settings = require("setmeup").settings
 
 // Feet and miles ratio.
 const rFeet = 3.28084
@@ -327,6 +327,11 @@ export function toStravaProfile(data: any): StravaProfile {
         }
     }
 
+    // Sex defined?
+    if (data.sex) {
+        profile.sex = data.sex
+    }
+
     return profile
 }
 
@@ -505,19 +510,13 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
         distance: Math.round(distance),
         elevationGain: elevationGain,
         polyline: data.map.polyline || data.map.summary_polyline || null,
-        type: data.type == 1 ? StravaSport.Ride : StravaSport.Run
+        type: data.type == 1 ? StravaSport.Ride : StravaSport.Run,
+        url: `https://strava.com/routes/${data.id_str}`
     }
 
     // Estimated moving time available? Also estimate the total time.
     if (data.estimated_moving_time) {
         route.movingTime = data.estimated_moving_time
-
-        // Set total time rounded to 15 minutes.
-        const secondsEstimated = route.movingTime * settings.routes.estimatedTimeMultiplier
-        const secondsExtraBreaks = Math.floor(route.movingTime / 10800) * settings.routes.extraTimePer3Hours
-        const duration = dayjs.duration(secondsEstimated + secondsExtraBreaks, "seconds")
-        const toQuarter = 15 - (duration.minutes() % 15)
-        route.totalTime = duration.add(toQuarter, "minutes").asSeconds()
     }
 
     // Terrain type available?
@@ -533,6 +532,9 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
         route.locationEnd = coordinates[coordinates.length - 1] as [number, number]
     }
 
+    // Process additional route details.
+    routes.process(user, route)
+
     return route
 }
 
@@ -544,21 +546,28 @@ export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
     const activity = source as StravaActivity
 
     switch (activity.sportType) {
+        case "Ride":
+            return "🚴"
         case "GravelRide":
+            return "🚵‍♂️"
         case "MountainBikeRide":
             return "🚵"
-    }
-
-    switch (source.type) {
+        case "EMountainBikeRide":
+            return "🚵‍♀️"
+        case "EBikeRide":
+            return "🚴‍♀️"
+        case "VirtualRide":
+        case "Handcycle":
+        case "Velomobile":
+            return "🚲"
         case "Run":
-        case "VirtualRun":
+            return "🏃‍♂️"
+        case "TrailRun":
             return "🏃"
+        case "VirtualRun":
+            return "👟"
         case "Walk":
             return "🚶"
-        case "Ride":
-        case "EBikeRide":
-        case "VirtualRide":
-            return "🚴"
         case "Swim":
             return "🏊"
         case "AlpineSki":
@@ -578,9 +587,12 @@ export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
         case "Windsurf":
             return "🏄"
         case "Canoeing":
+        case "Kayaking":
             return "🛶"
         case "Rowing":
             return "🚣"
+        case "VirtualRow":
+            return "🚣🏽‍♂️"
         case "Sail":
             return "⛵"
         case "Golf":
@@ -588,17 +600,32 @@ export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
         case "Soccer":
             return "⚽"
         case "Crossfit":
+            return "🏋🏻‍♀️"
         case "Elliptical":
         case "WeightTraining":
             return "🏋"
+        case "HighIntensityIntervalTraining":
+            return "🏋️‍♂️"
         case "Yoga":
             return "🧘"
+        case "Pilates":
+            return "🧘🏻‍♀️"
         case "Wheelchair":
             return "🧑‍🦽"
         case "Hike":
             return "🥾"
+        case "Badminton":
+            return "🏸"
+        case "Tennis":
+        case "Squash":
+            return "🎾"
+        case "TableTennis":
+        case "Racquetball":
+            return "🏓"
+        case "Pickleball":
+            return "🏏"
         default:
-            return "👤"
+            return "🚶🏽"
     }
 }
 
@@ -613,7 +640,7 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
     for (let prop of recipePropertyList) {
         let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
 
-        // Farenheit temperature suffix (special case).
+        // Fahrenheit temperature suffix (special case).
         if (prop.fSuffix && user.preferences.weatherUnit == "f") {
             suffix = prop.fSuffix
         }
