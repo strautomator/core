@@ -1,5 +1,6 @@
 // Strautomator Core: Twitter
 
+import {TwitterState} from "./types"
 import {StravaActivity} from "../strava/types"
 import {transformActivityFields} from "../strava/utils"
 import {UserData} from "../users/types"
@@ -10,6 +11,7 @@ import eventManager from "../eventmanager"
 import _ from "lodash"
 import jaul = require("jaul")
 import logger = require("anyhow")
+import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
@@ -29,9 +31,16 @@ export class Twitter {
     client: TwitterApi
 
     /**
-     * The Twitter handle name.
+     * Twitter state details.
      */
-    screenName: string
+    state: TwitterState = {}
+
+    /**
+     * Check if the client is currently rate limited.
+     */
+    get isRateLimited() {
+        return this.state.dateRateLimitReset && dayjs.utc().isAfter(this.state.dateRateLimitReset)
+    }
 
     // INIT
     // --------------------------------------------------------------------------
@@ -64,19 +73,18 @@ export class Twitter {
             })
 
             // Load data from database cache first.
-            const fromCache = await database.appState.get("twitter")
+            const fromCache: TwitterState = await database.appState.get("twitter")
             if (fromCache) {
-                this.screenName = fromCache.screenName
-                logger.info("Twitter.init", `Screen name from cache: ${this.screenName}`)
+                this.state = fromCache
+                logger.debug("Twitter.init", `Screen name from cache: ${this.state.screenName}`)
             }
 
             // Get user screen name straight away, but only if quickStart was not set.
             if (!quickStart) {
                 await this.client.appLogin()
                 await this.getAccountDetails()
-            } else if (!this.screenName) {
-                await this.client.appLogin()
-                this.getAccountDetails()
+            } else {
+                this.client.appLogin()
             }
 
             // Strava events.
@@ -153,19 +161,31 @@ export class Twitter {
      * Get details for the logged account.
      */
     getAccountDetails = async (): Promise<any> => {
+        if (this.isRateLimited) {
+            logger.warn("Twitter.getAccountDetails", "Currently rate limited, abort")
+            return
+        }
+
+        // Stop here if the account details were recently refreshed.
+        const minDate = dayjs().subtract(settings.twitter.accountRefreshInterval, "seconds")
+        if (this.state.dateAccountRefreshed && minDate.isBefore(this.state.dateAccountRefreshed)) {
+            logger.debug("Twitter.getAccountDetails", "Recently refreshed, abort")
+            return
+        }
+
         try {
             const res = await this.client.readOnly.v2.me()
 
-            // Screen name updated? Save to database cache.
-            if (this.screenName != res.data.username) {
-                this.screenName = res.data.username
-                await database.appState.set("twitter", {screenName: res.data.username})
-            }
+            // Update state data.
+            this.state.screenName = res.data.username
+            this.state.dateAccountRefreshed = new Date()
+            await database.appState.set("twitter", this.state)
 
-            logger.info("Twitter.getAccountDetails", `Logged as ${this.screenName}`)
+            logger.info("Twitter.getAccountDetails", `Logged as ${this.state.screenName}`)
             return res
         } catch (ex) {
             logger.error("Twitter.getAccountDetails", ex)
+            await this.checkRateLimit(ex)
         }
     }
 
@@ -177,11 +197,17 @@ export class Twitter {
      * @param status Status to be posted to Twitter.
      */
     postStatus = async (status: string): Promise<void> => {
+        if (this.isRateLimited) {
+            logger.warn("Twitter.postStatus", "Currently rate limited, abort", status)
+            return
+        }
+
         try {
             await this.client.readWrite.v2.tweet(status)
             logger.info("Twitter.postStatus", status)
         } catch (ex) {
             logger.error("Twitter.postStatus", status, ex)
+            await this.checkRateLimit(ex)
         }
     }
 
@@ -202,6 +228,38 @@ export class Twitter {
             await this.postStatus(`${message} https://strava.com/activities/${activity.id}`)
         } catch (ex) {
             logger.error("Twitter.postActivity", logHelper.user(user), `Activity ${sourceActivity.id}`, ex)
+        }
+    }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Check exception details to handle rate limits.
+     * @param err Exception thrown by the Twitter API.
+     */
+    checkRateLimit = async (err: any): Promise<void> => {
+        try {
+            if (!err || !err.rateLimit) {
+                logger.debug("Twitter.checkRateLimit", "Last error is not rate limit related")
+                return
+            }
+
+            const now = dayjs.utc().unix()
+
+            // Check if we have reached the API rate limits.
+            if (err.rateLimit.remaining < 2 && now < err.rateLimit.reset) {
+                const dateReset = dayjs.unix(err.rateLimit.reset).utc()
+
+                // Rate limited, save to the database.
+                if (!this.state.dateRateLimitReset || dateReset.isAfter(this.state.dateRateLimitReset)) {
+                    logger.warn("Twitter.checkRateLimit", `Rate limited, will reset at ${dateReset.format("YYYY-MM-DD HH:mm:ss")}`)
+                    this.state.dateRateLimitReset = dateReset.toDate()
+                    await database.appState.set("twitter", this.state)
+                }
+            }
+        } catch (ex) {
+            logger.error("Twitter.checkRateLimit", ex)
         }
     }
 }
