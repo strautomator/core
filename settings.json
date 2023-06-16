@@ -477,7 +477,9 @@
     },
     "twitter": {
         // Around 85% chances of posting interesting activities on Twitter for users that have opted in.
-        "activityThreshold": 0.85
+        "activityThreshold": 0.85,
+        // Refresh account details max 4 times a day, value set in seconds.
+        "accountRefreshInterval": 21600
     },
     "users": {
         // Consider users idle (for deletion) if they are suspended for longer than 6 months or
