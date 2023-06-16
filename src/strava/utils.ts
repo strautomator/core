@@ -543,9 +543,9 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
  * @param source The relevant Strava activity or club event.
  */
 export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
-    const activity = source as StravaActivity
+    const sportType = source["type"] || source["sportType"]
 
-    switch (activity.sportType) {
+    switch (sportType) {
         case "Ride":
             return "🚴"
         case "GravelRide":
