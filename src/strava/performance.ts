@@ -57,7 +57,7 @@ export class StravaPerformance {
             if (activities.length >= 4 && activities.find((a) => minDate.isAfter(a.dateStart))) {
                 const fitnessLevel = await this.estimateFitnessLevel(user, activities)
 
-                if (fitnessLevel != user.fitnessLevel) {
+                if (user.fitnessLevel != fitnessLevel) {
                     user.fitnessLevel = fitnessLevel
                     await users.update({id: user.id, displayName: user.displayName, fitnessLevel: fitnessLevel})
                 }
