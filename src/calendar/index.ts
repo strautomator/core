@@ -397,7 +397,7 @@ export class Calendar {
                     // Club has a route set? Fetch the full route details. PRO users will also
                     // get distance and times from Komoot routes.
                     if (hasFutureDate) {
-                        const idString = (clubEvent.route as StravaRoute)?.idString
+                        const idString = clubEvent?.route ? clubEvent.route["idString"] : null
                         if (idString) {
                             try {
                                 clubEvent.route = await strava.routes.getRoute(user, idString)
