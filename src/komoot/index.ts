@@ -171,9 +171,9 @@ export class Komoot {
                 route.locationStart = [json.start_point.lat, json.start_point.lng]
             }
             if (json.path) {
-                const coordinatesMapper = (p) => [p.location.lat, p.location.lng]
-                route.polyline = maps.polylines.encode(json.path.map(coordinatesMapper))
-                route.locationEnd = json.path.pop().map(coordinatesMapper)
+                const lastPath = json.path[json.path.length - 1]
+                route.polyline = maps.polylines.encode(json.path.map((p) => [p.location.lat, p.location.lng]))
+                route.locationEnd = [lastPath.location.lat, lastPath.location.lng]
             }
 
             // Default expiration time.
