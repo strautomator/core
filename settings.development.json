@@ -49,6 +49,11 @@
             "urlToken": "super-secret"
         }
     },
+    "komoot": {
+        // Shorter Komoot cache on dev.
+        "cacheDuration": 60,
+        "maxCacheDuration": 120
+    },
     "paypal": {
         "api": {
             "baseUrl": "https://api.sandbox.paypal.com/v1/",
@@ -87,10 +92,11 @@
         },
         // Shorter cache durations on dev.
         "cacheDuration": {
-            "athletes-stats": 20,
-            "clubs": 60,
-            "clubs-group-events": 60,
-            "routes": 60
+            "activities-streams": 120,
+            "athletes-stats": 10,
+            "clubs": 20,
+            "clubs-group-events": 20,
+            "routes": 20
         },
         // Faster delayed processing on dev, just 2 minutes.
         "processingQueue": {
