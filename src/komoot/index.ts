@@ -66,6 +66,8 @@ export class Komoot {
      * @param routeUrl The Komoot route URL.
      */
     getRoute = async (user: UserData, routeUrl: string): Promise<KomootRoute> => {
+        let fromCache: KomootRoute
+
         try {
             if (!routeUrl || !routeUrl.includes("/tour/")) {
                 throw new Error("Invalid tour URL")
@@ -86,13 +88,13 @@ export class Komoot {
             // Check if that URL was previously unsuccessful.
             const invalidCache = cache.get("komoot-invalid", routeUrl)
             if (invalidCache) {
-                logger.info("Komoot.getRoute", tourId || routeUrl, `Marked as invalid, won't fetch`)
+                logger.info("Komoot.getRoute", tourId || routeUrl, "Marked as invalid, won't fetch")
                 return null
             }
 
             // Check if route details are available in the database cache first.
-            const fromCache: KomootRoute = await database.get("komoot", tourId)
-            if (fromCache && dayjs(fromCache.dateCached).add(settings.komoot.maxCacheDuration, "seconds").isAfter(now)) {
+            fromCache = await database.get("komoot", tourId)
+            if (fromCache && dayjs(fromCache.dateCached).add(settings.komoot.cacheDuration, "seconds").isAfter(now)) {
                 logger.info("Komoot.getRoute.fromCache", tourId, `Distance: ${fromCache.distance}km`, `Duration: ${fromCache.totalTime}s`)
                 return fromCache
             }
@@ -141,6 +143,11 @@ export class Komoot {
 
             return result
         } catch (ex) {
+            if (fromCache) {
+                logger.error("Komoot.getRoute", logHelper.user(user), routeUrl, ex, "Will return cached data")
+                return fromCache
+            }
+
             logger.error("Komoot.getRoute", logHelper.user(user), routeUrl, ex)
             cache.set("komoot-invalid", routeUrl, true)
             return null
@@ -153,9 +160,8 @@ export class Komoot {
      */
     parseRouteFromApi = async (route: KomootRoute): Promise<void> => {
         try {
-            const apiUrl = `${settings.komoot.api.baseUrl}tours/${route.id}`
-
-            const json = await this.makeRequest(route.token ? apiUrl + `?share_token=${route.token}` : apiUrl)
+            const baseUrl = `${settings.komoot.api.baseUrl}tours/${route.id}`
+            const json = await this.makeRequest(route.token ? baseUrl + `?share_token=${route.token}` : baseUrl)
             if (!json) {
                 throw new Error("Could not extract tour data from API")
             }
@@ -170,14 +176,23 @@ export class Komoot {
             if (json.start_point) {
                 route.locationStart = [json.start_point.lat, json.start_point.lng]
             }
-            if (json.path) {
-                const lastPath = json.path[json.path.length - 1]
-                route.polyline = maps.polylines.encode(json.path.map((p) => [p.location.lat, p.location.lng]))
-                route.locationEnd = [lastPath.location.lat, lastPath.location.lng]
+
+            // Now try fetching the coordinates.
+            try {
+                const coordinatesJson = await this.makeRequest(route.token ? baseUrl + `/coordinates?share_token=${route.token}` : baseUrl + "/coordinates")
+                if (coordinatesJson) {
+                    const midPath = coordinatesJson.items[Math.round(json.path.length / 2)]
+                    const lastPath = coordinatesJson.items[json.path.length - 1]
+                    route.locationMid = [midPath.lat, midPath.lng]
+                    route.locationEnd = [lastPath.lat, lastPath.lng]
+                    route.polyline = maps.polylines.encode(coordinatesJson.items.map((p) => [p.lat, p.lng]))
+                }
+            } catch (innerEx) {
+                logger.error("Komoot.parseRouteFromApi", route.id, "Failed to fetch coordinates", innerEx)
             }
 
-            // Default expiration time.
-            route.dateExpiry = dayjs().add(settings.komoot.cacheDuration, "seconds").toDate()
+            // Maximum expiration time.
+            route.dateExpiry = dayjs().add(settings.komoot.maxCacheDuration, "seconds").toDate()
         } catch (ex) {
             logger.error("Komoot.parseRouteFromApi", route.id, ex)
         }
