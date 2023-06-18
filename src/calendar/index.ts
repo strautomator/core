@@ -3,7 +3,7 @@
 import {CalendarOptions} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
-import {StravaClub, StravaRoute} from "../strava/types"
+import {StravaClub} from "../strava/types"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
 import {File} from "@google-cloud/storage"

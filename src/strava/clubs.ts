@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Clubs
 
-import {StravaClub, StravaClubEvent, StravaRoute} from "./types"
+import {StravaClub, StravaClubEvent} from "./types"
 import {toStravaClub, toStravaClubEvent} from "./utils"
 import {UserData} from "../users/types"
 import stravaRoutes from "./routes"
