@@ -12,6 +12,8 @@ export interface Route {
     description?: string
     /** Route distance. */
     distance?: number
+    /** Total elevation gain. */
+    elevationGain?: number
     /** Starting location as coordinates. */
     locationStart?: [number, number]
     /** Mid point location as coordinates. */
@@ -22,6 +24,8 @@ export interface Route {
     movingTime?: number
     /** Estimated total time with breaks, in seconds. */
     totalTime?: number
+    /** Route encoded polyline. */
+    polyline?: string
     /** Link to the route details. */
     url?: string
 }

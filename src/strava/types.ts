@@ -483,10 +483,6 @@ export interface StravaRoute extends Route {
     idString?: string
     /** Ride or Run. */
     type?: StravaSport
-    /** Total elevation gain. */
-    elevationGain?: number
-    /** Route encoded polyline. */
-    polyline?: string
     /** Terrain type. */
     terrain?: StravaRouteTerrain
 }
