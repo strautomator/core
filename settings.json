@@ -162,7 +162,7 @@
         },
         // Base Komoot HTML / end user URL.
         "baseUrl": "https://www.komoot.com/",
-        // Route details are cached in memory for up to 12 hours. Value set in seconds.
+        // Route details are cached normally for around 12 hours. Value set in seconds.
         "cacheDuration": 43200,
         // Route details are cached in the database for up to 4 days. Value set in seconds.
         "maxCacheDuration": 345600
@@ -373,8 +373,9 @@
         }
     },
     "routes": {
-        // Total estimated route will add 40min (in seconds) for every 3 hours of riding / running..
-        "extraTimePer3Hours": 2400,
+        // Total estimated route will add 40min (in seconds) for every few hours of riding or running,
+        // depending on the user's fitness level.
+        "breakTime": 2400,
         // A maximum of 15 routes can be zipped for downloading.
         "zipLimit": 15
     },
