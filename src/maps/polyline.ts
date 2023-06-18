@@ -16,6 +16,19 @@ export class Polyline {
     }
 
     /**
+     * Encode the passed coordinates into a polyline.
+     * @param coordinates Coordinates to be encoded.
+     */
+    encode = (coordinates: [number, number][]): string => {
+        try {
+            return polyline.encode(coordinates)
+        } catch (ex) {
+            logger.error("Polylines.encode", `${coordinates.length} coordinates`, ex)
+            throw ex
+        }
+    }
+
+    /**
      * Decodes the passed polyline string and returns an array of coordinates.
      * @param value The polyline string.
      */
