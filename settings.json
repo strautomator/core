@@ -156,6 +156,11 @@
         "cacheDuration": 1800
     },
     "komoot": {
+        "api": {
+            // Base Komoot API URL.
+            "baseUrl": "https://api.komoot.de/v007/"
+        },
+        // Base Komoot HTML / end user URL.
         "baseUrl": "https://www.komoot.com/",
         // Route details are cached in memory for up to 12 hours. Value set in seconds.
         "cacheDuration": 43200,

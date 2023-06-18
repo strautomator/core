@@ -3,7 +3,9 @@
 import {KomootRoute} from "./types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
+import {URLSearchParams} from "url"
 import database from "../database"
+import maps from "../maps"
 import routes from "../routes"
 import dayjs from "../dayjs"
 import _ from "lodash"
@@ -37,11 +39,11 @@ export class Komoot {
      * Make a request to the Komoot website.
      * @param path URL path.
      */
-    private makeRequest = async (path: string): Promise<string> => {
+    private makeRequest = async (url: string): Promise<any> => {
         const options: any = {
             method: "GET",
             returnResponse: true,
-            url: `${settings.komoot.baseUrl}${path}`,
+            url: url,
             headers: {"User-Agent": settings.axios.uaBrowser},
             abortStatus: [403]
         }
@@ -50,7 +52,7 @@ export class Komoot {
             const res = await axiosRequest(options)
             return res ? res.data : null
         } catch (ex) {
-            logger.debug("Komoot.makeRequest", path, ex)
+            logger.debug("Komoot.makeRequest", url, ex)
             throw ex
         }
     }
@@ -69,16 +71,19 @@ export class Komoot {
                 throw new Error("Invalid tour URL")
             }
 
+            const now = dayjs()
             const tourId: any = routeUrl.substring(routeUrl.indexOf("tour/")).split("/")[1].split("?")[0]
 
             if (isNaN(tourId)) {
                 throw new Error("Invalid tour URL")
             }
 
-            const now = dayjs()
+            // User preferences.
+            const unit = user.profile.units == "imperial" ? "mi" : "km"
             const multDistance = user.profile.units == "imperial" ? 0.621371 : 1
+            const multFeet = user.profile.units == "imperial" ? 3.28084 : 1
 
-            // Check if that URL was already scraped unsuccessfully.
+            // Check if that URL was previously unsuccessful.
             const invalidCache = cache.get("komoot-invalid", routeUrl)
             if (invalidCache) {
                 logger.info("Komoot.getRoute", tourId || routeUrl, `Marked as invalid, won't fetch`)
@@ -92,20 +97,123 @@ export class Komoot {
                 return fromCache
             }
 
-            // Check if the tour was recently cached
-            const result: KomootRoute = {
-                id: tourId,
-                dateCached: now.toDate()
-            }
-
             const iQuery = routeUrl.indexOf("?")
             const query = iQuery > 0 ? routeUrl.substring(iQuery) : ""
 
-            // Set the route URL and request it from Komoot.
-            result.url = `${settings.komoot.baseUrl}tour/${tourId}${query}`
-            const html = await this.makeRequest(`tour/${tourId}${query}`)
+            // Base result.
+            const result: KomootRoute = {
+                id: tourId,
+                dateCached: now.toDate(),
+                url: `${settings.komoot.baseUrl}tour/${tourId}${query}`
+            }
+
+            // Check if URL has a share token.
+            if (query.includes("token")) {
+                const params = new URLSearchParams(query)
+                result.token = params.get("share_token") || params.get("token")
+            }
+
+            // First we try getting details from the API.
+            await this.parseRouteFromApi(result)
+
+            // If the expiration date is not set, it means it failed, so try from HTML.
+            if (!result.dateExpiry) {
+                await this.parseRouteFromHtml(result)
+            }
+
+            // Stop here if we don't have basic route details.
+            if (!result.distance && !result.locationStart) {
+                throw new Error(`Could not get details for tour ${result.id}`)
+            }
+
+            // Set the correct distance, elevation and moving time for the user.
+            result.distance = (result.distance / 1000) * multDistance
+            result.distance = parseFloat(result.distance.toFixed(1))
+            result.elevationGain = Math.round((result.elevationGain || 0) * multFeet)
+            result.movingTime = Math.round(result.movingTime * 0.98)
+
+            // Process additional details.
+            routes.process(user, result)
+
+            // Save to database.
+            await database.set("komoot", result, result.id)
+            logger.info("Komoot.getRoute", logHelper.user(user), tourId, result.name, `Distance: ${result.distance || "?"} ${unit}`, `Duration: ${result.totalTime || "?"} s`)
+
+            return result
+        } catch (ex) {
+            logger.error("Komoot.getRoute", logHelper.user(user), routeUrl, ex)
+            cache.set("komoot-invalid", routeUrl, true)
+            return null
+        }
+    }
+
+    /**
+     * Parse the route details from the API.
+     * @param route The Komoot route to be parsed.
+     */
+    parseRouteFromApi = async (route: KomootRoute): Promise<void> => {
+        try {
+            const apiUrl = `${settings.komoot.api.baseUrl}tours/${route.id}`
+
+            const json = await this.makeRequest(route.token ? apiUrl + `?share_token=${route.token}` : apiUrl)
+            if (!json) {
+                throw new Error("Could not extract tour data from API")
+            }
+
+            // Basic route details.
+            route.name = json.name
+            route.distance = json.distance
+            route.movingTime = json.duration
+            route.elevationGain = json.elevation_up
+
+            // Parse starting point and encode the coordinates, if present.
+            if (json.start_point) {
+                route.locationStart = [json.start_point.lat, json.start_point.lng]
+            }
+            if (json.path) {
+                const coordinatesMapper = (p) => [p.location.lat, p.location.lng]
+                route.polyline = maps.polylines.encode(json.path.map(coordinatesMapper))
+                route.locationEnd = json.path.pop().map(coordinatesMapper)
+            }
+
+            // Default expiration time.
+            route.dateExpiry = dayjs().add(settings.komoot.cacheDuration, "seconds").toDate()
+        } catch (ex) {
+            logger.error("Komoot.parseRouteFromApi", route.id, ex)
+        }
+    }
+
+    /**
+     * Parse the route details from the web HTML view.
+     * @param route The Komoot route to be parsed.
+     */
+    parseRouteFromHtml = async (route: KomootRoute): Promise<void> => {
+        try {
+            const html = await this.makeRequest(route.url)
             if (!html) {
-                throw new Error(`Could not fetch tour ${tourId}, likely it's private`)
+                throw new Error("Could not extract tour data from HTML")
+            }
+
+            // Extract the route name from the title.
+            const iTitle = html.indexOf("<title>") + 7
+            const iTitleEnd = html.indexOf("</title>")
+            const arrTitle = html.substring(iTitle, iTitleEnd).split("|")
+            arrTitle.pop()
+            route.name = arrTitle.join(" - ")
+
+            // Try parsing the distance.
+            const iDistance = html.indexOf("Distance: ") + 10
+            if (iDistance > 10) {
+                const distance = html.substring(iDistance, html.indexOf(" km", iDistance))
+                route.distance = parseFloat(distance.trim())
+            }
+
+            // Try parsing the duration.
+            const iDuration = html.indexOf("Duration: ") + 10
+            if (iDuration > 10) {
+                const htmlDuration = html.substring(iDuration, html.indexOf(" h", iDuration))
+                const arrDuration = htmlDuration.trim().split(":")
+                route.movingTime = parseInt(arrDuration[0]) * 60 * 60 + parseInt(arrDuration[1]) * 60
             }
 
             // Try parsing the start location.
@@ -119,46 +227,15 @@ export class Komoot {
                     const lng: any = html.substring(iLng, html.indexOf(`,`, iLng))
 
                     if (!isNaN(lng) && !isNaN(lng)) {
-                        result.locationStart = [parseFloat(lat), parseFloat(lng)]
+                        route.locationStart = [parseFloat(lat), parseFloat(lng)]
                     }
                 }
             }
 
-            // Try parsing the distance.
-            const iDistance = html.indexOf("Distance: ") + 10
-            if (iDistance > 10) {
-                const distance = html.substring(iDistance, html.indexOf(" km", iDistance))
-                result.distance = parseFloat(distance.trim()) * multDistance
-                result.distance = parseFloat(result.distance.toFixed(1))
-            }
-
-            // Try parsing the duration. Durations in Kommot are usually VERY conservative,
-            // we're removing around 2% of the final estimated moving time here.
-            const iDuration = html.indexOf("Duration: ") + 10
-            if (iDuration > 10) {
-                const htmlDuration = html.substring(iDuration, html.indexOf(" h", iDuration))
-                const arrDuration = htmlDuration.trim().split(":")
-                result.movingTime = parseInt(arrDuration[0]) * 60 * 58 + parseInt(arrDuration[1]) * 58
-            }
-
-            // Process additional details.
-            routes.process(user, result)
-
-            // Set expiration date.
-            if (result.distance || result.totalTime) {
-                result.dateExpiry = now.add(settings.komoot.maxCacheDuration, "seconds").toDate()
-            } else {
-                result.dateExpiry = now.add(settings.komoot.cacheDuration, "seconds").toDate()
-            }
-
-            await database.set("komoot", result, result.id)
-            logger.info("Komoot.getRoute", logHelper.user(user), tourId, `Distance: ${result.distance || "?"} km`, `Duration: ${result.totalTime || "?"} s`)
-
-            return result
+            // Maximum expiration time.
+            route.dateExpiry = dayjs().add(settings.komoot.maxCacheDuration, "seconds").toDate()
         } catch (ex) {
-            logger.error("Komoot.getRoute", logHelper.user(user), routeUrl, ex)
-            cache.set("komoot-invalid", routeUrl, true)
-            return null
+            logger.error("Komoot.parseRouteFromHtml", route.id, ex)
         }
     }
 
