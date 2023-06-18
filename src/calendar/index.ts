@@ -3,7 +3,7 @@
 import {CalendarOptions} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
-import {StravaClub} from "../strava/types"
+import {StravaClub, StravaRoute} from "../strava/types"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
 import {File} from "@google-cloud/storage"
@@ -397,9 +397,10 @@ export class Calendar {
                     // Club has a route set? Fetch the full route details. PRO users will also
                     // get distance and times from Komoot routes.
                     if (hasFutureDate) {
-                        if (clubEvent.route && clubEvent.route.id) {
+                        const idString = (clubEvent.route as StravaRoute)?.idString
+                        if (idString) {
                             try {
-                                clubEvent.route = await strava.routes.getRoute(user, clubEvent.route.idString)
+                                clubEvent.route = await strava.routes.getRoute(user, idString)
                             } catch (routeEx) {
                                 logger.warn("Calendar.buildClubs", logHelper.user(user), `Failed to fetch route for event ${clubEvent.id}`)
                             }
@@ -411,7 +412,7 @@ export class Calendar {
 
                                 if (kRoute) {
                                     logger.info("Strava.buildClubs", logHelper.user(user), `Event ${clubEvent.title}`, `Komoot route: ${kRoute.id}`)
-                                    clubEvent.komootRoute = kRoute
+                                    clubEvent.route = kRoute
                                 }
                             }
                         }
@@ -423,7 +424,7 @@ export class Calendar {
                         let endDate: Date
 
                         const evTimestamp = Math.round(eventDate.valueOf() / 1000)
-                        const estimatedTime = clubEvent.route ? clubEvent.route.totalTime : clubEvent.komootRoute ? clubEvent.komootRoute.totalTime : 0
+                        const estimatedTime = clubEvent.route ? clubEvent.route.totalTime : 0
 
                         // Upcoming event has a route with estimated time? Use it for the end date, otherwise defaults to 15min.
                         if (eventDate > today && estimatedTime > 0) {

@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Clubs
 
-import {StravaClub, StravaClubEvent} from "./types"
+import {StravaClub, StravaClubEvent, StravaRoute} from "./types"
 import {toStravaClub, toStravaClubEvent} from "./utils"
 import {UserData} from "../users/types"
 import stravaRoutes from "./routes"
@@ -137,23 +137,27 @@ export class StravaClubs {
                     event.dates.sort()
 
                     // We need the full route details, including distance and polyline.
-                    if (event.route && event.route.id && (!event.route.distance || !event.route.polyline)) {
-                        try {
-                            event.route = await stravaRoutes.getRoute(user, event.route.idString)
-                        } catch (routeEx) {
-                            logger.warn("Strava.getUpcomingClubEvents", logHelper.user(user), `Event ${event.title}`, "Failed to get route details")
+                    // Try a Strava route first.
+                    if (event.route) {
+                        const idString = (event.route as StravaRoute)?.idString
+                        if (idString && (!event.route.distance || !event.route.polyline)) {
+                            try {
+                                event.route = await stravaRoutes.getRoute(user, idString)
+                            } catch (routeEx) {
+                                logger.warn("Strava.getUpcomingClubEvents", logHelper.user(user), `Event ${event.title}`, "Failed to get route details")
+                            }
                         }
-                    }
-                    // PRO users also get Komoot route parsing.
-                    else if (user.isPro && event.description && event.description.length > 30) {
-                        const url = komoot.extractRouteUrl(event.description)
+                        // PRO users also get Komoot route parsing.
+                        else if (user.isPro && event.description && event.description.length > 30) {
+                            const url = komoot.extractRouteUrl(event.description)
 
-                        if (url) {
-                            const kRoute = await komoot.getRoute(user, url)
+                            if (url) {
+                                const kRoute = await komoot.getRoute(user, url)
 
-                            if (kRoute) {
-                                logger.info("Strava.getUpcomingClubEvents", logHelper.user(user), `Event ${event.title}`, `Komoot route: ${kRoute.id}`)
-                                event.komootRoute = kRoute
+                                if (kRoute) {
+                                    logger.info("Strava.getUpcomingClubEvents", logHelper.user(user), `Event ${event.title}`, `Komoot route: ${kRoute.id}`)
+                                    event.route = kRoute
+                                }
                             }
                         }
                     }

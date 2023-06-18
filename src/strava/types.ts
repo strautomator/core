@@ -469,10 +469,8 @@ export interface StravaClubEvent {
     organizer?: Partial<StravaProfile>
     /** Start location (address). */
     address?: string
-    /** Attached Strava route. */
-    route?: StravaRoute
-    /** Extracted Komoot route. */
-    komootRoute?: KomootRoute
+    /** Attached Strava or Komoot route. */
+    route?: StravaRoute | KomootRoute
 }
 
 /**
