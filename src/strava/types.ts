@@ -562,62 +562,6 @@ export interface StravaCachedResponse {
 }
 
 /**
- * Strava sport types.
- */
-export enum StravaSport {
-    Ride = "Ride",
-    GravelRide = "GravelRide",
-    MountainBikeRide = "MountainBikeRide",
-    EBikeRide = "EBikeRide",
-    EMountainBikeRide = "EMountainBikeRide",
-    VirtualRide = "VirtualRide",
-    Run = "Run",
-    TrailRun = "TrailRun",
-    VirtualRun = "VirtualRun",
-    Walk = "Walk",
-    Swim = "Swim",
-    AlpineSki = "AlpineSki",
-    BackcountrySki = "BackcountrySki",
-    Badminton = "Badminton",
-    Canoeing = "Canoeing",
-    Crossfit = "Crossfit",
-    Elliptical = "Elliptical",
-    Golf = "Golf",
-    Handcycle = "Handcycle",
-    HighIntensityIntervalTraining = "HighIntensityIntervalTraining",
-    Hike = "Hike",
-    IceSkate = "IceSkate",
-    InlineSkate = "InlineSkate",
-    Kayaking = "Kayaking",
-    Kitesurf = "Kitesurf",
-    NordicSki = "NordicSki",
-    Pickleball = "Pickleball",
-    Pilates = "Pilates",
-    Racquetball = "Racquetball",
-    RockClimbing = "RockClimbing",
-    RollerSki = "RollerSki",
-    Rowing = "Rowing",
-    Sail = "Sail",
-    Skateboard = "Skateboard",
-    Snowboard = "Snowboard",
-    Snowshoe = "Snowshoe",
-    Soccer = "Soccer",
-    Squash = "Squash",
-    StairStepper = "StairStepper",
-    StandUpPaddling = "StandUpPaddling",
-    Surfing = "Surfing",
-    TableTennis = "TableTennis",
-    Tennis = "Tennis",
-    Velomobile = "Velomobile",
-    VirtualRow = "VirtualRow",
-    WeightTraining = "WeightTraining",
-    Wheelchair = "Wheelchair",
-    Windsurf = "Windsurf",
-    Workout = "Workout",
-    Yoga = "Yoga"
-}
-
-/**
  * Strava "Ride" workout types.
  */
 export enum StravaRideType {
@@ -675,6 +619,86 @@ export enum StravaFitnessLevel {
     Athletic = 3,
     Pro = 4,
     Elite = 5
+}
+
+/**
+ * Strava sport types.
+ */
+export enum StravaSport {
+    Ride = "Ride",
+    GravelRide = "GravelRide",
+    MountainBikeRide = "MountainBikeRide",
+    EBikeRide = "EBikeRide",
+    EMountainBikeRide = "EMountainBikeRide",
+    VirtualRide = "VirtualRide",
+    Run = "Run",
+    TrailRun = "TrailRun",
+    VirtualRun = "VirtualRun",
+    Walk = "Walk",
+    Swim = "Swim",
+    AlpineSki = "AlpineSki",
+    BackcountrySki = "BackcountrySki",
+    Badminton = "Badminton",
+    Canoeing = "Canoeing",
+    Crossfit = "Crossfit",
+    Elliptical = "Elliptical",
+    Golf = "Golf",
+    Handcycle = "Handcycle",
+    HighIntensityIntervalTraining = "HighIntensityIntervalTraining",
+    Hike = "Hike",
+    IceSkate = "IceSkate",
+    InlineSkate = "InlineSkate",
+    Kayaking = "Kayaking",
+    Kitesurf = "Kitesurf",
+    NordicSki = "NordicSki",
+    Pickleball = "Pickleball",
+    Pilates = "Pilates",
+    Racquetball = "Racquetball",
+    RockClimbing = "RockClimbing",
+    RollerSki = "RollerSki",
+    Rowing = "Rowing",
+    Sail = "Sail",
+    Skateboard = "Skateboard",
+    Snowboard = "Snowboard",
+    Snowshoe = "Snowshoe",
+    Soccer = "Soccer",
+    Squash = "Squash",
+    StairStepper = "StairStepper",
+    StandUpPaddling = "StandUpPaddling",
+    Surfing = "Surfing",
+    TableTennis = "TableTennis",
+    Tennis = "Tennis",
+    Velomobile = "Velomobile",
+    VirtualRow = "VirtualRow",
+    WeightTraining = "WeightTraining",
+    Wheelchair = "Wheelchair",
+    Windsurf = "Windsurf",
+    Workout = "Workout",
+    Yoga = "Yoga"
+}
+
+/**
+ * List of matching / similar base sports.
+ */
+export enum StravaBaseSport {
+    GravelRide = "Ride",
+    MountainBikeRide = "Ride",
+    EBikeRide = "Ride",
+    EMountainBikeRide = "Ride",
+    VirtualRide = "Ride",
+    TrailRun = "Run",
+    VirtualRun = "Run",
+    Walk = "Run",
+    AlpineSki = "AlpineSki",
+    BackcountrySki = "AlpineSki",
+    Crossfit = "Workout",
+    Elliptical = "Workout",
+    HighIntensityIntervalTraining = "Workout",
+    Hike = "Run",
+    NordicSki = "AlpineSki",
+    Velomobile = "Ride",
+    VirtualRow = "Rowing",
+    WeightTraining = "Workout"
 }
 
 /**
