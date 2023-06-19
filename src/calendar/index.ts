@@ -3,7 +3,7 @@
 import {CalendarOptions} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
-import {StravaClub} from "../strava/types"
+import {StravaBaseSport, StravaClub, StravaRideType, StravaRunType} from "../strava/types"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
 import {File} from "@google-cloud/storage"
@@ -248,6 +248,7 @@ export class Calendar {
      */
     private buildActivities = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
         const optionsLog = `From ${options.dateFrom.format("ll")} to ${options.dateTo.format("ll")}`
+        const fieldSettings = settings.calendar.activityFields
         let eventCount = 0
 
         try {
@@ -269,9 +270,11 @@ export class Calendar {
                     continue
                 }
 
-                // Activity start and end dates.
+                // Activity conditions.
                 const startDate = activity.dateStart
                 const endDate = activity.dateEnd
+                const sportType = activity.sportType.toLowerCase()
+                const similarSportType = StravaBaseSport[activity.sportType]?.toLowerCase()
 
                 // Append suffixes to activity values.
                 transformActivityFields(user, activity)
@@ -281,9 +284,14 @@ export class Calendar {
                     if (activity.commute) {
                         arrDetails.push("Commute")
                     }
+                    if (activity.workoutType == StravaRideType.Race || activity.workoutType == StravaRunType.Race) {
+                        arrDetails.push("Race")
+                    }
+
+                    const activityFields = fieldSettings[sportType] || fieldSettings[similarSportType] || fieldSettings.default
 
                     // Iterate default fields to be added to the event details.
-                    for (let f of settings.calendar.activityFields) {
+                    for (let f of activityFields) {
                         const subDetails = []
                         const arrFields = f.split(",")
 
