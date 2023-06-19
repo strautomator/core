@@ -689,7 +689,6 @@ export enum StravaBaseSport {
     TrailRun = "Run",
     VirtualRun = "Run",
     Walk = "Run",
-    AlpineSki = "AlpineSki",
     BackcountrySki = "AlpineSki",
     Crossfit = "Workout",
     Elliptical = "Workout",
