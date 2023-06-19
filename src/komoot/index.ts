@@ -132,7 +132,7 @@ export class Komoot {
             result.distance = (result.distance / 1000) * multDistance
             result.distance = parseFloat(result.distance.toFixed(1))
             result.elevationGain = Math.round((result.elevationGain || 0) * multFeet)
-            result.movingTime = Math.round(result.movingTime * 0.98)
+            result.movingTime = Math.round(result.movingTime * 0.99)
 
             // Process additional details.
             routes.process(user, result)
