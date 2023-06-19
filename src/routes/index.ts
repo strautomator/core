@@ -46,7 +46,7 @@ export class Routes {
 
             // No total time set? Estimate it now, using different multipliers depending on the user's fitness level.
             // Example: total time for average users will be 6% added to the moving time, plus a break of 40min
-            // for every 3 hours of riding (10800) seconds.
+            // for every 3 hours of riding (10800) seconds. Rounded to 15 minutes.
             if (!route.totalTime) {
                 const multiplier = multipliers[user.fitnessLevel || StravaFitnessLevel.Average]
                 const breakSplit = breakSplits[user.fitnessLevel || StravaFitnessLevel.Average]
@@ -56,6 +56,11 @@ export class Routes {
                 const toQuarter = 15 - (duration.minutes() % 15)
                 route.totalTime = Math.round(duration.add(toQuarter, "minutes").asSeconds())
             }
+
+            // Round the moving time to 5min.
+            const duration = dayjs.duration(route.movingTime, "seconds")
+            const rounding = 5 - (duration.minutes() % 5)
+            route.movingTime = Math.round(duration.add(rounding, "minutes").asSeconds())
         } catch (ex) {
             logger.error("Routes.estimateTotalTime", logHelper.user(user), route.id, ex)
         }
