@@ -1,5 +1,6 @@
 // STRAUTOMATOR CORE SETTINGS
-// Here are most of the Strautomator settings.
+// Here are most of the Strautomator settings, and these should be considered
+// production ready (not including secrets and credentials).
 
 {
     "app": {
@@ -37,7 +38,7 @@
         "baseUrl": "https://links.devv.com/"
     },
     "announcements": {
-        // Active announcements should be cached for up to 60 minutes.
+        // Active announcements should be cached for up to 1 hour.
         "cacheDuration": 3600
     },
     "axios": {
@@ -115,8 +116,8 @@
         "writeDisabled": false
     },
     "faq": {
-        // Download questions from the database twice a day by default. Value set in seconds.
-        "refreshInterval": 43200
+        // Download questions from the database three times a day by default. Value set in seconds.
+        "refreshInterval": 28800
     },
     "functions": {
         // Scheduled functions default batch size.
@@ -423,7 +424,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 6,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 80,
+            "maxPerMinute": 300,
             // Default page size is the max of 200.
             "pageSize": 200,
             // Token to be appended to the URL of Strava webhooks, for
@@ -438,11 +439,11 @@
         },
         // Some Strava resources might be cached. Duration in seconds.
         "cacheDuration": {
-            "activities-streams": 1814400,
+            "activities-streams": 1209600,
             "athletes-stats": 180,
             "clubs": 3600,
             "clubs-group-events": 1800,
-            "routes": 7200
+            "routes": 3600
         },
         // Do not process club events with more than 2 years of age (past or future).
         "clubs": {
