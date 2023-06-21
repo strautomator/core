@@ -23,6 +23,23 @@ export class StravaRoutes {
     // --------------------------------------------------------------------------
 
     /**
+     * Get list of all routes for the specified user.
+     * @param user The user owning the routes.
+     */
+    getUserRoutes = async (user: UserData): Promise<StravaRoute> => {
+        try {
+            const data = await api.get(user.stravaTokens, `athletes/${user.id}/routes`)
+            data?.forEach((d) => delete d.segments)
+
+            logger.info("Strava.getUserRoutes", logHelper.user(user), `User has ${data.length || "no"} routes`)
+            return data.map((d) => toStravaRoute(user, d))
+        } catch (ex) {
+            logger.error("Strava.getUserRoutes", logHelper.user(user), ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get detailed route info from Strava.
      * @param user User data.
      * @param idString The route URL ID (for whatever reason, Strava doesn't accept the route ID).
