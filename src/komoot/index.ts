@@ -1,6 +1,7 @@
 // Strautomator Core: Komoot
 
-import {KomootRoute} from "./types"
+import {KomootRoute, komootSportList} from "./types"
+import {StravaSport} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
 import {URLSearchParams} from "url"
@@ -134,6 +135,11 @@ export class Komoot {
             result.elevationGain = Math.round((result.elevationGain || 0) * multFeet)
             result.movingTime = Math.round(result.movingTime * 0.99)
 
+            // MTB routes are overly conservative, so remove some extra time.
+            if (result.sportType == StravaSport.MountainBikeRide) {
+                result.movingTime = Math.round(result.movingTime * 0.9)
+            }
+
             // Process additional details.
             routes.process(user, result)
 
@@ -190,6 +196,14 @@ export class Komoot {
             } catch (innerEx) {
                 logger.error("Komoot.parseRouteFromApi", route.id, "Failed to fetch coordinates", innerEx)
             }
+
+            // Add difficulty.
+            if (json.difficulty) {
+                route.difficulty = json.difficulty.grade
+            }
+
+            // Set sport type.
+            route.sportType = komootSportList[json.sport] || StravaSport.Ride
 
             // Maximum expiration time.
             route.dateExpiry = dayjs().add(settings.komoot.maxCacheDuration, "seconds").toDate()
