@@ -176,79 +176,72 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         summary.moon = getMoonPhase(date)
 
         // Select correct weather icon. Defaults to cloudy.
-        let unicodeIcon: string = "2601"
+        summary.icon = "🌥️"
         switch (extraData.iconText) {
             case "Clear":
                 if (extraData.timeOfDay == "day") {
-                    unicodeIcon = "2600"
+                    summary.icon = "☀️"
                 } else if (summary.moon == MoonPhase.Full) {
-                    unicodeIcon = "1F316"
+                    summary.icon = "🌕"
                 } else {
-                    unicodeIcon = "1F312"
+                    summary.icon = "🌙"
                 }
                 break
             case "MostlyClear":
-                unicodeIcon = "1F324"
+                summary.icon = "🌤️"
                 break
             case "MostlyCloudy":
                 if (extraData.timeOfDay == "day") {
-                    unicodeIcon = "26C5"
+                    summary.icon = "☁️"
                 } else {
-                    unicodeIcon = "1F319"
+                    summary.icon = "🌙"
                 }
                 break
             case "Drizzle":
             case "Rain":
-                unicodeIcon = "1F327"
+                summary.icon = "🌧️"
                 break
             case "Snow":
-                unicodeIcon = "2744"
+                summary.icon = "❄️"
                 break
             case "Sleet":
-                unicodeIcon = "1F328"
+                summary.icon = "🌨️"
                 break
             case "Wind":
             case "Windy":
-                unicodeIcon = "1F32C"
+                summary.icon = "💨"
                 break
             case "Fog":
-                unicodeIcon = "1F32B"
+                summary.icon = "😶‍🌫️"
                 break
             case "Thunderstorm":
-                unicodeIcon = "26C8"
+                summary.icon = "⛈️"
                 break
             case "Tornado":
             case "Hurricane":
-                unicodeIcon = "1F32A"
+                summary.icon = "🌪️"
                 break
-        }
-
-        // Convert code to unicode emoji.
-        if (unicodeIcon) {
-            summary.icon = String.fromCodePoint(parseInt(unicodeIcon, 16))
         }
 
         // Air quality index.
         if (!_.isNil(summary.aqi)) {
-            let aqiIcon = "1F7E2"
+            summary.aqiIcon = "🟢"
             switch (summary.aqi) {
                 case 1:
-                    aqiIcon = "1F7E1"
+                    summary.aqiIcon = "🟡"
                     break
                 case 2:
-                    aqiIcon = "1F7E0"
+                    summary.aqiIcon = "🟠"
                     break
                 case 3:
-                    aqiIcon = "1F534"
+                    summary.aqiIcon = "🔴"
                     break
                 case 4:
-                    aqiIcon = "1F7E3"
+                    summary.aqiIcon = "🟣"
                     break
                 case 5:
-                    aqiIcon = "1F7E4"
+                    summary.aqiIcon = "🟤"
             }
-
-            summary.aqiIcon = String.fromCodePoint(parseInt(aqiIcon, 16))
         }
 
         // Summary set? Check if it has a translation. If unset, set one now.
