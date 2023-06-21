@@ -1,4 +1,5 @@
 // STRAUTOMATOR CORE SETTINGS (DEVELOPMENT)
+// Development environment settings.
 
 {
     "app": {
@@ -80,6 +81,9 @@
     },
     "strava": {
         "api": {
+            // More retricted rate limits on dev.
+            "maxConcurrent": 5,
+            "maxPerMinute": 80,
             // Token to be appended to the URL of Strava webhooks, for
             // extra security. Can only include alphanumeric characters.
             // This SHOULD be overriden by a secret token set via secret settings
