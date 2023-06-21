@@ -1,5 +1,7 @@
 // Strautomator Core: Routes types
 
+import {StravaSport} from "../strava/types"
+
 /**
  * Represents a generic route.
  */
@@ -28,4 +30,6 @@ export interface Route {
     polyline?: string
     /** Link to the route details. */
     url?: string
+    /** Sport type. */
+    sportType?: StravaSport
 }
