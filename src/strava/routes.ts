@@ -28,7 +28,7 @@ export class StravaRoutes {
      */
     getUserRoutes = async (user: UserData): Promise<StravaRoute> => {
         try {
-            const data = await api.get(user.stravaTokens, `athletes/${user.id}/routes`)
+            const data = await api.get(user.stravaTokens, `athletes/${user.id}/routes?per_page=${settings.strava.api.pageSize}`)
             data?.forEach((d) => delete d.segments)
 
             logger.info("Strava.getUserRoutes", logHelper.user(user), `User has ${data.length || "no"} routes`)
