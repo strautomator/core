@@ -479,8 +479,6 @@ export interface StravaClubEvent {
 export interface StravaRoute extends Route {
     /** String version of the route ID, must be used on the API endpoints. */
     idString?: string
-    /** Ride or Run. */
-    type?: StravaSport
     /** Terrain type. */
     terrain?: StravaRouteTerrain
 }
