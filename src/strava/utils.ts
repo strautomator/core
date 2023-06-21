@@ -510,8 +510,18 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
         distance: Math.round(distance),
         elevationGain: elevationGain,
         polyline: data.map.polyline || data.map.summary_polyline || null,
-        type: data.type == 1 ? StravaSport.Ride : StravaSport.Run,
+        sportType: data.type == 1 ? StravaSport.Ride : StravaSport.Run,
         url: `https://strava.com/routes/${data.id_str}`
+    }
+
+    // Set correct sport type.
+    if (data.sub_type) {
+        if (data.type == 1) {
+            if (data.sub_type == 2) route.sportType = StravaSport.MountainBikeRide
+            else if (data.sub_type == 3) route.sportType = StravaSport.GravelRide
+        } else {
+            if (data.sub_type == 4) route.sportType = StravaSport.TrailRun
+        }
     }
 
     // Estimated moving time available? Also estimate the total time.
