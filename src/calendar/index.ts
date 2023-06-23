@@ -65,10 +65,10 @@ export class Calendar {
                     await file.delete()
                 }
 
-                logger.info("Calendar.onUsersDelete", logHelper.user(user), `Deleted ${count} cached calendars`)
+                logger.info("Calendar.onUserDelete", logHelper.user(user), `Deleted ${count} cached calendars`)
             }
         } catch (ex) {
-            logger.error("Calendar.onUsersDelete", logHelper.user(user), ex)
+            logger.error("Calendar.onUserDelete", logHelper.user(user), ex)
         }
     }
 

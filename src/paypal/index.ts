@@ -113,7 +113,7 @@ export class PayPal {
                 }
             }
         } catch (ex) {
-            logger.debug("PayPal.onUsersDelete", `Failed to cancel subscription ${user.subscription.id} for user ${user.id} ${user.displayName}`)
+            logger.debug("PayPal.onUserDelete", `Failed to cancel subscription ${user.subscription.id} for user ${user.id} ${user.displayName}`)
         }
     }
 

@@ -73,10 +73,10 @@ export class GearWear {
             const counter = await database.delete("gearwear", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("GearWear.onUsersDelete", logHelper.user(user), `Deleted ${counter} GearWear configs`)
+                logger.info("GearWear.onUserDelete", logHelper.user(user), `Deleted ${counter} GearWear configs`)
             }
         } catch (ex) {
-            logger.error("GearWear.onUsersDelete", logHelper.user(user), ex)
+            logger.error("GearWear.onUserDelete", logHelper.user(user), ex)
         }
     }
 

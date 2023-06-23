@@ -45,10 +45,10 @@ export class GDPR {
 
             if (file) {
                 await file.delete()
-                logger.info("GDPR.onUsersDelete", logHelper.user(user), `Deleted archive: ${filename}`)
+                logger.info("GDPR.onUserDelete", logHelper.user(user), `Deleted archive: ${filename}`)
             }
         } catch (ex) {
-            logger.error("GDPR.onUsersDelete", logHelper.user(user), ex)
+            logger.error("GDPR.onUserDelete", logHelper.user(user), ex)
         }
     }
 

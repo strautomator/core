@@ -63,10 +63,10 @@ export class Recipes {
             const counter = await database.delete("recipe-stats", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("Recipes.onUsersDelete", logHelper.user(user), `Deleted ${counter} recipe stats`)
+                logger.info("Recipes.onUserDelete", logHelper.user(user), `Deleted ${counter} recipe stats`)
             }
         } catch (ex) {
-            logger.error("Recipes.onUsersDelete", logHelper.user(user), ex)
+            logger.error("Recipes.onUserDelete", logHelper.user(user), ex)
         }
     }
 

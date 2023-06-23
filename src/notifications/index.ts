@@ -51,10 +51,10 @@ export class Notifications {
             const counter = await database.delete("notifications", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("Notifications.onUsersDelete", logHelper.user(user), `Deleted ${counter} notifications`)
+                logger.info("Notifications.onUserDelete", logHelper.user(user), `Deleted ${counter} notifications`)
             }
         } catch (ex) {
-            logger.error("Notifications.onUsersDelete", logHelper.user(user), ex)
+            logger.error("Notifications.onUserDelete", logHelper.user(user), ex)
         }
     }
 
