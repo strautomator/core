@@ -100,7 +100,6 @@ export class GarminAPI {
             const res: AxiosResponse = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
             return res ? res.data : null
         } catch (ex) {
-            console.dir(ex)
             logger.error("Garmin.makeRequest", targetUrl, ex)
             throw ex
         }
