@@ -200,7 +200,7 @@ export class PayPal {
     setupBillingPlans = async () => {
         try {
             const billingPlans = await paypalSubscriptions.getBillingPlans()
-            const frequencies = Object.keys(settings.plans.pro.price)
+            const frequencies = _.intersection(Object.keys(settings.plans.pro.price), ["day", "week", "month", "year"])
 
             api.currentBillingPlans = {}
             api.legacyBillingPlans = {}
