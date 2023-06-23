@@ -128,6 +128,13 @@
             "baseUrl": "https://apis.garmin.com/",
             "authUrl": "https://connectapi.garmin.com/oauth-service/oauth/",
             "loginUrl": "https://connect.garmin.com/oauthConfirm",
+            // Restrict webhook pings from Garmin by checking the user agent
+            // and the Cloudflare headers.
+            "checkHeaders": true,
+            // Maximum concurrent requests per instance.
+            "maxConcurrent": 4,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 120,
             // Token to be appended to the URL of Garmin webhooks, for
             // extra security. Can only include alphanumeric characters.
             // This MUST be set on the settings.secret.json file or via
@@ -135,7 +142,9 @@
             "urlToken": null
         },
         // Cache profiles and Garmin data for up to 2 minutes. Value set in seconds.
-        "cacheDuration": 120
+        "cacheDuration": 120,
+        // Garmin data will be stored in the database for up to 5 days.
+        "maxCacheDuration": 432000
     },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
