@@ -1,14 +1,15 @@
-// Strautomator Core: Strava Fortune
+// Strautomator Core: Recipe Fortune helper
 
-import {StravaActivity, StravaSport} from "./strava/types"
-import {UserData} from "./users/types"
-import {ActivityWeather} from "./weather/types"
-import openai from "./openai"
-import weather from "./weather"
-import dayjs from "./dayjs"
+import {StravaActivity, StravaSport} from "../strava/types"
+import {UserData} from "../users/types"
+import {ActivityWeather} from "../weather/types"
+import openai from "../openai"
+import weather from "../weather"
+import dayjs from "../dayjs"
 import _ from "lodash"
 import logger = require("anyhow")
-import * as logHelper from "./loghelper"
+import * as logHelper from "../loghelper"
+const settings = require("setmeup").settings
 
 /**
  * Random funny quotes.
@@ -73,10 +74,10 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
     let usingWeather = false
     let weatherSummaries: ActivityWeather
 
-    // Weather based checks for around 55% of non-PRO and 95% of PRO users, but only
-    // for activities that happened on the last 3 days.
-    const rndWeather = user.isPro ? 0.95 : 0.55
-    if (activity.hasLocation && now.subtract(3, "days").isBefore(activity.dateEnd) && Math.random() <= rndWeather) {
+    // Weather based checks for activities that happened in the last 3 days.
+    const isRecent = now.subtract(3, "days").isBefore(activity.dateEnd)
+    const rndWeather = user.isPro ? settings.plans.pro.fortune.weather : settings.plans.free.fortune.weather
+    if (activity.hasLocation && isRecent && Math.random() * 100 <= rndWeather) {
         const language = user.preferences.language
 
         // Force English language, fetch weather summaries for activity,
@@ -87,12 +88,11 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         user.preferences.language = language
     }
 
-    // If user is PRO and activity is cycling / running, use ChatGPT to generate the activity name.
-    if (user.isPro && (isRide || isRun)) {
+    // Chat GPT will be used only for a small portion of activities for free users.
+    const rndOpenAi = user.isPro ? settings.plans.pro.fortune.openai : settings.plans.free.fortune.openai
+    if (Math.random() * 100 <= rndOpenAi) {
         const aiName = await openai.generateActivityName(user, activity, weatherSummaries)
-
         if (aiName) {
-            logger.info("Fortune.getActivityFortune", logHelper.user(user), logHelper.activity(activity), `${usingWeather ? "with" : "without"} weather`, "Via OpenAI", aiName)
             return aiName
         }
 
@@ -307,24 +307,29 @@ export const getActivityFortune = async (user: UserData, activity: StravaActivit
         }
     }
 
-    // No unique names or names? Maybe just use the basic stuff, 10% chances.
-    if (uniqueNames.length == 0 && names.length == 0 && Math.random() < 0.11) {
+    // No unique names or names? Maybe just use the basic stuff, around 10% chances.
+    if (uniqueNames.length == 0 && names.length == 0 && Math.random() < 0.1) {
         if (isRide) {
             names.push("ride")
             names.push("tour")
             names.push("bike ride")
             names.push("bike tour")
+        } else if (isRun) {
+            names.push("run")
+            names.push("jog")
+        } else {
+            names.push("workout")
         }
     }
 
     // Build resulting string.
-    // If unique names were set, use one with 90% chance.
+    // If unique names were set, use one with a 90% chance.
     // If regular names were set, use it with a 70% chance.
     // Everything else, use a funny quote.
     let result: string
-    if (uniqueNames.length > 0 && Math.random() < 0.91) {
+    if (uniqueNames.length > 0 && Math.random() < 0.9) {
         result = _.sample(uniqueNames)
-    } else if (names.length > 0 && Math.random() < 0.71) {
+    } else if (names.length > 0 && Math.random() < 0.7) {
         result = `${_.sample(prefixes)} ${_.sample(names)}`.trim()
     }
 

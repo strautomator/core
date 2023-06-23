@@ -1,12 +1,12 @@
 // Strautomator Core: Recipe Action methods
 
 import {RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStatsData} from "./types"
+import {getActivityFortune} from "./fortune"
 import {recipeActionList} from "./lists"
 import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
-import {getActivityFortune} from "../fortune"
 import recipeStats from "./stats"
 import maps from "../maps"
 import musixmatch from "../musixmatch"
