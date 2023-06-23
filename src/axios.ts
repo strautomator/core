@@ -87,13 +87,19 @@ export const axiosRequest = async (options: AxiosConfig, rateLimitExtractor?: (r
         await rateLimitDelay(res, urlInfo, rateLimitExtractor)
         return res.status == 204 && !res.data ? true : options.returnResponse ? res : res.data
     } catch (ex) {
+        const statusCode = ex.response?.status || 500
+        if (!ex.statusCode) {
+            ex.statusCode = statusCode
+        }
+
         const message = `${ex.code} ${ex.message}`.toUpperCase()
         const isTimeout = message.includes("ECONNRESET") || message.includes("ECONNABORTED") || message.includes("ETIMEDOUT") || message.includes("TIMEOUT") || message.includes("REQUEST_ABORTED") || message.includes("ERR_BAD_REQUEST")
-        const isRetryable = ex.response && [405, 429, 500, 502, 503, 504, 520, 597].includes(ex.response.status)
-        const accessDenied = ex.response && [401, 403].includes(ex.response.status)
+        const isRetryable = ex.response && [405, 429, 500, 502, 503, 504, 520, 597].includes(statusCode)
+        const accessDenied = ex.response && [401, 403].includes(statusCode)
 
         // Abort if the stopStatus is set.
-        if (options.abortStatus?.includes(ex.response.status)) {
+        if (options.abortStatus?.includes(statusCode)) {
+            logger.warn("Axios.axiosRequest", options.method, logUrl, `Aborted with status ${statusCode}`)
             return null
         }
 
