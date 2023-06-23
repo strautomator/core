@@ -125,8 +125,17 @@
     },
     "garmin": {
         "api": {
-            "baseUrl": "https://apis.garmin.com/"
-        }
+            "baseUrl": "https://apis.garmin.com/",
+            "authUrl": "https://connectapi.garmin.com/oauth-service/oauth/",
+            "loginUrl": "https://connect.garmin.com/oauthConfirm",
+            // Token to be appended to the URL of Garmin webhooks, for
+            // extra security. Can only include alphanumeric characters.
+            // This MUST be set on the settings.secret.json file or via
+            // via the SMU_garmin_api_urlToken environment variable.
+            "urlToken": null
+        },
+        // Cache profiles and Garmin data for up to 2 minutes. Value set in seconds.
+        "cacheDuration": 120
     },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
@@ -272,6 +281,8 @@
         "api": {
             "baseUrl": "https://api.openai.com/v1/chat/completions"
         },
+        // Cache generated names for up to 2 minutes.
+        "cacheDuration": 120,
         // Limit to 24 tokens per response.
         "maxTokens": 24
     },
@@ -281,7 +292,7 @@
             "baseUrl": "https://api.paypal.com/v1/",
             // Token to be appended to the URL of PayPal webhooks, for
             // extra security. Can only include alphanumeric characters.
-            // This MUST be set voa the settings.secret.json file or via
+            // This MUST be set on the settings.secret.json file or via
             // via the SMU_paypal_api_urlToken environment variable.
             "urlToken": null,
             // The PayPal API client ID and secret must be set on the settings.secret.json file,
@@ -333,7 +344,12 @@
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5,
             // Track personal records for which sports?
-            "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"]
+            "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
+            // Use ChatGPT on around 20% and weather on 50% of "generateName" recipe actions.
+            "fortune": {
+                "openai": 20,
+                "weather": 50
+            }
         },
         "pro": {
             "apiConcurrency": 6,
@@ -353,10 +369,14 @@
             "recordSports": true,
             // Subscription prices on PayPal to get a PRO account.
             "price": {
-                "year": 6.99
+                "year": 6.99,
+                "github": 1.0
             },
-            // Sponsorship price set on GitHub (USD).
-            "githubPrice": 1.0
+            // Use ChatGPT on all and weather on 90% of "generateName" recipe actions.
+            "fortune": {
+                "openai": 100,
+                "weather": 90
+            }
         }
     },
     "recipes": {
@@ -429,7 +449,7 @@
             "pageSize": 200,
             // Token to be appended to the URL of Strava webhooks, for
             // extra security. Can only include alphanumeric characters.
-            // This MUST be set voa the settings.secret.json file or via
+            // This MUST be set on the settings.secret.json file or via
             // via the SMU_strava_api_urlToken environment variable.
             "urlToken": null,
             // Default verification token to be sent by Strava on subcriptions, MUST be set
