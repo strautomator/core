@@ -7,6 +7,7 @@ import {axiosRequest} from "../axios"
 import _ from "lodash"
 import logger = require("anyhow")
 import * as logHelper from "../loghelper"
+import cache from "bitecache"
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
 
@@ -31,6 +32,9 @@ export class OpenAI {
             if (!settings.openai.api.key) {
                 throw new Error("Missing the openai.api.key setting")
             }
+
+            cache.setup("openai", settings.openai.cacheDuration)
+            logger.info("OpenAI.init", `Cache prompt results for up to ${settings.openai.cacheDuration} seconds`)
         } catch (ex) {
             logger.error("OpenAI.init", ex)
         }
@@ -47,29 +51,46 @@ export class OpenAI {
      */
     generateActivityName = async (user: UserData, activity: StravaActivity, weatherSummaries?: ActivityWeather): Promise<string> => {
         try {
+            const cacheId = `activity-${activity.id}`
+            const fromCache = cache.get("openai", cacheId)
+            if (fromCache) {
+                logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), `${weatherSummaries ? "with" : "without"} weather`, fromCache)
+                return fromCache
+            }
+
+            const sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim()
             const adj = _.sample(["cool", "funny", "exquisite", "silly", "sarcastic", "ironic", "mocking", "very cool", "very funny", "very silly", "unique"])
-            const arrPrompt = [`Please generate a single ${adj} name for my Strava ${activity.commute ? "commute" : "activity"}.`]
+            const arrPrompt = [`Please generate a single ${adj} name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()} activity.`]
+            const verb = sportType.includes("ride") ? "rode" : sportType.includes("run") ? "ran" : "did"
 
             if (activity.distance > 0 && activity.movingTime > 0) {
-                arrPrompt.push(`I've done ${activity.distance} ${activity.distanceUnit} in ${activity.movingTimeString}.`)
+                arrPrompt.push(`I ${verb} ${activity.distance} ${activity.distanceUnit} in ${activity.movingTimeString}.`)
                 arrPrompt.push(`Maximum speed was ${activity.speedMax}${activity.speedUnit}.`)
             }
+
             if (activity.elevationGain > 0) {
                 arrPrompt.push(`Total elevation gain was ${activity.elevationGain}${activity.elevationUnit}.`)
             }
+
             if (activity.hasPower && activity.wattsWeighted > 0) {
                 arrPrompt.push(`My average power was ${activity.wattsWeighted} watts.`)
             }
-            if (activity.speedMax > 70 || (activity.speedMax > 44 && user.profile.units == "imperial")) {
-                arrPrompt.push(`Maximum speed was ${activity.speedMax}${activity.speedUnit}.`)
+
+            if (activity.speedMax > 65 || (activity.speedMax > 40 && user.profile.units == "imperial")) {
+                arrPrompt.push(`Maximum speed was very high, around ${activity.speedMax}${activity.speedUnit}.`)
+            } else if (activity.hrAvg > 0) {
+                arrPrompt.push(`My average heart rate was ${activity.hrAvg} BPM.`)
             }
+
             if (weatherSummaries) {
                 if (weatherSummaries.start && weatherSummaries.end && weatherSummaries.start.summary != weatherSummaries.end.summary) {
                     arrPrompt.push(`The weather at the start was ${weatherSummaries.start.summary}, and at the end it was ${weatherSummaries.end.summary}.`)
                 } else {
-                    arrPrompt.push(`The weather was ${weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "mixed"}.`)
+                    arrPrompt.push(`The weather was ${weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "ok"}.`)
                 }
-                if (weatherSummaries.start?.aqi > 3 || weatherSummaries.end?.aqi > 3) {
+                if (weatherSummaries.start?.aqi > 4 || weatherSummaries.end?.aqi > 4) {
+                    arrPrompt.push("The air quality index was extremely unhealthy.")
+                } else if (weatherSummaries.start?.aqi > 3 || weatherSummaries.end?.aqi > 3) {
                     arrPrompt.push("The air quality index was very unhealthy.")
                 }
             }
@@ -104,14 +125,19 @@ export class OpenAI {
             // Successful prompt response? Extract the generated activity name.
             if (res?.choices?.length > 0) {
                 const arrName = res.choices[0].message.content.split(`"`)
-                const activityName = arrName.length > 1 ? arrName[1] : arrName[0]
+                let activityName = arrName.length > 1 ? arrName[1] : arrName[0]
 
                 // Ends with a period, but has no question? Remove it.
                 if (activityName.substring(activityName.length - 1) == "." && !activityName.includes("?")) {
-                    return activityName.substring(0, activityName.length - 1).trim()
+                    activityName = activityName.substring(0, activityName.length - 1).trim()
+                } else {
+                    activityName = activityName.trim()
                 }
 
-                return activityName.trim()
+                cache.set("openai", cacheId, activityName)
+                logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), `${weatherSummaries ? "with" : "without"} weather`, activityName)
+
+                return activityName
             }
 
             // Failed to generate the activity name.
