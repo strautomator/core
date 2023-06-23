@@ -9,8 +9,8 @@ import {FieldValue} from "@google-cloud/firestore"
 import {Request} from "express"
 import users from "../users"
 import _ from "lodash"
-import crypto from "crypto"
 import cache from "bitecache"
+import crypto from "crypto"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
@@ -43,6 +43,7 @@ export class Spotify {
             }
 
             cache.setup("spotify", settings.spotify.cacheDuration)
+            logger.info("Spotify.init", `Cache profile for up to ${settings.spotify.cacheDuration} seconds`)
         } catch (ex) {
             logger.error("Spotify.init", ex)
             throw ex
@@ -55,7 +56,7 @@ export class Spotify {
      * @param path URL path.
      */
     private makeRequest = async (tokens: SpotifyTokens, path: string): Promise<any> => {
-        const options: any = {
+        const options: AxiosConfig = {
             method: "GET",
             returnResponse: true,
             url: `${settings.spotify.api.baseUrl}${path}`,
@@ -121,7 +122,7 @@ export class Spotify {
                 throw new Error("Invalid user")
             }
             if (user.spotifyAuthState != arrState[1]) {
-                throw new Error(`Invalid auth state: ${user.spotifyAuthState}`)
+                throw new Error(`Invalid auth state: ${arrState[1]}`)
             }
 
             const tokens = await this.getToken(user, req.query.code as string)

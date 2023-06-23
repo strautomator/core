@@ -10,7 +10,7 @@ import maps from "../maps"
 import routes from "../routes"
 import dayjs from "../dayjs"
 import _ from "lodash"
-import cache = require("bitecache")
+import cache from "bitecache"
 import logger = require("anyhow")
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
@@ -46,7 +46,7 @@ export class Komoot {
             returnResponse: true,
             url: url,
             headers: {"User-Agent": settings.axios.uaBrowser},
-            abortStatus: [403]
+            abortStatus: [401, 403, 404]
         }
 
         try {
@@ -208,7 +208,11 @@ export class Komoot {
             // Maximum expiration time.
             route.dateExpiry = dayjs().add(settings.komoot.maxCacheDuration, "seconds").toDate()
         } catch (ex) {
-            logger.error("Komoot.parseRouteFromApi", route.id, ex)
+            if (ex.statusCode == 404) {
+                logger.warn("Komoot.parseRouteFromApi", route.id, "Not found")
+            } else {
+                logger.error("Komoot.parseRouteFromApi", route.id, ex)
+            }
         }
     }
 
@@ -264,7 +268,11 @@ export class Komoot {
             // Maximum expiration time.
             route.dateExpiry = dayjs().add(settings.komoot.maxCacheDuration, "seconds").toDate()
         } catch (ex) {
-            logger.error("Komoot.parseRouteFromHtml", route.id, ex)
+            if (ex.statusCode == 404) {
+                logger.warn("Komoot.parseRouteFromHtml", route.id, "Not found")
+            } else {
+                logger.error("Komoot.parseRouteFromHtml", route.id, ex)
+            }
         }
     }
 
@@ -300,9 +308,10 @@ export class Komoot {
             const separatorIndex = separators.length > 0 ? _.min(separators) : 0
             const routeUrl = separatorIndex > 0 ? data.substring(index, index + separatorIndex + 12) : data.substring(index)
 
-            // Found it?
+            // Make sure it does not have the trailing ? query symbol.
             if (routeUrl.includes("/tour/")) {
-                return routeUrl.trim()
+                const isLastQuery = routeUrl.substring(routeUrl.length - 1) == "?"
+                return isLastQuery ? routeUrl.substring(0, routeUrl.length - 1).trim() : routeUrl.trim()
             }
 
             return null
