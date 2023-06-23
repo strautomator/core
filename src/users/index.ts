@@ -453,6 +453,28 @@ export class Users {
     }
 
     /**
+     * Get a user based on the Garmin ID.
+     * @param profileId Garmin profile ID.
+     */
+    getByGarminId = async (garminProfileId: string): Promise<UserData> => {
+        try {
+            const users = await database.search("users", ["garmin.id", "==", garminProfileId])
+            const user = users.length > 0 ? users[0] : null
+
+            if (user) {
+                logger.info("Users.getByGarminId", garminProfileId, logHelper.user(user))
+            } else {
+                logger.warn("Users.getByGarminId", garminProfileId, "Not found")
+            }
+
+            return user
+        } catch (ex) {
+            logger.error("Garmin.getByGarminId", garminProfileId, ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get list of users with a linked Garmin account.
      */
     getWithGarmin = async (): Promise<UserData[]> => {
