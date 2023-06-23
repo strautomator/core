@@ -453,6 +453,22 @@ export class Users {
     }
 
     /**
+     * Get list of users with a linked Garmin account.
+     */
+    getWithGarmin = async (): Promise<UserData[]> => {
+        try {
+            const where = [["garmin.tokens.accessToken", "!=", ""]]
+            const users = await database.search("users", where)
+
+            logger.info("Users.getWithGarmin", `Got ${users.length || "no"} linked Garmin users`)
+            return users
+        } catch (ex) {
+            logger.error("Users.getWithGarmin", ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get list of users with a linked Spotify account.
      */
     getWithSpotify = async (): Promise<UserData[]> => {
@@ -460,7 +476,7 @@ export class Users {
             const where = [["spotify.tokens.accessToken", "!=", ""]]
             const users = await database.search("users", where)
 
-            logger.info("Users.getWithSpotify", `Got ${users.length || "no"} users with Spotify`)
+            logger.info("Users.getWithSpotify", `Got ${users.length || "no"} linked Spotify users`)
             return users
         } catch (ex) {
             logger.error("Users.getWithSpotify", ex)

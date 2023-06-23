@@ -1,5 +1,6 @@
 // Strautomator Core: User types
 
+import {GarminProfile} from "../garmin/types"
 import {RecipeData} from "../recipes/types"
 import {SpotifyProfile} from "../spotify/types"
 import {StravaFitnessLevel, StravaProfile, StravaTokens} from "../strava/types"
@@ -40,6 +41,10 @@ export interface UserData {
     ftpStatus?: UserFtpStatus
     /** Subscription details (for PRO accounts). */
     subscription?: UserSubscriptionRef
+    /** Linked Garmin account. */
+    garmin?: GarminProfile
+    /** Garmin authentication state. */
+    garminAuthState?: string
     /** Linked Spotify account. */
     spotify?: SpotifyProfile
     /** Spotify authentication state. */
