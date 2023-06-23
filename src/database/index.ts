@@ -4,7 +4,7 @@ import {DocumentReference, FieldValue, Firestore, OrderByDirection} from "@googl
 import {DatabaseOptions} from "./types"
 import {cryptoProcess} from "./crypto"
 import _ from "lodash"
-import cache = require("bitecache")
+import cache from "bitecache"
 import jaul = require("jaul")
 import logger = require("anyhow")
 import dayjs from "../dayjs"

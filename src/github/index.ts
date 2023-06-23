@@ -2,7 +2,7 @@
 
 import {GitHubChangelog, GitHubCommit, GitHubSubscription} from "./types"
 import api from "./api"
-import cache = require("bitecache")
+import cache from "bitecache"
 import database from "../database"
 import dayjs from "../dayjs"
 import eventManager from "../eventmanager"

@@ -5,7 +5,7 @@ import {UserData} from "../users/types"
 import database from "../database"
 import logger = require("anyhow")
 import * as logHelper from "../loghelper"
-import cache = require("bitecache")
+import cache from "bitecache"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 

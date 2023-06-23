@@ -6,7 +6,7 @@ import {MapAddress, MapCoordinates} from "./types"
 import {axiosRequest} from "../axios"
 import Bottleneck from "bottleneck"
 import database from "../database"
-import cache = require("bitecache")
+import cache from "bitecache"
 import jaul = require("jaul")
 import logger = require("anyhow")
 import dayjs from "../dayjs"
