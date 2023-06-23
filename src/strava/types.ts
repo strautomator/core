@@ -10,6 +10,8 @@ import dayjs from "dayjs"
 export interface StravaActivity {
     /** Activity numeric ID. */
     id: number
+    /** External ID (from the uploader service). */
+    externalId?: string
     /** Activity basic type (Ride, Run, etc). */
     type: StravaSport
     /** Activity extended sport type (includes Gravel Ride, Mountain Bike Ride, Trail Run, etc) */

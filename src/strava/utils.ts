@@ -62,6 +62,11 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         updatedFields: []
     }
 
+    // Has an external ID?
+    if (data.external_id) {
+        activity.externalId = data.external_id
+    }
+
     // Get elapsed and moving times as HH:MM:SS strings.
     if (activity.totalTime > 0) {
         activity.totalTimeString = dayjs.duration(activity.totalTime, "seconds").format("HH:mm:ss")
