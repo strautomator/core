@@ -4,8 +4,8 @@
 
 import {OAuth1Data} from "./types"
 import {AxiosConfig} from "../axios"
-import crypto = require("crypto")
-import jaul = require("jaul")
+import crypto from "crypto"
+import jaul from "jaul"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 

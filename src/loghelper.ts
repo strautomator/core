@@ -1,6 +1,6 @@
 // Strautomator Core: Log Helper
 
-import {GarminActivity, GarminPingActivity} from "./garmin/types"
+import {GarminActivity, GarminPingActivityFile} from "./garmin/types"
 import {RecipeData} from "./recipes/types"
 import {StravaActivity, StravaProcessedActivity} from "./strava/types"
 import {UserData} from "./users/types"
@@ -19,7 +19,7 @@ export const activity = (activity: StravaActivity | StravaProcessedActivity, ful
  * Helper to get Garmin activity details for logging.
  * @param activity Activity data.
  */
-export const garminActivity = (activity: GarminActivity | GarminPingActivity): string => {
+export const garminActivity = (activity: GarminActivity | GarminPingActivityFile): string => {
     if (!activity) return "Activity unknown"
     return `Activity ${activity["id"] || activity["activityId"]} - ${activity["name"] || activity["activityName"]}`
 }

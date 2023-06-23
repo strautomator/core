@@ -33,7 +33,11 @@ export interface GarminActivity {
     /** Profile ID (user ID from Garmin). */
     profileId: string
     /** Activity name (same as activityName). */
-    name?: string
+    name: string
+    /** Activity duration in seconds. */
+    duration?: number
+    /** Activity distance in KM. */
+    distance?: number
     /** Devices used in the activity. */
     devices?: string[]
     /** Activity UTC start date. */
@@ -47,7 +51,7 @@ export interface GarminActivity {
  */
 export interface GarminWebhookData {
     /** Activity files data. */
-    activityFiles?: GarminActivity[]
+    activityFiles?: GarminPingActivityFile[]
     /** Deregistrations data. */
     deregistrations?: GarminPing[]
     /** User permissions change data. */
@@ -68,7 +72,7 @@ export interface GarminPing {
  * Activity details from Garmin. Mostly the same schema as the ping
  * from Garmin, expect the appended dateStart and devices.
  */
-export interface GarminPingActivity extends GarminPing {
+export interface GarminPingActivityFile extends GarminPing {
     /** Activity unique ID. */
     activityId?: string
     /** Activity name on Garmin. */
@@ -77,10 +81,8 @@ export interface GarminPingActivity extends GarminPing {
     callbackURL?: string
     /** File type. */
     fileType?: string
-    /** Date start in seconds. */
+    /** Activity timestamp. */
     startTimeInSeconds?: number
-    /** Timezone offset in seconds. */
-    startTimeOffsetInSeconds?: number
 }
 
 /**

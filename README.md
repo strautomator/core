@@ -19,6 +19,7 @@ Mandatory credentials:
 
 Optional credentials:
 
+-   Garmin Connect API
 -   GitHub API
 -   LocationIQ API
 -   musixmatch API
@@ -64,14 +65,15 @@ By default Strautomator uses Google Cloud Firestore to store its data. But the [
 
 The following collections are currently used:
 
+-   **app-state** general application state
 -   **activities** processed activities
 -   **announcements** website announcements
--   **app-state** general application state
 -   **athlete-records** athlete sports records
 -   **faq** help questions and answers
+-   **garmin** cached Garmin data
+-   **gearwear** GearWear configurations
 -   **komoot** cached Komoot routes
 -   **lyrics** cached Lyrics from musixmatch
--   **gearwear** GearWear configurations
 -   **maps** cached geolocation data
 -   **notifications** notifications to users
 -   **recipe-stats** automation recipe stats
