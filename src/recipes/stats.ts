@@ -4,7 +4,7 @@ import {RecipeData, RecipeStatsData} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings

@@ -2,8 +2,8 @@
 
 import {EmailSendingOptions} from "./types"
 import {EmailBaseTemplate, EmailTemplates} from "./templates"
-import jaul = require("jaul")
-import logger = require("anyhow")
+import jaul from "jaul"
+import logger from "anyhow"
 import nodemailer = require("nodemailer")
 const settings = require("setmeup").settings
 

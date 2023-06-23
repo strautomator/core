@@ -5,7 +5,7 @@ import {UserPreferences} from "../users/types"
 import {translation} from "../translations"
 import Bottleneck from "bottleneck"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import dayjs from "../dayjs"
 
 /**

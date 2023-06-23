@@ -3,7 +3,7 @@
 import {Announcement} from "./types"
 import {UserData} from "../users/types"
 import database from "../database"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import cache from "bitecache"
 import dayjs from "../dayjs"

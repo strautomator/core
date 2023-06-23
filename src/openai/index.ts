@@ -5,7 +5,7 @@ import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
 import {axiosRequest} from "../axios"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import cache from "bitecache"
 const settings = require("setmeup").settings

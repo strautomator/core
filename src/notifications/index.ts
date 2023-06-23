@@ -8,7 +8,7 @@ import mailer from "../mailer"
 import users from "../users"
 import _ from "lodash"
 import cache from "bitecache"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings

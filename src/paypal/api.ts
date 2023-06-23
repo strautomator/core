@@ -4,7 +4,7 @@ import {PayPalAuth, PayPalBillingPlan, PayPalProduct} from "./types"
 import {axiosRequest} from "../axios"
 import database from "../database"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version

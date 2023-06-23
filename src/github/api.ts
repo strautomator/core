@@ -2,7 +2,7 @@
 
 import {axiosRequest} from "../axios"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
 

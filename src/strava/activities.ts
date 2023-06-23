@@ -6,7 +6,7 @@ import {UserData} from "../users/types"
 import stravaAthletes from "./athletes"
 import api from "./api"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings

@@ -1,6 +1,6 @@
 // Strautomator Core: Event Manager
 
-import events = require("events")
+import events from "events"
 
 /**
  * Central event manager.

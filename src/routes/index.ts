@@ -5,7 +5,7 @@ import {StravaFitnessLevel} from "../strava/types"
 import {UserData} from "../users/types"
 import dayjs from "../dayjs"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 

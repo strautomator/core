@@ -7,7 +7,7 @@ import storage from "../storage"
 import users from "../users"
 import dayjs from "../dayjs"
 import path from "path"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import JSZip = require("jszip")
 import _ from "lodash"

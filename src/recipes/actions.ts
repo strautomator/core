@@ -14,8 +14,8 @@ import notifications from "../notifications"
 import spotify from "../spotify"
 import weather from "../weather"
 import _ from "lodash"
-import jaul = require("jaul")
-import logger = require("anyhow")
+import jaul from "jaul"
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 

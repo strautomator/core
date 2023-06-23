@@ -8,7 +8,7 @@ import dayjs from "../dayjs"
 import eventManager from "../eventmanager"
 import users from "../users"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 const settings = require("setmeup").settings
 
 /**

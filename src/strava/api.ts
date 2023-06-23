@@ -8,8 +8,8 @@ import database from "../database"
 import eventManager from "../eventmanager"
 import Bottleneck from "bottleneck"
 import _ from "lodash"
-import crypto = require("crypto")
-import logger = require("anyhow")
+import crypto from "crypto"
+import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 

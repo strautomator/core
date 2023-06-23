@@ -6,7 +6,7 @@ if (!process.env.NODE_ENV) {
 }
 
 // Logs to the console by default.
-import logger = require("anyhow")
+import logger from "anyhow"
 logger.setup("console")
 logger.setOptions({
     appName: "Strautomator",

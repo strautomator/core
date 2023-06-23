@@ -9,8 +9,8 @@ import * as messages from "./messages"
 import database from "../database"
 import eventManager from "../eventmanager"
 import _ from "lodash"
-import jaul = require("jaul")
-import logger = require("anyhow")
+import jaul from "jaul"
+import logger from "anyhow"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings

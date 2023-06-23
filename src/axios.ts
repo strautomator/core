@@ -1,9 +1,9 @@
 // Strautomator Core: Axios
 
 import {AxiosRequestConfig, AxiosResponse} from "axios"
-import jaul = require("jaul")
-import logger = require("anyhow")
-import url = require("url")
+import jaul from "jaul"
+import logger from "anyhow"
+import url from "url"
 const axios = require("axios").default
 const settings = require("setmeup").settings
 const packageVersion = require("../package.json").version

@@ -2,7 +2,7 @@
 
 import {StravaWebhook} from "./types"
 import api from "./api"
-import logger = require("anyhow")
+import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 

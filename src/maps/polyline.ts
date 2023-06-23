@@ -3,7 +3,7 @@
 
 import Flatbush from "flatbush"
 import polyline = require("@mapbox/polyline")
-import logger = require("anyhow")
+import logger from "anyhow"
 
 /**
  * Polyline helper class.

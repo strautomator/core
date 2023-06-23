@@ -7,7 +7,7 @@ import users from "../users"
 import api from "./api"
 import database from "../database"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 

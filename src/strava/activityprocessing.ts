@@ -12,7 +12,7 @@ import notifications from "../notifications"
 import recipes from "../recipes"
 import users from "../users"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings

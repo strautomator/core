@@ -5,8 +5,8 @@ import {DatabaseOptions} from "./types"
 import {cryptoProcess} from "./crypto"
 import _ from "lodash"
 import cache from "bitecache"
-import jaul = require("jaul")
-import logger = require("anyhow")
+import jaul from "jaul"
+import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 const deadlineTimeout = 1500

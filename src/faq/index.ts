@@ -3,7 +3,7 @@
 import {FaqQuestion} from "./types"
 import database from "../database"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 

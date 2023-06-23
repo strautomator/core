@@ -5,7 +5,7 @@ import api from "./api"
 import database from "../database"
 import eventManager from "../eventmanager"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 const settings = require("setmeup").settings
 
 /**

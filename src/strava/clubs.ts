@@ -8,7 +8,7 @@ import api from "./api"
 import komoot from "../komoot"
 import dayjs from "../dayjs"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 

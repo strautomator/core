@@ -10,7 +10,7 @@ import database from "../database"
 import eventManager from "../eventmanager"
 import recipeStats from "./stats"
 import _ from "lodash"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings

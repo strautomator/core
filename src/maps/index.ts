@@ -7,8 +7,8 @@ import {axiosRequest} from "../axios"
 import Bottleneck from "bottleneck"
 import database from "../database"
 import cache from "bitecache"
-import jaul = require("jaul")
-import logger = require("anyhow")
+import jaul from "jaul"
+import logger from "anyhow"
 import dayjs from "../dayjs"
 const axios = require("axios").default
 const settings = require("setmeup").settings

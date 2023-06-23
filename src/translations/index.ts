@@ -9,7 +9,7 @@ import fr from "./fr"
 import it from "./it"
 import pl from "./pl"
 import pt from "./pt"
-import logger = require("anyhow")
+import logger from "anyhow"
 
 /**
  * Map of translated strings in multiple languages.

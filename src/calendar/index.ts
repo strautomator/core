@@ -8,15 +8,15 @@ import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
 import {File} from "@google-cloud/storage"
 import _ from "lodash"
-import crypto = require("crypto")
+import crypto from "crypto"
 import eventManager from "../eventmanager"
 import komoot from "../komoot"
 import maps from "../maps"
 import storage from "../storage"
 import strava from "../strava"
 import ical, {ICalCalendar, ICalAttendeeType, ICalAttendeeRole, ICalAttendeeStatus, ICalEventData} from "ical-generator"
-import jaul = require("jaul")
-import logger = require("anyhow")
+import jaul from "jaul"
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings

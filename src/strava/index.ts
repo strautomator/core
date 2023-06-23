@@ -13,7 +13,7 @@ import api from "./api"
 import database from "../database"
 import eventManager from "../eventmanager"
 import dayjs from "../dayjs"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 

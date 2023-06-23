@@ -11,7 +11,7 @@ import routes from "../routes"
 import dayjs from "../dayjs"
 import _ from "lodash"
 import cache from "bitecache"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 

@@ -4,7 +4,7 @@ import {StravaRoute} from "./types"
 import {toStravaRoute} from "./utils"
 import {UserData} from "../users/types"
 import api from "./api"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import JSZip = require("jszip")
 const settings = require("setmeup").settings

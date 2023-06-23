@@ -1,7 +1,7 @@
 // Strautomator Core: Storage
 
 import * as cloudStorage from "@google-cloud/storage"
-import logger = require("anyhow")
+import logger from "anyhow"
 import dayjs = require("dayjs")
 const settings = require("setmeup").settings
 

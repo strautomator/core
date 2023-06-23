@@ -4,7 +4,7 @@ import {UserData} from "./types"
 import {GitHubSubscription} from "../github/types"
 import {PayPalSubscription} from "../paypal/types"
 import database from "../database"
-import logger = require("anyhow")
+import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 

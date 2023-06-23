@@ -4,7 +4,7 @@ import {WeatherApiStats, WeatherProvider, WeatherRoundTo, WeatherSummary} from "
 import {getSuntimes} from "./utils"
 import {UserData} from "../users/types"
 import {axiosRequest} from "../axios"
-import logger = require("anyhow")
+import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import _ from "lodash"
 import dayjs from "../dayjs"
