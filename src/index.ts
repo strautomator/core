@@ -47,7 +47,7 @@ import setmeup = require("setmeup")
 setmeup.readOnly = true
 
 // Init in-memory cache.
-import cache = require("bitecache")
+import cache from "bitecache"
 
 // Load Core modules and event manager.
 import {Database} from "./database"
@@ -72,6 +72,8 @@ import {Musixmatch} from "./musixmatch"
 export const musixmatch: Musixmatch = Musixmatch.Instance
 import {OpenAI} from "./openai"
 export const openai: OpenAI = OpenAI.Instance
+import {Garmin} from "./garmin"
+export const garmin: Garmin = Garmin.Instance
 import {Spotify} from "./spotify"
 export const spotify: Spotify = Spotify.Instance
 import {Twitter} from "./twitter"
@@ -100,9 +102,11 @@ export const events: EventManager = EventManager.Instance
 // Export types and helpers.
 export * from "./gearwear/types"
 export * from "./recipes/types"
+export * from "./recipes/fortune"
 export * from "./routes/types"
 export * from "./strava/types"
 export * from "./komoot/types"
+export * from "./garmin/types"
 export * from "./spotify/types"
 export * from "./users/types"
 export * from "./calendar/types"
@@ -111,7 +115,6 @@ export * from "./announcements/types"
 export * from "./github/types"
 export * from "./paypal/types"
 export * from "./weather/types"
-export * from "./fortune"
 export * as logHelper from "./loghelper"
 
 // Import the custom dayjs implementation.
@@ -201,18 +204,18 @@ export const startup = async (quickStart?: boolean) => {
     // Start the database before other modules.
     await database.init()
 
-    // Try starting individual modules now.
-    for (let coreModule of [github, mailer, maps, paypal, strava, komoot, openai, spotify, musixmatch, users, recipes, twitter, weather, gearwear, notifications, announcements, calendar, faq, gdpr]) {
+    // Helper to init a core module.
+    const initModule = async (module) => {
         try {
-            const modSettings = settings[coreModule.constructor.name.toLowerCase()]
+            const modSettings = settings[module.constructor.name.toLowerCase()]
 
-            if (modSettings && modSettings.disabled) {
-                logger.warn("Strautomator.startup", coreModule.constructor.name, "Module is disabled on settings")
+            if (modSettings?.disabled) {
+                logger.warn("Strautomator.startup", module.constructor.name, "Module is disabled on settings")
             } else {
                 if (quickStart) {
-                    coreModule.init(quickStart)
+                    module.init(quickStart)
                 } else {
-                    await coreModule.init()
+                    await module.init()
                 }
             }
         } catch (ex) {
@@ -220,6 +223,12 @@ export const startup = async (quickStart?: boolean) => {
             return process.exit(1)
         }
     }
+
+    // Init individual modules now. Start with the most important modules, than the rest.
+    const coreModules = [github, paypal, strava, users]
+    await Promise.all(coreModules.map(initModule))
+    const otherModules = [announcements, calendar, faq, garmin, gearwear, gdpr, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, twitter, weather]
+    await Promise.all(otherModules.map(initModule))
 
     // Running locally? Setup the necessary cron jobs which are
     // otherwise defined as Cloud Functions in production.
