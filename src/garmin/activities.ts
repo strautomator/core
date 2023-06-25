@@ -1,6 +1,7 @@
 // Strautomator Core: Garmin Activities
 
 import {GarminActivity, GarminPingActivityFile} from "./types"
+import {DatabaseSearchOptions} from "../database/types"
 import {UserData} from "../users/types"
 import api from "./api"
 import database from "../database"
@@ -52,11 +53,11 @@ export class GarminActivities {
         } catch (ex) {
             logger.error("Garmin.processActivity", logHelper.user(user), logHelper.garminActivity(ping), ex)
         } finally {
-            await this.saveActivity(user, activity)
+            await this.saveProcessedActivity(user, activity)
         }
     }
 
-    // GET DATA FROM GARMIN
+    // DATA FROM GARMIN
     // --------------------------------------------------------------------------
 
     /**
@@ -109,7 +110,54 @@ export class GarminActivities {
         }
     }
 
-    // INTERNAL
+    // DATABASE DATA
+    // --------------------------------------------------------------------------
+
+    /**
+     * Find a matching Garmin activity in the database.
+     * @param user The user.
+     * @param options Search query options.
+     */
+    getProcessedActivities = async (user: UserData, options: DatabaseSearchOptions): Promise<GarminActivity[]> => {
+        try {
+            const where: any[] = [["userId", "==", user.id]]
+
+            // Filter by start date.
+            if (options.dateFrom) {
+                where.push(["dateStart", ">=", options.dateFrom])
+            }
+            if (options.dateTo) {
+                where.push(["dateStart", "<=", options.dateTo])
+            }
+
+            const result = await database.search("garmin", where)
+            return result
+        } catch (ex) {
+            logger.error("Garmin.getProcessedActivities", logHelper.user(user), ex)
+        }
+    }
+
+    /**
+     * Save the the processed activity from Garmin to the database.
+     * @param user The user.
+     * @param data The Garmin activity data.
+     */
+    saveProcessedActivity = async (user: UserData, activity: GarminActivity): Promise<void> => {
+        try {
+            if (!activity.dateExpiry) {
+                activity.dateExpiry = dayjs().add(settings.garmin.maxCacheDuration, "seconds").toDate()
+            }
+
+            await database.set("garmin", activity, `activity-${activity.id}`)
+
+            const logDevices = activity.devices ? activity.devices.length : "no"
+            logger.info("Garmin.saveActivity", logHelper.user(user), logHelper.garminActivity(activity), `${logDevices} devices`)
+        } catch (ex) {
+            logger.error("Garmin.saveActivity", logHelper.user(user), logHelper.garminActivity(activity), ex)
+        }
+    }
+
+    // HELPERS
     // --------------------------------------------------------------------------
 
     /**
@@ -133,7 +181,7 @@ export class GarminActivities {
                         // Extract duration and distance from sessions.
                         if (fitData.sessions?.length > 0) {
                             activity.distance = parseFloat((_.sumBy(fitData.sessions, "total_distance") / 1000).toFixed(1))
-                            activity.duration = Math.round(_.sumBy(fitData.sessions, "total_elapsed_time"))
+                            activity.totalTime = Math.round(_.sumBy(fitData.sessions, "total_elapsed_time"))
                         }
 
                         // Found devices in the FIT file? Generate device IDs.
@@ -156,26 +204,6 @@ export class GarminActivities {
                 reject(ex)
             }
         })
-    }
-
-    /**
-     * Save the Garmin profile to the specified user account.
-     * @param user The user.
-     * @param data The Garmin activity data.
-     */
-    saveActivity = async (user: UserData, activity: GarminActivity): Promise<void> => {
-        try {
-            if (!activity.dateExpiry) {
-                activity.dateExpiry = dayjs().add(settings.garmin.maxCacheDuration, "seconds").toDate()
-            }
-
-            await database.set("garmin", activity, `activity-${activity.id}`)
-
-            const logDevices = activity.devices ? activity.devices.length : "no"
-            logger.info("Garmin.saveActivity", logHelper.user(user), logHelper.garminActivity(activity), `${logDevices} devices`)
-        } catch (ex) {
-            logger.error("Garmin.saveActivity", logHelper.user(user), logHelper.garminActivity(activity), ex)
-        }
     }
 }
 
