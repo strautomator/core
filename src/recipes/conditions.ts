@@ -4,6 +4,7 @@ import {RecipeCondition, RecipeOperator} from "./types"
 import {StravaActivity, StravaActivityQuery} from "../strava/types"
 import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
+import garmin from "../garmin"
 import spotify from "../spotify"
 import strava from "../strava"
 import weather from "../weather"
@@ -400,6 +401,53 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
 }
 
 /**
+ * Check if Garmin related metadata matches the activity.
+ * @param user User data.
+ * @param activity The Strava activity to be checked.
+ * @param condition The Garmin based recipe condition.
+ */
+export const checkGarmin = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+    const op = condition.operator
+    let valid = false
+
+    // If user has no Garmin account linked, stop here.
+    if (!user.garmin) {
+        logger.debug("Recipes.checkGarmin", logHelper.activity(activity), condition, "Skipped, user has no Garmin profile")
+        return op == RecipeOperator.NotEqual || op == RecipeOperator.NotLike
+    }
+
+    // Try finding the matching Garmin activity for the Strava activity.
+    const activityDate = dayjs(activity.dateStart)
+    const dateFrom = activityDate.subtract(1, "minute").toDate()
+    const dateTo = activityDate.add(1, "minute").toDate()
+    const minTime = activity.totalTime + 60
+    const maxTime = activity.totalTime - 60
+    const garminActivities = await garmin.activities.getProcessedActivities(user, {dateFrom: dateFrom, dateTo: dateTo, minDuration: minTime, maxDuration: maxTime})
+
+    // Garmin activity not found? Stop here.
+    if (garminActivities.length == 0) {
+        return op == RecipeOperator.NotLike
+    }
+
+    // Warn if we found more than 1 activity, for future troubleshooting.
+    if (garminActivities.length > 1) {
+        logger.warn("Recipes.checkGarmin", logHelper.activity(activity), condition.friendlyValue, "Found more than 1 matching Garmin activity")
+    }
+
+    // Finally, check if the Garmin activity was using the specified device ID.
+    const devices = garminActivities.map((ga) => ga.devices).flat(1)
+    const hasDevice = devices.includes(condition.value as string)
+    valid = (RecipeOperator.Equal && hasDevice) || (RecipeOperator.NotEqual && !hasDevice)
+
+    if (valid) {
+        return true
+    }
+
+    logger.debug("Recipes.checkGarmin", logHelper.activity(activity), condition, "Failed")
+    return false
+}
+
+/**
  * Check if a spotify track during the the activity matches the specified condition.
  * @param user User data.
  * @param activity The Strava activity to be checked.
@@ -411,8 +459,8 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
 
     // If user has no Spotify account linked, stop here.
     if (!user.spotify) {
-        logger.debug("Recipes.checkSpotify", logHelper.activity(activity), condition, "Skipped, user has no Spotify")
-        return false
+        logger.debug("Recipes.checkSpotify", logHelper.activity(activity), condition, "Skipped, user has no Spotify profile")
+        return op == RecipeOperator.NotEqual || op == RecipeOperator.NotLike
     }
 
     // Fetch recent played tracks from Spotify.
@@ -423,24 +471,21 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
     // Check Spotify.
     // Set as valid if user has tracks and either no specific track name was set,
     // or a track name was set and it matches one of the played tracks.
-    if (!user.spotify && op == RecipeOperator.NotLike) {
-        valid = true
-    } else {
-        if (tracks.length > 0) {
-            if (op == RecipeOperator.Equal) {
-                valid = trackTitles.filter((t) => t == value).length > 0
-            } else if (op == RecipeOperator.Like) {
-                valid = trackTitles.filter((t) => t.includes(t)).length > 0
-            } else if (op == RecipeOperator.NotLike) {
-                valid = trackTitles.filter((t) => !t.includes(t)).length > 0
-            }
-        } else if (op == RecipeOperator.NotLike) {
-            valid = true
-        }
 
-        if (valid) {
-            return true
+    if (tracks.length > 0) {
+        if (op == RecipeOperator.Equal) {
+            valid = trackTitles.filter((t) => t == value).length > 0
+        } else if (op == RecipeOperator.Like) {
+            valid = trackTitles.filter((t) => t.includes(t)).length > 0
+        } else if (op == RecipeOperator.NotLike) {
+            valid = trackTitles.filter((t) => !t.includes(t)).length > 0
         }
+    } else if (op == RecipeOperator.NotLike) {
+        valid = true
+    }
+
+    if (valid) {
+        return true
     }
 
     logger.debug("Recipes.checkSpotify", logHelper.activity(activity), condition, "Failed")

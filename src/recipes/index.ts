@@ -1,8 +1,8 @@
 // Strautomator Core: Recipes
 
 import {recipePropertyList, recipeActionList} from "./lists"
-import {defaultAction, booleanAction, gearAction, mapStyleAction, sportTypeAction, webhookAction, workoutTypeAction} from "./actions"
-import {checkBoolean, checkFirstOfDay, checkGear, checkLocation, checkNewRecords, checkNumber, checkSportType, checkSpotify, checkText, checkTimestamp, checkWeather, checkWeekday} from "./conditions"
+import * as actions from "./actions"
+import * as conditions from "./conditions"
 import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
@@ -327,73 +327,79 @@ export class Recipes {
 
             // Weather conditions.
             if (prop.indexOf("weather") == 0) {
-                const valid = await checkWeather(user, activity, condition)
+                const valid = await conditions.checkWeather(user, activity, condition)
+                if (!valid) return false
+            }
+
+            // Garmin conditions.
+            else if (prop.indexOf("garmin") == 0) {
+                const valid = await conditions.checkGarmin(user, activity, condition)
                 if (!valid) return false
             }
 
             // Spotify conditions.
             else if (prop.indexOf("spotify") == 0) {
-                const valid = await checkSpotify(user, activity, condition)
+                const valid = await conditions.checkSpotify(user, activity, condition)
                 if (!valid) return false
             }
 
             // Sport type condition.
             else if (prop == "sportType") {
-                const valid = checkSportType(activity, condition)
+                const valid = conditions.checkSportType(activity, condition)
                 if (!valid) return false
             }
 
             // Gear condition.
             else if (prop == "gear") {
-                const valid = checkGear(activity, condition)
+                const valid = conditions.checkGear(activity, condition)
                 if (!valid) return false
             }
 
             // Day of week condition.
             else if (prop == "weekday") {
-                const valid = checkWeekday(activity, condition)
+                const valid = conditions.checkWeekday(activity, condition)
                 if (!valid) return false
             }
 
             // New records?
             else if (prop == "newRecords" || prop == "komSegments" || prop == "prSegments") {
-                const valid = checkNewRecords(activity, condition)
+                const valid = conditions.checkNewRecords(activity, condition)
                 if (!valid) return false
             }
 
             // Location condition.
             else if (propDetails?.type == "location") {
-                const valid = checkLocation(activity, condition)
+                const valid = conditions.checkLocation(activity, condition)
                 if (!valid) return false
             }
 
             // Time based condition.
             else if (propDetails?.type == "time") {
-                const valid = checkTimestamp(activity, condition)
+                const valid = conditions.checkTimestamp(activity, condition)
                 if (!valid) return false
             }
 
             // First activity of the day condition.
             else if (prop.indexOf("firstOfDay") == 0) {
-                const valid = await checkFirstOfDay(user, activity, condition, prop.includes(".same"))
+                const valid = await conditions.checkFirstOfDay(user, activity, condition, prop.includes(".same"))
                 if (!valid) return false
             }
 
             // Boolean condition.
             else if (_.isBoolean(condition.value)) {
-                const valid = checkBoolean(activity, condition)
+                const valid = conditions.checkBoolean(activity, condition)
                 if (!valid) return false
             }
 
             // Number condition.
             else if (_.isNumber(activity[condition.property])) {
-                const valid = checkNumber(activity, condition)
+                const valid = conditions.checkNumber(activity, condition)
                 if (!valid) return false
             }
 
             // Text condition (default).
             else {
-                const valid = checkText(activity, condition)
+                const valid = conditions.checkText(activity, condition)
                 if (!valid) return false
             }
 
@@ -421,36 +427,36 @@ export class Recipes {
 
         // Mark activity as commute?
         if (action.type == RecipeActionType.Commute || action.type == RecipeActionType.HideHome || action.type.toString().substring(0, 8) == "hideStat") {
-            return booleanAction(user, activity, recipe, action)
+            return actions.booleanAction(user, activity, recipe, action)
         }
 
         // Change activity gear?
         else if (action.type == RecipeActionType.Gear) {
-            return gearAction(user, activity, recipe, action)
+            return actions.gearAction(user, activity, recipe, action)
         }
 
         // Change activity / sport type?
         else if (action.type == RecipeActionType.SportType) {
-            return sportTypeAction(user, activity, recipe, action)
+            return actions.sportTypeAction(user, activity, recipe, action)
         }
 
         // Change activity workout type?
         else if (action.type == RecipeActionType.WorkoutType) {
-            return workoutTypeAction(user, activity, recipe, action)
+            return actions.workoutTypeAction(user, activity, recipe, action)
         }
 
         // Change activity map style?
         else if (action.type == RecipeActionType.MapStyle) {
-            return mapStyleAction(user, activity, recipe, action)
+            return actions.mapStyleAction(user, activity, recipe, action)
         }
 
         // Dispatch activity to webhook?
         else if (action.type == RecipeActionType.Webhook) {
-            return webhookAction(user, activity, recipe, action)
+            return actions.webhookAction(user, activity, recipe, action)
         }
 
         // Other actions (set description or name).
-        return defaultAction(user, activity, recipe, action)
+        return actions.defaultAction(user, activity, recipe, action)
     }
 
     /**
