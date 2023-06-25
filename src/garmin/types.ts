@@ -35,7 +35,7 @@ export interface GarminActivity {
     /** Activity name (same as activityName). */
     name: string
     /** Activity duration in seconds. */
-    duration?: number
+    totalTime?: number
     /** Activity distance in KM. */
     distance?: number
     /** Devices used in the activity. */
