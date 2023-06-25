@@ -13,3 +13,19 @@ export interface DatabaseOptions {
     /** Ignore undefined properties? */
     ignoreUndefinedProperties?: boolean
 }
+
+/**
+ * Generic database search query options.
+ */
+export interface DatabaseSearchOptions {
+    /** User ID. */
+    userId?: string
+    /** Date from. */
+    dateFrom?: Date
+    /** Date to. */
+    dateTo?: Date
+    /** Minimum duration. */
+    minDuration?: number
+    /** Maximum duration. */
+    maxDuration?: number
+}
