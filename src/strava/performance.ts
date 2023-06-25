@@ -137,10 +137,9 @@ export class StravaPerformance {
                 const isRun = activity.sportType.includes("Run")
                 const minMovingTime = isRide ? settings.strava.fitnessLevel.minRideTime : settings.strava.fitnessLevel.minRunTime
 
-                // Avoid processing very short activities as they might give overly optimistic results.
-                if ((isRide || isRun) && activity.movingTime < minMovingTime) {
+                // Avoid processing manual or very short activities as they might give overly optimistic results.
+                if (activity.manual || ((isRide || isRun) && activity.movingTime < minMovingTime)) {
                     logger.debug("Strava.estimateFitnessLevel", logHelper.user(user), `Activity ${activity.id} too short: ${activity.movingTimeString}`)
-
                     continue
                 }
 
@@ -166,9 +165,9 @@ export class StravaPerformance {
 
             // Calculate the score based on the average hours per week of training.
             const hoursPerWeek = totalTime / weeks / 3600
-            if (hoursPerWeek > 18) levels.hoursPerWeek = StravaFitnessLevel.Elite
-            else if (hoursPerWeek > 14) levels.hoursPerWeek = StravaFitnessLevel.Pro
-            else if (hoursPerWeek > 9) levels.hoursPerWeek = StravaFitnessLevel.Athletic
+            if (hoursPerWeek > 20) levels.hoursPerWeek = StravaFitnessLevel.Elite
+            else if (hoursPerWeek > 16) levels.hoursPerWeek = StravaFitnessLevel.Pro
+            else if (hoursPerWeek > 10) levels.hoursPerWeek = StravaFitnessLevel.Athletic
             else if (hoursPerWeek > 2) levels.hoursPerWeek = StravaFitnessLevel.Average
 
             // Calculate the score based on the average number of active days per week.
@@ -176,8 +175,8 @@ export class StravaPerformance {
             const uniqueDays = _.uniq(activities.map((a) => dayjs(a.dateStart).format("YYYY-MM-DD"))).length
             const activeDays = (uniqueDays + uniqueDays + activities.length) / 3
             const daysPerWeek = activeDays / weeks
-            if (daysPerWeek > 5) levels.daysPerWeek = StravaFitnessLevel.Elite
-            else if (daysPerWeek > 4) levels.daysPerWeek = StravaFitnessLevel.Pro
+            if (daysPerWeek > 6) levels.daysPerWeek = StravaFitnessLevel.Elite
+            else if (daysPerWeek > 5) levels.daysPerWeek = StravaFitnessLevel.Pro
             else if (daysPerWeek > 3) levels.daysPerWeek = StravaFitnessLevel.Athletic
             else if (daysPerWeek > 1) levels.daysPerWeek = StravaFitnessLevel.Average
         } catch (ex) {
