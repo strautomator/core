@@ -72,6 +72,7 @@ export class StravaPerformance {
 
     /**
      * Estimate the user's fitness level using a combination of speed, wattage and training hours.
+     * At the moment biased towards endurance sports (rides and runs) where volume is usually higher.
      * @param user The user data.
      * @param activities Optional activities to consider, if not passed will get latest for the last few weeks.
      */
@@ -173,7 +174,7 @@ export class StravaPerformance {
             // Calculate the score based on the average number of active days per week.
             // If a user does more than 1 activity per day, only a partial extra day will be counted.
             const uniqueDays = _.uniq(activities.map((a) => dayjs(a.dateStart).format("YYYY-MM-DD"))).length
-            const activeDays = (uniqueDays + uniqueDays + activities.length) / 3
+            const activeDays = (uniqueDays * 3 + activities.length) / 4
             const daysPerWeek = activeDays / weeks
             if (daysPerWeek > 6) levels.daysPerWeek = StravaFitnessLevel.Elite
             else if (daysPerWeek > 5) levels.daysPerWeek = StravaFitnessLevel.Pro
