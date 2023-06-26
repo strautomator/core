@@ -99,8 +99,14 @@ export class GDPR {
             jsonData["subscriptions"] = await database.search("subscriptions", where)
 
             // Remove sensitive data.
-            delete jsonData["user"].stravaTokens
-            delete jsonData["user"].urlToken
+            delete jsonData.user.stravaTokens
+            delete jsonData.user.urlToken
+            if (jsonData.user.garmin) {
+                delete jsonData.user.garmin.tokens
+            }
+            if (jsonData.user.spotify) {
+                delete jsonData.user.spotify.tokens
+            }
 
             // Iterate and zip database contents for the specified user.
             let key: string
