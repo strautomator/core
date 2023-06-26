@@ -4,7 +4,7 @@ import {LanguageString} from "./types"
 
 const enLang: LanguageString = {
     Description: "beschrijving",
-    Cool: "cool",
+    Cool: "koel",
     Cold: "koud",
     Warm: "warm",
     VeryCold: "erg koud",
