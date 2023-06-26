@@ -33,7 +33,7 @@ export const languageStrings: {[id: string]: LanguageString} = {
  * @param capitalized Optional, return string capitalized
  */
 export const translation = (id: string, preferences: UserPreferences, capitalized?: boolean): string => {
-    let language = preferences ? preferences.language : "en"
+    let language = preferences?.language || "en"
     if (!language || !languageStrings[language]) {
         language = "en"
     }

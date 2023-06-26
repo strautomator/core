@@ -3,6 +3,7 @@
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
+import {translation} from "../translations"
 import {axiosRequest} from "../axios"
 import _ from "lodash"
 import logger from "anyhow"
@@ -95,8 +96,15 @@ export class OpenAI {
                 }
             }
 
+            // Translate to the user's language (if other than English).
+            let languagePrompt = "."
+            if (user.preferences.language && user.preferences.language != "en") {
+                const languageName = translation("LanguageName", user.preferences)
+                languagePrompt = `, in ${languageName} language.`
+            }
+
             // Avoid boilerplate around the actual answer.
-            arrPrompt.push("Answer the generated name only, with no additional text.")
+            arrPrompt.push(`Answer the generated name only, with no additional text${languagePrompt}`)
 
             // Get final prompt and request options.
             const content = arrPrompt.join(" ")
