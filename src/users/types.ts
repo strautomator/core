@@ -23,6 +23,8 @@ export interface UserData {
     displayName?: string
     /** Is activated with a Pro account? */
     isPro?: boolean
+    /** Is allowed to access the Beta environment? */
+    isBeta?: boolean
     /** User profile data from Strava. */
     profile: StravaProfile
     /** Estimated fitness level. */
