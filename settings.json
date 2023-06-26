@@ -504,7 +504,7 @@
             "minMovingTimeAvg": 1200
         },
         "processingQueue": {
-            // Delayed processing of activities happens no earlier than 10 minutes. Value set in seconds.
+            // Default delay for queued activities is 10 minutes, value set in seconds.
             "delayedInterval": 600,
             // A single batch operation per user per 24 hours.
             "batchPerHours": 24,

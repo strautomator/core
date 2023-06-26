@@ -82,7 +82,7 @@
     "strava": {
         "api": {
             // More retricted rate limits on dev.
-            "maxConcurrent": 5,
+            "maxConcurrent": 4,
             "maxPerMinute": 80,
             // Token to be appended to the URL of Strava webhooks, for
             // extra security. Can only include alphanumeric characters.
@@ -101,10 +101,6 @@
             "clubs": 20,
             "clubs-group-events": 20,
             "routes": 20
-        },
-        // Faster delayed processing on dev, just 2 minutes.
-        "processingQueue": {
-            "delayedInterval": 120
         },
         // Enabling test mode will prevent activities from being written to Strava.
         // They will be logged to the console instead.
