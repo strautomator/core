@@ -3,6 +3,9 @@
 import {LanguageString} from "./types"
 
 const enLang: LanguageString = {
+    LanguageName: "Dutch",
+    LanguageLocalName: "Nederlands",
+    Language
     Description: "beschrijving",
     Cool: "koel",
     Cold: "koud",

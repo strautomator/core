@@ -15,7 +15,7 @@ import logger from "anyhow"
 /**
  * Map of translated strings in multiple languages.
  */
-const languageStrings: {[id: string]: LanguageString} = {
+export const languageStrings: {[id: string]: LanguageString} = {
     de: de,
     en: en,
     es: es,

@@ -4,6 +4,8 @@
  * Set of language strings.
  */
 export interface LanguageString {
+    LanguageName: string
+    LanguageLocalName: string
     Description: string
     Cool: string
     Cold: string

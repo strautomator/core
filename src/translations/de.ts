@@ -3,6 +3,8 @@
 import {LanguageString} from "./types"
 
 const deLang: LanguageString = {
+    LanguageName: "German",
+    LanguageLocalName: "Deutsch",
     Description: "beschreibung",
     Cool: "frisch",
     Warm: "warm",

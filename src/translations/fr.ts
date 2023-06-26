@@ -3,6 +3,8 @@
 import {LanguageString} from "./types"
 
 const frLang: LanguageString = {
+    LanguageName: "French",
+    LanguageLocalName: "Français",
     Description: "description",
     Cool: "frais",
     Warm: "chaud",

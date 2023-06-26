@@ -3,6 +3,8 @@
 import {LanguageString} from "./types"
 
 const plLang: LanguageString = {
+    LanguageName: "Polish",
+    LanguageLocalName: "Polski",
     Description: "opis",
     Cool: "chłodno",
     Cold: "zimno",

@@ -3,6 +3,8 @@
 import {LanguageString} from "./types"
 
 const itLang: LanguageString = {
+    LanguageName: "Italian",
+    LanguageLocalName: "Italiano",
     Description: "descrizione",
     Cool: "fresco",
     Cold: "freddo",
