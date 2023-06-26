@@ -7,6 +7,7 @@ import en from "./en"
 import es from "./es"
 import fr from "./fr"
 import it from "./it"
+import nl from "./nl"
 import pl from "./pl"
 import pt from "./pt"
 import logger from "anyhow"
@@ -20,6 +21,7 @@ const languageStrings: {[id: string]: LanguageString} = {
     es: es,
     fr: fr,
     it: it,
+    nl: nl,
     pl: pl,
     pt: pt
 }
