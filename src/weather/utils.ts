@@ -212,15 +212,18 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
                 summary.icon = "💨"
                 break
             case "Fog":
+            case "Foggy":
                 summary.icon = "😶‍🌫️"
                 break
             case "Thunderstorm":
                 summary.icon = "⛈️"
                 break
             case "Tornado":
-            case "Hurricane":
                 summary.icon = "🌪️"
                 break
+            case "Cyclone":
+            case "Hurricane":
+                summary.icon = "🌀"
         }
 
         // Air quality index.
@@ -254,13 +257,11 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
 
         // Final trimmed summary should be always Capital cased.
         summary.summary = (summary.summary.charAt(0).toUpperCase() + summary.summary.slice(1)).trim()
-
-        // Extra data not needed any longer.
-        delete summary.extraData
     } catch (ex) {
-        delete summary.extraData
         const weatherProps = Object.keys(summary).map((key) => `${key}: ${summary[key]}`)
         logger.error("Weather.processWeatherSummary", dDate.format("lll"), weatherProps.join(" | "), ex)
+    } finally {
+        delete summary.extraData
     }
 }
 

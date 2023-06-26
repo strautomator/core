@@ -93,7 +93,7 @@ export interface WeatherSummary {
     aqiIcon?: string
     /** Moon phase (as string). */
     moon?: MoonPhase
-    /** Weather unicode icon. */
+    /** Weather icon. */
     icon?: string
     /** Extra data for summary calculation, this will be removed after the weather summary has processed. */
     extraData?: {
