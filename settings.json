@@ -144,7 +144,9 @@
         // Cache profiles and Garmin data for up to 2 minutes. Value set in seconds.
         "cacheDuration": 120,
         // Garmin data will be stored in the database for up to 5 days.
-        "maxCacheDuration": 432000
+        "maxCacheDuration": 432000,
+        // Garmin is currently enabled only for testing on the beta environment.
+        "beta": true
     },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
