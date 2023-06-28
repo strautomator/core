@@ -131,6 +131,12 @@ export class GarminActivities {
             }
 
             const result = await database.search("garmin", where)
+
+            // Log additional where clauses.
+            where.shift()
+            const logWhere = where.length > 0 ? where.map((w) => w.join(" ")).join(", ") : "No date filter"
+            logger.info("Garmin.getProcessedActivities", logHelper.user(user), logWhere, `Got ${result?.length || "no"} activities`)
+
             return result
         } catch (ex) {
             logger.error("Garmin.getProcessedActivities", logHelper.user(user), ex)
