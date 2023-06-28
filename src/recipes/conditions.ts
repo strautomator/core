@@ -425,19 +425,21 @@ export const checkGarmin = async (user: UserData, activity: StravaActivity, cond
     const garminActivities = await garmin.activities.getProcessedActivities(user, {dateFrom: dateFrom, dateTo: dateTo, minDuration: minTime, maxDuration: maxTime})
 
     // Garmin activity not found? Stop here.
-    if (garminActivities.length == 0) {
+    if (!garminActivities || garminActivities.length == 0) {
         return op == RecipeOperator.NotLike
-    }
-
-    // Warn if we found more than 1 activity, for future troubleshooting.
-    if (garminActivities.length > 1) {
-        logger.warn("Recipes.checkGarmin", logHelper.activity(activity), condition.friendlyValue, "Found more than 1 matching Garmin activity")
     }
 
     // Finally, check if the Garmin activity was using the specified device ID.
     const devices = garminActivities.map((ga) => ga.devices).flat(1)
     const hasDevice = devices.includes(condition.value as string)
     valid = (RecipeOperator.Equal && hasDevice) || (RecipeOperator.NotEqual && !hasDevice)
+
+    // Warn if we found more than 1 activity, for future troubleshooting.
+    // TODO! Remove logging after beta testing has finished.
+    if (garminActivities.length > 1) {
+        logger.warn("Recipes.checkGarmin", logHelper.activity(activity), condition.value, "Found more than 1 matching Garmin activity")
+    }
+    logger.info("Recipes.checkGarmin", logHelper.activity(activity), condition.value, `Activity devices: ${devices.join(", ")}`)
 
     if (valid) {
         return true
