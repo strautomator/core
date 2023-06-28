@@ -212,7 +212,7 @@ export const startup = async (quickStart?: boolean) => {
 
             if (modSettings?.disabled) {
                 logger.warn("Strautomator.startup", module.constructor.name, "Module is disabled on settings")
-            } else if (modSettings?.beta && nodeEnv == "production") {
+            } else if (modSettings?.beta && !settings.beta.enabled) {
                 logger.warn("Strautomator.startup", module.constructor.name, "Module is currently in beta, won't init in production")
             } else {
                 if (quickStart) {
