@@ -2,6 +2,7 @@
 
 import {GarminActivity, GarminPingActivityFile} from "./types"
 import {DatabaseSearchOptions} from "../database/types"
+import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import api from "./api"
 import database from "../database"
@@ -114,9 +115,9 @@ export class GarminActivities {
     // --------------------------------------------------------------------------
 
     /**
-     * Find a matching Garmin activity in the database.
+     * Search for Garmin activities in the database based on user and (optional) start date.
      * @param user The user.
-     * @param options Search query options.
+     * @param options Search query options (dateFrom and dateTo).
      */
     getProcessedActivities = async (user: UserData, options: DatabaseSearchOptions): Promise<GarminActivity[]> => {
         try {
@@ -132,14 +133,55 @@ export class GarminActivities {
 
             const result = await database.search("garmin", where)
 
-            // Log additional where clauses.
+            // Log additional where date clauses.
             where.shift()
-            const logWhere = where.length > 0 ? where.map((w) => w.join(" ")).join(", ") : "No date filter"
+            const logWhere = where.length > 0 ? where.map((w) => w.map((i) => i.toISOString()).join(" ")).join(", ") : "No date filter"
             logger.info("Garmin.getProcessedActivities", logHelper.user(user), logWhere, `Got ${result?.length || "no"} activities`)
 
             return result
         } catch (ex) {
             logger.error("Garmin.getProcessedActivities", logHelper.user(user), ex)
+        }
+    }
+
+    /**
+     * Find a matching Garmin activity in the database.
+     * @param user The user.
+     * @param activity The Strava activity to be matched.
+     */
+    getMatchingActivity = async (user: UserData, activity: StravaActivity): Promise<GarminActivity> => {
+        try {
+            const activityDate = dayjs(activity.dateStart)
+            const dateFrom = activityDate.subtract(1, "minute").toDate()
+            const dateTo = activityDate.add(1, "minute").toDate()
+            const where: any[] = [
+                ["userId", "==", user.id],
+                ["dateStart", ">=", dateFrom],
+                ["dateStart", "<=", dateTo]
+            ]
+
+            // Find activities based on the start date.
+            const activities: GarminActivity[] = await database.search("garmin", where)
+
+            // No activities found? Stop here.
+            if (activities.length == 0) {
+                logger.info("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), "Not found")
+                return null
+            }
+
+            // Make sure activity is the correct one.
+            const minTime = activity.totalTime - 60
+            const maxTime = activity.totalTime + 60
+            const result = activities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
+            if (!result) {
+                logger.warn("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), `Activities: ${activities.map((a) => a.id).join(", ")}`, "Around same start date, but different total time")
+                return null
+            }
+
+            logger.info("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), `Matched Garmin activity: ${logHelper.garminActivity(result)}`)
+            return result
+        } catch (ex) {
+            logger.error("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), ex)
         }
     }
 
