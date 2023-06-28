@@ -423,9 +423,8 @@ export const checkGarmin = async (user: UserData, activity: StravaActivity, cond
     }
 
     // Finally, check if the Garmin activity was using the specified device ID.
-    const deviceStrings = garminActivity.devices.join(", ")
-    const hasDevice = deviceStrings.includes(condition.value as string)
-    valid = (RecipeOperator.Equal && hasDevice) || (RecipeOperator.NotEqual && !hasDevice)
+    const hasDevice = garminActivity.devices?.find((d) => d.includes(condition.value as string)) ? true : false
+    valid = (op == RecipeOperator.Equal && hasDevice) || (op == RecipeOperator.NotEqual && !hasDevice)
 
     if (valid) {
         return true
