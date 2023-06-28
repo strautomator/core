@@ -3,6 +3,7 @@
 import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaProfileStats, StravaRoute, StravaSport, StravaTotals} from "./types"
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
+import {translation} from "../translations"
 import maps from "../maps"
 import routes from "../routes"
 import dayjs from "../dayjs"
@@ -685,8 +686,11 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             activity.sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim() as any
         }
 
-        // Append suffixes.
+        // Append suffixes. If suffix has at least 3 characters, check for translations as well.
         if (suffix && !noSuffixes && !_.isNil(activity[prop.value]) && !_.isDate(activity[prop.value])) {
+            if (suffix.length >= 3) {
+                suffix = translation(suffix, user.preferences)
+            }
             activity[prop.value] = `${activity[prop.value]}${suffix}`
         }
     }
