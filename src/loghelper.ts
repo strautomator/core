@@ -41,7 +41,7 @@ export const recipe = (recipe: RecipeData): string => {
  * Helper to get user details for logging.
  * @param user User data.
  */
-export const user = (user: UserData): string => {
+export const user = (user: UserData | Partial<UserData>): string => {
     if (!user) return "User unknown"
     if (user.id && user.displayName) return `User ${user.id} ${user.displayName}`
     return user.id || user.displayName
