@@ -159,12 +159,13 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         if (!_.isNil(summary.windSpeed)) {
             const windUnit = preferences.windSpeedUnit ? preferences.windSpeedUnit : preferences.weatherUnit == "f" ? "mph" : "kph"
             const windSpeed = windUnit == "m/s" ? summary.windSpeed : windUnit == "mph" ? msToMph(summary.windSpeed as number) : msToKph(summary.windSpeed as number)
-            summary.windSpeed = `${Math.round(windSpeed as number)} ${windUnit}`
+            summary.windSpeed = `${Math.round(windSpeed as number)} ${translation(windUnit, preferences)}`
         }
 
         // Wind direction.
         if (!_.isNil(summary.windDirection)) {
-            summary.windDirection = degToDirection(summary.windDirection as number)
+            const direction = degToDirection(summary.windDirection as number)
+            summary.windDirection = translation(`Directions.${direction}`, preferences)
         }
 
         // Cloud coverage.
