@@ -37,7 +37,28 @@ const enLang: LanguageString = {
     MostlyCloudy: "meestal bewolkt",
     Thunderstorm: "onweersbui",
     Hurricane: "orkaan",
-    Tornado: "tornado"
+    Tornado: "tornado",
+    Watts: "watt",
+    Kph: "km/u",
+    Mph: "mph",
+    Directions: {
+        N: "N",
+        NNE: "NNO",
+        NE: "NO",
+        ENE: "ONO",
+        E: "O",
+        ESE: "OZO",
+        SE: "ZO",
+        SSE: "ZZO",
+        S: "Z",
+        SSW: "ZZW",
+        SW: "ZW",
+        WSW: "WZW",
+        W: "W",
+        WNW: "WNW",
+        NW: "NW",
+        NNW: "NNW"
+    }
 }
 
 export default enLang

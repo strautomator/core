@@ -37,7 +37,28 @@ const plLang: LanguageString = {
     MostlyCloudy: "głównie pochmurnie",
     Thunderstorm: "burza",
     Hurricane: "huragan",
-    Tornado: "tornado"
+    Tornado: "tornado",
+    Watts: "watów",
+    Kph: "km/h",
+    Mph: "mph",
+    Directions: {
+        N: "N",
+        NNE: "NNE",
+        NE: "NE",
+        ENE: "ENE",
+        E: "E",
+        ESE: "ESE",
+        SE: "SE",
+        SSE: "SSE",
+        S: "S",
+        SSW: "SSW",
+        SW: "SW",
+        WSW: "WSW",
+        W: "W",
+        WNW: "WNW",
+        NW: "NW",
+        NNW: "NNW"
+    }
 }
 
 export default plLang

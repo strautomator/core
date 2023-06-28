@@ -37,7 +37,28 @@ const ptLang: LanguageString = {
     MostlyCloudy: "parcialmente nublado",
     Thunderstorm: "tempestade",
     Hurricane: "furacão",
-    Tornado: "tornado"
+    Tornado: "tornado",
+    Watts: "watts",
+    Kph: "km/h",
+    Mph: "mph",
+    Directions: {
+        N: "N",
+        NNE: "NNE",
+        NE: "NE",
+        ENE: "ENE",
+        E: "E",
+        ESE: "ESE",
+        SE: "SE",
+        SSE: "SSE",
+        S: "S",
+        SSW: "SSO",
+        SW: "SO",
+        WSW: "OSO",
+        W: "O",
+        WNW: "ONO",
+        NW: "NO",
+        NNW: "NNO"
+    }
 }
 
 export default ptLang

@@ -37,7 +37,28 @@ const deLang: LanguageString = {
     MostlyCloudy: "meist bewölkt",
     Thunderstorm: "gewitter",
     Hurricane: "hurrikan",
-    Tornado: "tornado"
+    Tornado: "tornado",
+    Watts: "Watt",
+    Kph: "km/h",
+    Mph: "mph",
+    Directions: {
+        N: "N",
+        NNE: "NNO",
+        NE: "NO",
+        ENE: "ONO",
+        E: "O",
+        ESE: "OSO",
+        SE: "SO",
+        SSE: "SSO",
+        S: "S",
+        SSW: "SSW",
+        SW: "SW",
+        WSW: "WSW",
+        W: "W",
+        WNW: "WNW",
+        NW: "NW",
+        NNW: "NNW"
+    }
 }
 
 export default deLang

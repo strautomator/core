@@ -37,7 +37,28 @@ const esLang: LanguageString = {
     MostlyCloudy: "mayormente nublado",
     Thunderstorm: "tormenta",
     Hurricane: "huracán",
-    Tornado: "tornado"
+    Tornado: "tornado",
+    Watts: "vatios",
+    Kph: "km/h",
+    Mph: "mph",
+    Directions: {
+        N: "N",
+        NNE: "NNE",
+        NE: "NE",
+        ENE: "ENE",
+        E: "E",
+        ESE: "ESE",
+        SE: "SE",
+        SSE: "SSE",
+        S: "S",
+        SSW: "SSO",
+        SW: "SO",
+        WSW: "OSO",
+        W: "O",
+        WNW: "ONO",
+        NW: "NO",
+        NNW: "NNO"
+    }
 }
 
 export default esLang

@@ -39,4 +39,25 @@ export interface LanguageString {
     Thunderstorm: string
     Tornado: string
     Hurricane: string
+    Watts: string
+    Kph: string
+    Mph: string
+    Directions: {
+        N: string
+        NNE: string
+        NE: string
+        ENE: string
+        E: string
+        ESE: string
+        SE: string
+        SSE: string
+        S: string
+        SSW: string
+        SW: string
+        WSW: string
+        W: string
+        WNW: string
+        NW: string
+        NNW: string
+    }
 }
