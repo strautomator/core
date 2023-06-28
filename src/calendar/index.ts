@@ -68,7 +68,7 @@ export class Calendar {
                 logger.info("Calendar.onUserDelete", logHelper.user(user), `Deleted ${count} cached calendars`)
             }
         } catch (ex) {
-            logger.error("Calendar.onUserDelete", logHelper.user(user), ex)
+            logger.warn("Calendar.onUserDelete", logHelper.user(user), "Failed, no problem as calendar files will be auto-deleted in a few days")
         }
     }
 

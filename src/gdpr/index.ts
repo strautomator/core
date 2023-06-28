@@ -48,7 +48,7 @@ export class GDPR {
                 logger.info("GDPR.onUserDelete", logHelper.user(user), `Deleted archive: ${filename}`)
             }
         } catch (ex) {
-            logger.error("GDPR.onUserDelete", logHelper.user(user), ex)
+            logger.warn("GDPR.onUserDelete", logHelper.user(user), "Failed, no problem as archives files will be auto-deleted in a few days")
         }
     }
 
