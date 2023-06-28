@@ -4,6 +4,7 @@
 if (!process.env.NODE_ENV) {
     process.env.NODE_ENV = "development"
 }
+const nodeEnv = process.env.NODE_ENV
 
 // Logs to the console by default.
 import logger from "anyhow"
@@ -16,7 +17,7 @@ logger.setOptions({
 })
 
 // Defaults to gcp-strautomator.json on home directory if no credentials were set for gcloud.
-if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+if (nodeEnv != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     const homedir = require("os").homedir()
     const credPath = `${homedir}/gcp-strautomator.json`
     process.env.GOOGLE_APPLICATION_CREDENTIALS = credPath
@@ -26,7 +27,7 @@ if (process.env.NODE_ENV != "production" && !process.env.GOOGLE_APPLICATION_CRED
 }
 
 // Check if JSON logging (for Google Cloud Logging) should be used instead of simple text.
-if (process.env.NODE_ENV == "production" && process.env.JSON_LOGGING) {
+if (nodeEnv == "production" && process.env.JSON_LOGGING) {
     const consoleLog = (level, message) => {
         level = level.toUpperCase()
         if (level == "WARN") level = "WARNING"
@@ -134,7 +135,7 @@ export const startup = async (quickStart?: boolean) => {
     let settings: any
 
     try {
-        setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${process.env.NODE_ENV}.json`])
+        setmeup.load([`${__dirname}/../settings.json`, `${__dirname}/../settings.${nodeEnv}.json`])
         setmeup.load()
         setmeup.loadFromEnv()
 
@@ -149,7 +150,7 @@ export const startup = async (quickStart?: boolean) => {
         }
 
         // Running locally on dev? Load local-only settings as the last loaded file so it overwrites everything else.
-        if (process.env.NODE_ENV == "development") {
+        if (nodeEnv == "development") {
             setmeup.load("settings.local.json")
         }
 
@@ -211,6 +212,8 @@ export const startup = async (quickStart?: boolean) => {
 
             if (modSettings?.disabled) {
                 logger.warn("Strautomator.startup", module.constructor.name, "Module is disabled on settings")
+            } else if (modSettings?.beta && nodeEnv == "production") {
+                logger.warn("Strautomator.startup", module.constructor.name, "Module is currently in beta, won't init in production")
             } else {
                 if (quickStart) {
                     module.init(quickStart)
@@ -232,7 +235,7 @@ export const startup = async (quickStart?: boolean) => {
 
     // Running locally? Setup the necessary cron jobs which are
     // otherwise defined as Cloud Functions in production.
-    if (process.env.NODE_ENV == "development" && process.env.STRAUTOMATOR_CRON) {
+    if (nodeEnv == "development" && process.env.STRAUTOMATOR_CRON) {
         try {
             logger.warn("Strautomator.startup", "Setting up cron jobs directly")
 
@@ -281,7 +284,7 @@ export const shutdown = async (code) => {
         cache.clear()
 
         // Remove Strava webhook on development.
-        if (process.env.NODE_ENV == "development") {
+        if (nodeEnv == "development") {
             await strava.webhooks.cancelWebhook()
         }
     } catch (ex) {
