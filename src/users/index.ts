@@ -30,6 +30,11 @@ export class Users {
     }
 
     /**
+     * List of ignored user IDs.
+     */
+    ignoredUserIds: string[] = []
+
+    /**
      * User subscriptions.
      */
     subscriptions = userSubscriptions
@@ -44,8 +49,19 @@ export class Users {
 
     /**
      * Init the Users manager. Listen to PayPal, GitHub and Strava events.
+     * @param quickStart If true, will not manage list of ignored users.
      */
-    init = async (): Promise<void> => {
+    init = async (quickStart?: boolean): Promise<void> => {
+        if (!quickStart) {
+            const dbUsers = await database.appState.get("users")
+            if (dbUsers?.ignored) {
+                dbUsers.ignored.forEach((id) => this.ignoredUserIds.push(id))
+            }
+            if (this.ignoredUserIds.length > 0) {
+                logger.info("Users.init", `Currently ignoring ${this.ignoredUserIds.length} users`)
+            }
+        }
+
         eventManager.on("PayPal.subscriptionCreated", this.onPayPalSubscription)
         eventManager.on("PayPal.subscriptionUpdated", this.onPayPalSubscription)
         eventManager.on("GitHub.subscriptionUpdated", this.onGitHubSubscription)
@@ -362,7 +378,7 @@ export class Users {
             const userData = users.length > 0 ? users[0] : null
 
             if (userData) {
-                logger.info("Users.getByUsername", username, userData.id, userData.displayName)
+                logger.info("Users.getByUsername", username, logHelper.user(userData))
             } else {
                 logger.warn("Users.getByUsername", username, "Not found")
             }
@@ -601,7 +617,7 @@ export class Users {
                 if (login) {
                     if (!_.isNil(existingData.suspended)) {
                         if (existingData.suspended === true) {
-                            logger.warn("Users.upsert", `${userData.id} ${userData.displayName}`, "Reactivated, suspended = false")
+                            logger.warn("Users.upsert", logHelper.user(userData), "Reactivated, suspended = false")
                         }
                         userData.suspended = FieldValue.delete() as any
                     }
@@ -621,10 +637,11 @@ export class Users {
 
             // If a new user, publish the user creation event.
             if (!exists) {
-                logger.info("Users.upsert", `${userData.id} ${userData.displayName}`, "New registration")
+                logger.info("Users.upsert", logHelper.user(userData), "New registration")
+
                 eventManager.emit("Users.create", userData)
             } else {
-                logger.info("Users.upsert", `${userData.id} ${userData.displayName}`, "Updated")
+                logger.info("Users.upsert", logHelper.user(userData), "Updated")
             }
 
             return userData
@@ -640,8 +657,6 @@ export class Users {
      * @param replace Set to true to fully replace data instead of merging, default is false.
      */
     update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
-        const username = user.displayName ? `${user.id} ${user.displayName}` : user.id
-
         try {
             const logs = []
 
@@ -691,9 +706,9 @@ export class Users {
                 logs.push("Replaced entire user data")
             }
 
-            logger.info("Users.update", username, logs.length > 0 ? logs.join(" | ") : "Updated")
+            logger.info("Users.update", logHelper.user(user), logs.length > 0 ? logs.join(" | ") : "Updated")
         } catch (ex) {
-            logger.error("Users.update", username, ex)
+            logger.error("Users.update", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -715,7 +730,7 @@ export class Users {
             // Publish delete event so related contents can be removed as well.
             eventManager.emit("Users.delete", user)
         } catch (ex) {
-            logger.error("Users.delete", user.id, user.displayName, ex)
+            logger.error("Users.delete", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -728,12 +743,12 @@ export class Users {
     suspend = async (user: UserData, reason: string): Promise<void> => {
         try {
             if (user.isPro) {
-                logger.warn("Users.suspend", user.id, user.displayName, reason, "Abort, PRO users cannot be suspended")
+                logger.warn("Users.suspend", logHelper.user(user), reason, "Abort, PRO users cannot be suspended")
                 return
             }
 
             await database.merge("users", {id: user.id, suspended: true})
-            logger.info("Users.suspend", user.id, user.displayName, reason)
+            logger.info("Users.suspend", logHelper.user(user), reason)
 
             // Alert the user via email.
             if (user.email) {
@@ -752,7 +767,25 @@ export class Users {
                 mailer.send(options)
             }
         } catch (ex) {
-            logger.error("Users.suspend", user.id, user.displayName, reason, ex)
+            logger.error("Users.suspend", logHelper.user(user), reason, ex)
+        }
+    }
+
+    /**
+     * Add ID to the list of ignored user IDs.
+     */
+    ignore = async (id: string): Promise<void> => {
+        try {
+            if (this.ignoredUserIds.includes(id)) {
+                logger.warn("Users.ignore", id, "Already ignored")
+                return
+            }
+
+            logger.warn("Users.ignore", id, "Added to the list of ignored user IDs")
+            this.ignoredUserIds.push(id)
+            await database.appState.set("users", {ignored: this.ignoredUserIds})
+        } catch (ex) {
+            logger.error("Users.ignore", id, ex)
         }
     }
 
@@ -762,8 +795,8 @@ export class Users {
      */
     anonymize = (user: UserData | Partial<UserData>): void => {
         if (!user.profile) user.profile = {} as any
-        const firstNames = ["Chair", "Table", "Ball", "Wheel", "Flower", "Sun", "Globe", "January", "Dry", "Chain", "High"]
-        const lastNames = ["Winter", "McGyver", "Second", "Tequila", "Whiskey", "Wine", "House", "Light", "Fast", "Rock"]
+        const firstNames = ["Chair", "Table", "Ball", "Wheel", "Flower", "Sun", "Globe", "January", "Dry", "Chain", "High", "Low", "Ghost"]
+        const lastNames = ["Winter", "McGyver", "Second", "Tequila", "Whiskey", "Wine", "House", "Light", "Fast", "Rock", "Pop", "Jazz", "Rider"]
 
         user.displayName = "anonymous"
         user.profile.username = "anonymous"
