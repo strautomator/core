@@ -27,7 +27,7 @@ Optional credentials:
 -   PayPal API
 -   Spotify API
 -   Twitter API
--   Weather providers: OpenWeatherMap, Storm Glass, Tomorrow.io, Visual Crossing
+-   Weather providers: OpenWeatherMap, Storm Glass, Tomorrow.io, Visual Crossing, WeatherAPI
 
 Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid plans.
 
@@ -98,7 +98,7 @@ By default, buckets in production are created as CNAME records. This can be disa
 
 ### IAM policy
 
-Please make sure that the service account being used has full permissions to read and write to your GCP project Storage buckets. Otherwise you'll have to create the buckets manually via the GCP Console.
+Please make sure that the service account being used has full permissions to read and write to your GCP project Storage buckets. Otherwise you'll have to create the buckets manually and assign the required permissions via the GCP Console.
 
 ## Make
 
