@@ -2,7 +2,7 @@
 
 import {GarminActivity, GarminPingActivityFile} from "./types"
 import {DatabaseSearchOptions} from "../database/types"
-import {StravaActivity} from "../strava/types"
+import {StravaActivity, StravaProcessedActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import api from "./api"
 import database from "../database"
@@ -149,7 +149,7 @@ export class GarminActivities {
      * @param user The user.
      * @param activity The Strava activity to be matched.
      */
-    getMatchingActivity = async (user: UserData, activity: StravaActivity): Promise<GarminActivity> => {
+    getMatchingActivity = async (user: UserData, activity: StravaActivity | StravaProcessedActivity): Promise<GarminActivity> => {
         try {
             const activityDate = dayjs(activity.dateStart)
             const dateFrom = activityDate.subtract(1, "minute").toDate()
