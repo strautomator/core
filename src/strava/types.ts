@@ -188,6 +188,8 @@ export interface StravaProcessedActivity {
     dateStart?: Date
     /** Original UTC offset (timezone) of the activity. */
     utcStartOffset?: number
+    /** Total elapsed time. */
+    totalTime?: number
     /** User details for this activity. */
     user: {
         /** User ID. */
