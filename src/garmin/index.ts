@@ -5,6 +5,7 @@ import {UserData} from "../users/types"
 import {Request} from "express"
 import activities from "./activities"
 import api from "./api"
+import courses from "./courses"
 import profiles from "./profiles"
 import webhooks from "./webhooks"
 import database from "../database"
@@ -30,6 +31,11 @@ export class Garmin {
      * Garmin activities wrapper.
      */
     activities = activities
+
+    /**
+     * Garmin courses wrapper.
+     */
+    courses = courses
 
     /**
      * Garmin profiles wrapper.
