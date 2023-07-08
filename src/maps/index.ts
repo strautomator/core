@@ -2,7 +2,7 @@
 
 import {Client, GeocodeRequest, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
 import {Polyline} from "./polyline"
-import {MapAddress, MapCoordinates} from "./types"
+import {CountryCodes, MapAddress, MapCoordinates} from "./types"
 import {axiosRequest} from "../axios"
 import Bottleneck from "bottleneck"
 import database from "../database"
@@ -80,6 +80,24 @@ export class Maps {
 
     // GEOCODING
     // --------------------------------------------------------------------------
+
+    /**
+     * Get the 2 letter code (lowercased) for the specified country.
+     * @param countryName The full country name.
+     */
+    getCountryCode = (countryName: string): string => {
+        const entries = Object.entries(CountryCodes)
+        countryName = countryName.toLowerCase()
+
+        // Iterate and check each of the country codes.
+        for (let [code, name] of entries) {
+            if (name.toLowerCase() == countryName) {
+                return code
+            }
+        }
+
+        return null
+    }
 
     /**
      * Get the geocode data for the specified address.
