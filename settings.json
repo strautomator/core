@@ -487,7 +487,7 @@
             "weeks": 10,
             // FTP can be updated only once every 24 hours.
             "sinceLastHours": 24,
-            // FTP must have changed by at least 2% to be updated automatically
+            // FTP must have changed by at least 2% to be updated automatically.
             "saveThreshold": 0.02
         },
         "fitnessLevel": {
@@ -511,7 +511,7 @@
             // A single batch operation per user per 24 hours.
             "batchPerHours": 24,
             // Default batch size when processing queued activities.
-            "batchSize": 50,
+            "batchSize": 60,
             // How long can activities stayed queued for processing?
             // By default 4 days, value set in seconds.
             "maxAge": 345600,
