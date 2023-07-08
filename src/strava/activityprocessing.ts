@@ -336,6 +336,7 @@ export class StravaActivityProcessing {
                 data.name = activity.name
                 data.dateStart = activity.dateStart
                 data.utcStartOffset = activity.utcStartOffset
+                data.totalTime = activity.totalTime
 
                 if (activity.newRecords) {
                     data.newRecords = activity.newRecords
