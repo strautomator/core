@@ -143,8 +143,8 @@
         },
         // Cache profiles and Garmin data for up to 2 minutes. Value set in seconds.
         "cacheDuration": 120,
-        // Garmin data will be stored in the database for up to 5 days.
-        "maxCacheDuration": 432000
+        // Garmin data will be stored in the database for up to 10 days.
+        "maxCacheDuration": 864000
     },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
@@ -520,8 +520,8 @@
     "twitter": {
         // Around 80% chances of posting interesting activities on Twitter for users that have opted in.
         "activityThreshold": 0.8,
-        // Refresh account details max 4 times a day, value set in seconds.
-        "accountRefreshInterval": 21600
+        // Refresh account details max 3 times a day, value set in seconds.
+        "accountRefreshInterval": 28800
     },
     "users": {
         // Consider users idle (for deletion) if they are suspended for longer than 6 months or
