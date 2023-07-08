@@ -86,10 +86,13 @@ export class Maps {
      * @param countryName The full country name.
      */
     getCountryCode = (countryName: string): string => {
-        const entries = Object.entries(CountryCodes)
+        if (!countryName) return null
+
+        // Comparison always using lowercase.
         countryName = countryName.toLowerCase()
 
         // Iterate and check each of the country codes.
+        const entries = Object.entries(CountryCodes)
         for (let [code, name] of entries) {
             if (name.toLowerCase() == countryName) {
                 return code
