@@ -18,7 +18,14 @@
         // Hashtag used on social media.
         "hashtag": "#strautomator.com",
         // Express trust proxy settings.
-        "trustProxy": 2
+        "trustProxy": 2,
+        // URL redirections.
+        "redirects": [
+            {
+                "from": "/calendar/upcoming",
+                "to": "/map"
+            }
+        ]
     },
     "api": {
         // API is rate limited to 900 requests per minute per instance by default. If you wish to disable
@@ -408,6 +415,7 @@
             "timeout": 5000
         }
     },
+    // Navigation routes options (GPS routing, not URLs).
     "routes": {
         // Total estimated route will add 40min (in seconds) for every few hours of riding or running,
         // depending on the user's fitness level.
