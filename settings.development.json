@@ -58,6 +58,7 @@
     "paypal": {
         "api": {
             "baseUrl": "https://api.sandbox.paypal.com/v1/",
+            "mBaseUrl": "https://api-m.sandbox.paypal.com/v1/",
             "mode": "sandbox",
             // Token to be appended to the URL of PayPal webhooks, for
             // extra security. Can only include alphanumeric characters.
@@ -68,7 +69,9 @@
         "billingPlan": {
             // Subscription set to start 1 hours after approval while testing.
             "startMinutes": 60
-        }
+        },
+        // To disable the PayPal cache in the database, set this flag to true.
+        "cacheDisabled": false
     },
     // Cloud Storage development buckets have a -dev suffix appended and are
     // not available via CNAME records.

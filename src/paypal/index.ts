@@ -7,6 +7,7 @@ import database from "../database"
 import eventManager from "../eventmanager"
 import paypalProducts from "./products"
 import paypalSubscriptions from "./subscriptions"
+import paypalTransactions from "./transactions"
 import paypalWebhooks from "./webhooks"
 import _ from "lodash"
 import logger from "anyhow"
@@ -32,6 +33,11 @@ export class PayPal {
      * Subscription methods.
      */
     subscriptions = paypalSubscriptions
+
+    /**
+     * Transaction methods.
+     */
+    transactions = paypalTransactions
 
     /**
      * Webhook methods.
@@ -134,6 +140,7 @@ export class PayPal {
 
             // Set initial auth, product and billing plans.
             api.auth = fromCache.auth
+            api.mAuth = fromCache.mAuth
             api.currentProduct = fromCache.product
             api.currentBillingPlans = fromCache.billingPlans
 
@@ -153,7 +160,9 @@ export class PayPal {
             if (authenticated) {
                 await this.setupProduct()
                 await this.setupBillingPlans()
-                await database.appState.set("paypal", {product: api.currentProduct, billingPlans: this.currentBillingPlans})
+                if (!settings.paypal.cacheDisabled) {
+                    await database.appState.set("paypal", {product: api.currentProduct, billingPlans: this.currentBillingPlans})
+                }
             } else if (api.auth.expiresAt <= dayjs().unix()) {
                 throw new Error("PayPal authentication failed")
             }

@@ -306,6 +306,7 @@
         "api": {
             "mode": "live",
             "baseUrl": "https://api.paypal.com/v1/",
+            "mBaseUrl": "https://api-m.paypal.com/v1/",
             // Token to be appended to the URL of PayPal webhooks, for
             // extra security. Can only include alphanumeric characters.
             // This MUST be set on the settings.secret.json file or via

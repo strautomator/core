@@ -89,6 +89,10 @@ export interface PayPalTransaction {
     currency: string
     /** Transaction date. */
     date: Date
+    /** Reference subscription. */
+    subscriptionId?: string
+    /** Payer's email. */
+    email?: string
 }
 
 /**

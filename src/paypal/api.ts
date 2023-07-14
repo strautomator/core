@@ -51,9 +51,14 @@ export class PayPalAPI {
     }
 
     /**
-     * Authentication token and expiry timestamp.
+     * Authentication token and expiry timestamp for the api.
      */
     auth: PayPalAuth
+
+    /**
+     * Authentication token and expiry timestamp for the m-api.
+     */
+    mAuth: PayPalAuth
 
     /**
      * The current product registered on PayPal.
@@ -84,12 +89,15 @@ export class PayPalAPI {
 
     /**
      * Authenticate on PayPal and get a new access token.
+     * @param mEndpoint Get token for the api-m endpoint?
      */
-    authenticate = async (): Promise<boolean> => {
+    authenticate = async (mEndpoint?: boolean): Promise<boolean> => {
+        const endpointLog = mEndpoint ? "api-m" : "api"
+
         try {
             const options = {
                 method: "POST",
-                url: `${settings.paypal.api.baseUrl}oauth2/token`,
+                url: `${mEndpoint ? settings.paypal.api.mBaseUrl : settings.paypal.api.baseUrl}oauth2/token`,
                 timeout: settings.oauth.tokenTimeout,
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
@@ -104,19 +112,25 @@ export class PayPalAPI {
             // Try fetching a new token from PayPal.
             const res = await axiosRequest(options)
             const expiresIn = res.expires_in ? res.expires_in : 3600
-
-            // Set auth token and expiry timestamp.
-            this.auth = {
+            const tokenData = {
                 accessToken: res.access_token,
                 expiresAt: expiresIn + dayjs().unix() - 180
             }
 
-            logger.info("PayPal.authenticate", "Got a new token")
-            await database.appState.set("paypal", {auth: this.auth})
+            logger.info("PayPal.authenticate", `Got a new ${endpointLog} token`)
+
+            // Set auth token and expiry timestamp.
+            if (mEndpoint) {
+                this.mAuth = tokenData
+                await database.appState.set("paypal", {mAuth: tokenData})
+            } else {
+                this.auth = tokenData
+                await database.appState.set("paypal", {auth: tokenData})
+            }
 
             return true
         } catch (ex) {
-            logger.error("PayPal.authenticate", parseResponseError(ex))
+            logger.error("PayPal.authenticate", endpointLog, parseResponseError(ex))
             return false
         }
     }
@@ -124,34 +138,34 @@ export class PayPalAPI {
     /**
      * Make a request to the PayPal API with the given options.
      * @param options Options passed to the request (axios).
+     * @param mEndpoint Use the api-m endpoint?
      */
-    makeRequest = async (reqOptions: any): Promise<any> => {
+    makeRequest = async (reqOptions: any, mEndpoint?: boolean): Promise<any> => {
+        const options = _.cloneDeep(reqOptions)
+        const auth = mEndpoint ? this.mAuth : this.auth
+
         try {
-            if (!this.auth) {
+            if (!auth) {
                 try {
-                    await this.authenticate()
+                    await this.authenticate(mEndpoint)
                 } catch (innerEx) {
                     throw new Error("Not authenticated to PayPal")
                 }
-            }
-
-            if (this.auth.expiresAt <= dayjs().unix()) {
+            } else if (auth.expiresAt <= dayjs().unix()) {
                 logger.info("PayPal.makeRequest", reqOptions.url, "Token expired, will fetch a new one")
-                await this.authenticate()
+                await this.authenticate(mEndpoint)
             }
-
-            const options = _.cloneDeep(reqOptions)
 
             // Make sure headers object is set.
             if (!options.headers) options.headers = {}
 
             // Set correct full URL.
             if (options.url.substring(0, 4) != "http") {
-                options.url = `${settings.paypal.api.baseUrl}${options.url}`
+                options.url = `${mEndpoint ? settings.paypal.api.mBaseUrl : settings.paypal.api.baseUrl}${options.url}`
             }
 
             // Append auth header and custom user agent.
-            options.headers["Authorization"] = `Bearer ${this.auth.accessToken}`
+            options.headers["Authorization"] = `Bearer ${mEndpoint ? this.mAuth.accessToken : this.auth.accessToken}`
             options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
             // Return full representation?
