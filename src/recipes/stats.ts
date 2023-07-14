@@ -108,31 +108,23 @@ export class RecipeStats {
                     id: id,
                     userId: user.id,
                     activities: [activity.id],
-                    activityCount: 0,
-                    counter: 0
+                    activityCount: 1,
+                    counter: 1
                 }
 
                 logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), "Created new recipe stats")
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
 
-                // Only add activity ID to list if it not there yet.
+                // Only add activity ID and update the counter if it not there yet.
                 if (!stats.activities.includes(activity.id)) {
                     stats.activities.push(activity.id)
-                }
-
-                // Make sure the activity count is set.
-                if (!stats.activityCount) {
-                    stats.activityCount = stats.activities.length
-                }
-
-                // Make sure stats has a counter.
-                if (!stats.counter) {
-                    stats.counter = 0
+                    stats.activityCount++
+                    stats.counter++
                 }
 
                 // Remove activity IDs from the stats.
-                if (stats.activities.length > settings.recipes.maxActivityIds) {
+                while (stats.activities.length > settings.recipes.maxActivityIds) {
                     const removedId = stats.activities.shift()
                     logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${removedId} removed from list`)
                 }
@@ -140,14 +132,12 @@ export class RecipeStats {
 
             // Update stats.
             stats.dateLastTrigger = now
-            stats.activityCount++
-            stats.counter++
 
             // Increase failure counter if recipe execution was not successful.
             if (success) {
                 stats.recentFailures = 0
             } else {
-                stats.recentFailures = stats.recentFailures ? stats.recentFailures + 1 : 1
+                stats.recentFailures = (stats.recentFailures || 0) + 1
             }
 
             // Save stats to the database.

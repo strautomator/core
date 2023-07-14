@@ -98,9 +98,12 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         }
 
         // Value has a counter tag? Get recipe stats to increment the counter.
+        // Do not increment if it identifies that the automation has already ran previously.
         if (processedValue.includes("${counter}")) {
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
-            activityWithSuffix.counter = stats && stats.counter ? stats.counter + 1 : 1
+            const currentCounter = stats?.counter || 0
+            const addCounter = !stats || !stats.activities.includes(activity.id) ? 1 : 0
+            activityWithSuffix.counter = currentCounter + addCounter
         }
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
