@@ -21,7 +21,9 @@ const rMiles = 0.621371
  */
 export function toStravaActivity(user: UserData, data: any): StravaActivity {
     const profile = user.profile
+    const utcOffset = data.utc_offset ? data.utc_offset / 60 : 0
     const startDate = dayjs.utc(data.start_date)
+    const localStartDate = startDate.utcOffset(utcOffset)
 
     const activity: StravaActivity = {
         id: data.id,
@@ -37,8 +39,9 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         trainer: data.trainer ? true : false,
         dateStart: startDate.toDate(),
         dateEnd: data.elapsed_time ? startDate.add(data.elapsed_time, "s").toDate() : null,
-        weekOfYear: startDate.week(),
-        utcStartOffset: data.utc_offset ? data.utc_offset / 60 : 0,
+        weekday: localStartDate.format("dddd"),
+        weekOfYear: localStartDate.week(),
+        utcStartOffset: utcOffset,
         totalTime: data.elapsed_time,
         movingTime: data.moving_time || data.elapsed_time,
         locationStart: data.start_latlng,

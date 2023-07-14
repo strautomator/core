@@ -47,6 +47,8 @@ export interface StravaActivity {
     dateStart?: Date
     /** End date and time, local time. */
     dateEnd?: Date
+    /** Weekday. */
+    weekday?: string
     /** Week of the year. */
     weekOfYear?: number
     /** Stores the original UTC offset (timezone) in minutes. */
