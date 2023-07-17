@@ -55,21 +55,42 @@ export class Calendar {
      * @param user User that was deleted from the database.
      */
     private onUserDelete = async (user: UserData): Promise<void> => {
+        const count = await this.deleteCache(user)
+
+        if (count > 0) {
+            logger.info("Calendar.onUserDelete", logHelper.user(user), "User's cached calendars deleted")
+        }
+    }
+
+    // CACHE
+    // --------------------------------------------------------------------------
+
+    /**
+     * Delete cached calendars for the specified user.
+     * @param user The owner user.
+     */
+    deleteCache = async (user: UserData): Promise<number> => {
+        let result = 0
+
         try {
             const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
-
             if (calendarFiles.length > 0) {
-                const count = calendarFiles.length
-
                 for (let file of calendarFiles) {
-                    await file.delete()
+                    try {
+                        await file.delete()
+                        result++
+                    } catch (fileEx) {
+                        logger.error("Calendar.deleteCache", logHelper.user(user), file.name, fileEx)
+                    }
                 }
 
-                logger.info("Calendar.onUserDelete", logHelper.user(user), `Deleted ${count} cached calendars`)
+                logger.info("Calendar.deleteCache", logHelper.user(user), `Deleted ${result || "no"} cached calendars`)
             }
         } catch (ex) {
-            logger.warn("Calendar.onUserDelete", logHelper.user(user), "Failed, no problem as calendar files will be auto-deleted in a few days")
+            logger.error("Calendar.deleteCache", logHelper.user(user), ex)
         }
+
+        return result
     }
 
     // GENERATION
@@ -279,6 +300,12 @@ export class Calendar {
                 // Append suffixes to activity values.
                 transformActivityFields(user, activity)
 
+                // Replace boolean tags with yes or no.
+                for (let field of Object.keys(activity)) {
+                    if (activity[field] === true) activity[field] = "yes"
+                    else if (activity[field] === false) activity[field] = "no"
+                }
+
                 // If no event details template was set, push default values to the details array.
                 if (!calendarTemplate.eventDetails) {
                     if (activity.commute) {
@@ -303,18 +330,12 @@ export class Calendar {
                                 const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
                                 subDetails.push(`${fieldName}: ${activity[field]}`)
                             }
-
-                            arrDetails.push(subDetails.join(" - "))
                         }
+
+                        arrDetails.push(subDetails.join(" - "))
                     }
 
                     arrDetails.push(`\nhttps://www.strava.com/activities/${activity.id}`)
-                }
-
-                // Replace boolean tags with yes or no.
-                for (let field of Object.keys(activity)) {
-                    if (activity[field] === true) activity[field] = "yes"
-                    else if (activity[field] === false) activity[field] = "no"
                 }
 
                 // Get summary and details from options or from defaults.
