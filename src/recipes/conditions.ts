@@ -136,7 +136,7 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
 
     // When using "equals" use around 60m radius, and "like" use 650m radius.
     let radius: number
-    if (op == RecipeOperator.Equal) {
+    if (op == RecipeOperator.Equal || op == RecipeOperator.NotEqual) {
         radius = 0.000556
     } else if (op == RecipeOperator.Approximate) {
         radius = 0.002735
@@ -151,7 +151,10 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
 
     // Check if activity passed near the specified location.
     for (let [lat, long] of coordinates) {
-        if (lat <= cLat + radius && lat >= cLat - radius && long <= cLong + radius && long >= cLong - radius) {
+        if (op == RecipeOperator.NotEqual && (lat <= cLat - radius || lat >= cLat + radius || long <= cLong - radius || long >= cLong + radius)) {
+            return true
+        }
+        if (op != RecipeOperator.NotEqual && lat <= cLat + radius && lat >= cLat - radius && long <= cLong + radius && long >= cLong - radius) {
             return true
         }
     }

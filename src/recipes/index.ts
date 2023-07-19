@@ -99,6 +99,9 @@ export class Recipes {
 
             if (_.isArray(recipe.actions)) {
                 recipe.actions = recipe.actions.filter((a) => !_.isEmpty(a))
+                if (recipe.actions.length == 0) {
+                    throw new Error("Recipe must have at least one action")
+                }
             } else {
                 throw new Error("Missing or invalid recipe actions list")
             }
@@ -127,8 +130,8 @@ export class Recipes {
             }
             // Non-default recipes must have conditions defined.
             else {
-                if (!_.isArray(recipe.conditions)) {
-                    throw new Error("Missing recipe conditions")
+                if (!_.isArray(recipe.conditions) || recipe.conditions.length == 0) {
+                    throw new Error("Recipe must have at least one condition")
                 }
 
                 // Parse recipe conditions.

@@ -23,7 +23,8 @@ export const recipeOperatorList = {
     location: [
         {value: "like", text: "within 650m of", impText: "within 710 yards of", description: "Location within 650 meters (710 yards)"},
         {value: "approx", text: "within 300m of", impText: "within 328 yards of", description: "Location within 300 meters (328 yards)"},
-        {value: "=", text: "within 60m of", impText: "within 65 yards of", description: "Location within 60 meters (65 yards)"}
+        {value: "=", text: "within 60m of", impText: "within 65 yards of", description: "Location within 60 meters (65 yards)"},
+        {value: "!=", text: "at least 60m away from", impText: "at least 65 yards away from", description: "Location at least 60 meters (65 yards) away from"}
     ],
     // Time.
     time: [
