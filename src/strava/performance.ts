@@ -360,13 +360,13 @@ export class StravaPerformance {
             // Round FTP, looks nicer.
             ftpWatts = Math.round(ftpWatts)
 
-            logger.info("Strava.estimateFtp", logHelper.user(user), `Estimated FTP from ${activityCount} activities: ${ftpWatts}w, current ${currentWatts}w, best activity ${bestActivity.id}`)
+            logger.info("Strava.estimateFtp", logHelper.user(user), `Estimated FTP from ${activityCount} activities: ${ftpWatts}w, current ${currentWatts}w, best activity ${bestActivity?.id || "none"}`)
 
             return {
                 ftpWatts: ftpWatts,
                 ftpCurrentWatts: currentWatts,
                 bestWatts: maxWatts,
-                bestActivity: bestActivity,
+                bestActivity: bestActivity || null,
                 activityCount: listWatts.length,
                 activityWattsAvg: avgWatts,
                 recentlyUpdated: recentlyUpdated
@@ -413,7 +413,7 @@ export class StravaPerformance {
             }
 
             const ftpStatus: UserFtpStatus = {
-                activityId: ftpEstimation.bestActivity.id,
+                activityId: ftpEstimation.bestActivity?.id || null,
                 previousFtp: ftpEstimation.ftpCurrentWatts,
                 dateUpdated: new Date()
             }
