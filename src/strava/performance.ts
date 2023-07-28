@@ -172,9 +172,9 @@ export class StravaPerformance {
             else if (hoursPerWeek > 2) levels.hoursPerWeek = StravaFitnessLevel.Average
 
             // Calculate the score based on the average number of active days per week.
-            // If a user does more than 1 activity per day, only a partial extra day will be counted.
+            // If a user does more than 1 activity per day, an extra / partial score will be counted.
             const uniqueDays = _.uniq(activities.map((a) => dayjs(a.dateStart).format("YYYY-MM-DD"))).length
-            const activeDays = (uniqueDays * 3 + activities.length) / 4
+            const activeDays = (uniqueDays * 6 + activities.length) / 7
             const daysPerWeek = activeDays / weeks
             if (daysPerWeek > 6) levels.daysPerWeek = StravaFitnessLevel.Elite
             else if (daysPerWeek > 5) levels.daysPerWeek = StravaFitnessLevel.Pro
@@ -188,12 +188,15 @@ export class StravaPerformance {
         // and divide by the number of the remaining scores.
         const arrLevels = Object.values(levels)
         const totalScore = _.sum(arrLevels) - _.min(arrLevels)
-        let result = Math.round(totalScore / (arrLevels.length - 1))
+        let result = totalScore / (arrLevels.length - 1)
 
         // If the fitness level decreased, use the current level as part of the final calculation.
         if (!_.isNil(user.fitnessLevel) && result < user.fitnessLevel) {
-            result = Math.round((totalScore + user.fitnessLevel) / (arrLevels.length - 1))
+            result = (totalScore + user.fitnessLevel) / 2 / (arrLevels.length - 1)
         }
+
+        // Round lower if decimal part is lower than 0.8.
+        result = result % 1 < 0.8 ? Math.floor(result) : Math.ceil(result)
 
         const logLevels = Object.entries(levels).map(([key, value]) => `${key}: ${value}`)
         logger.info("Strava.estimateFitnessLevel", logHelper.user(user), StravaFitnessLevel[result], logLevels.join(", "))
