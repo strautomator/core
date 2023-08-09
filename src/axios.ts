@@ -19,7 +19,7 @@ export interface AxiosConfig extends AxiosRequestConfig {
     /** Path part of the URL. */
     path?: string
     /** Optional callback before retrying the request. */
-    onRetry?: (options: AxiosConfig) => boolean
+    onRetry?: (options: AxiosConfig) => boolean | void
     /** Optional rate limit extractor function. */
     rateLimitExtractor?: (res: AxiosResponse) => number
 }
@@ -113,7 +113,7 @@ export const axiosRequest = async (options: AxiosConfig): Promise<AxiosResponse 
                 await jaul.io.sleep(settings.axios.retryInterval)
 
                 // On retry processor?
-                if (options.onRetry && !options.onRetry(options)) {
+                if (options.onRetry && options.onRetry(options) === false) {
                     logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed, and retry condition hasn't passed")
                     throw ex
                 }
