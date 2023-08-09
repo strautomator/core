@@ -4,7 +4,7 @@ import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
 import {translation} from "../translations"
-import {axiosRequest} from "../axios"
+import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
@@ -108,16 +108,19 @@ export class OpenAI {
 
             // Get final prompt and request options.
             const content = arrPrompt.join(" ")
-            const options = {
+            const options: AxiosConfig = {
                 url: settings.openai.api.baseUrl,
                 method: "POST",
                 headers: {},
                 data: {
-                    model: "gpt-3.5-turbo",
+                    model: user.isPro ? "gpt-4" : "gpt-3.5-turbo",
                     messages: [{role: "user", content: content}],
                     max_tokens: settings.openai.maxTokens,
                     temperature: 1,
                     top_p: 1
+                },
+                onRetry: (opt) => {
+                    opt.data.model = "gpt-3.5-turbo"
                 }
             }
 
