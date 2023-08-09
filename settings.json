@@ -362,9 +362,9 @@
             "linksOn": 5,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
-            // Use ChatGPT on around 20% and weather on 50% of "generateName" recipe actions.
+            // Use ChatGPT on around 30% and weather on 50% of "generateName" recipe actions.
             "fortune": {
-                "openai": 20,
+                "openai": 30,
                 "weather": 50
             }
         },
@@ -389,9 +389,9 @@
                 "year": 6.99,
                 "github": 1.0
             },
-            // Use ChatGPT on all and weather on 90% of "generateName" recipe actions.
+            // Use ChatGPT on around 95% and weather on 90% of "generateName" recipe actions.
             "fortune": {
-                "openai": 100,
+                "openai": 95,
                 "weather": 90
             }
         }

@@ -113,7 +113,7 @@ export class OpenAI {
                 method: "POST",
                 headers: {},
                 data: {
-                    model: user.isPro ? "gpt-4" : "gpt-3.5-turbo",
+                    model: user.isPro && Math.random() < 0.3 ? "gpt-4" : "gpt-3.5-turbo",
                     messages: [{role: "user", content: content}],
                     max_tokens: settings.openai.maxTokens,
                     temperature: 1,
