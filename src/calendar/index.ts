@@ -155,7 +155,7 @@ export class Calendar {
                 try {
                     const [metadata] = await cachedFile.getMetadata()
                     const cacheTimestamp = dayjs.utc(metadata.timeCreated).valueOf()
-                    const cacheSize = metadata.size
+                    const cacheSize = metadata.size as number
                     const onlyClubs = options.clubs && !options.activities
 
                     // Calculate the correct cache duration.

@@ -66,7 +66,7 @@ export class Storage {
                             await bucket.setMetadata({iamConfiguration: {uniformBucketLevelAccess: {enabled: true}}})
 
                             if (config.ttlDays) {
-                                await bucket.addLifecycleRule({action: "delete", condition: {age: Math.round(config.ttlDays)}})
+                                await bucket.addLifecycleRule({action: {type: "Delete"}, condition: {age: Math.round(config.ttlDays)}})
                             }
 
                             logger.info("Storage.init", `Created bucket: ${config.name}`, `TTL ${config.ttlDays || "not set"}`)
