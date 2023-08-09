@@ -91,11 +91,12 @@ export class GDPR {
             const where = [["userId", "==", user.id]]
             const jsonData: any = {}
             jsonData["user"] = await database.get("users", user.id, true)
-            jsonData["athlete-records"] = await database.get("athlete-records", user.id, true)
-            jsonData["recipe-stats"] = await database.search("recipe-stats", where)
-            jsonData["gearwear"] = await database.search("gearwear", where)
             jsonData["activities"] = await database.search("activities", where)
+            jsonData["athlete-records"] = await database.get("athlete-records", user.id, true)
+            jsonData["garmin"] = await database.search("garmin", where)
+            jsonData["gearwear"] = await database.search("gearwear", where)
             jsonData["notifications"] = await database.search("notifications", where)
+            jsonData["recipe-stats"] = await database.search("recipe-stats", where)
             jsonData["subscriptions"] = await database.search("subscriptions", where)
 
             // Remove sensitive data.
