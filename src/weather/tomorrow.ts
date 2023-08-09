@@ -61,7 +61,7 @@ export class Tomorrow implements WeatherProvider {
 
             // Fetch weather data.
             logger.debug("Tomorrow.getWeather", weatherUrl)
-            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl}, this.rateLimitExtractor))
+            const res = await this.apiRequest.schedule(() => axiosRequest({url: weatherUrl, rateLimitExtractor: this.rateLimitExtractor}))
 
             // Parse result.
             const result = this.toWeatherSummary(res, coordinates, dDate, roundTo)

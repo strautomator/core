@@ -259,7 +259,8 @@ export class StravaAPI {
             const options: AxiosConfig = {
                 url: `${settings.strava.api.baseUrl}${path}`,
                 method: method,
-                headers: {}
+                headers: {},
+                rateLimitExtractor: this.rateLimitExtractor
             }
 
             // Renew token if it has expired.
@@ -291,7 +292,7 @@ export class StravaAPI {
             }
 
             // Send request to Strava.
-            const res: AxiosResponse = await this.limiter.schedule({id: options.path}, () => axiosRequest(options, this.rateLimitExtractor))
+            const res: AxiosResponse = await this.limiter.schedule({id: options.path}, () => axiosRequest(options))
             if (!res) {
                 throw new Error("Invalid or empty response")
             }
