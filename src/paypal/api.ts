@@ -68,12 +68,12 @@ export class PayPalAPI {
     /**
      * Active billing plans on PayPal.
      */
-    currentBillingPlans: {[id: string]: PayPalBillingPlan}
+    currentBillingPlans: {[id: string]: PayPalBillingPlan} = {}
 
     /**
      * Inactive (legacy) billing plans.
      */
-    legacyBillingPlans: {[id: string]: PayPalBillingPlan}
+    legacyBillingPlans: {[id: string]: PayPalBillingPlan} = {}
 
     /**
      * URL used for webhooks.
