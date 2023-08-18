@@ -103,6 +103,8 @@ export class Garmin {
         // Return final auth URL.
         const baseUrl = settings.api.url || `${settings.app.url}api/`
         const callbackUrl = `${baseUrl}garmin/auth/callback?state=${user.id}-${state}`
+        logger.info("Garmin.generateAuthUrl", logHelper.user(user), callbackUrl)
+
         return `${settings.garmin.api.loginUrl}?oauth_token=${tokens.oauth_token}&oauth_callback=${callbackUrl}`
     }
 
