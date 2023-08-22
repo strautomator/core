@@ -353,11 +353,11 @@
             "maxGearWear": 2,
             // Free accounts can trigger batch automations for activities up to 60 days old.
             "batchDays": 60,
-            // Free accounts limited to 6 months in the past and up to 5 days in the future.
+            // Free accounts limited to 6 months in the past and up to 7 days in the future.
             "pastCalendarDays": 180,
             "futureCalendarDays": 5,
-            // Free calendars are cached for up to 14 hours.
-            "calendarCacheDuration": 50400,
+            // Free calendars are cached for up to 12 hours.
+            "calendarCacheDuration": 43200,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5,
             // Track personal records for which sports?
@@ -378,8 +378,8 @@
             // PRO accounts limited to 10 years in the past and up to 1 year in the future.
             "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
-            // PRO calendars are cached for up to 6 hours.
-            "calendarCacheDuration": 21600,
+            // PRO calendars are cached for up to 4 hours.
+            "calendarCacheDuration": 14400,
             // No links on PRO accounts processed activities.
             "linksOn": false,
             // Allow personal records for all sports.
