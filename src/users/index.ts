@@ -587,7 +587,7 @@ export class Users {
                 }
 
                 // User has changed the access token? Update the previous one.
-                if (stravaTokens.accessToken != existingData.stravaTokens.accessToken) {
+                if (existingData.stravaTokens?.accessToken != stravaTokens.accessToken) {
                     userData.stravaTokens.previousAccessToken = stravaTokens.accessToken
                 }
 
