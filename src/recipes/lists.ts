@@ -118,7 +118,7 @@ export const recipePropertyList = [
  * List of possible recipe actions.
  */
 export const recipeActionList = [
-    {value: "commute", text: "Mark activity as commute"},
+    {value: "commute", text: "Tag activity as commute"},
     {value: "gear", text: "Set activity gear"},
     {value: "name", text: "Set activity name"},
     {value: "prependName", text: "Prepend to activity name"},
