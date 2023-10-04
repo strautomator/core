@@ -428,7 +428,7 @@ export class Recipes {
             activity.updatedFields = []
         }
 
-        // Mark activity as commute?
+        // Boolean based actions?
         if (action.type == RecipeActionType.Commute || action.type == RecipeActionType.HideHome || action.type.toString().substring(0, 8) == "hideStat") {
             return actions.booleanAction(user, activity, recipe, action)
         }
