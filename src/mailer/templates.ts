@@ -32,7 +32,7 @@ export const EmailTemplates = {
 
     // Pre alert reminder sent to user when a gear component has reached a certain % of the target usage.
     GearWearPreAlert: {
-        subject: "${gearName} - ${component} (GearWear notification)",
+        subject: "${gearName} - ${component} (GearWear)",
         body:
             "<p>" +
             "This is a friendly reminder that this component has now reached ${usage}% of its target usage.<br>-<br>" +
@@ -41,6 +41,9 @@ export const EmailTemplates = {
             "</p>" +
             "<p>" +
             "This is a good time to double check if everything is in order with the component. ${tips}" +
+            "</p>" +
+            "<p>" +
+            'If you wish to buy replacement parts early, check the <a href="${affiliateLink}">best deals on our affiliate stores</a>.' +
             "</p>",
         tags: {
             tips: {
@@ -53,7 +56,7 @@ export const EmailTemplates = {
 
     // Alert sent to user when a gear component has passed the defined distance.
     GearWearAlert: {
-        subject: "${gearName} - ${component} (GearWear alert)",
+        subject: "${gearName} - ${component} (GearWear)",
         body:
             "<p>" +
             "It's about time to replace this component!<br>-<br>" +
@@ -71,7 +74,7 @@ export const EmailTemplates = {
 
     // Reminder sent if user hasn't reset the distance on a gear component after it reaches 120% of the distance threshold.
     GearWearReminder: {
-        subject: "${gearName} - ${component} (GearWear reminder)",
+        subject: "${gearName} - ${component} (GearWear)",
         body:
             "<p>" +
             "This is a friendly reminder that you haven't reset the usage for the component below.<br>-<br>" +
