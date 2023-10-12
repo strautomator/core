@@ -138,6 +138,7 @@ export class RecipeStats {
                 stats.recentFailures = 0
             } else {
                 stats.recentFailures = (stats.recentFailures || 0) + 1
+                stats.dateLastFailure = now
             }
 
             // Save stats to the database.
