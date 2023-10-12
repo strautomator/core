@@ -32,7 +32,7 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
         const body = `There was an issue processing the activity ID ${activity.id}. Action: ${actionType} - ${actionValue}. ${errorMessage.toString()}`
         const title = `Failed automation: ${recipe.title}`
 
-        // Create a notification to the user statin the failed action.
+        // Create a notification to the user stating the failed action.
         const notification = {userId: user.id, title: title, body: body, recipeId: recipe.id, activityId: activity.id}
         await notifications.createNotification(user, notification)
     } catch (ex) {
@@ -316,7 +316,6 @@ export const gearAction = async (user: UserData, activity: StravaActivity, recip
             throw new Error(`Gear ID ${action.value} not found`)
         } else if ((isRide && shoe) || (isRun && bike)) {
             logger.info("Recipes.gearAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Gear ${action.value} not valid for type ${activity.sportType}`)
-            return false
         } else {
             activity.gear = gear
             activity.updatedFields.push("gear")
@@ -374,11 +373,10 @@ export const workoutTypeAction = async (user: UserData, activity: StravaActivity
 
         if (abortMessage) {
             logger.info("Recipes.workoutTypeAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), abortMessage)
-            return false
+        } else {
+            activity.workoutType = action.value
+            activity.updatedFields.push("workoutType")
         }
-
-        activity.workoutType = action.value
-        activity.updatedFields.push("workoutType")
 
         return true
     } catch (ex) {
@@ -404,7 +402,6 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, re
         }
 
         await axiosRequest(options)
-
         return true
     } catch (ex) {
         failedAction(user, activity, recipe, action, ex)
