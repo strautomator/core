@@ -7,6 +7,7 @@ import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import {FieldValue} from "@google-cloud/firestore"
 import {Request} from "express"
+import eventManager from "../eventmanager"
 import users from "../users"
 import _ from "lodash"
 import cache from "bitecache"
@@ -234,6 +235,13 @@ export class Spotify {
             return tokens
         } catch (ex) {
             logger.error("Spotify.refreshToken", logHelper.user(user), ex)
+
+            // Token invalid or expired? Emit the token failure event.
+            const err = JSON.stringify(ex, null, 0)
+            if (err.includes("invalid_grant") || err.includes("expired") || err.includes("access denied")) {
+                eventManager.emit("Spotify.tokenFailure", user)
+            }
+
             throw ex
         }
     }

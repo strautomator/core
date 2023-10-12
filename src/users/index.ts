@@ -2,6 +2,7 @@
 
 import {validateUserPreferences} from "./utils"
 import {UserData} from "./types"
+import {AuthNotification} from "../notifications/types"
 import {PayPalSubscription} from "../paypal/types"
 import {GitHubSubscription} from "../github/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
@@ -65,9 +66,10 @@ export class Users {
         eventManager.on("PayPal.subscriptionCreated", this.onPayPalSubscription)
         eventManager.on("PayPal.subscriptionUpdated", this.onPayPalSubscription)
         eventManager.on("GitHub.subscriptionUpdated", this.onGitHubSubscription)
+        eventManager.on("Strava.missingPermission", this.onStravaMissingPermission)
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
         eventManager.on("Strava.tokenFailure", this.onStravaTokenFailure)
-        eventManager.on("Strava.missingPermission", this.onStravaMissingPermission)
+        eventManager.on("Spotify.tokenFailure", this.onSpotifyTokenFailure)
     }
 
     /**
@@ -133,6 +135,44 @@ export class Users {
             await this.update(user)
         } catch (ex) {
             logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
+        }
+    }
+
+    /**
+     * When user hasn't authorized Strautomator to write to the Strava account.
+     * @param tokens Set of Strava tokens that failed due to missing permissions.
+     */
+    private onStravaMissingPermission = async (tokens: StravaTokens): Promise<void> => {
+        if (!tokens) {
+            logger.error("Users.onStravaMissingPermission", "Missing tokens")
+            return
+        }
+
+        // Masked token used on warning logs.
+        const token = tokens.accessToken || tokens.previousAccessToken
+        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
+
+        try {
+            const user = await this.getByToken(tokens)
+
+            if (!user) {
+                logger.warn("Users.onStravaMissingPermission", `No user found for token ${maskedToken}`)
+                return
+            }
+
+            // Write not suspended yet? Do it now and notify the user.
+            if (!user.writeSuspended) {
+                const title = "Missing Strava permissions"
+                const body = "You haven't authorized Strautomator to make changes to your Strava account (missing write permissions). Please login again."
+                const href = "https://strautomator.com/auth/login"
+                const expiry = dayjs().add(30, "days").toDate()
+                await notifications.createNotification(user, {title: title, body: body, href: href, auth: true, dateExpiry: expiry})
+
+                const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, writeSuspended: true}
+                await this.update(updatedUser)
+            }
+        } catch (ex) {
+            logger.error("Notifications.onStravaMissingPermission", `Failed to notify user for token ${maskedToken}`)
         }
     }
 
@@ -239,40 +279,39 @@ export class Users {
     }
 
     /**
-     * When user hasn't authorized Strautomator to write to the Strava account.
-     * @param tokens Set of Strava tokens that failed due to missing permissions.
+     * When a Spotify refresh token has expired or a token has failed, notify the user.
+     * @param user The user.
      */
-    private onStravaMissingPermission = async (tokens: StravaTokens): Promise<void> => {
-        if (!tokens) {
-            logger.error("Users.onStravaMissingPermission", "Missing tokens")
-            return
-        }
+    private onSpotifyTokenFailure = async (user: UserData): Promise<void> => {
+        const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName}
 
-        // Masked token used on warning logs.
-        const token = tokens.accessToken || tokens.previousAccessToken
-        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
-
+        // When the token has failed for the first time, set the auth state to "token-failed".
+        // If it fails again, notify the user.
         try {
-            const user = await this.getByToken(tokens)
+            if (!user.spotifyAuthState) {
+                user.spotifyAuthState = "token-failed"
+            } else if (user.spotifyAuthState == "token-failed") {
+                user.spotifyAuthState = "token-fail-notified"
+                delete user.spotify
 
-            if (!user) {
-                logger.warn("Users.onStravaMissingPermission", `No user found for token ${maskedToken}`)
+                // Failed at least twice, so notify the user that reauth is needed and reset the existing Spotify tokens.
+                const nOptions: Partial<AuthNotification> = {
+                    title: "Spotify reauthentication needed",
+                    body: "Your Spotify account authentication has expired, please login again.",
+                    href: "/account?spotify=link",
+                    auth: true
+                }
+                await notifications.createNotification(user, nOptions)
+            } else {
                 return
             }
 
-            // Write not suspended yet? Do it now and notify the user.
-            if (!user.writeSuspended) {
-                const title = "Missing Strava permissions"
-                const body = "You haven't authorized Strautomator to make changes to your Strava account (missing write permissions). Please login again."
-                const href = "https://strautomator.com/auth/login"
-                const expiry = dayjs().add(30, "days").toDate()
-                await notifications.createNotification(user, {title: title, body: body, href: href, auth: true, dateExpiry: expiry})
-
-                const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, writeSuspended: true}
-                await this.update(updatedUser)
-            }
+            // Reset the Spotify user data.
+            updatedUser.spotifyAuthState = user.spotifyAuthState
+            updatedUser.spotify = FieldValue.delete() as any
+            await this.update(updatedUser)
         } catch (ex) {
-            logger.error("Notifications.onStravaMissingPermission", `Failed to notify user for token ${maskedToken}`)
+            logger.error("Users.onSpotifyTokenFailure", ex)
         }
     }
 
