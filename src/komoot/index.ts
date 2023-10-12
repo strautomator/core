@@ -32,7 +32,7 @@ export class Komoot {
      * Init the Komoot wrapper.
      */
     init = async (): Promise<void> => {
-        cache.setup("komoot-invalid", settings.komoot.cacheDuration)
+        cache.setup("komoot-invalid", settings.komoot.maxCacheDuration)
         logger.info("Komoot.init", `Routes will be cached for up to ${dayjs.duration(settings.komoot.maxCacheDuration, "seconds").humanize()}`)
     }
 
