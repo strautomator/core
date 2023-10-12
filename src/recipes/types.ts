@@ -62,8 +62,6 @@ export interface RecipeStatsData {
     id: string
     /** User that owns this recipe. */
     userId: string
-    /** When was it last triggered. */
-    dateLastTrigger?: Date
     /** List of activity IDs that triggered the recipe. */
     activities: number[]
     /** Total number of activities processed by the recipe. */
@@ -72,6 +70,10 @@ export interface RecipeStatsData {
     counter?: number
     /** Failed execution counter (gets reset if recipe executes successfully). */
     recentFailures?: number
+    /** When was it last triggered. */
+    dateLastTrigger?: Date
+    /** When it last failed. */
+    dateLastFailure?: Date
     /** Date when the recipe stats was archived. */
     dateArchived?: Date
 }
