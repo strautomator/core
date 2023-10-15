@@ -93,8 +93,6 @@ export interface UserPreferences {
     delayedProcessing?: boolean
     /** How many days to delay the calculations of new GearWear mileage / hours. */
     gearwearDelayDays?: number
-    /** Opt in to have activities shared on Strautomator's Twitter? */
-    twitterShare?: boolean
     /** Reset recipe counters every year? Set using the format MM-DD, or false to disable. */
     dateResetCounter?: string | false
     /** Preferred weather provider. */

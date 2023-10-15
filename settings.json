@@ -526,12 +526,6 @@
             "retry": 5
         }
     },
-    "twitter": {
-        // Around 80% chances of posting interesting activities on Twitter for users that have opted in.
-        "activityThreshold": 0.8,
-        // Refresh account details max 3 times a day, value set in seconds.
-        "accountRefreshInterval": 28800
-    },
     "users": {
         // Consider users idle (for deletion) if they are suspended for longer than 6 months or
         // haven't done any Strava activities for more than 2 years.
