@@ -98,6 +98,11 @@ export class StravaClubs {
             logger.info("Strava.getClubEvents", logHelper.user(user), `Club ${id} has ${clubEvents.length} events`)
             return clubEvents
         } catch (ex) {
+            if (ex.response?.status == 404) {
+                logger.warn("Strava.getClubEvents", logHelper.user(user), `Club ${id}`, "Status 404, no events")
+                return []
+            }
+
             logger.error("Strava.getClubEvents", logHelper.user(user), `Club ${id}`, ex)
             throw ex
         }
