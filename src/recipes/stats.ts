@@ -130,20 +130,21 @@ export class RecipeStats {
                 }
             }
 
-            // Update stats.
+            // Set trigger date.
             stats.dateLastTrigger = now
 
             // Increase failure counter if recipe execution was not successful.
             if (success) {
+                logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`)
                 stats.recentFailures = 0
             } else {
+                logger.warn("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`, `Recent recipe failures: ${stats.recentFailures}`)
                 stats.recentFailures = (stats.recentFailures || 0) + 1
                 stats.dateLastFailure = now
             }
 
             // Save stats to the database.
             await database.merge("recipe-stats", stats, doc)
-            logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Added activity ${activity.id}`)
         } catch (ex) {
             logger.error("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), logHelper.activity(activity), ex)
         }
