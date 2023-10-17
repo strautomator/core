@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "23.417.12006",
+    "version": "23.422.11108",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
