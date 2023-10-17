@@ -10,6 +10,7 @@ import paypalSubscriptions from "./subscriptions"
 import paypalTransactions from "./transactions"
 import paypalWebhooks from "./webhooks"
 import _ from "lodash"
+import jaul from "jaul"
 import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
@@ -154,20 +155,32 @@ export class PayPal {
      * Authenticate with PayPal and load product details and billing plans from the live API.
      */
     loadLive = async (): Promise<void> => {
+        const loader = async () => {
+            await this.setupProduct()
+            await this.setupBillingPlans()
+            if (!settings.paypal.cacheDisabled) {
+                await database.appState.set("paypal", {product: api.currentProduct, billingPlans: this.currentBillingPlans})
+            }
+        }
+
         try {
             const authenticated = await api.authenticate()
 
             if (authenticated) {
-                await this.setupProduct()
-                await this.setupBillingPlans()
-                if (!settings.paypal.cacheDisabled) {
-                    await database.appState.set("paypal", {product: api.currentProduct, billingPlans: this.currentBillingPlans})
-                }
+                await loader()
             } else if (api.auth.expiresAt <= dayjs().unix()) {
                 throw new Error("PayPal authentication failed")
             }
         } catch (ex) {
-            logger.error("PayPal.loadLive", ex)
+            logger.warn("PayPal.loadLive", ex, "Will try again")
+
+            try {
+                await jaul.io.sleep(settings.axios.retryInterval)
+                await api.authenticate()
+                await loader()
+            } catch (innerEx) {
+                logger.error("PayPal.loadLive", innerEx)
+            }
         }
     }
 
