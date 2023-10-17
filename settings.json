@@ -362,10 +362,10 @@
             "linksOn": 5,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
-            // Use ChatGPT on around 30% and weather on 50% of "generateName" recipe actions.
+            // Use ChatGPT on around 20% and weather on 40% of "generateName" recipe actions.
             "fortune": {
-                "openai": 30,
-                "weather": 50
+                "openai": 20,
+                "weather": 40
             }
         },
         "pro": {
@@ -389,9 +389,9 @@
                 "year": 6.99,
                 "github": 1.0
             },
-            // Use ChatGPT on around 95% and weather on 90% of "generateName" recipe actions.
+            // Use ChatGPT and weather parameters on around 90% of "generateName" recipe actions.
             "fortune": {
-                "openai": 95,
+                "openai": 90,
                 "weather": 90
             }
         }
@@ -402,7 +402,7 @@
         // activity description.
         "linksTexts": ["Powered by", "Automated with"],
         // How many times a recipe can fail before getting disabled automatically.
-        "maxFailures": 5,
+        "maxFailures": 10,
         // Max number of activity IDs kept on the recipe stats.
         "maxActivityIds": 500,
         // Max length for specific properties.
