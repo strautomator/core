@@ -702,4 +702,12 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
     if (activity.gear && activity.gear.name) {
         activity.gear = activity.gear.name as any
     }
+
+    // Replace activity null values with an empty string.
+    const keys = Object.keys(activity)
+    for (let key of keys) {
+        if (_.isNil(activity[key])) {
+            activity[key] = ""
+        }
+    }
 }
