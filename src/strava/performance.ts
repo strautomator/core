@@ -1,10 +1,11 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaActivityPerformance, StravaEstimatedFtp, StravaFitnessLevel, StravaSport} from "./types"
+import {StravaActivity, StravaActivityPerformance, StravaCachedResponse, StravaEstimatedFtp, StravaFitnessLevel, StravaSport} from "./types"
 import {UserData, UserFtpStatus} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
 import api from "./api"
+import database from "../database"
 import users from "../users"
 import _ from "lodash"
 import logger from "anyhow"
@@ -451,6 +452,22 @@ export class StravaPerformance {
                 return null
             }
 
+            // Helper to get intervals for logging.
+            const getLogResult = (result: StravaActivityPerformance) => {
+                const logResult = Object.entries(result).map((r) => `${r[0].replace("power", "")}: ${r[1]}`)
+                return logResult.join(", ")
+            }
+
+            // Check if power is cached.
+            const now = dayjs()
+            const cacheId = `power-${user.id}-${activity.id}`
+            const cacheDuration = settings.strava.cacheDuration["power-intervals"]
+            const fromCache: StravaCachedResponse = await database.get("strava-cache", cacheId)
+            if (fromCache && dayjs(fromCache.dateCached).add(cacheDuration, "seconds").isAfter(now)) {
+                logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), getLogResult(fromCache.data), "From cache")
+                return fromCache.data
+            }
+
             const streams = await stravaActivities.getStreams(user, activity.id)
 
             // Missing or not enough power data points? Stop here.
@@ -463,9 +480,8 @@ export class StravaPerformance {
                 return null
             }
 
-            const result: StravaActivityPerformance = {}
-
             const watts = streams.watts.data
+            const result: StravaActivityPerformance = {}
             const intervals: StravaActivityPerformance = {
                 power5min: 300,
                 power20min: 1200,
@@ -494,9 +510,23 @@ export class StravaPerformance {
                 result[key] = Math.round(best / interval)
             }
 
-            const logResult = Object.entries(result).map((r) => `${r[0].replace("power", "")}: ${r[1]}`)
-            logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), logResult.join(", "))
+            // Save to cache.
+            try {
+                const cacheData: StravaCachedResponse = {
+                    id: cacheId,
+                    resourceType: "power-intervals",
+                    data: result,
+                    dateCached: now.toDate(),
+                    dateExpiry: now.add(cacheDuration, "seconds").toDate()
+                }
 
+                await database.set("strava-cache", cacheData, cacheId)
+            } catch (cacheEx) {
+                logger.warn("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), "Failed to save to cache", cacheEx)
+            }
+
+            // Done!
+            logger.info("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), getLogResult(result))
             return result
         } catch (ex) {
             logger.error("Strava.getPowerIntervals", logHelper.user(user), logHelper.activity(activity), ex)
