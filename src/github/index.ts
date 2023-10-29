@@ -6,6 +6,7 @@ import cache from "bitecache"
 import database from "../database"
 import dayjs from "../dayjs"
 import eventManager from "../eventmanager"
+import subscriptions from "../subscriptions"
 import users from "../users"
 import _ from "lodash"
 import logger from "anyhow"
@@ -203,7 +204,7 @@ export class GitHub {
             const status = data.action == "pending_cancellation" || "cancelled" ? "CANCELLED" : "ACTIVE"
 
             // Check if the subscription data already exists, and if not, create one.
-            let subscription: GitHubSubscription = await database.get("subscriptions", subId)
+            let subscription: GitHubSubscription = (await subscriptions.getById(subId)) as GitHubSubscription
             if (!subscription) {
                 const user = await users.getByUsername(username)
 
@@ -224,9 +225,10 @@ export class GitHub {
                     dateUpdated: now
                 }
 
-                // One time payment? Set the expiration date to 31 days.
+                // One time payment? Set the expiration date.
                 if (data.sponsorship.tier.is_one_time) {
-                    subscription.dateExpiry = dayjs().add(31, "days").endOf("day").toDate()
+                    const days = 31 + settings.users.subscriptionDays.expired
+                    subscription.dateExpiry = dayjs().add(days, "days").endOf("day").toDate()
                 }
             } else {
                 subscription.status = status
