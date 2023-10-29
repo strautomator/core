@@ -5,6 +5,7 @@ import {UserData} from "../users/types"
 import api from "./api"
 import database from "../database"
 import eventManager from "../eventmanager"
+import subscriptions from "../subscriptions"
 import paypalProducts from "./products"
 import paypalSubscriptions from "./subscriptions"
 import paypalTransactions from "./transactions"
@@ -13,6 +14,7 @@ import _ from "lodash"
 import jaul from "jaul"
 import logger from "anyhow"
 import dayjs from "../dayjs"
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
 /**
@@ -111,16 +113,24 @@ export class PayPal {
      */
     private onUserDelete = async (user: UserData): Promise<void> => {
         try {
-            if (user.subscription && user.subscription.enabled && user.subscription.source == "paypal") {
-                const subscription = await paypalSubscriptions.getSubscription(user.subscription.id)
+            const userSubs = await subscriptions.getByUser(user)
+            const userPayPalSubs = _.filter(userSubs, {source: "paypal"})
 
-                if (subscription) {
-                    subscription.userId = user.id
-                    await paypalSubscriptions.cancelSubscription(subscription)
+            // Iterate and try to cancel all pending PayPal subscriptions.
+            for (let s of userPayPalSubs) {
+                try {
+                    const subscription = await paypalSubscriptions.getSubscription(s.id)
+
+                    if (subscription) {
+                        subscription.userId = user.id
+                        await paypalSubscriptions.cancelSubscription(subscription)
+                    }
+                } catch (innerEx) {
+                    logger.warn("PayPal.onUserDelete", logHelper.user(user), `Failed to cancel subscription ${s.id}`)
                 }
             }
         } catch (ex) {
-            logger.debug("PayPal.onUserDelete", `Failed to cancel subscription ${user.subscription.id} for user ${user.id} ${user.displayName}`)
+            logger.warn("PayPal.onUserDelete", logHelper.user(user), "Failed to cancel user subscriptions")
         }
     }
 

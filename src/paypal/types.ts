@@ -1,5 +1,7 @@
 // Strautomator Core: PayPal types
 
+import {BaseSubscription} from "../subscriptions/types"
+
 /**
  * PayPal auth with access token and expiry date.
  */
@@ -47,22 +49,12 @@ export interface PayPalProduct {
 /**
  * A PayPal subscription (user subscribed to Strautomator).
  */
-export interface PayPalSubscription {
-    /** Subscription ID. */
-    id: string
-    /** User ID (set when subscribing, might be null when only fetching subscriptions from PayPal). */
-    userId: string
+export interface PayPalSubscription extends BaseSubscription {
     /** Email of the subscriber. */
     email?: string
-    /** Subscription status. */
-    status: "APPROVAL_PENDING" | "APPROVED" | "ACTIVE" | "SUSPENDED" | "CANCELLED" | "EXPIRED"
     /** Billing plan details. */
     billingPlan: PayPalBillingPlan
-    /** Date of creation of the subscription. */
-    dateCreated: Date
-    /** Date of last update of the subscription. */
-    dateUpdated: Date
-    /** Date of next payment. */
+    /** Date of next payment (on the PayPal side). */
     dateNextPayment?: Date
     /** URL for the user to proceed and approve the subscription. */
     approvalUrl?: string

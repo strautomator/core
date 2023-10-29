@@ -41,8 +41,6 @@ export interface UserData {
     calendarTemplate?: UserCalendarTemplate
     /** FTP status. */
     ftpStatus?: UserFtpStatus
-    /** Subscription details (for PRO accounts). */
-    subscription?: UserSubscriptionRef
     /** Linked Garmin account. */
     garmin?: GarminProfile
     /** Garmin authentication state. */
@@ -53,6 +51,8 @@ export interface UserData {
     spotifyAuthState?: string
     /** Custom URL token used to get the calendar. */
     urlToken?: string
+    /** User's subscription ID. */
+    subscriptionId?: string
     /** Last login date (UTC). */
     dateLogin?: Date
     /** Registration date (UTC). */
@@ -127,20 +127,4 @@ export interface UserFtpStatus {
     previousFtp: number
     /** Date of update. */
     dateUpdated: Date
-}
-
-/**
- * User subscription (PRO) reference.
- */
-export interface UserSubscriptionRef {
-    /** Subscription ID. */
-    id: string
-    /** Subscription source. */
-    source?: "friend" | "github" | "paypal" | "revolut" | "trial"
-    /** Subscription currency. */
-    currency?: string
-    /** Subscription end date. */
-    dateExpiry?: Date
-    /** Enabled? */
-    enabled: boolean
 }

@@ -45,6 +45,56 @@ export class GitHub {
     // --------------------------------------------------------------------------
 
     /**
+     * Get list of active sponsors. If failed, won't throw an error, but return null instead.
+     * TODO! At the moment pagination is not implemented, so only the first 200 sponsors will be returned.
+     */
+    getActiveSponsors = async (): Promise<Partial<GitHubSubscription>[]> => {
+        try {
+            const query = `query { user (login: "${settings.github.api.username}") { sponsorshipsAsMaintainer(includePrivate: true, activeOnly: true, #count) { totalCount nodes { createdAt, isOneTimePayment, tierSelectedAt, tier { monthlyPriceInDollars }, sponsorEntity { ... on User { login } }, sponsorEntity { ... on Organization { login } } } } }}`
+            const firstQuery = {query: query.replace("#count", "first: 100")}
+            const lastQuery = {query: query.replace("#count", "last: 100")}
+
+            const result = await api.graphQL(firstQuery)
+            if (result.data?.user?.sponsorshipsAsMaintainer?.totalCount > 100) {
+                const lastResult = await api.graphQL(lastQuery)
+                result.data.user.sponsorshipsAsMaintainer.nodes = _.concat(result.data.user.sponsorshipsAsMaintainer.nodes, lastResult.data.user.sponsorshipsAsMaintainer.nodes)
+            }
+
+            const subscriptions: Partial<GitHubSubscription>[] = []
+
+            // Iterate and build the list of active sponsors.
+            for (let node of result.data.user.sponsorshipsAsMaintainer.nodes) {
+                const dateCreated = dayjs(node.createdAt)
+                const dateUpdated = dayjs(node.tierSelectedAt)
+
+                const sub: Partial<GitHubSubscription> = {
+                    id: `GH-${node.sponsorEntity.login.toLowerCase()}`,
+                    username: node.sponsorEntity.login,
+                    price: node.tier.monthlyPriceInDollars,
+                    dateCreated: dateCreated.toDate(),
+                    dateUpdated: dateUpdated.toDate(),
+                    currency: "USD",
+                    frequency: "monthly"
+                }
+
+                // One time payment? Set the default expiration date.
+                if (node.isOneTimePayment) {
+                    const days = 31 + settings.users.subscriptionDays.expired
+                    sub.dateExpiry = dateCreated.add(days, "days").endOf("day").toDate()
+                }
+
+                subscriptions.push(sub)
+            }
+
+            logger.info("GitHub.getActiveSponsors", `${subscriptions.length} active sponsors`)
+            return subscriptions
+        } catch (ex) {
+            logger.error("GitHub.getActiveSponsors", ex)
+            return null
+        }
+    }
+
+    /**
      * Get the list of last commits from the Strautomator repos.
      */
     getLastCommits = async (): Promise<GitHubCommit[]> => {
@@ -150,6 +200,7 @@ export class GitHub {
 
             const username = data.sponsorship.sponsor.login
             const subId = `GH-${username}`
+            const status = data.action == "pending_cancellation" || "cancelled" ? "CANCELLED" : "ACTIVE"
 
             // Check if the subscription data already exists, and if not, create one.
             let subscription: GitHubSubscription = await database.get("subscriptions", subId)
@@ -162,21 +213,32 @@ export class GitHub {
                     return
                 }
 
-                subscription = {id: subId, userId: user.id, dateCreated: now, dateUpdated: now}
+                subscription = {
+                    source: "github",
+                    id: subId,
+                    userId: user.id,
+                    username: username,
+                    price: data.sponsorship.tier.monthly_price_in_dollars,
+                    status: status,
+                    dateCreated: now,
+                    dateUpdated: now
+                }
 
                 // One time payment? Set the expiration date to 31 days.
                 if (data.sponsorship.tier.is_one_time) {
-                    subscription.dateExpiry = dayjs().add(31, "days").toDate()
+                    subscription.dateExpiry = dayjs().add(31, "days").endOf("day").toDate()
                 }
+            } else {
+                subscription.status = status
+                subscription.dateUpdated = now
             }
-
-            subscription.status = data.action == "cancelled" ? "CANCELLED" : "ACTIVE"
-            subscription.monthlyPrice = data.sponsorship.tier.monthly_price_in_dollars
 
             // Make sure the expiration date is removed if not a single payment.
             if (!data.sponsorship.tier.is_one_time) {
                 delete subscription.dateExpiry
+                subscription.frequency = "monthly"
             } else {
+                delete subscription.frequency
                 details.push(`One time payment`)
             }
 

@@ -240,6 +240,7 @@ export class PayPalSubscriptions {
 
             // Create subscription object with the fetched details.
             const subscription: PayPalSubscription = {
+                source: "paypal",
                 id: res.id,
                 userId: null,
                 status: res.status,
@@ -330,6 +331,7 @@ export class PayPalSubscriptions {
 
             // Create subscription and save on the database.
             const subscription: PayPalSubscription = {
+                source: "paypal",
                 id: res.id,
                 userId: userId,
                 status: res.status,

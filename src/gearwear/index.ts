@@ -173,7 +173,7 @@ export class GearWear {
      * @param user The user owner of the GearWear.
      * @param includeExpired Also return GearWear for deleted / expired gear?
      */
-    getForUser = async (user: UserData, includeExpired?: boolean): Promise<GearWearConfig[]> => {
+    getByUser = async (user: UserData, includeExpired?: boolean): Promise<GearWearConfig[]> => {
         try {
             const result: GearWearConfig[] = await database.search("gearwear", ["userId", "==", user.id])
 
@@ -181,14 +181,14 @@ export class GearWear {
             if (!includeExpired) {
                 const allGear = _.concat(user.profile.bikes || [], user.profile.shoes || [])
                 _.remove(result, (g) => !_.find(allGear, {id: g.id}))
-                logger.info("GearWear.getForUser", logHelper.user(user), `${result.length} active GearWear configurations`)
+                logger.info("GearWear.getByUser", logHelper.user(user), `${result.length} active GearWear configurations`)
             } else {
-                logger.info("GearWear.getForUser", logHelper.user(user), `${result.length} total GearWear configurations`)
+                logger.info("GearWear.getByUser", logHelper.user(user), `${result.length} total GearWear configurations`)
             }
 
             return result
         } catch (ex) {
-            logger.error("GearWear.getForUser", logHelper.user(user), ex)
+            logger.error("GearWear.getByUser", logHelper.user(user), ex)
             throw ex
         }
     }

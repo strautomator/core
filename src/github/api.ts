@@ -1,6 +1,6 @@
 // Strautomator Core: GitHub API
 
-import {axiosRequest} from "../axios"
+import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
 import logger from "anyhow"
 const settings = require("setmeup").settings
@@ -24,7 +24,7 @@ export class GitHubAPI {
      * @param onlyFirstPage Set to avoid following paginated results.
      */
     private makeRequest = async (method: "GET" | "POST", path: string, body?: any, onlyFirstPage?: boolean): Promise<any> => {
-        const options: any = {headers: {}, returnResponse: true}
+        const options: AxiosConfig = {headers: {}, returnResponse: true}
 
         // Request options.
         options.method = method
@@ -34,7 +34,7 @@ export class GitHubAPI {
 
         // Optional body.
         if (body) {
-            options.body = body
+            options.data = body
         }
 
         try {
@@ -72,6 +72,20 @@ export class GitHubAPI {
 
     // INTERNAL API METHODS
     // --------------------------------------------------------------------------
+
+    /**
+     * Get the latest commits from the repository on GitHub.
+     * @param query Full GraphQL query.
+     */
+    graphQL = async (query: any): Promise<any> => {
+        try {
+            const result = await this.makeRequest("POST", "graphql", query)
+            return result
+        } catch (ex) {
+            logger.error("GitHub.graphQL", ex)
+            throw ex
+        }
+    }
 
     /**
      * Get the latest commits from the repository on GitHub.

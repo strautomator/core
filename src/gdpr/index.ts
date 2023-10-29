@@ -27,7 +27,7 @@ export class GDPR {
      */
     init = async (): Promise<void> => {
         try {
-            logger.info("GDPR.init", `Archives expiration: ${settings.users.archiveDownloadDays} days`)
+            logger.info("GDPR.init", `Archives expiration: ${settings.gdpr.requestDays} days`)
             eventManager.on("Users.delete", this.onUserDelete)
         } catch (ex) {
             logger.error("GDPR.init", ex)
@@ -71,7 +71,7 @@ export class GDPR {
             const extension = settings.beta.enabled ? "-beta.zip" : ".zip"
             const filename = `${user.id}-${user.urlToken}${extension}`
             const saveAs = `strautomator-${user.id}${extension}`
-            const minDays = settings.users.archiveDownloadDays
+            const minDays = settings.gdpr.requestDays
             const lastDownload = user.dateLastArchiveGenerated || dayjs("2000-01-01")
             const diffDays = now.diff(lastDownload, "days")
 

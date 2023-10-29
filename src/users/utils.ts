@@ -1,6 +1,6 @@
 // Strautomator Core: Users Utils
 
-import {UserData} from "./types"
+import {UserData} from "../users/types"
 import _ from "lodash"
 import logger from "anyhow"
 const settings = require("setmeup").settings

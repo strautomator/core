@@ -81,6 +81,8 @@ import {Weather} from "./weather"
 export const weather: Weather = Weather.Instance
 import {Users} from "./users"
 export const users: Users = Users.Instance
+import {Subscriptions} from "./subscriptions"
+export const subscriptions: Subscriptions = Subscriptions.Instance
 import {Recipes} from "./recipes"
 export const recipes: Recipes = Recipes.Instance
 import {GearWear} from "./gearwear"
@@ -108,6 +110,7 @@ export * from "./komoot/types"
 export * from "./garmin/types"
 export * from "./spotify/types"
 export * from "./users/types"
+export * from "./subscriptions/types"
 export * from "./calendar/types"
 export * from "./notifications/types"
 export * from "./announcements/types"
@@ -226,7 +229,7 @@ export const startup = async (quickStart?: boolean) => {
     }
 
     // Init individual modules now. Start with the most important modules, than the rest.
-    const coreModules = [github, paypal, strava, users]
+    const coreModules = [github, paypal, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
     const otherModules = [announcements, calendar, faq, garmin, gearwear, gdpr, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, weather]
     await Promise.all(otherModules.map(initModule))

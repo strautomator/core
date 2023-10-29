@@ -169,6 +169,10 @@
             "betaFilename": "settings.beta.json"
         }
     },
+    "gdpr": {
+        // Users can request an archive download once every 10 days.
+        "requestDays": 10
+    },
     "gearwear": {
         // By default, when update distance for gear components, get activities that happened
         // 2 days ago (so users will have some time to set the correct activity gear).
@@ -182,7 +186,8 @@
         "api": {
             "baseUrl": "https://api.github.com/",
             "repo": "strautomator/web",
-            "coreRepo": "strautomator/core"
+            "coreRepo": "strautomator/core",
+            "username": "igoramadas"
         },
         // GitHub data is cached for up to 30 minutes.
         "cacheDuration": 1800
@@ -534,10 +539,12 @@
             "suspended": 180,
             "noActivities": 730
         },
-        // Consider user subscriptions dangling (pending approval) after 4 days.
-        "danglingDays": 4,
-        // Users can request an archive download once every 10 days.
-        "archiveDownloadDays": 10
+        "subscriptionDays": {
+            // Consider pending-approval user subscriptions dangling after 3 days.
+            "dangling": 3,
+            // Consider subscriptions expired after 5 days of the last missing payment.
+            "expired": 5
+        }
     },
     // Weather settings. The rate limits set here should be enough for basic usage using free accounts,
     // but should be updated in production when used with a paid plan.

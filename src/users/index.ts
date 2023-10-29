@@ -1,18 +1,19 @@
 // Strautomator Core: Users
 
 import {validateUserPreferences} from "./utils"
-import {UserData} from "./types"
+import {UserData} from "../users/types"
+import {BaseSubscription} from "../subscriptions/types"
 import {AuthNotification} from "../notifications/types"
 import {PayPalSubscription} from "../paypal/types"
 import {GitHubSubscription} from "../github/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 import {encryptData} from "../database/crypto"
 import {FieldValue} from "@google-cloud/firestore"
-import userSubscriptions from "./subscriptions"
 import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
 import notifications from "../notifications"
+import subscriptions from "../subscriptions"
 import _ from "lodash"
 import crypto from "crypto"
 import logger from "anyhow"
@@ -34,11 +35,6 @@ export class Users {
      * List of ignored user IDs.
      */
     ignoredUserIds: string[] = []
-
-    /**
-     * User subscriptions.
-     */
-    subscriptions = userSubscriptions
 
     /**
      * Shortcut to validate user preferences.
@@ -85,20 +81,11 @@ export class Users {
         logger.info("Users.onPayPalSubscription", `User ${subscription.userId}`, subscription.id, subscription.status)
 
         try {
-            const user: Partial<UserData> = {
-                id: subscription.userId,
-                subscription: {
-                    id: subscription.id,
-                    source: "paypal",
-                    enabled: subscription.status != "CANCELLED"
-                }
-            }
+            const user = await this.getById(subscription.userId)
 
-            // User activated a PRO account or reverted back to the free plan?
-            if (subscription.status == "ACTIVE") {
+            // User activated a PRO account?
+            if (!user.isPro && subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
-            } else {
-                await this.update(user)
             }
         } catch (ex) {
             logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
@@ -118,23 +105,14 @@ export class Users {
         logger.info("Users.onGitHubSubscription", `User ${subscription.userId}`, subscription.id, subscription.status)
 
         try {
-            const user: Partial<UserData> = {
-                id: subscription.userId,
-                subscription: {
-                    id: subscription.id,
-                    source: "github",
-                    enabled: subscription.status != "CANCELLED"
-                }
-            }
+            const user = await this.getById(subscription.userId)
 
             // Switch to PRO if subscription is active.
-            if (subscription.status == "ACTIVE") {
+            if (!user.isPro && subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
             }
-
-            await this.update(user)
         } catch (ex) {
-            logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
+            logger.error("Users.onGitHubSubscription", `Failed to update user ${subscription.userId} subscription details`)
         }
     }
 
@@ -978,13 +956,10 @@ export class Users {
      * @param user Data for the user that should be updated.
      * @param subscription Optional subscription that was created, otherwise default to a "friend" subscription.
      */
-    switchToPro = async (user: Partial<UserData>, subscription?: PayPalSubscription | GitHubSubscription): Promise<void> => {
+    switchToPro = async (user: UserData, subscription?: BaseSubscription | PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
-            const existingUser = await this.getById(user.id)
-
-            // Set PRO flag force set the display name.
             user.isPro = true
-            user.displayName = existingUser.displayName
+            await this.update({id: user.id, displayName: user.displayName, subscriptionId: subscription.id, isPro: true})
 
             // Reset the batch date, if there's one, so the user can run a new batch sync straight away.
             if (user.dateLastBatchProcessing) {
@@ -992,44 +967,23 @@ export class Users {
                 user.dateLastBatchProcessing = user.dateRegistered
             }
 
-            // Create subscription reference, if not there yet.
-            if (!user.subscription) {
-                user.subscription = {id: user.id, enabled: true}
-            }
-
             // Friend or PayPal subscription? GitHub needs no additional processing.
-            if (!subscription) {
-                user.subscription = {
-                    id: `F-${dayjs().unix()}`,
-                    source: "friend",
-                    enabled: true
-                }
-            } else if (subscription.id.substring(0, 2) != "GH") {
+            if (subscription.source == "paypal") {
                 const paypalSub = subscription as PayPalSubscription
 
-                // Extract the payment currency (if any).
-                const currency = paypalSub.billingPlan ? paypalSub.billingPlan.currency : paypalSub.lastPayment ? paypalSub.lastPayment.currency : null
-                if (currency) {
-                    user.subscription.currency = currency
-                }
-
                 // Email passed with the subscription and was not set for that user? Set it now.
-                if (!existingUser.email && paypalSub.email) {
+                if (!user.email && paypalSub.email) {
                     user.email = paypalSub.email
                 }
             }
 
-            // Update user on the database.
-            await this.update(user)
-
             // User was on the free plan before? Send a thanks email.
-            const email = user.email || existingUser.email
-            if (email && !existingUser.isPro) {
+            if (user.email) {
                 const data = {
                     userId: user.id,
                     userName: user.profile.firstName || user.displayName,
-                    subscriptionId: user.subscription.id,
-                    subscriptionSource: user.subscription.source
+                    subscriptionId: subscription.id,
+                    subscriptionSource: subscription.source
                 }
                 const options = {
                     to: user.email,
@@ -1041,7 +995,7 @@ export class Users {
                 mailer.send(options)
             }
 
-            logger.info("Users.switchToPro", user.id, user.displayName, `Subscription: ${user.subscription.source} ${user.subscription.id}`)
+            logger.info("Users.switchToPro", user.id, user.displayName, `Subscription: ${subscription.source} ${subscription.id}`)
         } catch (ex) {
             logger.error("Users.switchToPro", user.id, user.displayName, ex)
             throw ex
@@ -1053,38 +1007,25 @@ export class Users {
      * @param user Data for the user that should be updated.
      * @param subscription Optional subscription that was deactivated.
      */
-    switchToFree = async (user: Partial<UserData>, subscription?: PayPalSubscription | GitHubSubscription): Promise<void> => {
+    switchToFree = async (user: UserData, subscription?: BaseSubscription | PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
-            const existingUser = await this.getById(user.id)
-
-            // Remove the PRO flag.
-            user.displayName = existingUser.displayName
             user.isPro = false
-
-            // User had a previous subscription set? Mark as disabled.
-            if (existingUser.subscription) {
-                existingUser.subscription.enabled = false
-                user.subscription = existingUser.subscription
-            }
-
-            // Update user on the database.
-            await this.update(user)
+            await this.update({id: user.id, displayName: user.displayName, subscriptionId: FieldValue.delete() as any, isPro: false})
 
             // Expire the subscription, in case it's active.
             if (subscription?.status == "ACTIVE") {
-                await this.subscriptions.expire(subscription)
+                await subscriptions.expire(subscription)
             }
 
-            const email = user.email || existingUser.email
             const status = subscription ? subscription.status.toLowerCase() : "cancelled"
 
             // User had a valid PRO subscription before? Send an email about the downgrade.
-            if (email && existingUser.isPro) {
+            if (user.email) {
                 const data = {
                     userId: user.id,
                     userName: user.profile.firstName || user.displayName,
-                    subscriptionId: user.subscription.id,
-                    subscriptionSource: user.subscription.source,
+                    subscriptionId: subscription.id,
+                    subscriptionSource: subscription.source,
                     subscriptionStatus: status
                 }
                 const options = {
@@ -1097,7 +1038,7 @@ export class Users {
                 mailer.send(options)
             }
 
-            logger.info("Users.switchToFree", user.id, user.displayName, `Subscription: ${user.subscription.source} ${user.subscription.id} - ${status}`)
+            logger.info("Users.switchToFree", user.id, user.displayName, `Subscription: ${subscription.source} ${subscription.id} - ${status}`)
         } catch (ex) {
             logger.error("Users.switchToFree", user.id, user.displayName, ex)
             throw ex

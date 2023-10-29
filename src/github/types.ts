@@ -1,5 +1,7 @@
 // Strautomator Core: GitHub types
 
+import {BaseSubscription} from "../subscriptions/types"
+
 /**
  * Release / tag based change log.
  */
@@ -28,19 +30,7 @@ export interface GitHubCommit {
 /**
  * A GitHub subscription (sponsorship).
  */
-export interface GitHubSubscription {
-    /** Subscription ID. */
-    id: string
-    /** User ID (set when subscribing, might be null when only fetching subscriptions from PayPal). */
-    userId: string
-    /** Subscription status. */
-    status?: "ACTIVE" | "CANCELLED"
-    /** Monthly price paid. */
-    monthlyPrice?: number
-    /** Date of creation of the subscription. */
-    dateCreated: Date
-    /** Date of last update of the subscription. */
-    dateUpdated: Date
-    /** Expiry date (used mostly in case of one-time payments). */
-    dateExpiry?: Date
+export interface GitHubSubscription extends BaseSubscription {
+    /** Username of the sponsor. */
+    username: string
 }
