@@ -116,13 +116,20 @@ export class Subscriptions {
      */
     create = async (subscription: Partial<BaseSubscription | PayPalSubscription | GitHubSubscription>): Promise<void> => {
         try {
+            if (!subscription.id) {
+                throw new Error("Missing subscription ID")
+            }
+            if (!subscription.userId) {
+                throw new Error("Missing user ID")
+            }
+
             subscription.dateCreated = new Date()
             subscription.dateUpdated = new Date()
 
             await database.set("subscriptions", subscription, subscription.id)
             logger.info("Subscriptions.create", `User ${subscription.userId}`, subscription.id, subscription.source, subscription.currency, subscription.frequency)
         } catch (ex) {
-            logger.error("Subscriptions.create", `User ${subscription.userId}`, subscription.id, ex)
+            logger.error("Subscriptions.create", `ID ${subscription.id || "unset"}`, `User ${subscription.userId || "unset"}`, ex)
             throw ex
         }
     }
