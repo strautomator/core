@@ -45,8 +45,8 @@
         "baseUrl": "https://links.devv.com/"
     },
     "announcements": {
-        // Active announcements should be cached for up to 1 hour.
-        "cacheDuration": 3600
+        // Active announcements should be cached for up to 30 minutes.
+        "cacheDuration": 1800
     },
     "axios": {
         // User agent used to emulate a browser.
@@ -179,7 +179,7 @@
         "delayDays": 2,
         // Wait at least 10 days before sending another GearWear reminder.
         "reminderDays": 10,
-        // Remind user if tracking was not reset and current usage has passed 15% of the alert value.
+        // Remind user if tracking was not reset and current usage has passed 15% of the target alert value.
         "reminderThreshold": 1.15
     },
     "github": {
@@ -282,12 +282,12 @@
     "notifications": {
         // Cache notification results for up to 4 seconds.
         "cacheDuration": 4,
-        // Messages will auto expire after 3 months.
-        "defaultExpireDays": 90,
+        // Messages will auto expire after 6 months.
+        "defaultExpireDays": 180,
         // Send notifications via email if unread notifications hits a certain count.
         "emailReminderCount": 10,
-        // Delete read user messages after 60 days.
-        "readDeleteAfterDays": 60
+        // Delete read messages after 90 days.
+        "readDeleteAfterDays": 90
     },
     "oauth": {
         // Alert users after 3 token failures.
@@ -467,7 +467,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 6,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 300,
+            "maxPerMinute": 320,
             // Default page size is the max of 200.
             "pageSize": 200,
             // Token to be appended to the URL of Strava webhooks, for
