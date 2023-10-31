@@ -42,11 +42,19 @@ export class Subscriptions {
 
     /**
      * Get a subscription by its ID. If not found, returns null.
-     * @param id The user's ID.
+     * @param id The subscription ID.
      */
     getById = async (id: string): Promise<BaseSubscription | PayPalSubscription | GitHubSubscription> => {
         try {
-            return await database.get("subscriptions", id)
+            const result = await database.get("subscriptions", id)
+
+            if (result) {
+                logger.info("Subscriptions.getById", id, logHelper.subscription(result))
+            } else {
+                logger.warn("Subscriptions.getById", id, "Not found")
+            }
+
+            return result
         } catch (ex) {
             logger.error("Subscriptions.getById", id, ex)
             throw ex
