@@ -299,7 +299,8 @@ export class StravaAPI {
 
             return res
         } catch (ex) {
-            const accessDenied = token && ex.response?.status == 401
+            const status = ex.response?.status || 500
+            const accessDenied = token && (status == 401 || status == 403)
 
             // Has a error response data? Add it to the exception message.
             if (ex.response?.data) {

@@ -234,14 +234,8 @@ export class Spotify {
             logger.info("Spotify.refreshToken", logHelper.user(user), "Refreshed tokens")
             return tokens
         } catch (ex) {
-            logger.error("Spotify.refreshToken", logHelper.user(user), ex)
-
-            // Token invalid or expired? Emit the token failure event.
-            const err = JSON.stringify(ex, null, 0)
-            if (err.includes("invalid_grant") || err.includes("expired") || err.includes("access denied")) {
-                eventManager.emit("Spotify.tokenFailure", user)
-            }
-
+            const err = logger.error("Spotify.refreshToken", logHelper.user(user), ex)
+            this.processTokenError(user, err)
             throw ex
         }
     }
@@ -263,9 +257,21 @@ export class Spotify {
             }
         } catch (ex) {
             logger.error("Spotify.validateTokens", logHelper.user(user), ex)
+            throw new Error("Failed to refresh token")
         }
 
         return tokens
+    }
+
+    /**
+     * Process token errors and emit the appropriate event.
+     * @param user The user.
+     * @param err The parsed error message.
+     */
+    processTokenError = async (user: UserData, err: string): Promise<void> => {
+        if (err.includes("invalid_grant") || err.includes("expired")) {
+            eventManager.emit("Spotify.tokenFailure", user)
+        }
     }
 
     // METHODS
@@ -301,7 +307,8 @@ export class Spotify {
             logger.info("Spotify.getProfile", logHelper.user(user), `ID ${profile.id}`)
             return profile
         } catch (ex) {
-            logger.error("Spotify.getProfile", logHelper.user(user), ex)
+            const err = logger.error("Spotify.getProfile", logHelper.user(user), ex)
+            this.processTokenError(user, err)
             throw ex
         }
     }
@@ -352,7 +359,8 @@ export class Spotify {
             logger.info("Spotify.getActivityTracks", logHelper.user(user), logHelper.activity(activity), `Got ${tracks.length || "no"} tracks`)
             return tracks
         } catch (ex) {
-            logger.error("Spotify.getActivityTracks", logHelper.user(user), logHelper.activity(activity), ex)
+            const err = logger.error("Spotify.getActivityTracks", logHelper.user(user), logHelper.activity(activity), ex)
+            this.processTokenError(user, err)
             return null
         }
     }
