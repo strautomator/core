@@ -65,7 +65,7 @@ export class Database {
             // Setup bitecache.
             cache.setup(`database${this.collectionSuffix}`, dbOptions.cacheDuration)
 
-            const logSuffix = this.collectionSuffix ? `Collections suffixd with "${this.collectionSuffix}"` : "No collection suffix"
+            const logSuffix = this.collectionSuffix ? `Collections suffixed with "${this.collectionSuffix}"` : "No collection suffix"
 
             if (settings.database.writeDisabled) {
                 logger.warn("Database.init", customLog, logSuffix, "Database in read-only mode, writeDisable = true")
