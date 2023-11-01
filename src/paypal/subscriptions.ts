@@ -335,10 +335,10 @@ export class PayPalSubscriptions {
                 id: res.id,
                 userId: userId,
                 status: res.status,
-                billingPlan: billingPlan,
                 dateCreated: dayjs.utc(res.create_time).toDate(),
                 dateUpdated: dayjs.utc(res.create_time).toDate(),
-                approvalUrl: _.find(res.links, {rel: "approve"}).href
+                approvalUrl: _.find(res.links, {rel: "approve"}).href,
+                billingPlan: {id: billingPlan.id, productId: billingPlan.productId}
             }
 
             await database.set("subscriptions", subscription, res.id)
