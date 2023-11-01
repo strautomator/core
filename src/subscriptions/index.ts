@@ -104,7 +104,7 @@ export class Subscriptions {
      */
     getByUser = async (user: UserData): Promise<(BaseSubscription | PayPalSubscription | GitHubSubscription)[]> => {
         try {
-            const where = [["userId", "in", user.id]]
+            const where = [["userId", "==", user.id]]
             const subscriptions: (BaseSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions", where)
             logger.info("Subscriptions.getByUser", logHelper.user(user), `Got ${subscriptions.length} subscriptions`)
 
