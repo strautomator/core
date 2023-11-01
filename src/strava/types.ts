@@ -81,6 +81,14 @@ export interface StravaActivity {
     locationEnd?: [number, number]
     /** Half-time location (latitude and longitude). */
     locationMid?: [number, number]
+    /** Country (name) where the activity has started. */
+    countryStart?: string
+    /** Country (flag) where the activity has started. */
+    countryFlagStart?: string
+    /** Country (name) where the activity has ended. */
+    countryEnd?: string
+    /** Country (flag) where the activity has ended. */
+    countryFlagEnd?: string
     /** Map encoded as polyline. */
     polyline?: string
     /** Gear used. */

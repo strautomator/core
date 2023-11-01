@@ -9,6 +9,7 @@ import routes from "../routes"
 import dayjs from "../dayjs"
 import _ from "lodash"
 import polyline = require("@mapbox/polyline")
+import {emojiFlag, iso1A2Code} from "@rapideditor/country-coder"
 
 // Feet and miles ratio.
 const rFeet = 3.28084
@@ -103,6 +104,16 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
 
     // Has location data?
     activity.hasLocation = activity.locationStart?.length > 0 || activity.locationEnd?.length > 0
+
+    // Get country from start and end locations.
+    if (activity.locationStart?.length > 0) {
+        activity.countryStart = iso1A2Code(activity.locationStart, {level: "territory"})
+        activity.countryFlagStart = emojiFlag(activity.locationStart)
+    }
+    if (activity.locationEnd?.length > 0) {
+        activity.countryEnd = iso1A2Code(activity.locationEnd, {level: "territory"})
+        activity.countryFlagEnd = emojiFlag(activity.locationEnd)
+    }
 
     if (data.stats_visibility && data.stats_visibility.length > 0) {
         for (let sv of data.stats_visibility) {

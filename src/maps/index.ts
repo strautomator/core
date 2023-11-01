@@ -2,7 +2,7 @@
 
 import {Client, GeocodeRequest, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
 import {Polyline} from "./polyline"
-import {CountryCodes, MapAddress, MapCoordinates} from "./types"
+import {MapAddress, MapCoordinates} from "./types"
 import {axiosRequest} from "../axios"
 import Bottleneck from "bottleneck"
 import database from "../database"
@@ -10,6 +10,7 @@ import cache from "bitecache"
 import jaul from "jaul"
 import logger from "anyhow"
 import dayjs from "../dayjs"
+import {iso1A2Code} from "@rapideditor/country-coder"
 const axios = require("axios").default
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
@@ -87,19 +88,7 @@ export class Maps {
      */
     getCountryCode = (countryName: string): string => {
         if (!countryName) return null
-
-        // Comparison always using lowercase.
-        countryName = countryName.toLowerCase()
-
-        // Iterate and check each of the country codes.
-        const entries = Object.entries(CountryCodes)
-        for (let [code, name] of entries) {
-            if (name.toLowerCase() == countryName) {
-                return code
-            }
-        }
-
-        return null
+        return iso1A2Code(countryName).toLowerCase()
     }
 
     /**
