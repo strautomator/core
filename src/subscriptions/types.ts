@@ -24,4 +24,6 @@ export interface BaseSubscription {
     dateUpdated?: Date
     /** Subscription end date. */
     dateExpiry?: Date
+    /** Flag used to decide if subscription has pending updates to be saved to the database. */
+    pendingUpdate?: boolean
 }
