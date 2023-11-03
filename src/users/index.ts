@@ -718,6 +718,9 @@ export class Users {
                 if (user.spotify) {
                     logs.push("Spotify")
                 }
+                if (user.subscriptionId) {
+                    logs.push(`Subscription: ${user.subscriptionId}`)
+                }
             } else {
                 await database.set("users", user, user.id)
                 logs.push("Replaced entire user data")
