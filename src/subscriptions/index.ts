@@ -62,6 +62,37 @@ export class Subscriptions {
     }
 
     /**
+     * Get all subscriptions.
+     */
+    getAll = async (): Promise<(BaseSubscription | PayPalSubscription | GitHubSubscription)[]> => {
+        try {
+            const subscriptions: (BaseSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions")
+            logger.info("Subscriptions.getAll", `Got ${subscriptions.length} subscriptions`)
+
+            return subscriptions
+        } catch (ex) {
+            logger.error("Subscriptions.getAll", ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get active subscriptions.
+     */
+    getActive = async (): Promise<(BaseSubscription | PayPalSubscription | GitHubSubscription)[]> => {
+        try {
+            const where = [["status", "==", "ACTIVE"]]
+            const subscriptions: (BaseSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions", where)
+            logger.info("Subscriptions.getActive", `Got ${subscriptions.length} active subscriptions`)
+
+            return subscriptions
+        } catch (ex) {
+            logger.error("Subscriptions.getActive", ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get non-active subscriptions.
      */
     getNonActive = async (): Promise<(BaseSubscription | PayPalSubscription | GitHubSubscription)[]> => {
@@ -161,6 +192,17 @@ export class Subscriptions {
             }
             if (subscription.status) {
                 logs.push(`Status: ${subscription.status}`)
+            }
+            if (subscription.source == "paypal") {
+                const paypalSub = subscription as PayPalSubscription
+                if (paypalSub.lastPayment?.date > dayjs().subtract(7, "days").toDate()) {
+                    logs.push("Payment made")
+                }
+            }
+
+            // Remove the pending update flag, it should never be sent to the database.
+            if (subscription.pendingUpdate) {
+                delete subscription.pendingUpdate
             }
 
             await database.merge("subscriptions", subscription)
