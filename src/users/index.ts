@@ -59,9 +59,9 @@ export class Users {
             }
         }
 
-        eventManager.on("PayPal.subscriptionCreated", this.onPayPalSubscription)
-        eventManager.on("PayPal.subscriptionUpdated", this.onPayPalSubscription)
-        eventManager.on("GitHub.subscriptionUpdated", this.onGitHubSubscription)
+        eventManager.on("PayPal.subscriptionCreated", this.onSubscription)
+        eventManager.on("PayPal.subscriptionUpdated", this.onSubscription)
+        eventManager.on("GitHub.subscriptionUpdated", this.onSubscription)
         eventManager.on("Strava.missingPermission", this.onStravaMissingPermission)
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
         eventManager.on("Strava.tokenFailure", this.onStravaTokenFailure)
@@ -69,50 +69,29 @@ export class Users {
     }
 
     /**
-     * Set user isPro status when a PayPal subscription status changes.
+     * Set user isPro status depending on the subscription status.
      * @param subscription The PayPal subscription details.
      */
-    private onPayPalSubscription = async (subscription: PayPalSubscription): Promise<void> => {
+    private onSubscription = async (subscription: PayPalSubscription): Promise<void> => {
         if (!subscription) {
-            logger.error("Users.onPayPalSubscription", "Missing subscription data")
+            logger.error("Users.onSubscription", "Missing subscription data")
             return
         }
 
-        logger.info("Users.onPayPalSubscription", `User ${subscription.userId}`, subscription.id, subscription.status)
+        logger.info("Users.onSubscription", `User ${subscription.userId}`, subscription.id, subscription.status)
 
         try {
+            const now = dayjs.utc()
             const user = await this.getById(subscription.userId)
 
-            // User activated a PRO account?
+            // Switch to PRO if subscription is active, or back to free if it has expired.
             if (!user.isPro && subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
+            } else if (user.isPro && subscription.dateExpiry && now.isAfter(subscription.dateExpiry)) {
+                await this.switchToFree(user, subscription)
             }
         } catch (ex) {
-            logger.error("Users.onPayPalSubscription", `Failed to update user ${subscription.userId} subscription details`)
-        }
-    }
-
-    /**
-     * Set user isPro status when a GitHub sponsorship gets updated.
-     * @param subscription The GitHub subscription details.
-     */
-    private onGitHubSubscription = async (subscription: PayPalSubscription): Promise<void> => {
-        if (!subscription) {
-            logger.error("Users.onGitHubSubscription", "Missing subscription data")
-            return
-        }
-
-        logger.info("Users.onGitHubSubscription", `User ${subscription.userId}`, subscription.id, subscription.status)
-
-        try {
-            const user = await this.getById(subscription.userId)
-
-            // Switch to PRO if subscription is active.
-            if (!user.isPro && subscription.status == "ACTIVE") {
-                await this.switchToPro(user, subscription)
-            }
-        } catch (ex) {
-            logger.error("Users.onGitHubSubscription", `Failed to update user ${subscription.userId} subscription details`)
+            logger.error("Users.onSubscription", `Failed to update user ${subscription.userId} subscription details`)
         }
     }
 

@@ -115,7 +115,7 @@ export class Subscriptions {
      */
     getDangling = async (): Promise<(BaseSubscription | PayPalSubscription | GitHubSubscription)[]> => {
         try {
-            const minDate = dayjs.utc().add(settings.users.subscriptionDays.dangling, "days").toDate()
+            const minDate = dayjs.utc().add(settings.users.idleDays.pendingSubscriptions, "days").toDate()
             const queries = [
                 ["dateUpdated", "<", minDate],
                 ["status", "==", "APPROVAL_PENDING"]
@@ -157,15 +157,20 @@ export class Subscriptions {
      */
     create = async (subscription: Partial<BaseSubscription | PayPalSubscription | GitHubSubscription>): Promise<void> => {
         try {
+            const now = dayjs.utc().toDate()
+
             if (!subscription.id) {
                 throw new Error("Missing subscription ID")
             }
             if (!subscription.userId) {
                 throw new Error("Missing user ID")
             }
-
-            subscription.dateCreated = new Date()
-            subscription.dateUpdated = new Date()
+            if (!subscription.dateCreated) {
+                subscription.dateCreated = now
+            }
+            if (!subscription.dateUpdated) {
+                subscription.dateUpdated = now
+            }
 
             await database.set("subscriptions", subscription, subscription.id)
             logger.info("Subscriptions.create", `User ${subscription.userId}`, subscription.id, subscription.source, subscription.currency, subscription.frequency)
@@ -182,12 +187,11 @@ export class Subscriptions {
     update = async (subscription: Partial<BaseSubscription | PayPalSubscription | GitHubSubscription>): Promise<void> => {
         try {
             const logs = []
-
-            if (subscription.currency) {
-                logs.push(`Currency: ${subscription.currency}`)
-            }
             if (subscription.frequency) {
-                logs.push(`Frequency: ${subscription.frequency}`)
+                logs.push(subscription.frequency)
+            }
+            if (subscription.currency) {
+                logs.push(subscription.currency)
             }
             if (subscription.price) {
                 logs.push(`Price: ${subscription.price}`)
@@ -195,9 +199,10 @@ export class Subscriptions {
             if (subscription.status) {
                 logs.push(`Status: ${subscription.status}`)
             }
+
             if (subscription.source == "paypal") {
                 const paypalSub = subscription as PayPalSubscription
-                if (paypalSub.lastPayment?.date > dayjs().subtract(7, "days").toDate()) {
+                if (paypalSub.lastPayment?.date > dayjs().subtract(1, "days").toDate()) {
                     logs.push("Payment made")
                 }
             }

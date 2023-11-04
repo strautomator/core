@@ -4,9 +4,11 @@ import {PayPalWebhook, PayPalSubscription} from "./types"
 import api from "./api"
 import database from "../database"
 import eventManager from "../eventmanager"
+import subscriptions from "../subscriptions"
 import _ from "lodash"
 import logger from "anyhow"
 import dayjs from "../dayjs"
+import {logHelper} from "src"
 const settings = require("setmeup").settings
 
 /**
@@ -116,29 +118,28 @@ export class PayPalWebhooks {
     processWebhook = async (data: any): Promise<void> => {
         try {
             const resourceDetails = []
-            const resource = data ? data.resource : null
-            let subscription: PayPalSubscription
+            const res = data ? data.resource : null
 
             // Invalid resource? Stop here.
-            if (!resource) {
+            if (!res) {
                 logger.warn("PayPal.processWebhook", data.event_type, "No resource data found")
                 return
             }
 
             // Get and log webhook event details.
-            if (resource.id) resourceDetails.push(`ID ${resource.id}`)
-            if (resource.plan_id) resourceDetails.push(`Plan ${resource.plan_id}`)
-            if (resource.billing_agreement_id) resourceDetails.push(`Subscription ${resource.billing_agreement_id}`)
-            if (resource.amount) resourceDetails.push(`${resource.amount.total} ${resource.amount.currency}`)
-            if (resource.state) resourceDetails.push(`State: ${resource.state}`)
-            if (resource.status) resourceDetails.push(resource.status)
-            if (resource.subscriber?.email_address) resourceDetails.push(`Email: ${resource.subscriber.email_address}`)
+            if (res.id) resourceDetails.push(`ID ${res.id}`)
+            if (res.plan_id) resourceDetails.push(`Plan ${res.plan_id}`)
+            if (res.billing_agreement_id) resourceDetails.push(`Subscription ${res.billing_agreement_id}`)
+            if (res.amount) resourceDetails.push(`${res.amount.total} ${res.amount.currency}`)
+            if (res.state) resourceDetails.push(`State: ${res.state}`)
+            if (res.status) resourceDetails.push(res.status)
+            if (res.subscriber?.email_address) resourceDetails.push(`Email: ${res.subscriber.email_address}`)
             logger.info("PayPal.processWebhook", data.event_type, resourceDetails.join(", "))
 
             // Webhook event referencing a subscription?
-            const subscriptionId = resource.billing_agreement_id || resource.id
+            const subscriptionId = res.billing_agreement_id || res.id
             if (subscriptionId) {
-                subscription = await database.get("subscriptions", subscriptionId)
+                let subscription: PayPalSubscription = await database.get("subscriptions", subscriptionId)
 
                 // No matching subscription found? Stop here.
                 if (!subscription) {
@@ -146,8 +147,9 @@ export class PayPalWebhooks {
                     return
                 }
 
-                const dateUpdated = resource.update_time ? dayjs(resource.update_time).toDate() : new Date()
+                const dateUpdated = res.update_time ? dayjs.utc(res.update_time).toDate() : dayjs.utc().toDate()
                 const updatedSubscription: Partial<PayPalSubscription> = {
+                    source: "paypal",
                     id: subscription.id,
                     userId: subscription.userId,
                     dateUpdated: dateUpdated
@@ -156,6 +158,10 @@ export class PayPalWebhooks {
                 // Set the current subscription status.
                 if (data.event_type == "PAYMENT.SALE.COMPLETED") {
                     subscription.status = "ACTIVE"
+                    if (subscription.frequency && subscription.dateExpiry) {
+                        const logExpiry = dayjs.utc(subscription.dateExpiry).format("ll")
+                        logger.warn("PayPal.processWebhook", logHelper.subscriptionUser(subscription), `Expiry date: ${logExpiry}, probably should not have one`)
+                    }
                 } else if (data.event_type == "BILLING.SUBSCRIPTION.CANCELLED") {
                     subscription.status = "CANCELLED"
                 } else if (data.event_type == "BILLING.SUBSCRIPTION.EXPIRED") {
@@ -166,23 +172,29 @@ export class PayPalWebhooks {
                 updatedSubscription.status = subscription.status
 
                 // Email present on subscription details?
-                if (resource.subscriber && resource.subscriber.email_address) {
-                    subscription.email = resource.subscriber.email_address
+                if (res.subscriber && res.subscriber.email_address) {
+                    subscription.email = res.subscriber.email_address
                     updatedSubscription.email = subscription.email
                 }
 
                 // Payment data present on subscription details?
-                if (subscription.status == "ACTIVE" && resource.amount?.total) {
-                    subscription.lastPayment = {
-                        amount: resource.amount.total,
-                        currency: resource.amount.currency,
-                        date: dateUpdated
+                if (subscription.status == "ACTIVE") {
+                    if (res.amount?.total) {
+                        subscription.lastPayment = {
+                            amount: res.amount.total,
+                            currency: res.amount.currency,
+                            date: dateUpdated
+                        }
+                        updatedSubscription.lastPayment = subscription.lastPayment
                     }
-                    updatedSubscription.lastPayment = subscription.lastPayment
+                    if (res.billing_info?.next_billing_time) {
+                        subscription.dateNextPayment = dayjs.utc(res.billing_info.next_billing_time).toDate()
+                        updatedSubscription.dateNextPayment = subscription.dateNextPayment
+                    }
                 }
 
                 // Save updated subscription on the database, and emit event to update the user.
-                await database.merge("subscriptions", updatedSubscription)
+                await subscriptions.update(updatedSubscription)
                 eventManager.emit("PayPal.subscriptionUpdated", subscription)
             }
         } catch (ex) {

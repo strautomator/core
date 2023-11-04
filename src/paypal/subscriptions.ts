@@ -2,8 +2,8 @@
 
 import {PayPalBillingPlan, PayPalSubscription} from "./types"
 import api from "./api"
-import database from "../database"
 import eventManager from "../eventmanager"
+import subscriptions from "../subscriptions"
 import _ from "lodash"
 import logger from "anyhow"
 import dayjs from "../dayjs"
@@ -276,7 +276,7 @@ export class PayPalSubscriptions {
                 }
             }
 
-            logger.info("PayPal.getSubscription", id, `Plan ${res.plan_id}`, `Last updated ${dayjs(subscription.dateUpdated).format("llll")}`)
+            logger.info("PayPal.getSubscription", id, `Plan ${res.plan_id}`, `Last updated ${dayjs.utc(subscription.dateUpdated).format("lll")}`)
 
             return subscription
         } catch (ex) {
@@ -336,12 +336,13 @@ export class PayPalSubscriptions {
                 userId: userId,
                 status: res.status,
                 dateCreated: dayjs.utc(res.create_time).toDate(),
-                dateUpdated: dayjs.utc(res.create_time).toDate(),
                 approvalUrl: _.find(res.links, {rel: "approve"}).href,
                 billingPlan: {id: billingPlan.id, productId: billingPlan.productId}
             }
 
-            await database.set("subscriptions", subscription, res.id)
+            // Save to the database.
+            await subscriptions.create(subscription)
+
             logger.info("PayPal.createSubscription", `User ${userId}, plan ${billingPlan.id}`, `Created: ${subscription.id}`)
             eventManager.emit("PayPal.subscriptionCreated", subscription)
 
@@ -357,7 +358,7 @@ export class PayPalSubscriptions {
      * @param subscription The subscription to be cancelled.
      */
     cancelSubscription = async (subscription: PayPalSubscription, reason?: string): Promise<void> => {
-        const data: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: dayjs.utc().toDate()}
+        const updatedSubscription: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: dayjs.utc().toDate()}
 
         try {
             const options = {
@@ -372,43 +373,24 @@ export class PayPalSubscriptions {
             await api.makeRequest(options)
 
             // Update subscription reference.
-            subscription.status = data.status
-            subscription.dateUpdated = data.dateUpdated
+            subscription.status = updatedSubscription.status
+            subscription.dateUpdated = updatedSubscription.dateUpdated
         } catch (ex) {
             if (ex.message && ex.message.includes("SUBSCRIPTION_STATUS_INVALID")) {
-                logger.warn("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Subscription not active, can't cancel`)
+                logger.warn("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Subscription not active, can't cancel")
             } else {
-                logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Could not cancel`)
+                logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Could not cancel")
                 throw ex
             }
         }
 
         // Merge new subscription status on the database.
         try {
-            await database.merge("subscriptions", data)
+            await subscriptions.update(updatedSubscription)
             logger.info("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Status: ${subscription.status}`)
             eventManager.emit("PayPal.subscriptionUpdated", subscription)
         } catch (ex) {
-            logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Could not cancel`)
-            throw ex
-        }
-    }
-
-    /**
-     * Fix a dangling subscription by force updating its details on the database.
-     * @param subscription The dangling subscription.
-     */
-    fixSubscription = async (subscription: PayPalSubscription): Promise<void> => {
-        try {
-            if (subscription.status != "ACTIVE") {
-                throw new Error(`Subscription ${subscription.id} is not active`)
-            }
-
-            await database.merge("subscriptions", subscription)
-            logger.info("PayPal.fixSubscription", `Subscription ${subscription.id} for user ${subscription.userId}`, "Fixed")
-            eventManager.emit("PayPal.subscriptionUpdated", subscription)
-        } catch (ex) {
-            logger.error("PayPal.fixSubscription", `Could not fix subscription ${subscription.id} for user ${subscription.userId}`)
+            logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Could not cancel")
             throw ex
         }
     }

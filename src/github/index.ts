@@ -61,12 +61,12 @@ export class GitHub {
                 result.data.user.sponsorshipsAsMaintainer.nodes = _.concat(result.data.user.sponsorshipsAsMaintainer.nodes, lastResult.data.user.sponsorshipsAsMaintainer.nodes)
             }
 
-            const subscriptions: Partial<GitHubSubscription>[] = []
+            const sponsors: Partial<GitHubSubscription>[] = []
 
             // Iterate and build the list of active sponsors.
             for (let node of result.data.user.sponsorshipsAsMaintainer.nodes) {
-                const dateCreated = dayjs(node.createdAt)
-                const dateUpdated = dayjs(node.tierSelectedAt)
+                const dateCreated = dayjs.utc(node.createdAt)
+                const dateUpdated = dayjs.utc(node.tierSelectedAt)
 
                 const sub: Partial<GitHubSubscription> = {
                     id: `GH-${node.sponsorEntity.login.toLowerCase()}`,
@@ -74,21 +74,21 @@ export class GitHub {
                     price: node.tier.monthlyPriceInDollars,
                     dateCreated: dateCreated.toDate(),
                     dateUpdated: dateUpdated.toDate(),
-                    currency: "USD",
-                    frequency: "monthly"
+                    currency: "USD"
                 }
 
                 // One time payment? Set the default expiration date.
                 if (node.isOneTimePayment) {
-                    const days = 31 + settings.users.subscriptionDays.expired
-                    sub.dateExpiry = dateCreated.add(days, "days").endOf("day").toDate()
+                    sub.dateExpiry = dateCreated.add(30, "days").toDate()
+                } else {
+                    sub.frequency = "monthly"
                 }
 
-                subscriptions.push(sub)
+                sponsors.push(sub)
             }
 
-            logger.info("GitHub.getActiveSponsors", `${subscriptions.length} active sponsors`)
-            return subscriptions
+            logger.info("GitHub.getActiveSponsors", `${sponsors.length} active sponsors`)
+            return sponsors
         } catch (ex) {
             logger.error("GitHub.getActiveSponsors", ex)
             return null
@@ -108,7 +108,7 @@ export class GitHub {
                 return fromCache
             }
 
-            const since = dayjs().subtract(3, "month").toISOString()
+            const since = dayjs.utc().subtract(3, "month").toISOString()
             const coreCommits = await api.getRepoCommits(settings.github.api.coreRepo, since, 10, true)
             const webCommits = await api.getRepoCommits(settings.github.api.repo, since, 10, true)
             const commits = _.concat(coreCommits, webCommits)
@@ -117,12 +117,12 @@ export class GitHub {
             // Build list of last commits.
             for (let c of commits) {
                 const arrGitRepo = c.commit.tree.url.replace("https://api.github.com/repos/", "").split("/").slice(0, 2)
-                unsortedResults.push({repo: arrGitRepo.join("/"), message: c.commit.message, dateCommitted: dayjs(c.commit.committer.date).toDate()})
+                unsortedResults.push({repo: arrGitRepo.join("/"), message: c.commit.message, dateCommitted: dayjs.utc(c.commit.committer.date).toDate()})
             }
 
             const results = _.orderBy(unsortedResults, "dateCommitted", "desc")
             cache.set("github-commits", "last", results)
-            logger.info("GitHub.getLastCommits", `Last commit on ${dayjs(results[0].dateCommitted).format("lll")}`)
+            logger.info("GitHub.getLastCommits", `Last commit on ${dayjs.utc(results[0].dateCommitted).format("lll")}`)
 
             return results
         } catch (ex) {
@@ -150,7 +150,7 @@ export class GitHub {
 
                     changelog[rel.tag_name] = {
                         changes: updates,
-                        datePublished: dayjs(rel.created_at).toDate()
+                        datePublished: dayjs.utc(rel.created_at).toDate()
                     }
                 }
             }
@@ -181,7 +181,8 @@ export class GitHub {
                 return
             }
 
-            const now = new Date()
+            const now = dayjs.utc()
+            const defaultExpiryDate = now.add(30, "days").toDate()
 
             // Log request body.
             if (data.action) details.push(`Action: ${data.action}`)
@@ -201,7 +202,7 @@ export class GitHub {
 
             const username = data.sponsorship.sponsor.login
             const subId = `GH-${username}`
-            const status = data.action == "pending_cancellation" || "cancelled" ? "CANCELLED" : "ACTIVE"
+            const status = data.action == "pending_cancellation" ? "SUSPENDED" : data.action == "cancelled" ? "CANCELLED" : "ACTIVE"
 
             // Check if the subscription data already exists, and if not, create one.
             let subscription: GitHubSubscription = (await subscriptions.getById(subId)) as GitHubSubscription
@@ -214,40 +215,50 @@ export class GitHub {
                     return
                 }
 
+                // New subscription details.
                 subscription = {
                     source: "github",
                     id: subId,
                     userId: user.id,
                     username: username,
                     price: data.sponsorship.tier.monthly_price_in_dollars,
-                    status: status,
-                    dateCreated: now,
-                    dateUpdated: now
+                    status: status
                 }
 
                 // One time payment? Set the expiration date.
                 if (data.sponsorship.tier.is_one_time) {
-                    const days = 31 + settings.users.subscriptionDays.expired
-                    subscription.dateExpiry = dayjs().add(days, "days").endOf("day").toDate()
+                    subscription.dateExpiry = defaultExpiryDate
                 }
             } else {
                 subscription.status = status
-                subscription.dateUpdated = now
+                subscription.dateUpdated = now.toDate()
+                subscription.pendingUpdate = true
+
+                // If cancelled, make sure we have an expiry date set.
+                if (status != "ACTIVE" && !subscription.dateExpiry) {
+                    subscription.dateExpiry = defaultExpiryDate
+                }
             }
 
             // Make sure the expiration date is removed if not a single payment.
             if (!data.sponsorship.tier.is_one_time) {
                 delete subscription.dateExpiry
                 subscription.frequency = "monthly"
+                details.push("Monthly")
             } else {
                 delete subscription.frequency
-                details.push(`One time payment`)
+                details.push("One time payment")
             }
 
             logger.info("GitHub.processWebhook", details.join(", "))
 
-            // Save updated subscription on the database, and emit event to update the user.
-            await database.merge("subscriptions", subscription)
+            // Save updated subscription on the database.
+            if (subscription.pendingUpdate) {
+                await subscriptions.update(subscription)
+            } else {
+                await subscriptions.create(subscription)
+            }
+
             eventManager.emit("GitHub.subscriptionUpdated", subscription)
         } catch (ex) {
             logger.error("GitHub.processWebhook", `ID ${data.id}`, details.join(", "), ex)
