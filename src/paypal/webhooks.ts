@@ -7,8 +7,8 @@ import eventManager from "../eventmanager"
 import subscriptions from "../subscriptions"
 import _ from "lodash"
 import logger from "anyhow"
+import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
-import {logHelper} from "src"
 const settings = require("setmeup").settings
 
 /**
