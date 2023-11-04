@@ -10,51 +10,60 @@ import {UserData} from "./users/types"
 
 /**
  * Helper to get activity details for logging.
- * @param activity Activity data.
+ * @param lActivity Activity data.
  * @param fullDetails Optional, if true will return details about the activity.
  */
-export const activity = (activity: StravaActivity | StravaProcessedActivity, fullDetails?: boolean): string => {
-    if (!activity) return "Activity unknown"
-    if (!fullDetails) return `Activity ${activity.id}`
+export const activity = (lActivity: StravaActivity | StravaProcessedActivity, fullDetails?: boolean): string => {
+    if (!lActivity) return "Activity unknown"
+    if (!fullDetails) return `Activity ${lActivity.id}`
 }
 
 /**
  * Helper to get Garmin activity details for logging.
- * @param activity Activity data.
+ * @param lActivity Activity data.
  */
-export const garminActivity = (activity: GarminActivity | GarminPingActivityFile): string => {
-    if (!activity) return "Activity unknown"
-    return `Activity ${activity["id"] || activity["activityId"]} - ${activity["name"] || activity["activityName"]}`
+export const garminActivity = (lActivity: GarminActivity | GarminPingActivityFile): string => {
+    if (!lActivity) return "Activity unknown"
+    return `Activity ${lActivity["id"] || lActivity["activityId"]} - ${lActivity["name"] || lActivity["activityName"]}`
 }
 
 /**
  * Helper to get automation recipe details for logging.
- * @param recipe Recipe data.
+ * @param lRecipe Recipe data.
  * @param fullDetails Optional, if true will return details about the activity.
  */
-export const recipe = (recipe: RecipeData): string => {
-    if (!recipe) return "recipe unknown"
-    const conditonsLog = recipe.defaultFor ? `D${recipe.defaultFor.length}` : `C${recipe.conditions.length}`
-    const actionsLog = `A${recipe.actions.length}`
-    if (recipe.id && recipe.title) return `Recipe ${recipe.id}: ${recipe.title} (${conditonsLog} ${actionsLog})`
-    return recipe.id
+export const recipe = (lRecipe: RecipeData): string => {
+    if (!lRecipe) return "recipe unknown"
+    const conditonsLog = lRecipe.defaultFor ? `D${lRecipe.defaultFor.length}` : `C${lRecipe.conditions.length}`
+    const actionsLog = `A${lRecipe.actions.length}`
+    if (lRecipe.id && lRecipe.title) return `Recipe ${lRecipe.id}: ${lRecipe.title} (${conditonsLog} ${actionsLog})`
+    return lRecipe.id
 }
 
 /**
  * Helper to get subscription details for logging.
- * @param subscription Subscription data.
+ * @param lSubscription Subscription data.
  */
-export const subscription = (subscription: BaseSubscription | GitHubSubscription | PayPalSubscription): string => {
-    if (!user) return "Subscription unknown"
-    return `Subscription ${subscription.source} ${subscription.id} - ${subscription.status}`
+export const subscription = (lSubscription: BaseSubscription | GitHubSubscription | PayPalSubscription): string => {
+    if (!lSubscription) return "Subscription unknown"
+    return `Subscription ${lSubscription.source} ${lSubscription.id} - ${lSubscription.status}`
+}
+
+/**
+ * Helper to get subscription and user summary for logging.
+ * @param lSubscription Subscription data.
+ */
+export const subscriptionUser = (lSubscription: BaseSubscription | GitHubSubscription | PayPalSubscription): string => {
+    if (!lSubscription) return "Subscription unknown"
+    return `User ${lSubscription.userId} - Subscription ${lSubscription.source} ${lSubscription.id} (${lSubscription.status})`
 }
 
 /**
  * Helper to get user details for logging.
- * @param user User data.
+ * @param lUser User data.
  */
-export const user = (user: UserData | Partial<UserData>): string => {
-    if (!user) return "User unknown"
-    if (user.id && user.displayName) return `User ${user.id} ${user.displayName}`
-    return user.id || user.displayName
+export const user = (lUser: UserData | Partial<UserData>): string => {
+    if (!lUser) return "User unknown"
+    if (lUser.id && lUser.displayName) return `User ${lUser.id} ${lUser.displayName}`
+    return lUser.id || lUser.displayName
 }
