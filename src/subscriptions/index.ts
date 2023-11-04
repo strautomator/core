@@ -63,11 +63,13 @@ export class Subscriptions {
 
     /**
      * Get all subscriptions.
+     * @param source Optional, return only subscriptions from the specified source.
      */
-    getAll = async (): Promise<(BaseSubscription | PayPalSubscription | GitHubSubscription)[]> => {
+    getAll = async (source?: string): Promise<(BaseSubscription | PayPalSubscription | GitHubSubscription)[]> => {
         try {
-            const subscriptions: (BaseSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions")
-            logger.info("Subscriptions.getAll", `Got ${subscriptions.length} subscriptions`)
+            const where = source ? [["source", "==", source]] : null
+            const subscriptions: (BaseSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions", where)
+            logger.info("Subscriptions.getAll", `Got ${subscriptions.length} ${source ? source + " subscriptions" : "subscriptions"}`)
 
             return subscriptions
         } catch (ex) {
