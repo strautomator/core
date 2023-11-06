@@ -123,13 +123,15 @@ export class Storage {
      */
     getFile = async (bucketKey: "calendar" | "gdpr", filename: string): Promise<cloudStorage.File> => {
         try {
-            const bucket: string = this.buckets[bucketKey] || bucketKey
+            const bucket = this.client.bucket(this.buckets[bucketKey] || bucketKey)
+            if (!(await bucket.exists())) {
+                logger.error("Storage.getFile", bucketKey, filename, "Bucket does not exist")
+                return null
+            }
 
-            const file = this.client.bucket(bucket).file(filename)
-            const [exists] = await file.exists()
-
-            if (!exists) {
-                logger.warn("Storage.getFile", bucketKey, filename, "Not found")
+            const file = bucket.file(filename)
+            if (!(await file.exists())) {
+                logger.warn("Storage.getFile", bucketKey, filename, "File not found")
                 return null
             }
 
@@ -193,9 +195,13 @@ export class Storage {
      */
     deleteFile = async (bucketKey: "calendar" | "gdpr", filename: string): Promise<void> => {
         try {
-            const bucket: string = this.buckets[bucketKey] || bucketKey
+            const bucket = this.client.bucket(this.buckets[bucketKey] || bucketKey)
+            if (!(await bucket.exists())) {
+                logger.error("Storage.deleteFile", bucketKey, filename, "Bucket does not exist")
+                return
+            }
 
-            const file = this.client.bucket(bucket).file(filename)
+            const file = bucket.file(filename)
             await file.delete({ignoreNotFound: true})
 
             logger.info("Storage.deleteFile", bucketKey, filename)
