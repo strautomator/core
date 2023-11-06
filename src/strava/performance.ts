@@ -394,6 +394,10 @@ export class StravaPerformance {
             if (ftp <= 0) {
                 throw new Error("Invalid FTP, must be higher than 0")
             }
+            if (user.writeSuspended) {
+                logger.error("Strava.saveFtp", logHelper.user(user), "User.writeSuspended, won't push the FTP to Strava")
+                return
+            }
 
             // Updating the FTP via Strautomator is limited to once every 24 hours by default,
             // and only if the value actually changed. Ignore these conditions if force is set.
