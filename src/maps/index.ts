@@ -101,12 +101,12 @@ export class Maps {
         if (!provider) provider = "google"
 
         try {
-            if (!address && address.length < 3) {
+            if (!address || address.length < 3) {
                 throw new Error("Invalid or missing address")
             }
 
             // Sanitize address and get its ID.
-            address = jaul.data.removeFromString(address, ["%", "{", "}", "[", "]", "@"])
+            address = jaul.data.removeFromString(decodeURIComponent(address), ["%", "{", "}", "[", "]", "@"])
             const addressId = address.toLowerCase().replace(/ /g, "")
 
             // Adapt region to correct ccTLD.
