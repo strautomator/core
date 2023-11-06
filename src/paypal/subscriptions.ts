@@ -358,7 +358,8 @@ export class PayPalSubscriptions {
      * @param subscription The subscription to be cancelled.
      */
     cancelSubscription = async (subscription: PayPalSubscription, reason?: string): Promise<void> => {
-        const updatedSubscription: Partial<PayPalSubscription> = {id: subscription.id, status: "CANCELLED", dateUpdated: dayjs.utc().toDate()}
+        subscription.status = "CANCELLED"
+        subscription.dateUpdated = dayjs.utc().toDate()
 
         try {
             const options = {
@@ -369,12 +370,9 @@ export class PayPalSubscriptions {
                 }
             }
 
-            // Cancel subscription on PayPal.
+            // Cancel subscription on PayPal. No need to save to the database, as it will be done automatically via webhooks
+            // when PayPal confirms that the subscription was cancelled.
             await api.makeRequest(options)
-
-            // Update subscription reference.
-            subscription.status = updatedSubscription.status
-            subscription.dateUpdated = updatedSubscription.dateUpdated
         } catch (ex) {
             if (ex.message && ex.message.includes("SUBSCRIPTION_STATUS_INVALID")) {
                 logger.warn("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Subscription not active, can't cancel")
@@ -382,16 +380,6 @@ export class PayPalSubscriptions {
                 logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Could not cancel")
                 throw ex
             }
-        }
-
-        // Merge new subscription status on the database.
-        try {
-            await subscriptions.update(updatedSubscription)
-            logger.info("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, `Status: ${subscription.status}`)
-            eventManager.emit("PayPal.subscriptionUpdated", subscription)
-        } catch (ex) {
-            logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Could not cancel")
-            throw ex
         }
     }
 }
