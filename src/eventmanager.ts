@@ -25,7 +25,7 @@ export class EventManager extends events.EventEmitter {
     emit(eventName: string | symbol, ...args: any[]): boolean {
         const details = []
         for (let arg of args) {
-            if (typeof arg === "string" || typeof arg === "number" || typeof arg === "boolean") {
+            if (arg !== null && (typeof arg === "string" || typeof arg === "number" || typeof arg === "boolean")) {
                 details.push(arg)
             } else {
                 if (arg["id"]) details.push(arg["id"])

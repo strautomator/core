@@ -72,7 +72,7 @@ export class Users {
      * Set user isPro status depending on the subscription status.
      * @param subscription The PayPal subscription details.
      */
-    private onSubscription = async (subscription: PayPalSubscription): Promise<void> => {
+    private onSubscription = async (subscription: GitHubSubscription | PayPalSubscription): Promise<void> => {
         if (!subscription) {
             logger.error("Users.onSubscription", "Missing subscription data")
             return
@@ -84,6 +84,12 @@ export class Users {
             const now = dayjs.utc()
             const user = await this.getById(subscription.userId)
 
+            // User not found? Stop here.
+            if (!user) {
+                logger.warn("Users.onSubscription", `User ${subscription.userId} not found`, `Reference subscription: ${subscription.id}`)
+                return
+            }
+
             // Switch to PRO if subscription is active, or back to free if it has expired.
             if (!user.isPro && subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
@@ -91,7 +97,7 @@ export class Users {
                 await this.switchToFree(user, subscription)
             }
         } catch (ex) {
-            logger.error("Users.onSubscription", `Failed to update user ${subscription.userId} subscription details`)
+            logger.error("Users.onSubscription", `Failed to update user ${subscription.userId} subscription ${subscription.id} details`, ex)
         }
     }
 
