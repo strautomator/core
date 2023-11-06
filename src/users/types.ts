@@ -96,7 +96,7 @@ export interface UserPreferences {
     /** Reset recipe counters every year? Set using the format MM-DD, or false to disable. */
     dateResetCounter?: string | false
     /** Preferred weather provider. */
-    weatherProvider?: "tomorrow" | "openweathermap" | "stormglass" | "visualcrossing" | "weatherapi" | "openmeteo"
+    weatherProvider?: "tomorrow" | "openweathermap" | "visualcrossing" | "weatherapi" | "openmeteo"
     /** Weather temperature unit. */
     weatherUnit?: "c" | "f"
     /** Wind speed unit. */

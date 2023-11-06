@@ -7,7 +7,6 @@ import {UserData} from "../users/types"
 import tomorrow from "./tomorrow"
 import openmeteo from "./openmeteo"
 import openweathermap from "./openweathermap"
-import stormglass from "./stormglass"
 import visualcrossing from "./visualcrossing"
 import weatherapi from "./weatherapi"
 import _ from "lodash"
@@ -50,7 +49,7 @@ export class Weather {
      */
     init = async (): Promise<void> => {
         try {
-            const all: WeatherProvider[] = [stormglass, tomorrow, weatherapi, openmeteo, openweathermap, visualcrossing]
+            const all: WeatherProvider[] = [tomorrow, weatherapi, openmeteo, openweathermap, visualcrossing]
 
             // Iterate and init the weather providers.
             for (let provider of all) {
@@ -58,7 +57,7 @@ export class Weather {
 
                 // Disable via settings? Go to next.
                 if (pSettings.disabled) {
-                    logger.warn("Weather.init", `Provider ${provider.name} disabled on settings`)
+                    logger.debug("Weather.init", `Provider ${provider.name} disabled on settings`)
                     continue
                 }
 

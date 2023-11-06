@@ -26,7 +26,7 @@ Optional credentials:
 -   OpenAI API
 -   PayPal API
 -   Spotify API
--   Weather providers: OpenWeatherMap, Storm Glass, Tomorrow.io, Visual Crossing, WeatherAPI
+-   Weather providers: OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
 
 Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid plans.
 
