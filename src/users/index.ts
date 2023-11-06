@@ -102,10 +102,11 @@ export class Users {
     }
 
     /**
-     * When user hasn't authorized Strautomator to write to the Strava account.
+     * When user hasn't authorized Strautomator to read or write to the Strava account.
      * @param tokens Set of Strava tokens that failed due to missing permissions.
+     * @param permission The missing permission (read or write).
      */
-    private onStravaMissingPermission = async (tokens: StravaTokens): Promise<void> => {
+    private onStravaMissingPermission = async (tokens: StravaTokens, permission: "read" | "write"): Promise<void> => {
         if (!tokens) {
             logger.error("Users.onStravaMissingPermission", "Missing tokens")
             return
@@ -117,22 +118,27 @@ export class Users {
 
         try {
             const user = await this.getByToken(tokens)
-
             if (!user) {
                 logger.warn("Users.onStravaMissingPermission", `No user found for token ${maskedToken}`)
                 return
             }
 
-            // Write not suspended yet? Do it now and notify the user.
-            if (!user.writeSuspended) {
-                const title = "Missing Strava permissions"
-                const body = "You haven't authorized Strautomator to make changes to your Strava account (missing write permissions). Please login again."
-                const href = "https://strautomator.com/auth/login"
-                const expiry = dayjs().add(30, "days").toDate()
-                await notifications.createNotification(user, {title: title, body: body, href: href, auth: true, dateExpiry: expiry})
+            const title = "Missing Strava permissions"
+            const href = "https://strautomator.com/auth/login"
+            const expiry = dayjs().add(30, "days").toDate()
+            let body: string = ""
 
+            // Notify user about missing read or write permissions.
+            if (permission == "read" && [settings.oauth.tokenFailuresDisable, settings.oauth.tokenFailuresAlert].includes(user.reauth)) {
+                body = "You haven't authorized Strautomator to read your full Strava details (missing read permissions). Please login again."
+            } else if (permission == "write" && !user.writeSuspended) {
+                body = "You haven't authorized Strautomator to make changes to your Strava account (missing write permissions). Please login again."
                 const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, writeSuspended: true}
                 await this.update(updatedUser)
+            }
+
+            if (body) {
+                await notifications.createNotification(user, {title: title, body: body, href: href, auth: true, dateExpiry: expiry})
             }
         } catch (ex) {
             logger.error("Notifications.onStravaMissingPermission", `Failed to notify user for token ${maskedToken}`)
@@ -191,20 +197,22 @@ export class Users {
      * @param token The expired or invalid Strava auth token.
      * @param refresh Is it a refresh token?
      */
-    private onStravaTokenFailure = async (token: string, refresh?: boolean): Promise<void> => {
-        if (!token) {
-            logger.error("Users.onStravaTokenFailure", "Missing token")
+    private onStravaTokenFailure = async (tokens: StravaTokens, url?: string): Promise<void> => {
+        const urlLog = url ? url : "No URL provided"
+
+        if (!tokens) {
+            logger.error("Users.onStravaTokenFailure", "Missing token data", urlLog)
             return
         }
 
         // Masked token used on warning logs.
+        const token = tokens.accessToken || tokens.refreshToken
         const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
 
         try {
-            const byToken: StravaTokens = refresh ? {refreshToken: token} : {accessToken: token}
-            const user = await this.getByToken(byToken)
+            const user = await this.getByToken(tokens)
             if (!user) {
-                logger.warn("Users.onStravaMissingPermission", `No user found for token ${maskedToken}`)
+                logger.warn("Users.onStravaMissingPermission", `No user found for token ${maskedToken}`, urlLog)
                 return
             }
 
@@ -231,13 +239,13 @@ export class Users {
                 // Send email in async mode (no need to wait).
                 mailer.send(options)
             } else if (user.reauth >= settings.oauth.tokenFailuresDisable) {
-                logger.warn("Users.onStravaTokenFailure", logHelper.user(user), `User suspended due to too many token failures`)
+                logger.warn("Users.onStravaTokenFailure", logHelper.user(user), "User suspended due to too many token failures")
                 await this.suspend(user, "Too many Strava token failures")
             }
 
             await this.update(updatedUser)
         } catch (ex) {
-            logger.error("Users.onStravaTokenFailure", `Failed to email user about invalid token ${maskedToken}`)
+            logger.error("Users.onStravaTokenFailure", `Failed to process Strava token failure: ${maskedToken}`, urlLog)
         }
     }
 
@@ -748,8 +756,7 @@ export class Users {
     suspend = async (user: UserData, reason: string): Promise<void> => {
         try {
             if (user.isPro) {
-                logger.warn("Users.suspend", logHelper.user(user), reason, "Abort, PRO users cannot be suspended")
-                return
+                logger.warn("Users.suspend", logHelper.user(user), reason, "Suspending a PRO user")
             }
 
             await database.merge("users", {id: user.id, suspended: true})

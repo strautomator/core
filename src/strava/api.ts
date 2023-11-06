@@ -179,7 +179,7 @@ export class StravaAPI {
             this.extractTokenError(ex)
 
             if (ex.friendlyMessage && ex.friendlyMessage.includes("RefreshToken")) {
-                eventManager.emit("Strava.tokenFailure", refreshToken, true)
+                eventManager.emit("Strava.tokenFailure", {refreshToken: refreshToken})
             }
 
             logger.error("Strava.refreshToken", ex)
@@ -255,18 +255,18 @@ export class StravaAPI {
     private makeRequest = async (tokens: StravaTokens, method: string, path: string, params?: any, body?: any): Promise<any> => {
         let token: string = null
 
+        // Default request options.
+        const options: AxiosConfig = {
+            url: `${settings.strava.api.baseUrl}${path}`,
+            method: method,
+            headers: {},
+            rateLimitExtractor: this.rateLimitExtractor
+        }
         try {
-            const options: AxiosConfig = {
-                url: `${settings.strava.api.baseUrl}${path}`,
-                method: method,
-                headers: {},
-                rateLimitExtractor: this.rateLimitExtractor
-            }
-
-            // Renew token if it has expired.
             if (tokens) {
                 const now = dayjs.utc().unix()
 
+                // Renew token if it has expired.
                 if (tokens.expiresAt && tokens.expiresAt < now) {
                     const newTokens = await this.refreshToken(tokens.refreshToken, tokens.accessToken)
                     token = newTokens.accessToken
@@ -330,11 +330,13 @@ export class StravaAPI {
 
             // Access denied? Dispatch the relevant events.
             if (accessDenied) {
-                if (ex.message.includes("_permission")) {
-                    eventManager.emit("Strava.missingPermission", tokens)
+                if (ex.message.includes("read_permission")) {
+                    eventManager.emit("Strava.missingPermission", tokens, "read", options.url)
+                } else if (ex.message.includes("write_permission")) {
+                    eventManager.emit("Strava.missingPermission", tokens, "write", options.url)
                 }
 
-                eventManager.emit("Strava.tokenFailure", token)
+                eventManager.emit("Strava.tokenFailure", {accessToken: token}, options.url)
             }
 
             logger.debug("Strava.makeRequest", path, method, ex)
