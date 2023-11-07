@@ -300,7 +300,7 @@
     },
     "openai": {
         "api": {
-            "baseUrl": "https://api.openai.com/v1/chat/completions"
+            "baseUrl": "https://api.openai.com/v1/"
         },
         // Cache generated names for up to 2 minutes.
         "cacheDuration": 120,
