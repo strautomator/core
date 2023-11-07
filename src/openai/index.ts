@@ -59,9 +59,10 @@ export class OpenAI {
                 return fromCache
             }
 
+            const customPrompt = user.preferences.chatGptPrompt
             const sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            const adj = _.sample(["cool", "funny", "exquisite", "silly", "sarcastic", "ironic", "mocking", "very cool", "very funny", "very silly", "unique"])
-            const arrPrompt = [`Please generate a single ${adj} name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()} activity.`]
+            const adj = customPrompt ? "" : _.sample(["cool", "funny", "exquisite", "silly", "sarcastic", "ironic", "mocking", "very cool", "very funny", "very silly", "unique"]) + " "
+            const arrPrompt = [`Please generate a single ${adj}name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()} activity.`]
             const verb = sportType.includes("ride") ? "rode" : sportType.includes("run") ? "ran" : "did"
 
             if (activity.distance > 0 && activity.movingTime > 0) {
@@ -74,13 +75,13 @@ export class OpenAI {
             }
 
             if (activity.hasPower && activity.wattsWeighted > 0) {
-                arrPrompt.push(`My average power was ${activity.wattsWeighted} watts.`)
+                arrPrompt.push(`Average power was ${activity.wattsWeighted} watts.`)
             }
 
             if (activity.speedMax > 65 || (activity.speedMax > 40 && user.profile.units == "imperial")) {
                 arrPrompt.push(`Maximum speed was very high, around ${activity.speedMax}${activity.speedUnit}.`)
             } else if (activity.hrAvg > 0) {
-                arrPrompt.push(`My average heart rate was ${activity.hrAvg} BPM.`)
+                arrPrompt.push(`Average heart rate was ${activity.hrAvg} BPM.`)
             }
 
             if (weatherSummaries) {
@@ -96,6 +97,11 @@ export class OpenAI {
                 }
             }
 
+            // Add the user's custom ChatGPT prompt, if set.
+            if (customPrompt) {
+                arrPrompt.push(customPrompt)
+            }
+
             // Translate to the user's language (if other than English).
             let languagePrompt = "."
             if (user.preferences.language && user.preferences.language != "en") {
@@ -109,7 +115,7 @@ export class OpenAI {
             // Get final prompt and request options.
             const content = arrPrompt.join(" ")
             const options: AxiosConfig = {
-                url: settings.openai.api.baseUrl,
+                url: `${settings.openai.api.baseUrl}chat/completions`,
                 method: "POST",
                 headers: {},
                 data: {
@@ -156,6 +162,44 @@ export class OpenAI {
             return null
         } catch (ex) {
             logger.error("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), ex)
+            return null
+        }
+    }
+
+    /**
+     * Validate a prompt against OpenAI's moderation API, returns flagged categories or null if no issues were found.
+     * @param user The user triggering the validation.
+     * @param prompt Prompt to be validated.
+     */
+    validatePrompt = async (user: UserData, prompt: string): Promise<string[]> => {
+        try {
+            const options: AxiosConfig = {
+                url: `${settings.openai.api.baseUrl}moderations`,
+                method: "POST",
+                headers: {},
+                data: {input: prompt}
+            }
+
+            // Append headers.
+            options.headers["Authorization"] = `Bearer ${settings.openai.api.key}`
+            options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
+
+            // Stop if no results were returned, or if nothing was flagged.
+            const res = await axiosRequest(options)
+            if (!res) {
+                return null
+            }
+            const result = res.results.find((r) => r.flagged)
+            if (!result) {
+                return null
+            }
+
+            // Return list of categories that failed the moderation.
+            const categories = Object.keys(_.pickBy(result.categories, (i) => i == true))
+            logger.info("OpenAI.validatePrompt", logHelper.user(user), prompt, `Failed: ${categories.join(", ")}`)
+            return categories
+        } catch (ex) {
+            logger.error("OpenAI.validatePrompt", logHelper.user(user), prompt, ex)
             return null
         }
     }
