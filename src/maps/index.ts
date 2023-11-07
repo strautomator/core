@@ -1,6 +1,7 @@
 // Strautomator Core: Maps
 
 import {Client, GeocodeRequest, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
+import {emojiFlag, iso1A2Code} from "@rapideditor/country-coder"
 import {Polyline} from "./polyline"
 import {MapAddress, MapCoordinates} from "./types"
 import {axiosRequest} from "../axios"
@@ -10,7 +11,7 @@ import cache from "bitecache"
 import jaul from "jaul"
 import logger from "anyhow"
 import dayjs from "../dayjs"
-import {iso1A2Code} from "@rapideditor/country-coder"
+import _ from "lodash"
 const axios = require("axios").default
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
@@ -81,15 +82,6 @@ export class Maps {
 
     // GEOCODING
     // --------------------------------------------------------------------------
-
-    /**
-     * Get the 2 letter code (lowercased) for the specified country.
-     * @param countryName The full country name.
-     */
-    getCountryCode = (countryName: string): string => {
-        if (!countryName) return null
-        return iso1A2Code(countryName).toLowerCase()
-    }
 
     /**
      * Get the geocode data for the specified address.
@@ -415,6 +407,39 @@ export class Maps {
         } catch (ex) {
             logger.error("Maps.getStaticImage", Object.values(coordinates).join(", "), `Size ${options.size}`, `Circle ${options.circle}`, ex)
         }
+    }
+
+    // COUNTRIES
+    // --------------------------------------------------------------------------
+
+    /**
+     * Get the 2 letter code (uppercased) for the specified country.
+     * @param countryName The full country name or coordinates.
+     */
+    getCountryCode = (value: string | [number, number]): string => {
+        if (!value) return ""
+
+        // The library expects longitude first, then latitude.
+        if (_.isArray(value)) {
+            value = [value[1], value[0]]
+        }
+
+        return iso1A2Code(value, {level: "territory"})
+    }
+
+    /**
+     * Get the emoji country flag for the specified country.
+     * @param countryName The full country name or coordinates.
+     */
+    getCountryFlag = (value: string | [number, number]): string => {
+        if (!value) return ""
+
+        // The library expects longitude first, then latitude.
+        if (_.isArray(value)) {
+            value = [value[1], value[0]]
+        }
+
+        return emojiFlag(value, {level: "territory"})
     }
 
     // CLEANUP
