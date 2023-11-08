@@ -103,7 +103,7 @@ export const events: EventManager = EventManager.Instance
 // Export types and helpers.
 export * from "./gearwear/types"
 export * from "./recipes/types"
-export * from "./recipes/fortune"
+export * from "./recipes/actions"
 export * from "./routes/types"
 export * from "./strava/types"
 export * from "./komoot/types"

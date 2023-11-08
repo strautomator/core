@@ -453,6 +453,11 @@ export class Recipes {
             return actions.mapStyleAction(user, activity, recipe, action)
         }
 
+        // Auto generated activity names?
+        else if (action.type == RecipeActionType.GenerateName) {
+            return actions.generateNameAction(user, activity, recipe, action)
+        }
+
         // Dispatch activity to webhook?
         else if (action.type == RecipeActionType.Webhook) {
             return actions.webhookAction(user, activity, recipe, action)
