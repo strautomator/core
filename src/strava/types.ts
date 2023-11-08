@@ -133,6 +133,8 @@ export interface StravaActivity {
     tss?: number
     /** Average temperature. */
     temperature?: number
+    /** Saved CO2. */
+    co2Saved?: number
     /** Device name. */
     device?: string
     /** Was the activity created manually? */
