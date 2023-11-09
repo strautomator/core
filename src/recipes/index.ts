@@ -298,7 +298,8 @@ export class Recipes {
             }
         }
 
-        const logEvaluated = recipe.defaultFor ? `default for ${recipe.defaultFor}` : recipe.conditions.map((c) => `${c.property}: ${activity[c.property] ? activity[c.property].id || activity[c.property] : c.value}`).join(" | ")
+        const logMapper = (c: RecipeCondition) => `${c.property}: ${activity[c.property] ? activity[c.property].id || (c.property.indexOf("date") == 0 ? dayjs(activity[c.property]).format("lll") : activity[c.property]) : c.value}`
+        const logEvaluated = recipe.defaultFor ? `default for ${recipe.defaultFor}` : recipe.conditions.map(logMapper).join(" | ")
         logger.info("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), logEvaluated)
 
         // Sort recipe actions, webhook should come last.
