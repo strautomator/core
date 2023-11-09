@@ -706,7 +706,10 @@ export class Users {
                     }
                 }
                 if (user.preferences) {
-                    logs.push(_.toPairs(user.preferences).join(" | ").replace(/\,/gi, "="))
+                    const prefs = _.toPairs(user.preferences)
+                    if (prefs.length > 0) {
+                        logs.push(prefs.join(" | ").replace(/\,/gi, "="))
+                    }
                 }
                 if (user.spotify) {
                     logs.push("Spotify")
