@@ -192,7 +192,7 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
         aTime = activity[prop]
     } else {
         let aDate = dayjs.utc(activity[prop])
-        if (prop == "dateStart" && activity.utcStartOffset) {
+        if (activity.utcStartOffset) {
             aDate = aDate.add(activity.utcStartOffset, "minutes")
         }
 
