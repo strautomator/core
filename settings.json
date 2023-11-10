@@ -302,8 +302,8 @@
         "api": {
             "baseUrl": "https://api.openai.com/v1/"
         },
-        // Cache generated names for up to 2 minutes.
-        "cacheDuration": 120,
+        // Cache generated names for 1 minute.
+        "cacheDuration": 60,
         // Limit to 24 tokens per response.
         "maxTokens": 24
     },
