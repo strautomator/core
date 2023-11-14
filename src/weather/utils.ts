@@ -70,6 +70,8 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
 
     try {
         const tempValue = parseFloat(summary.temperature.toString())
+        const humidityValue = summary.humidity ? parseFloat(summary.humidity.toString()) : null
+        const pressureValue = summary.pressure ? parseFloat(summary.pressure.toString()) : null
         const prcFog = translation("Fog", preferences)
         const prcDrizzle = translation("Drizzle", preferences)
         const prcRain = translation("Rain", preferences)
@@ -77,6 +79,11 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         const prcSnow = translation("Snow", preferences)
 
         let extraData = summary.extraData || {}
+
+        // Calculate air density.
+        if (humidityValue && pressureValue) {
+            summary.airDensity = getAirDensity(tempValue, pressureValue, humidityValue)
+        }
 
         // No precipitation? Try calculating it based on the precipitation mm (if passed).
         // If no precipitation, then set it to "dry".
@@ -375,6 +382,23 @@ export function getSuntimes(coordinates: [number, number], dDate: dayjs.Dayjs): 
     logger.debug("Weather.getSuntimes", dDate.format("lll"), suntimesResult)
 
     return suntimesResult
+}
+
+/**
+ * Estimate the air density, based on the generic "density of air" formula.
+ * @param temperature Temperature in Celsius.
+ * @param pressure Pressure in hPa.
+ * @param humidity Humidity in percentage.
+ */
+export const getAirDensity = (temperature: number, pressure: number, humidity: number): number => {
+    const R = 287.05
+
+    // Temperature in Kelvin, pressure in Pa, humidity in decimal.
+    temperature = temperature + 273.15
+    pressure = pressure * 100
+    humidity = humidity / 100
+
+    return (pressure / (R * temperature)) * (1 - 0.378 * humidity)
 }
 
 /**

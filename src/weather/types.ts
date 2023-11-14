@@ -91,6 +91,8 @@ export interface WeatherSummary {
     aqi?: number
     /** Air Quality Index (colored circle icon). */
     aqiIcon?: string
+    /** Air density. */
+    airDensity?: number
     /** Moon phase (as string). */
     moon?: MoonPhase
     /** Weather icon. */
