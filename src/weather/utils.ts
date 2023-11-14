@@ -385,20 +385,22 @@ export function getSuntimes(coordinates: [number, number], dDate: dayjs.Dayjs): 
 }
 
 /**
- * Estimate the air density, based on the generic "density of air" formula.
+ * Estimate the air density based on temperature, pressure and relative humidity.
  * @param temperature Temperature in Celsius.
  * @param pressure Pressure in hPa.
  * @param humidity Humidity in percentage.
  */
 export const getAirDensity = (temperature: number, pressure: number, humidity: number): number => {
     const R = 287.05
+    const vaporPressure = (humidity / 100) * 5 * Math.exp((17.27 * temperature) / (237.77 + temperature))
 
     // Temperature in Kelvin, pressure in Pa, humidity in decimal.
     temperature = temperature + 273.15
     pressure = pressure * 100
     humidity = humidity / 100
 
-    return (pressure / (R * temperature)) * (1 - 0.378 * humidity)
+    const density = pressure / (R * temperature) - (vaporPressure * 100) / (611.5 * temperature)
+    return Math.round(density * 1000) / 1000
 }
 
 /**
