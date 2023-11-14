@@ -82,7 +82,7 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
 
         // Calculate air density.
         if (humidityValue && pressureValue) {
-            summary.airDensity = getAirDensity(tempValue, pressureValue, humidityValue)
+            summary.airDensity = getAirDensity(tempValue, pressureValue, humidityValue) + " kg/m³"
         }
 
         // No precipitation? Try calculating it based on the precipitation mm (if passed).
