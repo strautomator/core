@@ -62,6 +62,7 @@ export class GearWear {
         }
 
         eventManager.on("Users.delete", this.onUserDelete)
+        eventManager.on("Users.switchToFree", this.onUserSwitchToFree)
     }
 
     /**
@@ -77,6 +78,27 @@ export class GearWear {
             }
         } catch (ex) {
             logger.error("GearWear.onUserDelete", logHelper.user(user), ex)
+        }
+    }
+
+    /**
+     * Disable GearWear configurations outside the free plan limit.
+     * @param user User that was downgraded to free.
+     */
+    private onUserSwitchToFree = async (user: UserData): Promise<void> => {
+        try {
+            const arrGearwear: GearWearConfig[] = await database.search("gearwear", ["userId", "==", user.id])
+
+            if (arrGearwear.length > settings.plans.free.maxGearWear) {
+                logger.info("GearWear.onUserSwitchToFree", logHelper.user(user), `Will disable ${arrGearwear.length - settings.plans.free.maxGearWear} GearWear configs`)
+
+                for (let i = settings.plans.free.maxGearWear; i < arrGearwear.length; i++) {
+                    arrGearwear[i].disabled = true
+                    await this.upsert(user, arrGearwear[i])
+                }
+            }
+        } catch (ex) {
+            logger.error("GearWear.onUserSwitchToFree", logHelper.user(user), ex)
         }
     }
 
@@ -255,16 +277,23 @@ export class GearWear {
      * @param gearwear The GearWear configuration.
      */
     upsert = async (user: UserData, gearwear: GearWearConfig): Promise<GearWearConfig> => {
+        const doc = database.doc("gearwear", gearwear.id)
+        let action: string
+
         try {
-            const doc = database.doc("gearwear", gearwear.id)
             const docSnapshot = await doc.get()
             const exists = docSnapshot.exists
+            action = gearwear.disabled ? "Disabled" : exists ? "Created" : "Updated"
 
             const bike = _.find(user.profile.bikes, {id: gearwear.id})
             const shoe = _.find(user.profile.shoes, {id: gearwear.id})
             const gear: StravaGear = bike || shoe
 
             if (!gear) {
+                if (exists) {
+                    gearwear.disabled = true
+                }
+
                 throw new Error(`Gear ${gearwear.id} does not exist`)
             }
 
@@ -274,18 +303,22 @@ export class GearWear {
             // Get names of the components registered.
             const componentNames = _.map(gearwear.components, "name").join(", ")
 
-            // Set registration date, if user does not exist yet.
-            if (!exists) {
-                logger.info("GearWear.upsert", logHelper.user(user), `New configuration for ${gearwear.id}`)
-            }
-
             // Save user to the database.
             await database.merge("gearwear", gearwear, doc)
-            logger.info("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id} - ${gear.name}`, `Components: ${componentNames}`)
+            logger.info("GearWear.upsert", logHelper.user(user), `${action} ${gearwear.id} - ${gear.name}`, `Components: ${componentNames}`)
 
             return gearwear
         } catch (ex) {
             logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, ex)
+
+            if (doc && action == "Disabled") {
+                try {
+                    await database.merge("gearwear", gearwear, doc)
+                } catch (innerEx) {
+                    logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, innerEx)
+                }
+            }
+
             throw ex
         }
     }
@@ -424,8 +457,9 @@ export class GearWear {
 
             logger.info("GearWear.processUserActivities", logHelper.user(user), dateString, `Processing ${activities.length} activities`)
 
-            // Iterate user's gearwear configurations and process activities for each one of them.
-            for (let config of configs) {
+            // Iterate user's active gearwear configurations and process activities for each one of them.
+            const activeConfigs = configs.filter((c) => !c.disabled)
+            for (let config of activeConfigs) {
                 const gearActivities = _.remove(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
                 await this.updateTracking(user, config, gearActivities)
                 count += gearActivities.length
