@@ -37,8 +37,6 @@ export interface UserData {
     recipes?: UserRecipeMap
     /** User preferences. */
     preferences?: UserPreferences
-    /** Calendar template. */
-    calendarTemplate?: UserCalendarTemplate
     /** FTP status. */
     ftpStatus?: UserFtpStatus
     /** Linked Garmin account. */
@@ -101,6 +99,8 @@ export interface UserPreferences {
     weatherUnit?: "c" | "f"
     /** Wind speed unit. */
     windSpeedUnit?: "m/s" | "kph" | "mph"
+    /** Calendar template. */
+    calendarTemplate?: UserCalendarTemplate
     /** ChatGPT additional prompt when generating activity names. */
     chatGptPrompt?: string
     /** Omit suffixes when replacing activity tags? */

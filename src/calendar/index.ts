@@ -273,7 +273,7 @@ export class Calendar {
         let eventCount = 0
 
         try {
-            const calendarTemplate: UserCalendarTemplate = user.calendarTemplate || {}
+            const calendarTemplate: UserCalendarTemplate = user.preferences?.calendarTemplate || {}
 
             // Fetch and iterate user activities, checking filters before proceeding.
             const activities = await strava.activities.getActivities(user, {after: options.dateFrom, before: options.dateTo})
