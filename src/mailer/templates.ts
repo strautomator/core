@@ -136,20 +136,6 @@ export const EmailTemplates = {
             "</p>"
     },
 
-    // User was downgraded to the free plan.
-    DowngradedToFree: {
-        subject: "Strautomator PRO switched to the free plan",
-        body:
-            "<p>" +
-            "Hi ${userName}!<br><br>" +
-            "Your Strautomator PRO subscription status switched to <strong>${subscriptionStatus}</strong>, and your account was downgraded to the free plan.<br>" +
-            "If you have created more automations or GearWear configurations than the free plan allows, please note that some of them will not work, and you will need to manually remove those." +
-            "</p>" +
-            "<p>" +
-            'You can <a href="${appUrl}billing">subscribe</a> again at any time. If you need help or more details about Strautomator subscriptions, please reply to this email.' +
-            "</p>"
-    },
-
     // User was suspended.
     UserSuspended: {
         subject: "Your account was suspended",
