@@ -26,6 +26,8 @@ export interface GearWearConfig {
     components: GearWearComponent[]
     /** Flag to set if gear is having its distance updated right now. */
     updating?: boolean
+    /** Is the gearwear configuration disabled? */
+    disabled?: boolean
     /** Details about the last update made to this GearWear. */
     lastUpdate?: {
         /** Date of last update. */
