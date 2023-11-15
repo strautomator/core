@@ -1,6 +1,6 @@
 // Strautomator Core: Users
 
-import {validateUserPreferences} from "./utils"
+import {disableProPreferences, validateUserPreferences} from "./utils"
 import {UserData} from "../users/types"
 import {BaseSubscription} from "../subscriptions/types"
 import {AuthNotification} from "../notifications/types"
@@ -669,6 +669,7 @@ export class Users {
     update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
         try {
             const logs = []
+            const logValue = (value: any) => (value == FieldValue.delete() ? "deleted" : value)
 
             if (!replace) {
                 if (user.profile) {
@@ -682,6 +683,9 @@ export class Users {
                 if (user.suspended) {
                     logs.push("Suspended")
                 }
+                if (_.isBoolean(user.isPro)) {
+                    logs.push(`PRO: ${user.isPro}`)
+                }
                 if (user.dateLastActivity) {
                     logs.push(`Last activity: ${dayjs(user.dateLastActivity).utc().format("lll")}`)
                 }
@@ -691,31 +695,28 @@ export class Users {
                 if (user.fitnessLevel) {
                     logs.push(`Fitness level: ${user.fitnessLevel}`)
                 }
-                if (user.calendarTemplate) {
-                    logs.push("Calendar template")
-                }
                 if (user.stravaTokens) {
                     logs.push("Strava tokens")
                 }
                 if (user.profile) {
                     if (user.profile.bikes?.length > 0) {
-                        logs.push("Bikes")
+                        logs.push(`Bikes: ${user.profile.bikes.length}`)
                     }
                     if (user.profile.shoes?.length > 0) {
-                        logs.push("Shoes")
+                        logs.push(`Shoes: ${user.profile.shoes.length}`)
                     }
                 }
                 if (user.preferences) {
-                    const prefs = _.toPairs(user.preferences)
+                    const prefs = _.toPairs(user.preferences).map((p) => `${p[0]}=${logValue(p[1])}`)
                     if (prefs.length > 0) {
-                        logs.push(prefs.join(" | ").replace(/\,/gi, "="))
+                        logs.push(prefs.join(" | "))
                     }
                 }
                 if (user.spotify) {
-                    logs.push("Spotify")
+                    logs.push(`Spotify: ${logValue("auth")}`)
                 }
                 if (user.subscriptionId) {
-                    logs.push(`Subscription: ${user.subscriptionId}`)
+                    logs.push(`Subscription: ${logValue(user.subscriptionId)}`)
                 }
             } else {
                 await database.set("users", user, user.id)
@@ -994,6 +995,7 @@ export class Users {
             }
 
             logger.info("Users.switchToPro", user.id, user.displayName, `Subscription: ${subscription.source} ${subscription.id}`)
+            eventManager.emit("Users.switchToPro", user, subscription)
         } catch (ex) {
             logger.error("Users.switchToPro", user.id, user.displayName, ex)
             throw ex
@@ -1008,35 +1010,36 @@ export class Users {
     switchToFree = async (user: UserData, subscription?: BaseSubscription | PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
             user.isPro = false
-            await this.update({id: user.id, displayName: user.displayName, subscriptionId: FieldValue.delete() as any, isPro: false})
+            const freeUser: Partial<UserData> = {id: user.id, displayName: user.displayName, subscriptionId: FieldValue.delete() as any, isPro: false}
 
-            // Expire the subscription, in case it's active.
+            // Remove PRO only preferences.
+            if (user.preferences) {
+                const resetFields = disableProPreferences(user)
+                if (resetFields.length > 0) {
+                    freeUser.preferences = _.pick(user.preferences, resetFields)
+                }
+            }
+
+            // Disable recipes that are out of scope for the free plan.
+            const recipes = Object.values(user.recipes || {})
+            if (recipes.length > settings.plans.free.maxRecipes) {
+                logger.info("Users.switchToFree", logHelper.user(user), `Will disable ${recipes.length - settings.plans.free.maxRecipes} recipes`)
+
+                for (let i = settings.plans.free.maxRecipes; i < recipes.length; i++) {
+                    recipes[i].disabled = true
+                }
+                freeUser.recipes = user.recipes
+            }
+
+            // Update user and expire the subscription, in case it's active.
+            await this.update(freeUser)
             if (subscription?.status == "ACTIVE") {
                 await subscriptions.expire(subscription)
             }
 
-            const status = subscription ? subscription.status.toLowerCase() : "cancelled"
-
-            // User had a valid PRO subscription before? Send an email about the downgrade.
-            if (user.email) {
-                const data = {
-                    userId: user.id,
-                    userName: user.profile.firstName || user.displayName,
-                    subscriptionId: subscription.id,
-                    subscriptionSource: subscription.source,
-                    subscriptionStatus: status
-                }
-                const options = {
-                    to: user.email,
-                    template: "DowngradedToFree",
-                    data: data
-                }
-
-                // Send downgraded email in async mode (no need to wait).
-                mailer.send(options)
-            }
-
+            const status = subscription?.status.toLowerCase() || "cancelled"
             logger.info("Users.switchToFree", user.id, user.displayName, `Subscription: ${subscription.source} ${subscription.id} - ${status}`)
+            eventManager.emit("Users.switchToFree", user, subscription)
         } catch (ex) {
             logger.error("Users.switchToFree", user.id, user.displayName, ex)
             throw ex
