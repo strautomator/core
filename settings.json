@@ -307,7 +307,7 @@
         // Limit to 26 tokens per response.
         "maxTokens": 26,
         // List of humours (adjectives) to be used on the generated names.
-        "humours": ["ancient", "bording", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "wicked"]
+        "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "wicked"]
     },
     "paypal": {
         "api": {
