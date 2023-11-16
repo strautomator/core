@@ -683,9 +683,6 @@ export class Users {
                 if (user.suspended) {
                     logs.push("Suspended")
                 }
-                if (_.isBoolean(user.isPro)) {
-                    logs.push(`PRO: ${user.isPro}`)
-                }
                 if (user.dateLastActivity) {
                     logs.push(`Last activity: ${dayjs(user.dateLastActivity).utc().format("lll")}`)
                 }
@@ -707,7 +704,7 @@ export class Users {
                     }
                 }
                 if (user.preferences) {
-                    const prefs = _.toPairs(user.preferences).map((p) => `${p[0]}=${logValue(p[1])}`)
+                    const prefs = Object.keys(user.preferences).map((k) => `${k}=${logValue(user.preferences[k])}`)
                     if (prefs.length > 0) {
                         logs.push(prefs.join(" | "))
                     }
