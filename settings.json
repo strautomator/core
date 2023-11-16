@@ -304,8 +304,10 @@
         },
         // Cache generated names for 1 minute.
         "cacheDuration": 60,
-        // Limit to 24 tokens per response.
-        "maxTokens": 24
+        // Limit to 26 tokens per response.
+        "maxTokens": 26,
+        // List of humours (adjectives) to be used on the generated names.
+        "humours": ["ancient", "bording", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "wicked"]
     },
     "paypal": {
         "api": {
@@ -367,10 +369,10 @@
             "linksOn": 5,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
-            // Use ChatGPT on around 20% and weather on 40% of "generateName" recipe actions.
+            // Use ChatGPT and weather parameters on just under half of "generateName" recipe actions.
             "generatedNames": {
-                "openai": 20,
-                "weather": 40
+                "openai": 45,
+                "weather": 45
             }
         },
         "pro": {
@@ -394,10 +396,10 @@
                 "year": 6.99,
                 "github": 1.0
             },
-            // Use ChatGPT and weather parameters on around 90% of "generateName" recipe actions.
+            // Use ChatGPT and weather parameters on around 95% of "generateName" recipe actions.
             "generatedNames": {
-                "openai": 90,
-                "weather": 90
+                "openai": 95,
+                "weather": 95
             }
         }
     },
