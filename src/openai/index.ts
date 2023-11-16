@@ -101,7 +101,8 @@ export class OpenAI {
 
             // Add weather data?
             if (weatherSummaries) {
-                arrPrompt.push(`The weather was ${weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "ok"}.`)
+                const weatherText = weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "ok"
+                arrPrompt.push(`The weather was ${weatherText.toLowerCase()}.`)
                 if (weatherSummaries.start?.aqi > 4 || weatherSummaries.end?.aqi > 4) {
                     arrPrompt.push("Air quality was extremely unhealthy.")
                 }
