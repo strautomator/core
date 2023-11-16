@@ -463,9 +463,10 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
         // Chat GPT will be used only for a small portion of activities for free users.
         const rndOpenAi = user.isPro ? settings.plans.pro.generatedNames.openai : settings.plans.free.generatedNames.openai
         if (Math.random() * 100 <= rndOpenAi) {
-            const aiName = await openai.generateActivityName(user, activity, weatherSummaries)
-            if (aiName) {
-                activity.name = aiName
+            const chatGptResponse = await openai.generateActivityName(user, activity, action ? action.value : null, weatherSummaries)
+            if (chatGptResponse) {
+                activity.name = chatGptResponse.response
+                activity.updatedFields.push("name")
                 return true
             }
 
@@ -708,6 +709,7 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
 
         result = result ? result.charAt(0).toUpperCase() + result.slice(1) : _.sample(fortuneCookies)
         activity.name = result
+        activity.updatedFields.push("name")
 
         return true
     } catch (ex) {
