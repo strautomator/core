@@ -1,5 +1,6 @@
 // Strautomator Core: OpenAI (ChatGPT)
 
+import {ChatGptResponse} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
@@ -48,58 +49,72 @@ export class OpenAI {
      * Generate the activity name based on its parameters.
      * @param user The user.
      * @param activity The Strava activity.
+     * @param humour Optional humour to be used on the prompt.
      * @param weatherSummaries Optional weather for the start and end of the activity.
      */
-    generateActivityName = async (user: UserData, activity: StravaActivity, weatherSummaries?: ActivityWeather): Promise<string> => {
+    generateActivityName = async (user: UserData, activity: StravaActivity, humour?: string, weatherSummaries?: ActivityWeather): Promise<ChatGptResponse> => {
         try {
-            const cacheId = `activity-${activity.id}`
+            const baseCacheId = `activity-${activity.id}`
+            const cacheId = humour ? `${baseCacheId}-${humour}` : baseCacheId
             const fromCache = cache.get("openai", cacheId)
             if (fromCache) {
-                logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), `${weatherSummaries ? "with" : "without"} weather`, fromCache)
+                logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), fromCache)
                 return fromCache
             }
 
-            const customPrompt = user.preferences.chatGptPrompt
             const sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            const adj = customPrompt ? "" : _.sample(["cool", "funny", "exquisite", "silly", "sarcastic", "ironic", "mocking", "very cool", "very funny", "very silly", "unique"]) + " "
-            const arrPrompt = [`Please generate a single ${adj}name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()} activity.`]
+            const customPrompt = user.preferences.chatGptPrompt
+            const arrPrompt = [`Please generate a single name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()}.`]
             const verb = sportType.includes("ride") ? "rode" : sportType.includes("run") ? "ran" : "did"
 
+            // Add relative effort context to the prompt.
+            if (activity.relativeEffort > 600) {
+                arrPrompt.push("That was one of the hardest workouts I've ever done.")
+            } else if (activity.relativeEffort > 300) {
+                arrPrompt.push("The workout felt pretty hard.")
+            } else if (activity.relativeEffort < 30) {
+                arrPrompt.push("The workout felt very easy.")
+            }
+
+            // Only add distance if moving time was also set.
             if (activity.distance > 0 && activity.movingTime > 0) {
-                arrPrompt.push(`I ${verb} ${activity.distance} ${activity.distanceUnit} in ${activity.movingTimeString}.`)
-                arrPrompt.push(`Maximum speed was ${activity.speedMax}${activity.speedUnit}.`)
+                arrPrompt.push(`I ${verb} ${activity.distance}${activity.distanceUnit} in ${activity.movingTimeString}.`)
             }
 
-            if (activity.elevationGain > 0) {
-                arrPrompt.push(`Total elevation gain was ${activity.elevationGain}${activity.elevationUnit}.`)
+            // Only add elevation if less than 100m or more than 700m.
+            const skipElevationRange = {m: [100, 700], ft: [300, 2100]}
+            if (activity.elevationGain < skipElevationRange[activity.elevationUnit][0] || activity.elevationGain > skipElevationRange[activity.elevationUnit][1]) {
+                arrPrompt.push(`Elevation gain was ${activity.elevationGain}${activity.elevationUnit}.`)
             }
 
-            if (activity.hasPower && activity.wattsWeighted > 0) {
+            // Only add power data if less than 140W or more than 200W, otherwise add heart rate data.
+            if (activity.hasPower && (activity.wattsWeighted < 140 || activity.wattsWeighted > 200)) {
                 arrPrompt.push(`Average power was ${activity.wattsWeighted} watts.`)
-            }
-
-            if (activity.speedMax > 65 || (activity.speedMax > 40 && user.profile.units == "imperial")) {
-                arrPrompt.push(`Maximum speed was very high, around ${activity.speedMax}${activity.speedUnit}.`)
             } else if (activity.hrAvg > 0) {
                 arrPrompt.push(`Average heart rate was ${activity.hrAvg} BPM.`)
             }
 
+            // Add max speed in case it was high enough.
+            if (activity.speedMax > 65 || (activity.speedMax > 40 && user.profile.units == "imperial")) {
+                arrPrompt.push(`Maximum speed was very high at ${activity.speedMax}${activity.speedUnit}.`)
+            }
+
+            // Add weather data?
             if (weatherSummaries) {
-                if (weatherSummaries.start && weatherSummaries.end && weatherSummaries.start.summary != weatherSummaries.end.summary) {
-                    arrPrompt.push(`The weather at the start was ${weatherSummaries.start.summary}, and at the end it was ${weatherSummaries.end.summary}.`)
-                } else {
-                    arrPrompt.push(`The weather was ${weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "ok"}.`)
-                }
+                arrPrompt.push(`The weather was ${weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "ok"}.`)
                 if (weatherSummaries.start?.aqi > 4 || weatherSummaries.end?.aqi > 4) {
-                    arrPrompt.push("The air quality index was extremely unhealthy.")
-                } else if (weatherSummaries.start?.aqi > 3 || weatherSummaries.end?.aqi > 3) {
-                    arrPrompt.push("The air quality index was very unhealthy.")
+                    arrPrompt.push("Air quality was extremely unhealthy.")
                 }
             }
 
-            // Add the user's custom ChatGPT prompt, if set.
-            if (customPrompt) {
+            // Add the user's custom ChatGPT prompt, otherwise fallback to the specified or a random humour.
+            if (!humour && customPrompt) {
                 arrPrompt.push(customPrompt)
+            } else {
+                if (!humour) {
+                    humour = _.sample(settings.openai.humours)
+                }
+                arrPrompt.push(`Please be very ${humour} with the choice of words.`)
             }
 
             // Translate to the user's language (if other than English).
@@ -151,10 +166,12 @@ export class OpenAI {
                     activityName = activityName.trim()
                 }
 
-                cache.set("openai", cacheId, activityName)
-                logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), `${weatherSummaries ? "with" : "without"} weather`, activityName)
+                // Cache and return the response.
+                const result: ChatGptResponse = {prompt: content, response: activityName}
+                cache.set("openai", cacheId, result)
+                logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), `${weatherSummaries ? "with" : "without"} weather`, `Humour: ${humour}`, activityName)
 
-                return activityName
+                return result
             }
 
             // Failed to generate the activity name.
