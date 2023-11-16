@@ -56,7 +56,7 @@ export interface StravaActivity {
     /** Total distance in kilometers. */
     distance?: number
     /** Distance units based on the user profile. */
-    distanceUnit?: "km" | "miles"
+    distanceUnit?: "km" | "mi"
     /** Total elevation gain in meters. */
     elevationGain?: number
     /** Maximum elevation. */

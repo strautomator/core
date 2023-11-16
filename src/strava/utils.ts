@@ -178,7 +178,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     }
     if (data.distance) {
         activity.distance = parseFloat(distance.toFixed(1))
-        activity.distanceUnit = user.profile.units == "imperial" ? "miles" : "km"
+        activity.distanceUnit = user.profile.units == "imperial" ? "mi" : "km"
         activity.co2Saved = parseFloat((data.distance * 0.00021743).toFixed(2))
     }
     if (data.average_speed) {
