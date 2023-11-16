@@ -438,6 +438,7 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
         const imperial = user.profile.units == "imperial"
         const isRide = activity.sportType == StravaSport.Ride || activity.sportType == StravaSport.VirtualRide || activity.sportType == StravaSport.EBikeRide
         const isRun = activity.sportType == StravaSport.Run || activity.sportType == StravaSport.Walk
+        let humour = action ? action.value : null
         let prefixes = ["", "delightful", "amazing", "great", "", "just your regular", "crazy", "superb", "", "magnificent", "marvellous", "exotic", ""]
         let names = []
         let uniqueNames = []
@@ -463,7 +464,7 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
         // Chat GPT will be used only for a small portion of activities for free users.
         const rndOpenAi = user.isPro ? settings.plans.pro.generatedNames.openai : settings.plans.free.generatedNames.openai
         if (Math.random() * 100 <= rndOpenAi) {
-            const chatGptResponse = await openai.generateActivityName(user, activity, action ? action.value : null, weatherSummaries)
+            const chatGptResponse = await openai.generateActivityName(user, activity, humour, weatherSummaries)
             if (chatGptResponse) {
                 activity.name = chatGptResponse.response
                 activity.updatedFields.push("name")
@@ -471,6 +472,11 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
             }
 
             logger.warn("Recipes.generateNameAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "OpenAI failed, fallback to template")
+        }
+
+        // Get a random humour if not set.
+        if (!humour) {
+            humour = _.sample(settings.openai.humours)
         }
 
         // Rounded activity properties.
@@ -492,15 +498,32 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
         // Cycling.
         if (isRide) {
             if (activity.distance >= 400) {
-                uniqueNames.push("almost a lap around the world")
-                uniqueNames.push("short and easy tour")
-            } else if (activity.distance >= 200 && activity.distance <= 250) {
-                names.push("double century tour")
-                names.push("double century ride")
-                names.push("century x2")
-            } else if (activity.distance >= 100 && activity.distance <= 120) {
-                names.push("century ride")
-                names.push("century tour")
+                if (["boring"].includes(humour)) {
+                    uniqueNames.push("just a very, very long ride")
+                }
+                if (["ancient", "exquisite"].includes(humour)) {
+                    uniqueNames.push("transcontinental feelings")
+                }
+                if (["comical", "hilarious", "silly"].includes(humour)) {
+                    uniqueNames.push("almost a lap around the world")
+                }
+                if (["funny", "hilarious", "ironic", "sarcastic", "silly"].includes(humour)) {
+                    uniqueNames.push("short and easy tour")
+                }
+            } else if (activity.distance >= 200 && activity.distance <= 220) {
+                if (["boring"].includes(humour)) {
+                    names.push("double century tour")
+                    names.push("double century ride")
+                } else {
+                    names.push("century x2")
+                }
+            } else if (activity.distance >= 100 && activity.distance <= 110) {
+                if (["boring"].includes(humour)) {
+                    names.push("century ride")
+                    names.push("century tour")
+                } else {
+                    names.push("century tour")
+                }
             } else if (activity.distance > 98 && activity.distance < 100) {
                 names.push("almost-a-century ride")
                 names.push("and so close to 3 digits")
@@ -508,50 +531,111 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
                 uniqueNames.push("marathon on two wheels")
                 uniqueNames.push("marathon on a bike")
             } else if (((imperial && activity.distance < 6) || activity.distance <= 10) && activity.distance > 0) {
-                names.push("and short, too short of a ride")
-                names.push("short, very short ride")
-                names.push("mini ride")
+                if (["ancient", "boring"].includes(humour)) {
+                    names.push("and short, too short of a ride")
+                    names.push("short, very short ride")
+                    names.push("mini ride")
+                }
+                if (["comical", "funny", "hilarious", "ironic", "sarcastic", "silly"].includes(humour)) {
+                    uniqueNames.push("training for the Tour de France")
+                }
             }
 
             if ((imperial && activity.speedAvg > 26) || activity.speedAvg > 42) {
-                uniqueNames.push("fast and furious")
-                uniqueNames.push("shut up legs")
-                uniqueNames.push("lightspeed")
-                uniqueNames.push("push push push")
+                if (["ancient", "boring"].includes(humour)) {
+                    uniqueNames.push("lightspeed")
+                    uniqueNames.push("push push push")
+                }
+                if (["comical", "funny", "hilarious", "ironic", "sarcastic", "silly"].includes(humour)) {
+                    uniqueNames.push("recovery ride")
+                }
+                if (["comical", "funny", "sexy", "wicked"].includes(humour)) {
+                    uniqueNames.push("shut up legs")
+                }
             } else if (((imperial && activity.speedAvg < 5) || activity.speedAvg < 8) && activity.speedAvg > 0) {
-                uniqueNames.push("slow does it")
-                uniqueNames.push("who's in a hurry?")
+                if (["ancient", "boring"].includes(humour)) {
+                    uniqueNames.push("slow does it")
+                }
+                if (["comical", "funny", "hilarious"].includes(humour)) {
+                    uniqueNames.push("who's in a hurry?")
+                }
+                if (["ironic", "sarcastic", "silly"].includes(humour)) {
+                    uniqueNames.push("training for La Vuelta")
+                }
             }
 
             if (activity.wattsMax > 1600 || activity.wattsAvg > 400) {
-                uniqueNames.push("rocket propelled")
-                uniqueNames.push("shut up legs")
-                uniqueNames.push("legs are pumping hard")
+                if (["ancient"].includes(humour)) {
+                    uniqueNames.push("much horsepower")
+                }
+                if (["boring"].includes(humour)) {
+                    uniqueNames.push("legs are pumping hard")
+                }
+                if (["comical", "funny"].includes(humour)) {
+                    uniqueNames.push("rocket propelled")
+                }
+                if (["comical", "funny", "sexy", "wicked"].includes(humour)) {
+                    uniqueNames.push("shut up legs")
+                }
             } else if (activity.wattsAvg < 80 && activity.wattsAvg > 0) {
-                uniqueNames.push("easy does it")
-                uniqueNames.push("soft pedaling")
-                uniqueNames.push("smooth")
+                if (["ancient"].includes(humour)) {
+                    uniqueNames.push("no horsepower")
+                }
+                if (["ancient", "boring"].includes(humour)) {
+                    uniqueNames.push("smooth")
+                }
+                if (["boring", "silly"].includes(humour)) {
+                    uniqueNames.push("easy does it")
+                    uniqueNames.push("soft pedaling")
+                }
+                if (["ironic", "sarcastic", "silly"].includes(humour)) {
+                    uniqueNames.push("training for the Giro")
+                }
             }
 
             if (activity.distance > 0 && activity.elevationGain > 0 && activity.climbingRatio < 0.15) {
-                names.push("flatland tour")
-                names.push("ride along some massive hills")
+                if (["boring"].includes(humour)) {
+                    names.push("flatland tour")
+                }
+                if (["ironic", "sarcastic", "silly"].includes(humour)) {
+                    names.push("ride along some massive hills")
+                }
             }
         }
 
         // Running.
         else if (isRun) {
             if ((imperial && activity.distance >= 52) || activity.distance >= 84) {
-                uniqueNames.push("when a marathon is not enough")
-                uniqueNames.push("double marathon")
+                if (["ancient", "boring", "silly"].includes(humour)) {
+                    uniqueNames.push("when a marathon is not enough")
+                }
+                if (["boring"].includes(humour)) {
+                    uniqueNames.push("double marathon")
+                }
+                if (["ironic", "sarcastic", "silly"].includes(humour)) {
+                    uniqueNames.push("walk in the park")
+                }
             } else if ((imperial && activity.distance >= 26) || activity.distance >= 42) {
-                names.push("marathon")
+                if (["ancient", "boring", "silly"].includes(humour)) {
+                    names.push("marathon")
+                }
+                if (["ironic", "sarcastic", "silly"].includes(humour)) {
+                    uniqueNames.push("walk in the park")
+                }
+                if (["sexy"].includes(humour)) {
+                    uniqueNames.push("all the legs out")
+                }
             } else if (distanceR == 10) {
                 names.push("10K")
                 names.push("10K or 6 miles?")
             } else if (((imperial && activity.distance < 2.5) || activity.distance < 4) && activity.distance > 0) {
-                names.push("super short run")
-                names.push("mini workout")
+                if (["ancient", "boring", "silly"].includes(humour)) {
+                    names.push("super short run")
+                    names.push("mini workout")
+                }
+                if (["ironic", "sarcastic", "silly"].includes(humour)) {
+                    names.push("training for the marathon")
+                }
             }
         }
 
