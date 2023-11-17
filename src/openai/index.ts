@@ -83,7 +83,8 @@ export class OpenAI {
 
             // Only add elevation if less than 100m or more than 700m.
             const skipElevationRange = {m: [100, 700], ft: [300, 2100]}
-            if (activity.elevationGain < skipElevationRange[activity.elevationUnit][0] || activity.elevationGain > skipElevationRange[activity.elevationUnit][1]) {
+            const elevationUnit = activity.elevationUnit || "m"
+            if (!_.isNil(activity.elevationGain) && (activity.elevationGain < skipElevationRange[elevationUnit][0] || activity.elevationGain > skipElevationRange[elevationUnit][1])) {
                 arrPrompt.push(`Elevation gain was ${activity.elevationGain}${activity.elevationUnit}.`)
             }
 
