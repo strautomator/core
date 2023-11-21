@@ -60,11 +60,6 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
 export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayjs, preferences: UserPreferences): void {
     const date = dDate.toDate()
 
-    // Missing temperature and humidity? Then it's likely garbage data.
-    if ((_.isNaN(summary.temperature) && _.isNaN(summary.humidity)) || (_.isNil(summary.temperature) && _.isNil(summary.humidity))) {
-        throw new Error("Missing temperature and humidity")
-    }
-
     // Default preferences.
     if (!preferences) preferences = {}
 

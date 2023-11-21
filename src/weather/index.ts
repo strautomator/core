@@ -221,11 +221,11 @@ export class Weather {
                 providerModule = currentProviders.shift()
 
                 result = await providerModule.getWeather(user, options.coordinates, options.dDate, options.roundTo)
-                if (result) {
+                if (result && result.humidity && !_.isNaN(result.temperature)) {
                     providerModule.disabledTillDate = null
                     providerModule.stats.repeatedErrors = 0
                 } else {
-                    throw new Error("No weather summary returned")
+                    throw new Error("No valid weather summary returned")
                 }
             } catch (ex) {
                 const failedProviderName = providerModule.name
