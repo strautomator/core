@@ -31,11 +31,25 @@ export class StravaClubs {
      */
     getClubs = async (user: UserData): Promise<StravaClub[]> => {
         try {
-            const data: any[] = await api.get(user.stravaTokens, "athlete/clubs")
-            const clubs: StravaClub[] = data.map((d) => toStravaClub(d))
+            const result: StravaClub[] = []
+            let page = 1
 
-            logger.info("Strava.getClubs", logHelper.user(user), `Got ${clubs.length} clubs`)
-            return clubs
+            // Keep fetching till we get all clubs.
+            while (page) {
+                const data: any[] = await api.get(user.stravaTokens, "athlete/clubs", {per_page: settings.strava.api.pageSize, page: page})
+                const clubs: StravaClub[] = data.map((d) => toStravaClub(d))
+                result.push(...clubs)
+
+                // If we got less than the page size, we got all clubs.
+                if (clubs.length < settings.strava.api.pageSize) {
+                    page = 0
+                } else {
+                    page++
+                }
+            }
+
+            logger.info("Strava.getClubs", logHelper.user(user), `Got ${result.length} clubs`)
+            return result
         } catch (ex) {
             logger.error("Strava.getClubs", logHelper.user(user), ex)
             throw ex
