@@ -2,6 +2,7 @@
 
 import {StravaActivity, StravaActivityFilter, StravaProcessedActivity, StravaRideType, StravaRunType} from "./types"
 import {RecipeData} from "../recipes/types"
+import {getActionSummary, getConditionSummary} from "../recipes/utils"
 import {UserData} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
@@ -304,8 +305,8 @@ export class StravaActivityProcessing {
             for (let id of recipeIds) {
                 recipeDetails[id] = {
                     title: user.recipes[id].title,
-                    conditions: _.map(user.recipes[id].conditions, recipes.getConditionSummary),
-                    actions: _.map(user.recipes[id].actions, recipes.getActionSummary)
+                    conditions: _.map(user.recipes[id].conditions, getConditionSummary),
+                    actions: _.map(user.recipes[id].actions, getActionSummary)
                 }
             }
 

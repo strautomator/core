@@ -8,6 +8,8 @@ import {StravaSport} from "../strava/types"
 export interface RecipeData {
     /** Recipe unique ID (inside a user object). */
     id: string
+    /** Shared recipe ID (in case this was generated from a shared recipe). */
+    sharedRecipeId?: string
     /** Title or short description. */
     title: string
     /** List of conditions to be evaluated. */
@@ -26,6 +28,32 @@ export interface RecipeData {
     killSwitch?: boolean
     /** Is the recipe disabled? */
     disabled?: boolean
+}
+
+/**
+ * Shared recipe data.
+ */
+export interface SharedRecipe {
+    /** Recipe unique ID (inside a user object). */
+    id: string
+    /** User ID of the owner of the recipe. */
+    userId: string
+    /** Title of the shared recipe. */
+    title: string
+    /** List of conditions to be evaluated. */
+    conditions: RecipeCondition[]
+    /** List of actions to be executed. */
+    actions: RecipeAction[]
+    /** Conditions should use AND or OR as its logical operator? */
+    op?: "OR" | "AND"
+    /** Same type (grouped) conditions should use AND or OR as its logical operator? */
+    samePropertyOp?: "OR" | "AND"
+    /** Default recipe for a specific sport (applies to all incoming activities). */
+    defaultFor?: StravaSport
+    /** Date when it was last updated. */
+    dateLastUpdated?: Date
+    /** Date when the recipe was last copied by another user. */
+    dateLastCopy?: Date
 }
 
 /**

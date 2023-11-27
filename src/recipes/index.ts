@@ -1,9 +1,10 @@
 // Strautomator Core: Recipes
 
 import {recipePropertyList, recipeActionList} from "./lists"
+import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator, SharedRecipe} from "./types"
+import {generateId} from "./utils"
 import * as actions from "./actions"
 import * as conditions from "./conditions"
-import {RecipeAction, RecipeActionType, RecipeCondition, RecipeData, RecipeOperator} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
@@ -43,6 +44,11 @@ export class Recipes {
     get actionList() {
         return recipeActionList
     }
+
+    /**
+     * Export the generateId() helper.
+     */
+    generateId = generateId
 
     // INIT
     // --------------------------------------------------------------------------
@@ -114,7 +120,7 @@ export class Recipes {
             const recipeFields = Object.keys(recipe)
             const unknownFields = []
             for (let key of recipeFields) {
-                if (!["id", "title", "conditions", "actions", "order", "op", "samePropertyOp", "defaultFor", "killSwitch", "disabled"].includes(key)) {
+                if (!["id", "sharedRecipeId", "title", "conditions", "actions", "order", "op", "samePropertyOp", "defaultFor", "killSwitch", "disabled"].includes(key)) {
                     unknownFields.push(key)
                     delete recipe[key]
                 }
@@ -468,63 +474,145 @@ export class Recipes {
         return actions.defaultAction(user, activity, recipe, action)
     }
 
-    /**
-     * String representation of the recipe.
-     * @param recipe The recipe to get the summary for.
-     */
-    getSummary = (recipe: RecipeData): string => {
-        const result = []
-
-        for (let condition of recipe.conditions) {
-            result.push(`${condition.property} ${condition.operator} ${condition.value}`)
-        }
-
-        for (let action of recipe.actions) {
-            result.push(`${action.type}: ${action.value}`)
-        }
-
-        return result.join(", ")
-    }
+    // SHARED RECIPES
+    // --------------------------------------------------------------------------
 
     /**
-     * String representation of a recipe action.
-     * @param action The recipe action to get the summary for.
+     * Get a shared recipe.
+     * @param user User requesting the shared recipe.
+     * @param id ID of the shared recipe.
      */
-    getActionSummary = (action: RecipeAction): string => {
+    getSharedRecipe = async (user: UserData, id: string): Promise<SharedRecipe> => {
         try {
-            const actionType = _.find(recipeActionList, {value: action.type}).text
-            const valueText = action.friendlyValue || action.value
-
-            if (action.value && action.type != "commute") {
-                return `${actionType}: ${valueText}`
-            } else {
-                return `${actionType}`
+            const recipe: SharedRecipe = await database.get("shared-recipes", id)
+            if (!recipe) {
+                throw new Error(`Recipe ${id} not found`)
             }
+
+            logger.info("Recipes.getSharedRecipe", logHelper.user(user), id, logHelper.recipe(recipe))
+            return recipe
         } catch (ex) {
-            logger.error("Recipes.getActionSummary", action.type, ex)
-            return `${action.type}: ${action.value}`
+            logger.error("Recipes.getSharedRecipe", logHelper.user(user), id, ex)
+            throw ex
         }
     }
 
     /**
-     * String representation of a recipe condition.
-     * @param condition The recipe condition to get the summary for.
+     * Get all shared recipes for the specified user. Only available to PRO users.
+     * @param user User requesting the shared recipe.
+     * @param id ID of the shared recipe.
      */
-    getConditionSummary = (condition: RecipeCondition): string => {
+    getUserSharedRecipes = async (user: UserData): Promise<SharedRecipe[]> => {
         try {
-            const property = _.find(recipePropertyList, {value: condition.property})
-            const fieldText = property.text
-            const operatorText = _.find(property.operators, {value: condition.operator}).text
-            let valueText = condition.friendlyValue || condition.value
-
-            if (property.suffix) {
-                valueText += ` ${property.suffix}`
+            if (!user.isPro) {
+                return []
             }
 
-            return `${fieldText} ${operatorText} ${valueText}`
+            const recipes: SharedRecipe[] = await database.search("shared-recipes", [["userId", "==", user.id]])
+            logger.info("Recipes.getUserSharedRecipes", logHelper.user(user), `Got ${recipes.length} recipes`)
+            return recipes
         } catch (ex) {
-            logger.error("Recipes.getConditionSummary", condition.property, ex)
-            return `${condition.property} ${condition.operator} ${condition.value}`
+            logger.error("Recipes.getUserSharedRecipes", logHelper.user(user), ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Share a recipe with other users by making it public. Returns the created shared recipe.
+     * @param user User sharing the recipe.
+     * @param recipe New recipe data or existing shared recipe.
+     */
+    setSharedRecipe = async (user: UserData, recipe: RecipeData | SharedRecipe): Promise<SharedRecipe> => {
+        try {
+            this.validate(user, recipe)
+
+            // Limited to PRO users only, for now.
+            if (!user.isPro) {
+                throw new Error("Only PRO users can share automation recipes")
+            }
+
+            const now = new Date()
+            const isNew = !recipe.id || recipe.id.substring(0, 1) != "s"
+
+            // Create the shared recipe.
+            const sharedRecipe: SharedRecipe = {
+                id: isNew ? generateId(true) : recipe.id,
+                userId: user.id,
+                title: recipe.title,
+                conditions: recipe.conditions,
+                actions: recipe.actions,
+                dateLastUpdated: now
+            }
+
+            // Conditional fields.
+            if (recipe.defaultFor) sharedRecipe.defaultFor = recipe.defaultFor
+            if (recipe.op) sharedRecipe.op = recipe.op
+            if (recipe.samePropertyOp) sharedRecipe.samePropertyOp = recipe.samePropertyOp
+
+            // Save recipe to database.
+            await database.set("shared-recipes", sharedRecipe, sharedRecipe.id)
+            logger.info("Recipes.setSharedRecipe", logHelper.user(user), logHelper.recipe(sharedRecipe), isNew ? "Created" : "Updated")
+
+            return sharedRecipe
+        } catch (ex) {
+            logger.error("Recipes.setSharedRecipe", logHelper.user(user), logHelper.recipe(recipe), ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Delete a shared recipe.
+     * @param user User owner of the shared recipe.
+     * @param id ID of the shared recipe to be deleted.
+     */
+    deleteSharedRecipe = async (user: UserData, id: string): Promise<void> => {
+        try {
+            const recipe: SharedRecipe = await database.get("shared-recipes", id)
+
+            // Validate the existing shared recipe.
+            if (!recipe) {
+                throw new Error(`Recipe ${id} not found`)
+            }
+            if (recipe.userId != user.id) {
+                throw new Error(`Recipe ${id} does not belong to user ${user.id}`)
+            }
+
+            // Delete it!
+            await database.delete("shared-recipes", id)
+            logger.info("Recipes.deleteSharedRecipe", logHelper.user(user), id)
+        } catch (ex) {
+            logger.error("Recipes.deleteSharedRecipe", logHelper.user(user), id, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Copy a shared recipe to the user's account.
+     * @param user User requesting the shared recipe.
+     * @param sharedRecipe The shared recipe data.
+     */
+    copySharedRecipe = async (user: UserData, sharedRecipe: SharedRecipe): Promise<RecipeData> => {
+        try {
+            const recipe: RecipeData = {
+                id: generateId(),
+                sharedRecipeId: sharedRecipe.id,
+                title: sharedRecipe.title,
+                conditions: sharedRecipe.conditions,
+                actions: sharedRecipe.actions
+            }
+
+            if (sharedRecipe.defaultFor) recipe.defaultFor = sharedRecipe.defaultFor
+            if (sharedRecipe.op) recipe.op = sharedRecipe.op
+            if (sharedRecipe.samePropertyOp) recipe.samePropertyOp = sharedRecipe.samePropertyOp
+
+            await database.merge("shared-recipes", {id: sharedRecipe, dateLastCopy: new Date()})
+            await database.merge("users", {id: user.id, [`recipes.${recipe.id}`]: recipe})
+
+            logger.info("Recipes.copySharedRecipe", logHelper.user(user), logHelper.recipe(recipe))
+            return recipe
+        } catch (ex) {
+            logger.error("Recipes.copySharedRecipe", logHelper.user(user), ex)
+            throw ex
         }
     }
 }
