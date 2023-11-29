@@ -38,6 +38,8 @@ export interface SharedRecipe {
     id: string
     /** User ID of the owner of the recipe. */
     userId: string
+    /** Owner information, used via the API only to show the display name of the owner. */
+    userDisplayName?: string
     /** Title of the shared recipe. */
     title: string
     /** List of conditions to be evaluated. */
