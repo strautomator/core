@@ -1,10 +1,7 @@
 // Strautomator Core: OpenAI (ChatGPT)
 
-import {ChatGptResponse} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
-import {ActivityWeather} from "../weather/types"
-import {translation} from "../translations"
 import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
 import logger from "anyhow"
@@ -52,91 +49,17 @@ export class OpenAI {
      * @param humour Optional humour to be used on the prompt.
      * @param weatherSummaries Optional weather for the start and end of the activity.
      */
-    generateActivityName = async (user: UserData, activity: StravaActivity, humour?: string, weatherSummaries?: ActivityWeather): Promise<ChatGptResponse> => {
+    generateActivityName = async (user: UserData, activity: StravaActivity, prompt: string[]): Promise<string> => {
         try {
-            const baseCacheId = `activity-${activity.id}`
-            const cacheId = humour ? `${baseCacheId}-${humour}` : baseCacheId
+            const cacheId = `activity-${activity.id}`
             const fromCache = cache.get("openai", cacheId)
             if (fromCache) {
                 logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), fromCache)
                 return fromCache
             }
 
-            const sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            const customPrompt = user.preferences.chatGptPrompt
-            const arrPrompt = [`Please generate a single name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()}.`]
-
-            // Analyze the activity metadata and add relevant info to the prompt.
-            try {
-                const verb = sportType.includes("ride") ? "rode" : sportType.includes("run") ? "ran" : "did"
-
-                // Add relative effort context.
-                if (activity.relativeEffort > 600) {
-                    arrPrompt.push("That was one of the hardest workouts I've ever done.")
-                } else if (activity.relativeEffort > 300) {
-                    arrPrompt.push("The workout felt pretty hard.")
-                } else if (activity.relativeEffort < 30) {
-                    arrPrompt.push("The workout felt very easy.")
-                }
-
-                // Only add distance if moving time was also set.
-                if (activity.distance > 0 && activity.movingTime > 0) {
-                    arrPrompt.push(`I ${verb} ${activity.distance}${activity.distanceUnit} in ${activity.movingTimeString}.`)
-                }
-
-                // Only add elevation if less than 100m or more than 700m.
-                const elevationUnit = activity.elevationUnit || "m"
-                const skipElevationRange = elevationUnit == "ft" ? {min: 300, max: 2100} : {min: 100, max: 700}
-                if (!_.isNil(activity.elevationGain) && (activity.elevationGain < skipElevationRange.min || activity.elevationGain > skipElevationRange.max)) {
-                    arrPrompt.push(`Elevation gain was ${activity.elevationGain}${elevationUnit}.`)
-                }
-
-                // Only add power data if less than 140W or more than 200W, otherwise add heart rate data.
-                if (activity.hasPower && (activity.wattsWeighted < 140 || activity.wattsWeighted > 200)) {
-                    arrPrompt.push(`Average power was ${activity.wattsWeighted} watts.`)
-                } else if (activity.hrAvg > 0) {
-                    arrPrompt.push(`Average heart rate was ${activity.hrAvg} BPM.`)
-                }
-
-                // Add max speed in case it was high enough.
-                if (activity.speedMax > 65 || (activity.speedMax > 40 && user.profile.units == "imperial")) {
-                    arrPrompt.push(`Maximum speed was very high at ${activity.speedMax}${activity.speedUnit}.`)
-                }
-
-                // Add weather data?
-                if (weatherSummaries) {
-                    const weatherText = weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary || "ok"
-                    arrPrompt.push(`The weather was ${weatherText.toLowerCase()}.`)
-                    if (weatherSummaries.start?.aqi > 4 || weatherSummaries.end?.aqi > 4) {
-                        arrPrompt.push("Air quality was extremely unhealthy.")
-                    }
-                }
-
-                // Add the user's custom ChatGPT prompt, otherwise fallback to a generic humour + translation, if needed.
-                if (customPrompt) {
-                    arrPrompt.push(customPrompt)
-                } else {
-                    if (!humour) {
-                        humour = _.sample(settings.openai.humours)
-                    }
-                    arrPrompt.push(`Please be very ${humour} with the choice of words.`)
-
-                    // Translate to the user's language (if other than English).
-                    let languagePrompt = "."
-                    if (user.preferences.language && user.preferences.language != "en") {
-                        const languageName = translation("LanguageName", user.preferences)
-                        languagePrompt = `, translated to ${languageName} language.`
-                    }
-
-                    // Avoid boilerplate around the actual answer.
-                    arrPrompt.push(`Answer the generated name only, with no additional text${languagePrompt}`)
-                }
-            } catch (innerEx) {
-                logger.error("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), "Failure while building the prompt", innerEx)
-            }
-
             // Get final prompt and request options.
-            const content = arrPrompt.join(" ")
+            const content = prompt.join(" ")
             const options: AxiosConfig = {
                 url: `${settings.openai.api.baseUrl}chat/completions`,
                 method: "POST",
@@ -179,11 +102,8 @@ export class OpenAI {
                     }
 
                     // Cache and return the response.
-                    const result: ChatGptResponse = {prompt: content, response: activityName}
-                    cache.set("openai", cacheId, result)
-                    logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), `${weatherSummaries ? "with" : "without"} weather`, `Humour: ${humour}`, options.data.model, activityName)
-
-                    return result
+                    cache.set("openai", cacheId, activityName)
+                    return activityName
                 }
             } catch (innerEx) {
                 logger.error("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), options.data.model, innerEx)
