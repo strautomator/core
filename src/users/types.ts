@@ -101,8 +101,10 @@ export interface UserPreferences {
     windSpeedUnit?: "m/s" | "kph" | "mph"
     /** Calendar template. */
     calendarTemplate?: UserCalendarTemplate
-    /** ChatGPT additional prompt when generating activity names. */
-    chatGptPrompt?: string
+    /** Preferred AI provider. */
+    aiProvider?: "gemini" | "openai"
+    /** Additional AI prompt when generating activity names. */
+    aiPrompt?: string
     /** Omit suffixes when replacing activity tags? */
     noSuffixes?: boolean
     /** Privacy mode: do not save processed activities and records. */

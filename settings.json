@@ -3,6 +3,10 @@
 // production ready (not including secrets and credentials).
 
 {
+    "ai": {
+        // List of humours (adjectives) to be used on the AI generated content.
+        "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "wicked"]
+    },
     "app": {
         // Application title.
         "title": "Strautomator",
@@ -182,6 +186,12 @@
         // Remind user if tracking was not reset and current usage has passed 15% of the target alert value.
         "reminderThreshold": 1.15
     },
+    "gemini": {
+        // Cache Gemini generated names for 1 minute.
+        "cacheDuration": 60,
+        // Limit to 20 tokens per response.
+        "maxTokens": 20
+    },
     "github": {
         "api": {
             "baseUrl": "https://api.github.com/",
@@ -305,9 +315,7 @@
         // Cache generated names for 1 minute.
         "cacheDuration": 60,
         // Limit to 26 tokens per response.
-        "maxTokens": 26,
-        // List of humours (adjectives) to be used on the generated names.
-        "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "wicked"]
+        "maxTokens": 26
     },
     "paypal": {
         "api": {
@@ -369,10 +377,10 @@
             "linksOn": 5,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
-            // Use ChatGPT and weather parameters on just under half of "generateName" recipe actions.
+            // Use AI and weather parameters on just under half of "generateName" recipe actions.
             "generatedNames": {
-                "openai": 45,
-                "weather": 45
+                "ai": 50,
+                "weather": 50
             }
         },
         "pro": {
@@ -396,9 +404,9 @@
                 "year": 6.99,
                 "github": 1.0
             },
-            // Use ChatGPT and weather parameters on around 95% of "generateName" recipe actions.
+            // Use AI and weather parameters on around 95% of "generateName" recipe actions.
             "generatedNames": {
-                "openai": 95,
+                "ai": 95,
                 "weather": 95
             }
         }

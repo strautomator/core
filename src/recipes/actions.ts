@@ -8,10 +8,10 @@ import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
 import {axiosRequest} from "../axios"
 import recipeStats from "./stats"
+import ai from "../ai"
 import maps from "../maps"
 import musixmatch from "../musixmatch"
 import notifications from "../notifications"
-import openai from "../openai"
 import spotify from "../spotify"
 import weather from "../weather"
 import dayjs from "../dayjs"
@@ -426,7 +426,7 @@ export const workoutTypeAction = async (user: UserData, activity: StravaActivity
 }
 
 /**
- * Gets a random activity name using ChatGPT or using pre-defined templates.
+ * Gets a random activity name using AI or using pre-defined templates.
  * @param user The user.
  * @param activity The Strava activity.
  * @param recipe The source recipe, optional.
@@ -461,12 +461,12 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
             user.preferences.language = language
         }
 
-        // Chat GPT will be used only for a small portion of activities for free users.
-        const rndOpenAi = user.isPro ? settings.plans.pro.generatedNames.openai : settings.plans.free.generatedNames.openai
-        if (Math.random() * 100 <= rndOpenAi) {
-            const chatGptResponse = await openai.generateActivityName(user, activity, humour, weatherSummaries)
-            if (chatGptResponse) {
-                activity.name = chatGptResponse.response
+        // Decide if we should use AI or fallback to template-based names.
+        const rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : settings.plans.free.generatedNames.ai
+        if (Math.random() * 100 <= rndAi) {
+            const aiResponse = await ai.generateActivityName(user, activity, humour, weatherSummaries)
+            if (aiResponse) {
+                activity.name = aiResponse.response
                 activity.updatedFields.push("name")
                 return true
             }
@@ -476,7 +476,7 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
 
         // Get a random humour if not set.
         if (!humour) {
-            humour = _.sample(settings.openai.humours)
+            humour = _.sample(settings.ai.humours)
         }
 
         // Rounded activity properties.
