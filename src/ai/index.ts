@@ -9,7 +9,7 @@ import openai from "../openai"
 import _ from "lodash"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
-import {AiGeneratedResponse} from "./types"
+import {AiGeneratedResponse, AiProvider} from "./types"
 const settings = require("setmeup").settings
 
 /**
@@ -105,34 +105,39 @@ export class AI {
             logger.error("AI.generateActivityName", logHelper.user(user), logHelper.activity(activity), "Failure while building the prompt", ex)
         }
 
-        // Decide which AI model to use.
-        const provider = user.preferences.aiProvider || Math.random() < 0.3 ? gemini : openai
-        const fallback = provider == gemini ? openai : gemini
+        // Decide which AI model to use. If no preference is set, use Gemini on less than 30% of requests.
+        const providers = [gemini, openai]
+        const preferredProvider = user.preferences.aiProvider ? user.preferences.aiProvider : Math.random() < 0.3 ? "gemini" : "openai"
+        let provider: AiProvider
         let response: string
 
         // Try with the selected provider, and fallback to the other if it fails.
         try {
+            provider = _.remove(providers, (p) => p.constructor.name.toLowerCase() == preferredProvider)[0]
             response = await provider.generateActivityName(user, activity, arrPrompt)
             if (!response) {
-                throw new Error(`Got no response from ${provider.constructor.name}`)
+                throw new Error("Got no response")
             }
         } catch (ex) {
-            logger.error("AI.generateActivityName", logHelper.user(user), logHelper.activity(activity), ex)
+            logger.warn("AI.generateActivityName", provider.constructor.name, logHelper.user(user), logHelper.activity(activity), "Failed, will try another provider")
             try {
-                response = await fallback.generateActivityName(user, activity, arrPrompt)
+                provider = providers.pop()
+                response = await provider.generateActivityName(user, activity, arrPrompt)
             } catch (innerEx) {
-                logger.error("AI.generateActivityName", logHelper.user(user), logHelper.activity(activity), innerEx)
+                logger.error("AI.generateActivityName", provider.constructor.name, logHelper.user(user), logHelper.activity(activity), "Failed again")
             }
         }
 
         // Got a valid response?
         if (response) {
             return {
+                provider: provider.constructor.name.toLowerCase() as any,
                 prompt: arrPrompt.join(" "),
                 response: response
             }
         }
 
+        // Everything else failed.
         return null
     }
 }
