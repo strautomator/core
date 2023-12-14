@@ -1,5 +1,6 @@
 // Strautomator Core: OpenAI (ChatGPT)
 
+import {AiProvider} from "../ai/types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
@@ -13,7 +14,7 @@ const packageVersion = require("../../package.json").version
 /**
  * OpenAI (ChatGPT) wrapper.
  */
-export class OpenAI {
+export class OpenAI implements AiProvider {
     private constructor() {}
     private static _instance: OpenAI
     static get Instance() {
@@ -103,6 +104,7 @@ export class OpenAI {
 
                     // Cache and return the response.
                     cache.set("openai", cacheId, activityName)
+                    logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), activityName)
                     return activityName
                 }
             } catch (innerEx) {

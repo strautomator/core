@@ -1,5 +1,6 @@
 // Strautomator Core: Gemini (Vertex AI)
 
+import {AiProvider} from "../ai/types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {VertexAI} from "@google-cloud/vertexai"
@@ -12,7 +13,7 @@ const settings = require("setmeup").settings
 /**
  * Gemini (Vertex AI) wrapper.
  */
-export class Gemini {
+export class Gemini implements AiProvider {
     private constructor() {}
     private static _instance: Gemini
     static get Instance() {
@@ -75,7 +76,7 @@ export class Gemini {
             // Validate and extract the generated activity name.
             const activityName = result.response?.candidates[0].content.parts[0]?.text
             if (activityName) {
-                logger.info("Gemini.generateActivityName", logHelper.user(user), logHelper.activity(activity), result)
+                logger.info("Gemini.generateActivityName", logHelper.user(user), logHelper.activity(activity), activityName)
                 return activityName
             }
 
