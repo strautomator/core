@@ -189,8 +189,8 @@
     "gemini": {
         // Cache Gemini generated names for 1 minute.
         "cacheDuration": 60,
-        // Limit to 20 tokens per response.
-        "maxTokens": 20
+        // Limit to 22 tokens per response.
+        "maxTokens": 22
     },
     "github": {
         "api": {
