@@ -193,6 +193,7 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
             case "MostlyClear":
                 summary.icon = "🌤️"
                 break
+            case "Cloudy":
             case "MostlyCloudy":
                 if (extraData.timeOfDay == "day") {
                     summary.icon = "☁️"
