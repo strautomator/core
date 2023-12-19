@@ -52,6 +52,8 @@ export interface SharedRecipe {
     samePropertyOp?: "OR" | "AND"
     /** Default recipe for a specific sport (applies to all incoming activities). */
     defaultFor?: StravaSport
+    /** Is it a public / global recipe available as a template for new recipes? */
+    isTemplate?: boolean
     /** Date when it was last updated. */
     dateLastUpdated?: Date
     /** Date when the recipe was last copied by another user. */
@@ -133,6 +135,7 @@ export enum RecipeActionType {
     PrependName = "prependName",
     AppendName = "appendName",
     GenerateName = "generateName",
+    GenerateDescription = "generateDescription",
     Description = "description",
     PrependDescription = "prependDescription",
     AppendDescription = "appendDescription",
