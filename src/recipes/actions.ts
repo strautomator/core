@@ -111,25 +111,28 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
                 if (hasCityStart) {
                     try {
                         const address = await maps.getReverseGeocode(activity.locationStart, "locationiq")
-                        cityObj.cityStart = address?.city ? address.city : ""
+                        if (!address || !address.city) throw new Error(`Failed to geocode: ${activity.locationStart.join(", ")}`)
+                        cityObj.cityStart = address.city
                     } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "Failed to geocode the cityStart")
+                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "cityStart", innerEx)
                     }
                 }
                 if (hasCityMid) {
                     try {
                         const address = await maps.getReverseGeocode(activity.locationMid, "locationiq")
-                        cityObj.cityMid = address?.city ? address.city : ""
+                        if (!address || !address.city) throw new Error(`Failed to geocode: ${activity.locationMid.join(", ")}`)
+                        cityObj.cityMid = address.city
                     } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "Failed to geocode the cityMid")
+                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "cityMid", innerEx)
                     }
                 }
                 if (hasCityEnd) {
                     try {
                         const address = await maps.getReverseGeocode(activity.locationEnd, "locationiq")
-                        cityObj.cityEnd = address?.city ? address.city : ""
+                        if (!address || !address.city) throw new Error(`Failed to geocode: ${activity.locationEnd.join(", ")}`)
+                        cityObj.cityEnd = address.city
                     } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "Failed to geocode the cityEnd")
+                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "cityEnd", innerEx)
                     }
                 }
             }
@@ -426,23 +429,16 @@ export const workoutTypeAction = async (user: UserData, activity: StravaActivity
 }
 
 /**
- * Gets a random activity name using AI or using pre-defined templates.
+ * Gets a random activity name or description using AI or using pre-defined templates.
  * @param user The user.
  * @param activity The Strava activity.
  * @param recipe The source recipe, optional.
  * @param action The action details, optional.
  */
-export const generateNameAction = async (user: UserData, activity: StravaActivity, recipe?: RecipeData, action?: RecipeAction): Promise<boolean> => {
+export const aiGenerateAction = async (user: UserData, activity: StravaActivity, recipe?: RecipeData, action?: RecipeAction): Promise<boolean> => {
     try {
         const now = dayjs.utc()
-        const imperial = user.profile.units == "imperial"
-        const isRide = activity.sportType == StravaSport.Ride || activity.sportType == StravaSport.VirtualRide || activity.sportType == StravaSport.EBikeRide
-        const isRun = activity.sportType == StravaSport.Run || activity.sportType == StravaSport.Walk
-        let humour = action ? action.value : null
-        let prefixes = ["", "delightful", "amazing", "great", "", "just your regular", "crazy", "superb", "", "magnificent", "marvellous", "exotic", ""]
-        let names = []
-        let uniqueNames = []
-        let seqCount = 0
+        let humour = action ? action.value : _.sample(settings.ai.humours)
 
         // Weather props.
         const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
@@ -457,32 +453,50 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
             // Force English language, fetch weather summaries for activity,
             // then reset the user language back to its default.
             user.preferences.language = "en"
-            weatherSummaries = await weather.getActivityWeather(user, activity, true)
+            try {
+                weatherSummaries = await weather.getActivityWeather(user, activity, true)
+            } catch (weatherEx) {
+                logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Failed to get the activity weather summary")
+            }
             user.preferences.language = language
         }
 
         // Decide if we should use AI or fallback to template-based names.
         const rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : settings.plans.free.generatedNames.ai
         if (Math.random() * 100 <= rndAi) {
-            const aiResponse = await ai.generateActivityName(user, activity, humour, weatherSummaries)
-            if (aiResponse) {
-                activity.name = aiResponse.response
-                activity.updatedFields.push("name")
-                return true
+            if (action.type == RecipeActionType.GenerateName) {
+                const aiResponse = await ai.generateActivityName(user, {activity, humour, weatherSummaries})
+                if (aiResponse) {
+                    activity.name = aiResponse.response
+                    activity.updatedFields.push("name")
+                    return true
+                }
+            } else if (action.type == RecipeActionType.GenerateDescription) {
+                const aiResponse = await ai.generateActivityDescription(user, {activity, humour, weatherSummaries})
+                if (aiResponse) {
+                    activity.description = aiResponse.response
+                    activity.updatedFields.push("description")
+                    return true
+                }
             }
 
-            logger.warn("Recipes.generateNameAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "OpenAI failed, fallback to template")
+            logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "AI failed, fallback to template")
         }
 
-        // Get a random humour if not set.
-        if (!humour) {
-            humour = _.sample(settings.ai.humours)
-        }
+        const imperial = user.profile.units == "imperial"
+        const isRide = activity.sportType == StravaSport.Ride || activity.sportType == StravaSport.VirtualRide || activity.sportType == StravaSport.EBikeRide
+        const isRun = activity.sportType == StravaSport.Run || activity.sportType == StravaSport.Walk
 
         // Rounded activity properties.
         const distanceR = Math.round(activity.distance)
         const speedAvgR = Math.round(activity.speedAvg)
         const elevationGainR = Math.round(activity.elevationGain)
+
+        // Default prefixes.
+        let prefixes = ["", "delightful", "amazing", "great", "", "just your regular", "crazy", "superb", "", "magnificent", "marvellous", "exotic", ""]
+        let names = []
+        let uniqueNames = []
+        let seqCount = 0
 
         // Virtual ride prefix.
         if (activity.sportType == StravaSport.VirtualRide) {
@@ -792,8 +806,14 @@ export const generateNameAction = async (user: UserData, activity: StravaActivit
         }
 
         result = result ? result.charAt(0).toUpperCase() + result.slice(1) : _.sample(fortuneCookies)
-        activity.name = result
-        activity.updatedFields.push("name")
+
+        if (action.type == RecipeActionType.GenerateName) {
+            activity.name = result
+            activity.updatedFields.push("name")
+        } else if (action.type == RecipeActionType.GenerateDescription) {
+            activity.description = result
+            activity.updatedFields.push("description")
+        }
 
         return true
     } catch (ex) {

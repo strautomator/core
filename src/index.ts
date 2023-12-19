@@ -235,7 +235,7 @@ export const startup = async (quickStart?: boolean) => {
     // Init individual modules now. Start with the most important modules, than the rest.
     const coreModules = [github, paypal, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
-    const otherModules = [announcements, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, weather]
+    const otherModules = [ai, announcements, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, weather]
     await Promise.all(otherModules.map(initModule))
 
     // Running locally? Setup the necessary cron jobs which are

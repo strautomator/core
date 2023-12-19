@@ -2,23 +2,41 @@
 
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
-
-/**
- * AI LLM prompt and response data.
- */
-export interface AiGeneratedResponse {
-    /** Prompt sent to the LLM. */
-    prompt: string
-    /** Response from LLM. */
-    response: string
-    /** Which AI provider was used. */
-    provider: "gemini" | "openai"
-}
+import {ActivityWeather} from "../weather/types"
 
 /**
  * AI provider interface.
  */
 export interface AiProvider {
     /** Method to generate activity names. */
-    generateActivityName(user: UserData, activity: StravaActivity, prompt: string[]): Promise<string>
+    activityPrompt(user: UserData, activity: StravaActivity, prompt: string[], maxTokens: number): Promise<string>
+}
+
+/**
+ * AI LLM prompt and response data.
+ */
+export interface AiGeneratedResponse {
+    /** Which AI provider was used. */
+    provider: "gemini" | "openai"
+    /** Prompt sent to the LLM. */
+    prompt: string
+    /** Response from LLM. */
+    response: string
+}
+
+export interface AiGenerateOptions {
+    /** AI provider. */
+    provider?: "gemini" | "openai"
+    /** Referenced activity. */
+    activity: StravaActivity
+    /** Max tokens to be used. */
+    maxTokens?: number
+    /** Humour to be used on the prompt. */
+    humour: string
+    /** Optional weather for the start and end of the activity. */
+    weatherSummaries?: ActivityWeather
+    /** Text to be added before the activity prompt. */
+    prepend?: string[]
+    /** Text to be added after the activity prompt. */
+    append?: string[]
 }

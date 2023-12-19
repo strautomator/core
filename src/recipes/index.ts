@@ -188,6 +188,11 @@ export class Recipes {
                     throw new Error(`Invalid action type: ${action.type}`)
                 }
 
+                // PRO-only actions.
+                if (!user.isPro && [RecipeActionType.GenerateDescription, RecipeActionType.Webhook].includes(action.type)) {
+                    throw new Error(`Action ${action.type} is only available to PRO users`)
+                }
+
                 // Some actions must have a value.
                 if (action.type != RecipeActionType.Commute) {
                     if (action.value === null || action.value === "") {
@@ -203,6 +208,7 @@ export class Recipes {
                     }
                 }
 
+                // Action too long?
                 if (action.value && _.isString(action.value) && (action.value as string).length > settings.recipes.maxLength.actionValue) {
                     throw new Error(`Action value is too long (max length is ${settings.recipes.maxLength.actionValue})`)
                 }
@@ -461,8 +467,8 @@ export class Recipes {
         }
 
         // Auto generated activity names?
-        else if (action.type == RecipeActionType.GenerateName) {
-            return actions.generateNameAction(user, activity, recipe, action)
+        else if (action.type == RecipeActionType.GenerateName || action.type == RecipeActionType.GenerateDescription) {
+            return actions.aiGenerateAction(user, activity, recipe, action)
         }
 
         // Dispatch activity to webhook?
@@ -476,6 +482,26 @@ export class Recipes {
 
     // SHARED RECIPES
     // --------------------------------------------------------------------------
+
+    /**
+     * Get all shared recipes owned by the specified user. Only available to PRO users.
+     * @param owner The owner of the shared recipes.
+     * @param id ID of the shared recipe.
+     */
+    getUserSharedRecipes = async (owner: UserData): Promise<SharedRecipe[]> => {
+        try {
+            if (!owner.isPro) {
+                return []
+            }
+
+            const recipes: SharedRecipe[] = await database.search("shared-recipes", [["userId", "==", owner.id]])
+            logger.info("Recipes.getUserSharedRecipes", logHelper.user(owner), `Got ${recipes.length} recipes`)
+            return recipes
+        } catch (ex) {
+            logger.error("Recipes.getUserSharedRecipes", logHelper.user(owner), ex)
+            throw ex
+        }
+    }
 
     /**
      * Get a shared recipe.
@@ -498,36 +524,16 @@ export class Recipes {
     }
 
     /**
-     * Get all shared recipes for the specified user. Only available to PRO users.
-     * @param user User requesting the shared recipe.
-     * @param id ID of the shared recipe.
-     */
-    getUserSharedRecipes = async (user: UserData): Promise<SharedRecipe[]> => {
-        try {
-            if (!user.isPro) {
-                return []
-            }
-
-            const recipes: SharedRecipe[] = await database.search("shared-recipes", [["userId", "==", user.id]])
-            logger.info("Recipes.getUserSharedRecipes", logHelper.user(user), `Got ${recipes.length} recipes`)
-            return recipes
-        } catch (ex) {
-            logger.error("Recipes.getUserSharedRecipes", logHelper.user(user), ex)
-            throw ex
-        }
-    }
-
-    /**
      * Share a recipe with other users by making it public. Returns the created shared recipe.
-     * @param user User sharing the recipe.
+     * @param owner User sharing the recipe.
      * @param recipe New recipe data or existing shared recipe.
      */
-    setSharedRecipe = async (user: UserData, recipe: RecipeData | SharedRecipe): Promise<SharedRecipe> => {
+    setSharedRecipe = async (owner: UserData, recipe: RecipeData | SharedRecipe): Promise<SharedRecipe> => {
         try {
-            this.validate(user, recipe)
+            this.validate(owner, recipe)
 
             // Limited to PRO users only, for now.
-            if (!user.isPro) {
+            if (!owner.isPro) {
                 throw new Error("Only PRO users can share automation recipes")
             }
 
@@ -537,7 +543,7 @@ export class Recipes {
             // Create the shared recipe.
             const sharedRecipe: SharedRecipe = {
                 id: isNew ? generateId(true) : recipe.id,
-                userId: user.id,
+                userId: owner.id,
                 title: recipe.title,
                 conditions: recipe.conditions,
                 actions: recipe.actions,
@@ -551,21 +557,21 @@ export class Recipes {
 
             // Save recipe to database.
             await database.set("shared-recipes", sharedRecipe, sharedRecipe.id)
-            logger.info("Recipes.setSharedRecipe", logHelper.user(user), logHelper.recipe(sharedRecipe), isNew ? "Created" : "Updated")
+            logger.info("Recipes.setSharedRecipe", logHelper.user(owner), logHelper.recipe(sharedRecipe), isNew ? "Created" : "Updated")
 
             return sharedRecipe
         } catch (ex) {
-            logger.error("Recipes.setSharedRecipe", logHelper.user(user), logHelper.recipe(recipe), ex)
+            logger.error("Recipes.setSharedRecipe", logHelper.user(owner), logHelper.recipe(recipe), ex)
             throw ex
         }
     }
 
     /**
      * Delete a shared recipe.
-     * @param user User owner of the shared recipe.
+     * @param owner User owner of the shared recipe.
      * @param id ID of the shared recipe to be deleted.
      */
-    deleteSharedRecipe = async (user: UserData, id: string): Promise<void> => {
+    deleteSharedRecipe = async (owner: UserData, id: string): Promise<void> => {
         try {
             const recipe: SharedRecipe = await database.get("shared-recipes", id)
 
@@ -573,15 +579,15 @@ export class Recipes {
             if (!recipe) {
                 throw new Error(`Recipe ${id} not found`)
             }
-            if (recipe.userId != user.id) {
-                throw new Error(`Recipe ${id} does not belong to user ${user.id}`)
+            if (recipe.userId != owner.id) {
+                throw new Error(`Recipe ${id} does not belong to user ${owner.id}`)
             }
 
             // Delete it!
             await database.delete("shared-recipes", id)
-            logger.info("Recipes.deleteSharedRecipe", logHelper.user(user), id)
+            logger.info("Recipes.deleteSharedRecipe", logHelper.user(owner), id)
         } catch (ex) {
-            logger.error("Recipes.deleteSharedRecipe", logHelper.user(user), id, ex)
+            logger.error("Recipes.deleteSharedRecipe", logHelper.user(owner), id, ex)
             throw ex
         }
     }

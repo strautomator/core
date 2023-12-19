@@ -7,7 +7,6 @@ import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
-import cache from "bitecache"
 const settings = require("setmeup").settings
 const packageVersion = require("../../package.json").version
 
@@ -32,9 +31,6 @@ export class OpenAI implements AiProvider {
             if (!settings.openai.api.key) {
                 throw new Error("Missing the openai.api.key setting")
             }
-
-            cache.setup("openai", settings.openai.cacheDuration)
-            logger.info("OpenAI.init", `Cache prompt results for up to ${settings.openai.cacheDuration} seconds`)
         } catch (ex) {
             logger.error("OpenAI.init", ex)
         }
@@ -47,19 +43,11 @@ export class OpenAI implements AiProvider {
      * Generate the activity name based on its parameters.
      * @param user The user.
      * @param activity The Strava activity.
-     * @param humour Optional humour to be used on the prompt.
-     * @param weatherSummaries Optional weather for the start and end of the activity.
+     * @param prompt Prompt to be used.
+     * @param maxTokens Max tokens to be used.
      */
-    generateActivityName = async (user: UserData, activity: StravaActivity, prompt: string[]): Promise<string> => {
+    activityPrompt = async (user: UserData, activity: StravaActivity, prompt: string[], maxTokens: number): Promise<string> => {
         try {
-            const cacheId = `activity-${activity.id}`
-            const fromCache = cache.get("openai", cacheId)
-            if (fromCache) {
-                logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), fromCache)
-                return fromCache
-            }
-
-            // Get final prompt and request options.
             const content = prompt.join(" ")
             const options: AxiosConfig = {
                 url: `${settings.openai.api.baseUrl}chat/completions`,
@@ -68,10 +56,10 @@ export class OpenAI implements AiProvider {
                 data: {
                     model: user.isPro && Math.random() < 0.5 ? "gpt-4-1106-preview" : "gpt-3.5-turbo",
                     messages: [
-                        {role: "system", content: "You are an assistant to create creative names for Strava activities."},
+                        {role: "system", content: "You are an assistant to create creative names and descriptions for Strava activities."},
                         {role: "user", content: content}
                     ],
-                    max_tokens: settings.openai.maxTokens,
+                    max_tokens: maxTokens,
                     temperature: 1,
                     top_p: 1
                 },
@@ -84,7 +72,7 @@ export class OpenAI implements AiProvider {
             options.headers["Authorization"] = `Bearer ${settings.openai.api.key}`
             options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
-            logger.debug("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), `Prompt: ${content}`)
+            logger.debug("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), `Prompt: ${content}`)
 
             // Here we go!
             try {
@@ -102,20 +90,17 @@ export class OpenAI implements AiProvider {
                         activityName = activityName.trim()
                     }
 
-                    // Cache and return the response.
-                    cache.set("openai", cacheId, activityName)
-                    logger.info("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), activityName)
                     return activityName
                 }
             } catch (innerEx) {
-                logger.error("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), options.data.model, innerEx)
+                logger.error("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), options.data.model, innerEx)
             }
 
             // Failed to generate the activity name.
-            logger.warn("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), "Failed to generate")
+            logger.warn("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Failed to generate")
             return null
         } catch (ex) {
-            logger.error("OpenAI.generateActivityName", logHelper.user(user), logHelper.activity(activity), ex)
+            logger.error("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), ex)
             return null
         }
     }
