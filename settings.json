@@ -4,6 +4,8 @@
 
 {
     "ai": {
+        // Cache generated AI content for 1 minute.
+        "cacheDuration": 60,
         // List of humours (adjectives) to be used on the AI generated content.
         "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "wicked"]
     },
@@ -187,10 +189,12 @@
         "reminderThreshold": 1.15
     },
     "gemini": {
-        // Cache Gemini generated names for 1 minute.
-        "cacheDuration": 60,
-        // Limit to 22 tokens per response.
-        "maxTokens": 22
+        "api": {
+            // Maximum concurrent requests per instance.
+            "maxConcurrent": 2,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 50
+        }
     },
     "github": {
         "api": {
@@ -311,11 +315,7 @@
     "openai": {
         "api": {
             "baseUrl": "https://api.openai.com/v1/"
-        },
-        // Cache generated names for 1 minute.
-        "cacheDuration": 60,
-        // Limit to 26 tokens per response.
-        "maxTokens": 26
+        }
     },
     "paypal": {
         "api": {
@@ -377,7 +377,7 @@
             "linksOn": 5,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
-            // Use AI and weather parameters on just under half of "generateName" recipe actions.
+            // Use AI and weather parameters on 50% of "AI generate" recipe actions.
             "generatedNames": {
                 "ai": 50,
                 "weather": 50
@@ -404,10 +404,10 @@
                 "year": 6.99,
                 "github": 1.0
             },
-            // Use AI and weather parameters on around 95% of "generateName" recipe actions.
+            // Use AI and weather parameters on around 99% of "AI generate" recipe actions.
             "generatedNames": {
-                "ai": 95,
-                "weather": 95
+                "ai": 99,
+                "weather": 99
             }
         }
     },
