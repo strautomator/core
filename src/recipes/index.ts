@@ -194,7 +194,7 @@ export class Recipes {
                 }
 
                 // Some actions must have a value.
-                if (action.type != RecipeActionType.Commute) {
+                if (![RecipeActionType.Commute, RecipeActionType.GenerateDescription, RecipeActionType.GenerateName].includes(action.type)) {
                     if (action.value === null || action.value === "") {
                         throw new Error("Missing action value")
                     }
