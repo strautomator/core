@@ -166,7 +166,7 @@ export class AI {
      */
     generateActivityName = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
-            const cacheId = `name-${options.provider || "default"}-${options.activity.id}`
+            const cacheId = `name-${this.getCacheId(options)}`
             const fromCache = cache.get("ai", cacheId)
             if (fromCache) {
                 logger.info("AI.generateActivityName", logHelper.user(user), logHelper.activity(options.activity), fromCache.provider, "Cached response", fromCache.response)
@@ -202,7 +202,7 @@ export class AI {
      */
     generateActivityDescription = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
-            const cacheId = `description-${options.provider || "default"}-${options.activity.id}`
+            const cacheId = `description-${this.getCacheId(options)}`
             const fromCache = cache.get("ai", cacheId)
             if (fromCache) {
                 logger.info("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(options.activity), fromCache.provider, "Cached response", fromCache.response)
@@ -211,9 +211,9 @@ export class AI {
 
             // Generation options.
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            options.maxTokens = 128
-            options.prepend = [`Please write a very short poem for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}, with a maximum of 3 verses.`]
-            options.append = [`Answer the generated poem only, with no additional text.`]
+            options.maxTokens = 132
+            options.prepend = [`Please write a very short poem for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
+            options.append = [`Answer the generated poem only, with no additional text, limited to a maximum of 10 lines.`]
 
             // Generate and cache the result.
             const result = await this.activityPrompt(user, options)
@@ -229,6 +229,17 @@ export class AI {
             logger.error("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(options.activity), ex)
             return null
         }
+    }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Helper to get the cache ID for the specified AI generation options.
+     * @param options Provider, humour and activity details.
+     */
+    private getCacheId = (options: AiGenerateOptions): string => {
+        return `${options.provider || "default"}-${options.humour || "random"}-${options.activity.id}`
     }
 }
 
