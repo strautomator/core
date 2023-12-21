@@ -440,13 +440,11 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         const now = dayjs.utc()
         let humour = action ? action.value : _.sample(settings.ai.humours)
 
-        // Weather props.
-        const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
-        let weatherSummaries: ActivityWeather
-
         // Weather based checks for activities that happened in the last 3 days.
+        const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
         const isRecent = now.subtract(3, "days").isBefore(activity.dateEnd)
         const rndWeather = user.isPro ? settings.plans.pro.generatedNames.weather : settings.plans.free.generatedNames.weather
+        let weatherSummaries: ActivityWeather
         if (activity.hasLocation && isRecent && Math.random() * 100 <= rndWeather) {
             const language = user.preferences.language
 
@@ -461,9 +459,11 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
             user.preferences.language = language
         }
 
+        // Only proceed with AI features if the user has not enabled the Privacy Mode.
+
         // Decide if we should use AI or fallback to template-based names.
         const rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : settings.plans.free.generatedNames.ai
-        if (Math.random() * 100 <= rndAi) {
+        if (!user.preferences.privacyMode && Math.random() * 100 <= rndAi) {
             if (action.type == RecipeActionType.GenerateName) {
                 const aiResponse = await ai.generateActivityName(user, {activity, humour, weatherSummaries})
                 if (aiResponse) {
