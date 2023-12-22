@@ -3,7 +3,7 @@
 import {AiProvider} from "../ai/types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
-import {GenerateContentRequest, VertexAI} from "@google-cloud/vertexai"
+import {FinishReason, GenerateContentRequest, VertexAI} from "@google-cloud/vertexai"
 import _ from "lodash"
 import Bottleneck from "bottleneck"
 import logger from "anyhow"
@@ -80,12 +80,17 @@ export class Gemini implements AiProvider {
             }
             const jobId = `gemini-activity-${activity.id}`
             const result = await this.limiter.schedule({id: jobId}, () => model.generateContent(reqOptions))
+            // Ask for a response, and retry with a 0% higher token count if it stopped due to token depletion.
 
             // Validate and extract the generated activity name.
-            const activityName = result.response?.candidates[0].content.parts[0]?.text
-            if (activityName) {
-                logger.info("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), activityName)
-                return activityName
+            const text = result.response?.candidates[0].content.parts[0]?.text
+            if (text) {
+                if (result.response.candidates[0].finishReason === FinishReason.MAX_TOKENS) {
+                    logger.warn("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Early stop due to max tokens", text)
+                } else {
+                    logger.info("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), text)
+                }
+                return text
             }
 
             // Failed to generate the activity name.
