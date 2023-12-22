@@ -97,6 +97,7 @@ export class GDPR {
             jsonData["gearwear"] = await database.search("gearwear", where)
             jsonData["notifications"] = await database.search("notifications", where)
             jsonData["recipe-stats"] = await database.search("recipe-stats", where)
+            jsonData["shared-recipes"] = await database.search("shared-recipes", where)
             jsonData["subscriptions"] = await database.search("subscriptions", where)
 
             // Remove sensitive data.

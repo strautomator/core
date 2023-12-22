@@ -81,16 +81,16 @@ export class OpenAI implements AiProvider {
                 // Successful prompt response? Extract the generated activity name.
                 if (res?.choices?.length > 0) {
                     const arrName = res.choices[0].message.content.split(`"`)
-                    let activityName = arrName.length > 1 ? arrName[1] : arrName[0]
+                    let text = arrName.length > 1 ? arrName[1] : arrName[0]
 
                     // Ends with a period, but has no question? Remove it.
-                    if (activityName.substring(activityName.length - 1) == "." && !activityName.includes("?")) {
-                        activityName = activityName.substring(0, activityName.length - 1).trim()
+                    if (text.substring(text.length - 1) == "." && !text.includes("?")) {
+                        text = text.substring(0, text.length - 1).trim()
                     } else {
-                        activityName = activityName.trim()
+                        text = text.trim()
                     }
 
-                    return activityName
+                    return text
                 }
             } catch (innerEx) {
                 logger.error("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), options.data.model, innerEx)
