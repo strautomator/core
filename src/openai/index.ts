@@ -64,7 +64,11 @@ export class OpenAI implements AiProvider {
                     top_p: 1
                 },
                 onRetry: (opt) => {
-                    opt.data.model = "gpt-3.5-turbo"
+                    if (user.isPro) {
+                        opt.data.model = "gpt-3.5-turbo"
+                        return true
+                    }
+                    return false
                 }
             }
 
