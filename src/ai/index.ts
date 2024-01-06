@@ -129,7 +129,7 @@ export class AI {
         }
 
         // Start with the preferred provider, and keep trying until everything fails.
-        const providers = [gemini, openai]
+        const providers = [openai, gemini]
         const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == user.preferences.aiProvider)
         let provider: AiProvider = preferredProviders.pop() || providers.pop()
 
