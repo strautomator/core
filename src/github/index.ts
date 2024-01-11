@@ -201,7 +201,7 @@ export class GitHub {
             }
 
             const username = data.sponsorship.sponsor.login
-            const subId = `GH-${username}`
+            const subId = `GH-${username.toLowerCase()}`
             const status = data.action == "pending_cancellation" ? "SUSPENDED" : data.action == "cancelled" ? "CANCELLED" : "ACTIVE"
 
             // Check if the subscription data already exists, and if not, create one.
