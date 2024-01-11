@@ -404,7 +404,9 @@
             // Subscription prices to get a PRO account.
             "price": {
                 "year": 6.99,
-                "github": 1.0
+                "github": 1.0,
+                // Set the upcoming price increase, or null if there's no upcoming change.
+                "upcoming": 7.99
             },
             // Use AI and weather parameters on around 99% of "AI generate" recipe actions.
             "generatedNames": {
