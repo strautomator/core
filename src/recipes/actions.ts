@@ -459,10 +459,9 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
             user.preferences.language = language
         }
 
-        // Only proceed with AI features if the user has not enabled the Privacy Mode.
-
         // Decide if we should use AI or fallback to template-based names.
-        const rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : settings.plans.free.generatedNames.ai
+        // User with privacy mode enabled, and activities processed in batch mode are excluded.
+        const rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : activity.batch ? -1 : settings.plans.free.generatedNames.ai
         if (!user.preferences.privacyMode && Math.random() * 100 <= rndAi) {
             if (action.type == RecipeActionType.GenerateName) {
                 const aiResponse = await ai.generateActivityName(user, {activity, humour, weatherSummaries})
