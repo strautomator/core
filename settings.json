@@ -228,6 +228,8 @@
         "minTime": 500
     },
     "mailer": {
+        // Default contact email.
+        "contact": "info@strautomator.com",
         // The default "from" on sent emails should be set on settings.secret.json file
         // or via the SMU_mailer_from environment variable.
         "from": "noreply@strautomator.com",
