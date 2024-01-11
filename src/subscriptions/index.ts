@@ -115,7 +115,7 @@ export class Subscriptions {
      */
     getDangling = async (): Promise<(BaseSubscription | PayPalSubscription | GitHubSubscription)[]> => {
         try {
-            const minDate = dayjs.utc().add(settings.users.idleDays.pendingSubscriptions, "days").toDate()
+            const minDate = dayjs.utc().subtract(settings.users.idleDays.pendingSubscriptions, "days").toDate()
             const queries = [
                 ["dateUpdated", "<", minDate],
                 ["status", "==", "APPROVAL_PENDING"]
