@@ -143,10 +143,10 @@ export class StravaActivityProcessing {
     /**
      * Process activity event pushed by Strava.
      * @param user The activity's owner (user).
-     * @param activityId The activity's unique ID.
-     * @param queued Was the activity queued to be processed? Defaults to false (real time).
+     * @param pActivity Processed activity metadata.
      */
-    processActivity = async (user: UserData, activityId: number, queued?: boolean): Promise<StravaProcessedActivity> => {
+    processActivity = async (user: UserData, pActivity: Partial<StravaProcessedActivity>): Promise<StravaProcessedActivity> => {
+        const activityId = pActivity.id
         let saveError
         let activity: StravaActivity
 
@@ -169,6 +169,9 @@ export class StravaActivityProcessing {
             // Get activity details from Strava.
             try {
                 activity = await stravaActivities.getActivity(user, activityId)
+                if (pActivity.batch) {
+                    activity.batch = true
+                }
             } catch (ex) {
                 const status = ex.response?.status || ex.status || null
                 const message = ex.message || ex.toString()
@@ -179,7 +182,7 @@ export class StravaActivityProcessing {
                 }
 
                 // Add the activity to the queue to retry processing it later.
-                if (!queued) {
+                if (!pActivity.queued) {
                     await this.queueActivity(user, activityId, false, `${status}: ${message}`)
                 }
 
@@ -218,7 +221,7 @@ export class StravaActivityProcessing {
                 const actions = []
                 recipeIds.forEach((rid) => user.recipes[rid].actions.forEach((a) => actions.push(a.type)))
 
-                logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`, `Actions: ${_.uniq(actions).join(", ")}`)
+                logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, pActivity.queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`, `Actions: ${_.uniq(actions).join(", ")}`)
 
                 // Remove duplicates from list of updated fields.
                 activity.updatedFields = _.uniq(activity.updatedFields)
@@ -535,27 +538,27 @@ export class StravaActivityProcessing {
             }
 
             // Now we process each of the queued activities separately.
-            for (let activity of activities) {
+            for (let pActivity of activities) {
                 try {
-                    if (!usersCache[activity.user.id]) {
-                        usersCache[activity.user.id] = await users.getById(activity.user.id)
+                    if (!usersCache[pActivity.user.id]) {
+                        usersCache[pActivity.user.id] = await users.getById(pActivity.user.id)
                     }
 
-                    const processed = await this.processActivity(usersCache[activity.user.id], activity.id, true)
+                    const processed = await this.processActivity(usersCache[pActivity.user.id], pActivity)
 
                     // Queued activity is invalid or had no matching recipes? Delete it.
                     if (!processed) {
-                        await this.deleteQueuedActivity(activity)
+                        await this.deleteQueuedActivity(pActivity)
                     } else {
                         processedCount++
                     }
                 } catch (activityEx) {
-                    if (activity.retryCount >= settings.strava.processingQueue.retry) {
-                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${activity.id} from user ${activity.user.id} too many times`)
-                        await this.deleteQueuedActivity(activity)
+                    if (pActivity.retryCount >= settings.strava.processingQueue.retry) {
+                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${pActivity.id} from user ${pActivity.user.id} too many times`)
+                        await this.deleteQueuedActivity(pActivity)
                     } else {
-                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${activity.id} from user ${activity.user.id}, will retry`)
-                        await database.merge("activities", {id: activity.id, processing: false, retryCount: activity.retryCount + 1})
+                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${pActivity.id} from user ${pActivity.user.id}, will retry`)
+                        await database.merge("activities", {id: pActivity.id, processing: false, retryCount: pActivity.retryCount + 1})
                     }
                 }
             }
