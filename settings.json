@@ -85,11 +85,11 @@
         // Default activity fields to be added to event details, based on the activity type.
         // Each item is a line, and multiple fields can be added to same line separated by comma.
         "activityFields": {
-            "default": ["distance,elevationGain", "speedAvg,paceAvg", "calories", "hrAvg,hrMax,wattsAvg", "duration", "description"],
-            "ride": ["distance,elevationGain", "speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "duration", "description"],
-            "run": ["distance,elevationGain", "paceAvg,speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "duration", "description"],
-            "swim": ["distance", "speedAvg", "calories", "hrAvg,hrMax", "duration", "description"],
-            "workout": ["calories", "hrAvg,hrMax,wattsAvg", "duration", "description"]
+            "default": ["distance,elevationGain", "speedAvg,paceAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTimeString", "description"],
+            "ride": ["distance,elevationGain", "speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTimeString", "description"],
+            "run": ["distance,elevationGain", "paceAvg,speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTimeString", "description"],
+            "swim": ["distance", "speedAvg", "calories", "hrAvg,hrMax", "totalTimeString", "description"],
+            "workout": ["calories", "hrAvg,hrMax,wattsAvg", "totalTimeString", "description"]
         },
         // Default template for the event summary.
         "eventSummary": "${name} ${icon}",
