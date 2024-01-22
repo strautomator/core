@@ -179,7 +179,7 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         summary.moon = getMoonPhase(date)
 
         // Select correct weather icon. Defaults to cloudy.
-        summary.icon = "🌥️"
+        summary.icon = "☁️"
         switch (extraData.iconText) {
             case "Clear":
                 if (extraData.timeOfDay == "day") {
