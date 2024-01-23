@@ -171,7 +171,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         }
 
         // Set the activity name?
-        if (action.type == RecipeActionType.Name || action.type == RecipeActionType.GenerateName) {
+        if (action.type == RecipeActionType.Name) {
             activity.name = processedValue
             activity.updatedFields.push("name")
         }
@@ -440,6 +440,15 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         const now = dayjs.utc()
         let humour = action ? action.value : _.sample(settings.ai.humours)
 
+        // Stop here if the activity already has an AI generated name or description.
+        if (action.type == RecipeActionType.GenerateName && activity.aiName) {
+            logger.info("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Using previously AI generated name")
+            return true
+        } else if (action.type == RecipeActionType.GenerateDescription && activity.aiDescription) {
+            logger.info("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Using previously AI generated description")
+            return true
+        }
+
         // Weather based checks for activities that happened in the last 3 days.
         const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
         const isRecent = now.subtract(3, "days").isBefore(activity.dateEnd)
@@ -466,6 +475,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
             if (action.type == RecipeActionType.GenerateName) {
                 const aiResponse = await ai.generateActivityName(user, {activity, humour, weatherSummaries})
                 if (aiResponse) {
+                    activity.aiName = true
                     activity.name = aiResponse.response
                     activity.updatedFields.push("name")
                     return true
@@ -473,6 +483,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
             } else if (action.type == RecipeActionType.GenerateDescription) {
                 const aiResponse = await ai.generateActivityDescription(user, {activity, humour, weatherSummaries})
                 if (aiResponse) {
+                    activity.aiDescription = true
                     activity.description = aiResponse.response
                     activity.updatedFields.push("description")
                     return true
