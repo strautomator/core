@@ -163,8 +163,12 @@ export interface StravaActivity {
     linkback?: boolean
     /** Activity counter (extra field used exclusively when replacing activity tags). */
     counter?: number
-    /** Is the activity part of a batch processing operation? */
+    /** Flag: is the activity part of a batch processing operation? */
     batch?: boolean
+    /** Flag: was the activity name generated with AI? */
+    aiName?: boolean
+    /** Flag: was the activity description generated with AI? */
+    aiDescription?: boolean
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
 }
