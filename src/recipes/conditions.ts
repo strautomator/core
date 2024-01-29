@@ -13,6 +13,7 @@ import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 import polyline = require("@mapbox/polyline")
+import {GarminActivity} from "src/garmin/types"
 
 /**
  * Check if the passed text / string based condition is valid.
@@ -70,16 +71,18 @@ export const checkBoolean = (activity: StravaActivity, condition: RecipeConditio
 
 /**
  * Check if the passed number based condition is valid.
- * @param activity The Strava activity to be checked.
+ * @param activity The Strava (or Garmin) activity to be checked.
  * @param condition The number based recipe condition.
+ * @param garminActivity Optional, check values from a Garmin activity instead.
  */
-export const checkNumber = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+export const checkNumber = (activity: StravaActivity, condition: RecipeCondition, garminActivity?: GarminActivity): boolean => {
     const prop = condition.property
     const op = condition.operator
     let valid = false
 
-    // If target is an array, use its length instead.
-    let aNumber = activity[prop]
+    // If a Garmin activity was passed, use its values instead.
+    // If target is an array, use its length as the target value.
+    let aNumber = !garminActivity ? activity[prop] : garminActivity[prop.replace("garmin.", "")]
     if (_.isArray(aNumber)) {
         aNumber = aNumber.length
     }
@@ -425,9 +428,14 @@ export const checkGarmin = async (user: UserData, activity: StravaActivity, cond
         return op == RecipeOperator.NotLike
     }
 
-    // Finally, check if the Garmin activity was using the specified device ID.
-    const hasDevice = garminActivity.devices?.find((d) => d.includes(condition.value as string)) ? true : false
-    valid = (op == RecipeOperator.Equal && hasDevice) || (op == RecipeOperator.NotEqual && !hasDevice)
+    // Finally check the corresponding field on the Garmin activity.
+    const field = condition.property.split(".")[1]
+    if (field == "sensor") {
+        const hasDevice = garminActivity.devices?.find((d) => d.includes(condition.value as string)) ? true : false
+        valid = (op == RecipeOperator.Equal && hasDevice) || (op == RecipeOperator.NotEqual && !hasDevice)
+    } else {
+        valid = checkNumber(activity, condition, garminActivity)
+    }
 
     if (valid) {
         return true
