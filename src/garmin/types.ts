@@ -38,6 +38,22 @@ export interface GarminActivity {
     totalTime?: number
     /** Activity distance in KM. */
     distance?: number
+    /** Training stress score. */
+    tss?: number
+    /** Training load. */
+    trainingLoad?: number
+    /** Intensity factor. */
+    intensityFactor?: number
+    /** Aerobic training effect. */
+    aerobicTrainingEffect?: number
+    /** Anaerobic training effect. */
+    anaerobicTrainingEffect?: number
+    /** Pedal L/R avg. smoothness (0-100). */
+    pedalSmoothness?: number
+    /** Pedal L/R avg. torque effectiveness (0-100). */
+    pedalTorqueEffect?: number
+    /** Pedal L/R balance. */
+    pedalBalance?: string
     /** Devices used in the activity. */
     devices?: string[]
     /** Activity UTC start date. */

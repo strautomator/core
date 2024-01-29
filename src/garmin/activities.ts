@@ -35,7 +35,7 @@ export class GarminActivities {
         }
 
         // Base activity data to be saved to the database.
-        const activity: GarminActivity = {
+        const garminActivity: GarminActivity = {
             id: ping.activityId,
             userId: user.id,
             profileId: ping.userId,
@@ -48,13 +48,13 @@ export class GarminActivities {
             if (ping.callbackURL) {
                 const rawData = await this.getActivityFile(user, ping)
                 if (rawData) {
-                    await this.parseFitFile(user, activity, rawData)
+                    await this.parseFitFile(user, garminActivity, rawData)
                 }
             }
         } catch (ex) {
             logger.error("Garmin.processActivity", logHelper.user(user), logHelper.garminActivity(ping), ex)
         } finally {
-            await this.saveProcessedActivity(user, activity)
+            await this.saveProcessedActivity(user, garminActivity)
         }
     }
 
@@ -211,44 +211,88 @@ export class GarminActivities {
     /**
      * Parse FIT file and append extra data to the activity.
      * @param user The user.
-     * @param activity The Garmin activity data.
+     * @param garminActivity The Garmin activity data.
      * @param rawData Raw FIT file data.
      */
-    parseFitFile = async (user: UserData, activity: GarminActivity, rawData: any): Promise<void> => {
+    parseFitFile = async (user: UserData, garminActivity: GarminActivity, rawData: any): Promise<void> => {
         return new Promise((resolve, reject) => {
             try {
                 const fitParser = new FitParser({force: true})
                 fitParser.parse(rawData, async (err, fitData) => {
                     try {
                         if (err) {
-                            logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(activity), err)
+                            logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), err)
                             reject(err)
                             return
                         }
 
                         // Extract duration and distance from sessions.
                         if (fitData.sessions?.length > 0) {
-                            activity.distance = parseFloat((_.sumBy(fitData.sessions, "total_distance") / 1000).toFixed(1))
-                            activity.totalTime = Math.round(_.sumBy(fitData.sessions, "total_elapsed_time"))
+                            garminActivity.distance = parseFloat((_.sumBy(fitData.sessions, "total_distance") / 1000).toFixed(1))
+                            garminActivity.totalTime = Math.round(_.sumBy(fitData.sessions, "total_elapsed_time"))
+
+                            // Map our Garmin activity fields to the FIT file fields.
+                            const fields = {
+                                intensityFactor: "intensity_factor",
+                                tss: "training_stress_score",
+                                trainingLoad: "total_training_load",
+                                aerobicTrainingEffect: "total_training_effect",
+                                anaerobicTrainingEffect: "total_anaerobic_effect",
+                                pedalSmoothness: ["avg_left_pedal_smoothness", "avg_right_pedal_smoothness"],
+                                pedalTorqueEffect: ["avg_left_torque_effectiveness", "avg_right_torque_effectiveness"],
+                                pedalBalance: "left_right_balance"
+                            }
+
+                            // Append extra activity data, if present.
+                            for (let session of fitData.sessions) {
+                                for (let field in fields) {
+                                    let fieldKey = fields[field]
+                                    let value: number
+
+                                    // If the field key is an array, get the average of the values.
+                                    if (_.isArray(fields[field])) {
+                                        const filteredSession = _.pick(session, fields[field])
+                                        if (filteredSession.length > 0) {
+                                            value = _.mean(Object.values(filteredSession))
+                                        }
+                                    } else {
+                                        value = session[fieldKey]
+                                    }
+                                    if (!garminActivity[field] && !_.isNil(value)) {
+                                        garminActivity[field] = value
+                                    }
+                                }
+                            }
                         }
 
                         // Found devices in the FIT file? Generate device IDs.
                         if (fitData.devices?.length > 0) {
                             const getDeviceString = (d) => `${d.source_type}.${d.manufacturer}.${d.serial_number}`.replace(/\_/, "")
                             const filterDevices = fitData.devices.filter((d) => d.source_type && d.manufacturer && d.serial_number)
-                            activity.devices = _.uniq(filterDevices.map((d) => getDeviceString(d)))
+                            garminActivity.devices = _.uniq(filterDevices.map((d) => getDeviceString(d)))
                         }
 
-                        const logDevices = activity.devices ? activity.devices.join(", ") : "none"
-                        logger.info("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(activity), `Devices: ${logDevices}`)
+                        // Decode L/R balance, only right-power based calculation is supported for now.
+                        const balance = garminActivity.pedalBalance as any
+                        if (balance?.right && balance?.value <= 10000) {
+                            const right = Math.round(balance.value / 100)
+                            const left = 100 - right
+                            garminActivity.pedalBalance = `L ${left}% / R ${right}%`
+                        } else {
+                            delete garminActivity.pedalBalance
+                        }
+
+                        const logFields = Object.keys(garminActivity).join(", ") || "none"
+                        const logDevices = garminActivity.devices?.join(", ") || "none"
+                        logger.info("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), `Fields: ${logFields}`, `Devices: ${logDevices}`)
                         resolve()
                     } catch (innerEx) {
-                        logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(activity), innerEx)
+                        logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), innerEx)
                         reject(innerEx)
                     }
                 })
             } catch (ex) {
-                logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(activity), ex)
+                logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), ex)
                 reject(ex)
             }
         })
