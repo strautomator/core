@@ -4,11 +4,11 @@ import {GarminActivity, GarminPingActivityFile} from "./types"
 import {DatabaseSearchOptions} from "../database/types"
 import {StravaActivity, StravaProcessedActivity} from "../strava/types"
 import {UserData} from "../users/types"
+import FitParser from "./fitparser"
 import api from "./api"
 import database from "../database"
 import _ from "lodash"
 import logger from "anyhow"
-import FitParser from "fit-file-parser"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
@@ -215,87 +215,82 @@ export class GarminActivities {
      * @param rawData Raw FIT file data.
      */
     parseFitFile = async (user: UserData, garminActivity: GarminActivity, rawData: any): Promise<void> => {
-        return new Promise((resolve, reject) => {
-            try {
-                const fitParser = new FitParser({force: true})
-                fitParser.parse(rawData, async (err, fitData) => {
-                    try {
-                        if (err) {
-                            logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), err)
-                            reject(err)
-                            return
-                        }
+        try {
+            const fitParser = new FitParser({force: true})
+            const fitData = await fitParser.parse(rawData)
 
-                        // Extract duration and distance from sessions.
-                        if (fitData.sessions?.length > 0) {
-                            garminActivity.distance = parseFloat((_.sumBy(fitData.sessions, "total_distance") / 1000).toFixed(1))
-                            garminActivity.totalTime = Math.round(_.sumBy(fitData.sessions, "total_elapsed_time"))
+            // Extract duration and distance from sessions.
+            if (fitData.sessions?.length > 0) {
+                garminActivity.distance = parseFloat((_.sumBy(fitData.sessions, "total_distance") / 1000).toFixed(1))
+                garminActivity.totalTime = Math.round(_.sumBy(fitData.sessions, "total_elapsed_time"))
 
-                            // Map our Garmin activity fields to the FIT file fields.
-                            const fields = {
-                                intensityFactor: "intensity_factor",
-                                tss: "training_stress_score",
-                                trainingLoad: "total_training_load",
-                                aerobicTrainingEffect: "total_training_effect",
-                                anaerobicTrainingEffect: "total_anaerobic_effect",
-                                pedalSmoothness: ["avg_left_pedal_smoothness", "avg_right_pedal_smoothness"],
-                                pedalTorqueEffect: ["avg_left_torque_effectiveness", "avg_right_torque_effectiveness"],
-                                pedalBalance: "left_right_balance"
+                // Map our Garmin activity fields to the FIT file fields.
+                const fields = {
+                    primaryBenefit: "primary_benefit",
+                    intensityFactor: "intensity_factor",
+                    tss: "training_stress_score",
+                    trainingLoad: "total_training_load",
+                    aerobicTrainingEffect: "total_training_effect",
+                    anaerobicTrainingEffect: "total_anaerobic_effect",
+                    pedalSmoothness: ["avg_left_pedal_smoothness", "avg_right_pedal_smoothness"],
+                    pedalTorqueEffect: ["avg_left_torque_effectiveness", "avg_right_torque_effectiveness"],
+                    pedalBalance: "left_right_balance"
+                }
+
+                // Append extra activity data, if present.
+                for (let session of fitData.sessions) {
+                    for (let field in fields) {
+                        let fieldKey = fields[field]
+                        let value: number
+
+                        // If the field key is an array, get the average of the values.
+                        if (_.isArray(fields[field])) {
+                            const filteredSession = _.pick(session, fields[field])
+                            if (filteredSession.length > 0) {
+                                value = _.mean(Object.values(filteredSession))
                             }
-
-                            // Append extra activity data, if present.
-                            for (let session of fitData.sessions) {
-                                for (let field in fields) {
-                                    let fieldKey = fields[field]
-                                    let value: number
-
-                                    // If the field key is an array, get the average of the values.
-                                    if (_.isArray(fields[field])) {
-                                        const filteredSession = _.pick(session, fields[field])
-                                        if (filteredSession.length > 0) {
-                                            value = _.mean(Object.values(filteredSession))
-                                        }
-                                    } else {
-                                        value = session[fieldKey]
-                                    }
-                                    if (!garminActivity[field] && !_.isNil(value)) {
-                                        garminActivity[field] = value
-                                    }
-                                }
-                            }
-                        }
-
-                        // Found devices in the FIT file? Generate device IDs.
-                        if (fitData.devices?.length > 0) {
-                            const getDeviceString = (d) => `${d.source_type}.${d.manufacturer}.${d.serial_number}`.replace(/\_/, "")
-                            const filterDevices = fitData.devices.filter((d) => d.source_type && d.manufacturer && d.serial_number)
-                            garminActivity.devices = _.uniq(filterDevices.map((d) => getDeviceString(d)))
-                        }
-
-                        // Decode L/R balance, only right-power based calculation is supported for now.
-                        const balance = garminActivity.pedalBalance as any
-                        if (balance?.right && balance?.value <= 10000) {
-                            const right = Math.round(balance.value / 100)
-                            const left = 100 - right
-                            garminActivity.pedalBalance = `L ${left}% / R ${right}%`
                         } else {
-                            delete garminActivity.pedalBalance
+                            value = session[fieldKey]
                         }
-
-                        const logFields = Object.keys(garminActivity).join(", ") || "none"
-                        const logDevices = garminActivity.devices?.join(", ") || "none"
-                        logger.info("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), `Fields: ${logFields}`, `Devices: ${logDevices}`)
-                        resolve()
-                    } catch (innerEx) {
-                        logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), innerEx)
-                        reject(innerEx)
+                        if (!garminActivity[field] && !_.isNil(value)) {
+                            garminActivity[field] = value
+                        }
                     }
-                })
-            } catch (ex) {
-                logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), ex)
-                reject(ex)
+                }
             }
-        })
+
+            // Found devices in the FIT file? Generate device IDs.
+            if (fitData.devices?.length > 0) {
+                const getDeviceString = (d) => `${d.source_type}.${d.manufacturer}.${d.serial_number}`.replace(/\_/, "")
+                const filterDevices = fitData.devices.filter((d) => d.source_type && d.manufacturer && d.serial_number)
+                garminActivity.devices = _.uniq(filterDevices.map((d) => getDeviceString(d)))
+            }
+
+            // Decode primary benefit to a friendly string.
+            if (garminActivity.primaryBenefit) {
+                const primaryBenefits = ["None", "Recovery", "Base", "Tempo", "Threshold", "VO2Max", "AnaerobicCapacity", "Sprint"]
+                garminActivity.primaryBenefit = primaryBenefits[garminActivity.primaryBenefit]
+            }
+
+            // Decode L/R balance, only right-power based calculation is supported for now.
+            const balance = garminActivity.pedalBalance as any
+            if (balance?.right && balance?.value <= 10000) {
+                const right = Math.round(balance.value / 100)
+                const left = 100 - right
+                garminActivity.pedalBalance = `L ${left}% / R ${right}%`
+            } else {
+                delete garminActivity.pedalBalance
+            }
+
+            const logFields = Object.keys(garminActivity)
+            if (garminActivity.devices?.length > 0) {
+                logFields.push(...garminActivity.devices)
+            }
+            logger.info("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), `Data: ${logFields.join(", ")}`)
+        } catch (innerEx) {
+            logger.error("Garmin.parseFitFile", logHelper.user(user), logHelper.garminActivity(garminActivity), innerEx)
+            throw innerEx
+        }
     }
 }
 
