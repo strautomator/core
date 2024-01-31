@@ -38,6 +38,8 @@ export interface GarminActivity {
     totalTime?: number
     /** Activity distance in KM. */
     distance?: number
+    /** Activity primary benefit.*/
+    primaryBenefit?: string
     /** Training stress score. */
     tss?: number
     /** Training load. */
