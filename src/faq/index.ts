@@ -69,7 +69,7 @@ export class FAQ {
             const regex = new RegExp(query, "i")
 
             // Refresh questions from the database if they're too old.
-            if (this.lastRefresh < dayjs().subtract(settings.faq.refreshInterval, "seconds").unix()) {
+            if (this.lastRefresh < dayjs().subtract(settings.faq.refreshSeconds, "seconds").unix()) {
                 await this.refresh()
             }
 
