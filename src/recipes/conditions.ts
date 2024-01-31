@@ -1,6 +1,8 @@
 // Strautomator Core: Recipe Condition checks
 
+import {recipePropertyList} from "./lists"
 import {RecipeCondition, RecipeOperator} from "./types"
+import {GarminActivity} from "../garmin/types"
 import {StravaActivity, StravaActivityQuery} from "../strava/types"
 import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
@@ -9,30 +11,33 @@ import spotify from "../spotify"
 import strava from "../strava"
 import weather from "../weather"
 import _ from "lodash"
+import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 import polyline = require("@mapbox/polyline")
-import {GarminActivity} from "src/garmin/types"
+const settings = require("setmeup").settings
 
 /**
  * Check if the passed text / string based condition is valid.
  * This is the the "default" condition.
  * @param activity The Strava activity to be checked.
  * @param condition The text / string based recipe condition.
+ * @param garminActivity Optional, check values from a Garmin activity instead.
  */
-export const checkText = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+export const checkText = (activity: StravaActivity, condition: RecipeCondition, garminActivity?: GarminActivity): boolean => {
     const prop = condition.property
     const op = condition.operator
     let valid = false
 
     // Activity field has no value? Stop here.
-    if (_.isNil(activity[prop])) {
+    let refText = !garminActivity ? activity[prop] : garminActivity[prop.replace("garmin.", "")]
+    if (_.isNil(refText)) {
         return false
     }
 
     // Property and parsed condition value.
-    const aText: string = activity[prop].toString().toLowerCase()
+    const aText: string = refText.toString().toLowerCase()
     const value: string = condition.value.toString().toLowerCase()
 
     // Check text.
@@ -423,9 +428,16 @@ export const checkGarmin = async (user: UserData, activity: StravaActivity, cond
     }
 
     // Try finding the matching Garmin activity for the Strava activity.
-    const garminActivity = await garmin.activities.getMatchingActivity(user, activity)
+    // If failed and the activity was recorded with a Garmin device, try again in a few seconds.
+    let garminActivity = await garmin.activities.getMatchingActivity(user, activity)
     if (!garminActivity) {
-        return op == RecipeOperator.NotLike
+        if (activity.device.includes("Garmin")) {
+            await jaul.io.sleep(settings.garmin.delaySeconds)
+            garminActivity = await garmin.activities.getMatchingActivity(user, activity)
+        }
+        if (!garminActivity) {
+            return op == RecipeOperator.NotLike
+        }
     }
 
     // Finally check the corresponding field on the Garmin activity.
@@ -434,7 +446,14 @@ export const checkGarmin = async (user: UserData, activity: StravaActivity, cond
         const hasDevice = garminActivity.devices?.find((d) => d.includes(condition.value as string)) ? true : false
         valid = (op == RecipeOperator.Equal && hasDevice) || (op == RecipeOperator.NotEqual && !hasDevice)
     } else {
-        valid = checkNumber(activity, condition, garminActivity)
+        const propType = recipePropertyList.find((p) => p.value == condition.property).type
+
+        // Proxy text and number validators.
+        if (propType == "string") {
+            valid = checkText(activity, condition, garminActivity)
+        } else if (propType == "number") {
+            valid = checkNumber(activity, condition, garminActivity)
+        }
     }
 
     if (valid) {
