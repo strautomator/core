@@ -193,7 +193,7 @@ export class StravaActivityProcessing {
             stravaAthletes.checkActivityRecords(user, [activity])
 
             // Get recipes, having the defaults first and then sorted by order.
-            let sortedRecipes: any[] = _.sortBy(Object.values(user.recipes), ["defaultFor", "order", "title"])
+            let sortedRecipes: RecipeData[] = _.sortBy(Object.values(user.recipes), ["defaultFor", "order", "title"])
 
             // If PRO subscription was cancelled but user still have many recipes, consider just the first ones.
             if (!user.isPro && sortedRecipes.length > settings.plans.free.maxRecipes) {
@@ -505,7 +505,7 @@ export class StravaActivityProcessing {
         try {
             const now = dayjs()
             const processingCutDate = now.subtract(settings.strava.processingQueue.maxAge / 2, "seconds").toDate()
-            const beforeDate = now.subtract(settings.strava.processingQueue.delayedInterval, "seconds").toDate()
+            const beforeDate = now.subtract(settings.strava.processingQueue.delayedSeconds, "seconds").toDate()
             const queuedActivities = await this.getQueuedActivities(beforeDate, batchSize)
 
             // Filter activities that are not currently being processed, or that have been queued for at least
