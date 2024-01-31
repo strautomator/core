@@ -308,7 +308,7 @@ export class Calendar {
 
                 // If no event details template was set, push default values to the details array.
                 if (!calendarTemplate.eventDetails) {
-                    if (activity.commute) {
+                    if (activity.commute === ("yes" as any)) {
                         arrDetails.push("Commute")
                     }
                     if (activity.workoutType == StravaRideType.Race || activity.workoutType == StravaRunType.Race) {
@@ -332,7 +332,7 @@ export class Calendar {
                             }
                         }
 
-                        arrDetails.push(subDetails.join(" - "))
+                        arrDetails.push(subDetails.join("\n"))
                     }
 
                     arrDetails.push(`\nhttps://www.strava.com/activities/${activity.id}`)
@@ -350,8 +350,7 @@ export class Calendar {
                         start: startDate,
                         end: endDate,
                         summary: summary,
-                        description: details,
-                        url: `https://www.strava.com/activities/${activity.id}`
+                        description: details
                     })
 
                     // Geo location available?
@@ -362,17 +361,7 @@ export class Calendar {
                         if (user.isPro) {
                             try {
                                 const address = await maps.getReverseGeocode(activity.locationEnd)
-                                delete address.state
-                                delete address.dateCached
-                                delete address.dateExpiry
-
-                                // City available? Then we don't need to add the country,
-                                // so we keep the string output small.
-                                if (address.city) {
-                                    delete address.country
-                                }
-
-                                locationString = Object.values(address).join(", ")
+                                locationString = _.values(_.pick(address, ["neighborhood", "city", "country"])).join(", ")
                             } catch (locationEx) {
                                 logger.error("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), `Can't fetch address for ${locationString}`)
                             }
