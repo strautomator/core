@@ -982,6 +982,7 @@ export class Users {
                     subscriptionSource: subscription.source
                 }
                 const options = {
+                    from: settings.mailer.contact,
                     to: user.email,
                     template: "UpgradedToPro",
                     data: data
