@@ -327,7 +327,7 @@ export class Calendar {
 
                             if (activity[field]) {
                                 const fieldInfo = _.find(recipePropertyList, {value: field})
-                                const fieldName = fieldInfo ? fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
+                                const fieldName = fieldInfo ? fieldInfo.shortText || fieldInfo.text : field.charAt(0).toUpperCase() + field.slice(1)
                                 subDetails.push(`${fieldName}: ${activity[field]}`)
                             }
                         }
