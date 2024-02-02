@@ -9,6 +9,7 @@ import {ActivityWeather} from "../weather/types"
 import {axiosRequest} from "../axios"
 import recipeStats from "./stats"
 import ai from "../ai"
+import garmin from "../garmin"
 import maps from "../maps"
 import musixmatch from "../musixmatch"
 import notifications from "../notifications"
@@ -159,6 +160,11 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             processedValue = await addSpotifyTags(user, activity, recipe, processedValue)
         }
 
+        // Garmin tags on the value? Get those from the Garmin activity.
+        if (processedValue.includes("${garmin.")) {
+            processedValue = await addGarminTags(user, activity, recipe, processedValue)
+        }
+
         // Replace tags.
         if (processedValue) {
             processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
@@ -294,6 +300,35 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
         processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.")
     } catch (ex) {
         logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+    }
+
+    return processedValue
+}
+
+/**
+ * Default action to add Garmin tags to the activity name or description.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param processedValue The action's processed value.
+ */
+export const addGarminTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    try {
+        let garminActivity = await garmin.activities.getMatchingActivity(user, activity)
+        if (!garminActivity) {
+            if (activity.device.includes("Garmin")) {
+                await jaul.io.sleep(settings.garmin.delaySeconds)
+                garminActivity = await garmin.activities.getMatchingActivity(user, activity)
+            }
+            if (!garminActivity) {
+                logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Garmin activity")
+                return processedValue
+            }
+        }
+
+        processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.")
+    } catch (ex) {
+        logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
 
     return processedValue
