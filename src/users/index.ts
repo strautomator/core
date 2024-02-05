@@ -105,8 +105,9 @@ export class Users {
      * When user hasn't authorized Strautomator to read or write to the Strava account.
      * @param tokens Set of Strava tokens that failed due to missing permissions.
      * @param permission The missing permission (read or write).
+     * @param url Optional, URL which failed.
      */
-    private onStravaMissingPermission = async (tokens: StravaTokens, permission: "read" | "write"): Promise<void> => {
+    private onStravaMissingPermission = async (tokens: StravaTokens, permission: "read" | "write", url?: string): Promise<void> => {
         if (!tokens) {
             logger.error("Users.onStravaMissingPermission", "Missing tokens")
             return
@@ -127,6 +128,8 @@ export class Users {
             const href = "https://strautomator.com/auth/login"
             const expiry = dayjs().add(30, "days").toDate()
             let body: string = ""
+
+            logger.warn("Users.onStravaMissingPermission", logHelper.user(user), permission, url || "No URL provided")
 
             // Notify user about missing read or write permissions.
             if (permission == "read" && [settings.oauth.tokenFailuresDisable, settings.oauth.tokenFailuresAlert].includes(user.reauth)) {
@@ -195,7 +198,7 @@ export class Users {
     /**
      * When a refresh token has expired, check if user has an email address and contact asking to login again.
      * @param token The expired or invalid Strava auth token.
-     * @param refresh Is it a refresh token?
+     * @param url Optional, URL which failed.
      */
     private onStravaTokenFailure = async (tokens: StravaTokens, url?: string): Promise<void> => {
         const urlLog = url ? url : "No URL provided"
