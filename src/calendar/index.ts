@@ -308,11 +308,12 @@ export class Calendar {
 
                 // If no event details template was set, push default values to the details array.
                 if (!calendarTemplate.eventDetails) {
-                    if (activity.commute === ("yes" as any)) {
-                        arrDetails.push("Commute")
-                    }
                     if (activity.workoutType == StravaRideType.Race || activity.workoutType == StravaRunType.Race) {
                         arrDetails.push("Race")
+                    } else if (activity.commute === ("yes" as any)) {
+                        arrDetails.push("Commute")
+                    } else if (activity.trainer === ("yes" as any)) {
+                        arrDetails.push("Virtual")
                     }
 
                     const activityFields = fieldSettings[sportType] || fieldSettings[similarSportType] || fieldSettings.default
