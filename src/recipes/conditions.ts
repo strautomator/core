@@ -431,7 +431,7 @@ export const checkGarmin = async (user: UserData, activity: StravaActivity, cond
     // If failed and the activity was recorded with a Garmin device, try again in a few seconds.
     let garminActivity = await garmin.activities.getMatchingActivity(user, activity)
     if (!garminActivity) {
-        if (activity.device.includes("Garmin")) {
+        if (activity.device?.includes("Garmin")) {
             await jaul.io.sleep(settings.garmin.delaySeconds)
             garminActivity = await garmin.activities.getMatchingActivity(user, activity)
         }
