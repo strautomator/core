@@ -705,7 +705,7 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             if (suffix.length >= 3) {
                 suffix = translation(suffix, user.preferences)
             }
-            activity[prop.value] = `${activity[prop.value]}${suffix}`
+            activity[prop.value] = `${activity[prop.value]} ${suffix}`
         }
     }
 
