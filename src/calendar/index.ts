@@ -312,7 +312,7 @@ export class Calendar {
                         arrDetails.push("Race")
                     } else if (activity.commute === ("yes" as any)) {
                         arrDetails.push("Commute")
-                    } else if (activity.trainer === ("yes" as any)) {
+                    } else if (activity.trainer === ("yes" as any) && (similarSportType == "ride" || similarSportType == "run")) {
                         arrDetails.push("Virtual")
                     }
 
