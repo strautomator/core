@@ -229,7 +229,7 @@ export class GarminActivities {
                     primaryBenefit: "primary_benefit",
                     intensityFactor: "intensity_factor",
                     tss: "training_stress_score",
-                    trainingLoad: "total_training_load",
+                    trainingLoad: "training_load",
                     aerobicTrainingEffect: "total_training_effect",
                     anaerobicTrainingEffect: "total_anaerobic_effect",
                     pedalSmoothness: ["avg_left_pedal_smoothness", "avg_right_pedal_smoothness"],
@@ -268,7 +268,7 @@ export class GarminActivities {
 
             // Decode primary benefit to a friendly string.
             if (garminActivity.primaryBenefit) {
-                const primaryBenefits = ["None", "Recovery", "Base", "Tempo", "Threshold", "VO2Max", "AnaerobicCapacity", "Sprint"]
+                const primaryBenefits = ["None", "Recovery", "Base", "Tempo", "Threshold", "VO2Max", "Anaerobic", "Sprint"]
                 garminActivity.primaryBenefit = primaryBenefits[garminActivity.primaryBenefit]
             }
 

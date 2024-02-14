@@ -306,6 +306,7 @@ export const FIT = {
             134: {field: "avg_step_length", type: "uint16", scale: 10, offset: 0, units: "mm"},
             137: {field: "total_anaerobic_effect", type: "uint8", scale: 10, offset: 0, units: ""},
             139: {field: "avg_vam", type: "uint16", scale: 1000, offset: 0, units: "m/s"},
+            168: {field: "training_load", type: "sint32", scale: 65536, offset: 0, units: ""},
             188: {field: "primary_benefit", type: "uint8", scale: null, offset: 0, units: ""}
         },
         19: {
@@ -2570,7 +2571,7 @@ export const FIT = {
             38: "work",
             39: "power_ratio",
             40: "normalized_power",
-            41: "training_stress_Score",
+            41: "training_stress_score",
             42: "time_on_zone",
             43: "speed",
             44: "laps",
