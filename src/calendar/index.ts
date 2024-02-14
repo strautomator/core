@@ -296,6 +296,7 @@ export class Calendar {
                 const endDate = activity.dateEnd
                 const sportType = activity.sportType.toLowerCase()
                 const similarSportType = StravaBaseSport[activity.sportType]?.toLowerCase()
+                const activityLink = `https://www.strava.com/activities/${activity.id}`
 
                 // Append suffixes to activity values.
                 transformActivityFields(user, activity)
@@ -336,7 +337,7 @@ export class Calendar {
                         arrDetails.push(subDetails.join("\n"))
                     }
 
-                    arrDetails.push(`\nhttps://www.strava.com/activities/${activity.id}`)
+                    arrDetails.push(`<a href="${activityLink}">View on Strava</a>`)
                 }
 
                 // Get summary and details from options or from defaults.
@@ -351,7 +352,8 @@ export class Calendar {
                         start: startDate,
                         end: endDate,
                         summary: summary,
-                        description: details
+                        description: details,
+                        url: activityLink
                     })
 
                     // Geo location available?
@@ -466,7 +468,7 @@ export class Calendar {
                         if (organizer) {
                             arrDescription.push(`${tOrganizer}: ${organizer}\n`)
                         }
-                        arrDescription.push(eventLink)
+                        arrDescription.push(`<a href="${eventLink}">View on Strava</a>`)
 
                         // Base event data.
                         const eventData: ICalEventData = {
