@@ -32,7 +32,7 @@ export interface AiGenerateOptions {
     /** Max tokens to be used. */
     maxTokens?: number
     /** Humour to be used on the prompt. */
-    humour: string
+    humour?: string
     /** Optional weather for the start and end of the activity. */
     weatherSummaries?: ActivityWeather
     /** Text to be added before the activity prompt. */
