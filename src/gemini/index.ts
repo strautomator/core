@@ -80,10 +80,18 @@ export class Gemini implements AiProvider {
             }
             const jobId = `gemini-activity-${activity.id}`
             const result = await this.limiter.schedule({id: jobId}, () => model.generateContent(reqOptions))
-            // Ask for a response, and retry with a 0% higher token count if it stopped due to token depletion.
 
-            // Validate and extract the generated activity name.
-            const text = result.response?.candidates[0].content.parts[0]?.text
+            // Validate the response.
+            if (!result.response?.candidates?.length) {
+                throw new Error("Response is missing a candidate")
+            }
+            const candidate = result.response?.candidates[0]
+            if (!candidate.content.parts?.length) {
+                throw new Error("Response is missing the content part")
+            }
+            const text = candidate.content.parts[0].text
+
+            // Extract the generated text.
             if (text) {
                 if (result.response.candidates[0].finishReason === FinishReason.MAX_TOKENS) {
                     logger.warn("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Early stop due to max tokens", text)
@@ -98,6 +106,7 @@ export class Gemini implements AiProvider {
             return null
         } catch (ex) {
             logger.error("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), ex)
+            return null
         }
     }
 }
