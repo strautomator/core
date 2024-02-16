@@ -34,7 +34,7 @@ export class EventManager extends events.EventEmitter {
             }
         }
 
-        logger.info("EventManager.emit", eventName, details.join(" "))
+        logger.info("EventManager.emit", eventName, details.length > 0 ? details.join(" ") : "no args")
         return super.emit(eventName, ...args)
     }
 }
