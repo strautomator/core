@@ -273,8 +273,8 @@ export class StravaPerformance {
                     let watts = a.wattsWeighted > a.wattsAvg ? a.wattsWeighted : a.wattsAvg
                     let power: number
 
-                    // Low effort activities (less than 60% FTP or current best activity) are not processed.
-                    if (watts < user.profile.ftp * 0.6 || watts < maxWatts * 0.6) {
+                    // Low effort activities (less than 50% FTP or current best activity) are not processed.
+                    if (watts < user.profile.ftp * 0.5 || watts < maxWatts * 0.5) {
                         logger.info("Strava.estimateFtp", logHelper.user(user), `Activity ${a.id} power is too low: (${watts}), won't process`)
                         return
                     }
@@ -339,7 +339,7 @@ export class StravaPerformance {
             // Otherwise get the weighted or current value itself, whatever is the lowest.
             if (currentWatts && currentWatts > maxWatts) {
                 const maxWattsWeight = [maxWatts, 1]
-                const currentWattsWeight = [currentWatts, 6]
+                const currentWattsWeight = [currentWatts, 3]
                 const ftpWeights = [maxWattsWeight, currentWattsWeight]
                 const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
                 ftpWatts = ftpTotalSum / ftpWeightSum
@@ -415,7 +415,7 @@ export class StravaPerformance {
                 // Only update the FTP if it was changed by a minimum threshold.
                 const percentChanged = (ftp - user.profile.ftp) / ((ftp + user.profile.ftp) / 2)
                 if (percentChanged < settings.strava.ftp.saveThreshold) {
-                    logger.warn("Strava.saveFtp", logHelper.user(user), `Only ${(percentChanged * 100).toFixed(1)}% changed, won't update`)
+                    logger.warn("Strava.saveFtp", logHelper.user(user), `Only ${(percentChanged * 100).toFixed(1)}% changed (from ${user.profile.ftp} to ${ftp}), won't update`)
                     return false
                 }
             }
