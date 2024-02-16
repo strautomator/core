@@ -504,8 +504,11 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         }
 
         // Decide if we should use AI or fallback to template-based names.
-        // User with privacy mode enabled, and activities processed in batch mode are excluded.
-        const rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : activity.batch ? -1 : settings.plans.free.generatedNames.ai
+        // User with privacy mode enabled, and free users activities processed in batch mode, are excluded.
+        let rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : settings.plans.free.generatedNames.ai
+        if (activity.batch) {
+            rndAi -= settings.plans.free.generatedNames.ai
+        }
         if (!user.preferences.privacyMode && Math.random() * 100 <= rndAi) {
             if (action.type == RecipeActionType.GenerateName) {
                 const aiResponse = await ai.generateActivityName(user, {activity, humour, weatherSummaries})

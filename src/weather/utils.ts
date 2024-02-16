@@ -7,6 +7,7 @@ import Bottleneck from "bottleneck"
 import _ from "lodash"
 import logger from "anyhow"
 import dayjs from "../dayjs"
+const settings = require("setmeup").settings
 
 /**
  * Helper to get an API rate limiter (bottleneck) for the specified provider.
@@ -36,14 +37,18 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
     })
 
     // Catch errors.
+    limiter.on("failed", (err, job) => {
+        logger.error(`Weather.${provider.name}.limiter.failed`, job.options?.id || "job", err)
+        return settings.axios.backoffInterval
+    })
     limiter.on("error", (err) => {
         provider.stats.errorCount++
-        logger.error(`Weather.${provider.name}.limiter`, err)
+        logger.error(`Weather.${provider.name}.limiter.error`, err)
     })
 
     // Rate limiting warnings
     limiter.on("depleted", () => {
-        logger.warn(`Weather.${provider.name}.limiter`, "Rate limited")
+        logger.warn(`Weather.${provider.name}.limiter.depleted`, "Rate limited")
     })
 
     return limiter
