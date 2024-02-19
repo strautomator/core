@@ -102,7 +102,7 @@ export class Maps {
             }
 
             // Sanitize address and get its ID.
-            address = jaul.data.removeFromString(decodeURIComponent(address), ["%", "{", "}", "[", "]", "@"])
+            address = jaul.data.removeFromString(decodeURIComponent(address), ["%", "{", "}", "[", "]", "(", ")", "@"])
             const addressId = address.toLowerCase().replace(/ /g, "")
 
             // Adapt region to correct ccTLD.
