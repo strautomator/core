@@ -86,12 +86,15 @@ export class Gemini implements AiProvider {
             const result = await this.limiter.schedule({id: jobId}, () => model.generateContent(reqOptions))
 
             // Validate the response.
-            if (!result.response?.candidates?.length) {
-                throw new Error("Response is missing a candidate")
+            if (!result.response) {
+                throw new Error("Response is missing")
             }
-            const candidate = result.response?.candidates[0]
+            if (!result.response.candidates?.length) {
+                throw new Error(`Response is missing a candidate: ${JSON.stringify(result.response, null, 0)}`)
+            }
+            const candidate = result.response.candidates[0]
             if (!candidate.content.parts?.length) {
-                throw new Error("Response is missing the content part")
+                throw new Error(`Response is missing the content part: ${JSON.stringify(result.response, null, 0)}`)
             }
             const text = candidate.content.parts[0].text
 
