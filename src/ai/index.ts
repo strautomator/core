@@ -135,11 +135,12 @@ export class AI {
 
         // Keep trying with different providers.
         let response: string
-        while (!response && providers.length > 0) {
+        while (!response && provider) {
             try {
                 response = await provider.activityPrompt(user, activity, arrPrompt, options.maxTokens)
                 if (!response) {
-                    provider = providers.pop()
+                    logger.warn("AI.activityPrompt", logHelper.user(user), logHelper.activity(activity), `Empty response from ${provider.constructor.name}, will try another`)
+                    provider = providers.length > 0 ? providers.pop() : null
                 }
             } catch (ex) {
                 logger.warn("AI.activityPrompt", logHelper.user(user), logHelper.activity(activity), `${provider.constructor.name} failed, will try another`)
