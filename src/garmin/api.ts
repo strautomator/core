@@ -57,10 +57,6 @@ export class GarminAPI {
             })
 
             // Rate limiter events.
-            this.limiter.on("failed", (err, job) => {
-                logger.error("Garmin.limiter.failed", job.options?.id || "job", err)
-                return settings.axios.backoffInterval
-            })
             this.limiter.on("error", (err) => logger.error("Garmin.limiter.error", err))
             this.limiter.on("depleted", () => logger.warn("Garmin.limiter.depleted", "Rate limited"))
 

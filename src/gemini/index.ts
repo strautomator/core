@@ -49,10 +49,6 @@ export class Gemini implements AiProvider {
             })
 
             // Rate limiter events.
-            this.limiter.on("failed", (err, job) => {
-                logger.error("Gemini.limiter.failed", job.options?.id || "job", err)
-                return settings.axios.backoffInterval
-            })
             this.limiter.on("error", (err) => logger.error("Gemini.limiter.error", err))
             this.limiter.on("depleted", () => logger.warn("Gemini.limiter.depleted", "Rate limited"))
         } catch (ex) {

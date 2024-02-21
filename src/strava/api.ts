@@ -67,10 +67,6 @@ export class StravaAPI {
             })
 
             // Rate limiter events.
-            this.limiter.on("failed", (err, job) => {
-                logger.error("Strava.limiter.failed", job.options?.id || "job", err)
-                return settings.axios.backoffInterval
-            })
             this.limiter.on("error", (err) => logger.error("Strava.limiter.error", err))
             this.limiter.on("depleted", () => logger.warn("Strava.limiter.depleted", "Rate limited"))
 

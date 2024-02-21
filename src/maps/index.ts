@@ -66,10 +66,6 @@ export class Maps {
                 })
 
                 // Rate limiter events.
-                this.lociqLimiter.on("failed", (err, job) => {
-                    logger.error("LocationIQ.limiter.failed", job.options?.id || "job", err)
-                    return settings.axios.backoffInterval
-                })
                 this.lociqLimiter.on("error", (err) => logger.error("LocationIQ.limiter.error", err))
                 this.lociqLimiter.on("depleted", () => logger.warn("LocationIQ.limiter.depleted", "Rate limited"))
             }
