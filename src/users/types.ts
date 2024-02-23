@@ -55,6 +55,8 @@ export interface UserData {
     dateLogin?: Date
     /** Registration date (UTC). */
     dateRegistered?: Date
+    /** Date when the auth last failed. */
+    dateAuthFailed?: Date
     /** Date of last received activity from Strava. */
     dateLastActivity?: Date
     /** Date of last activity updated by a recipe. */
@@ -71,7 +73,7 @@ export interface UserData {
     suspended?: boolean
     /** Temporarily disable writing to Strava? */
     writeSuspended?: boolean
-    /** User needs to reauthenticate with Strava? */
+    /** Reauthentication count. */
     reauth?: number
 }
 
