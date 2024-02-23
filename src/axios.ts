@@ -130,11 +130,13 @@ export const axiosRequest = async (options: AxiosConfig): Promise<AxiosResponse 
                 await rateLimitDelay(res, urlInfo, options.rateLimitExtractor)
                 return res.status == 204 && !res.data ? true : options.returnResponse ? res : res.data
             } catch (innerEx) {
+                if (!innerEx.url) innerEx.url = options.url
                 logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed twice, will not retry")
                 throw innerEx
             }
         }
 
+        if (!ex.url) ex.url = options.url
         throw ex
     }
 }
