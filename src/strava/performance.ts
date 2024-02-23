@@ -414,7 +414,7 @@ export class StravaPerformance {
 
                 // Only update the FTP if it was changed by a minimum threshold.
                 const percentChanged = (ftp - user.profile.ftp) / ((ftp + user.profile.ftp) / 2)
-                if (percentChanged < settings.strava.ftp.saveThreshold) {
+                if (Math.abs(percentChanged) < settings.strava.ftp.saveThreshold) {
                     logger.warn("Strava.saveFtp", logHelper.user(user), `Only ${(percentChanged * 100).toFixed(1)}% changed (from ${user.profile.ftp} to ${ftp}), won't update`)
                     return false
                 }
