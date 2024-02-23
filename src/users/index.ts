@@ -185,8 +185,7 @@ export class Users {
             const updatedUser: Partial<UserData> = {
                 id: user.id,
                 displayName: user.displayName,
-                stravaTokens: tokens,
-                reauth: 0
+                stravaTokens: tokens
             }
 
             await this.update(updatedUser as UserData)
@@ -211,24 +210,34 @@ export class Users {
         // Masked token used on warning logs.
         const token = tokens.accessToken || tokens.refreshToken
         const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
+        const now = dayjs().utc()
 
         try {
             const user = await this.getByToken(tokens)
             if (!user) {
-                logger.warn("Users.onStravaMissingPermission", `No user found for token ${maskedToken}`, urlLog)
+                logger.warn("Users.onStravaTokenFailure", `No user found for token ${maskedToken}`, urlLog)
                 return
             }
 
-            // Increment the reauth counter.
-            if (!user.reauth) user.reauth = 0
+            // Set the auth failed date (if not set yet) and increment the reauth counter.
+            // The reauth counter is reset after 14 days by default, so sporadic failures should not cause problems.
+            if (!user.dateAuthFailed) {
+                user.dateAuthFailed = now.toDate()
+            } else if (user.dateAuthFailed < now.subtract(settings.oauth.reauthResetDays, "days").toDate()) {
+                logger.warn("Users.onStravaTokenFailure", logHelper.user(user), "Reauth flags reset")
+                user.dateAuthFailed = now.toDate()
+                user.reauth = 0
+            } else if (!user.reauth) {
+                user.reauth = 0
+            }
             user.reauth++
 
-            const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, reauth: user.reauth}
+            const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, reauth: user.reauth, dateAuthFailed: user.dateAuthFailed}
             logger.warn("Strava.onStravaTokenFailure", logHelper.user(user), `Reauth count: ${user.reauth}`)
 
             // User has an email address? Contact asking to connect to Strautomator again,
             // and if it fails too many times, disable the user.
-            if (user.email && user.reauth == settings.oauth.tokenFailuresAlert) {
+            if (user.email && [settings.oauth.tokenFailuresAlert, settings.oauth.tokenFailuresDisable].includes(user.reauth)) {
                 const data = {
                     userId: user.id,
                     userName: user.profile.firstName || user.displayName
@@ -241,12 +250,15 @@ export class Users {
 
                 // Send email in async mode (no need to wait).
                 mailer.send(options)
-            } else if (user.reauth >= settings.oauth.tokenFailuresDisable) {
-                logger.warn("Users.onStravaTokenFailure", logHelper.user(user), "User suspended due to too many token failures")
-                await this.suspend(user, "Too many Strava token failures")
             }
 
             await this.update(updatedUser)
+
+            // Reached the failures limit? Suspend the user.
+            if (user.reauth >= settings.oauth.tokenFailuresDisable) {
+                logger.warn("Users.onStravaTokenFailure", logHelper.user(user), "User suspended due to too many token failures")
+                await this.suspend(user, "Too many Strava token failures")
+            }
         } catch (ex) {
             logger.error("Users.onStravaTokenFailure", `Failed to process Strava token failure: ${maskedToken}`, urlLog)
         }
@@ -589,8 +601,9 @@ export class Users {
 
                 userData.dateLastActivity = existingData.dateLastActivity
 
-                // Remove the reauth flags.
-                if (_.isNumber(existingData.reauth)) {
+                // Remove the auth flags.
+                if (existingData.dateAuthFailed) {
+                    userData.dateAuthFailed = FieldValue.delete() as any
                     userData.reauth = FieldValue.delete() as any
                 }
 

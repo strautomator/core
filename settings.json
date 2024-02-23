@@ -308,10 +308,12 @@
         "readDeleteAfterDays": 90
     },
     "oauth": {
+        // Auth failure date is reset after 14 days by default.
+        "reauthResetDays": 14,
         // Alert users after 3 token failures.
         "tokenFailuresAlert": 3,
-        // Suspend users after 12 token failures.
-        "tokenFailuresDisable": 12,
+        // Suspend users after 10 token failures.
+        "tokenFailuresDisable": 10,
         // Token exchange requests times out in 8 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).
         "tokenTimeout": 8000
