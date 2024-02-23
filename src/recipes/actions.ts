@@ -69,10 +69,15 @@ export const fortuneCookies: string[] = [
  * Helper to log and alert users about failed actions.
  */
 const failedAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction, error: any): Promise<void> => {
-    logger.error("Recipes.failedAction", logHelper.user(user), logHelper.activity(activity), `${recipe.id} - ${action.type}`, error)
+    const logDetails = [`${recipe.id} - ${action.type}: ${action.friendlyValue || action.value}`]
+    if (error.statusCode) {
+        logDetails.push(`Status ${error.statusCode}`)
+    }
+
+    logger.error("Recipes.failedAction", logHelper.user(user), logHelper.activity(activity), logDetails, error)
 
     try {
-        const errorMessage = error.message || error.description || error
+        const errorMessage = error.message || error.description || error.toString()
         const actionType = _.find(recipeActionList, {value: action.type}).text
         const actionValue = action.friendlyValue || action.value
         const body = `There was an issue processing the activity ID ${activity.id}. Action: ${actionType} - ${actionValue}. ${errorMessage.toString()}`
@@ -82,7 +87,7 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
         const notification = {userId: user.id, title: title, body: body, recipeId: recipe.id, activityId: activity.id}
         await notifications.createNotification(user, notification)
     } catch (ex) {
-        logger.error("Recipes.failedAction.exception", logHelper.user(user), logHelper.activity(activity), `${recipe.id} - ${action.type}`, ex)
+        logger.error("Recipes.failedAction.exception", logHelper.user(user), logHelper.activity(activity), logDetails, ex)
     }
 }
 
