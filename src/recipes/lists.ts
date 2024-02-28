@@ -141,7 +141,7 @@ export const recipeActionList = [
     {value: "appendDescription", text: "Append to activity description"},
     {value: "sportType", text: "Change sport type"},
     {value: "workoutType", text: "Set workout type"},
-    {value: "privateNote", text: "Set private note"},
+    {value: "privateNote", text: "Set private notes"},
     {value: "mapStyle", text: "Set map style"},
     {value: "hideHome", text: "Mute (activity hidden on home feeds)"},
     {value: "hideStatPace", text: "Hide stats - pace"},
