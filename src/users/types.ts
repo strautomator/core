@@ -101,6 +101,8 @@ export interface UserPreferences {
     weatherUnit?: "c" | "f"
     /** Wind speed unit. */
     windSpeedUnit?: "m/s" | "kph" | "mph"
+    /** Force exported calendars to be refreshed more often. */
+    calendarFresher?: boolean
     /** Calendar template. */
     calendarTemplate?: UserCalendarTemplate
     /** Preferred AI provider. */
