@@ -160,7 +160,7 @@ export class Calendar {
 
                     // Calculate the correct cache duration.
                     let cacheDuration = user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
-                    if (user.isPro && options.shorterCache) {
+                    if (user.isPro && user.preferences?.calendarFresher) {
                         cacheDuration = cacheDuration / 2
                     }
                     if (onlyClubs && options.clubIds?.length == 1) {
@@ -299,7 +299,7 @@ export class Calendar {
                 const activityLink = `https://www.strava.com/activities/${activity.id}`
 
                 // Append suffixes to activity values.
-                transformActivityFields(user, activity)
+                transformActivityFields(user, activity, options.compact)
 
                 // Replace boolean tags with yes or no.
                 for (let field of Object.keys(activity)) {
@@ -337,14 +337,16 @@ export class Calendar {
                         arrDetails.push(subDetails.join("\n"))
                     }
 
-                    arrDetails.push(`<a href="${activityLink}">View on Strava</a>`)
+                    if (options.linkInDescription) {
+                        arrDetails.push(activityLink)
+                    }
                 }
 
                 // Get summary and details from options or from defaults.
                 try {
                     const summaryTemplate = calendarTemplate?.eventSummary || settings.calendar.eventSummary
                     const summary = jaul.data.replaceTags(summaryTemplate, activity)
-                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join("\n")
+                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join(options.compact ? "" : "\n")
 
                     // Add activity to the calendar as an event.
                     const event = cal.createEvent({
@@ -460,15 +462,19 @@ export class Calendar {
                         // Add all relevant details to the event description.
                         const arrDescription = [`${club.name}\n`]
                         if (clubEvent.description) {
-                            arrDescription.push(`${clubEvent.description}\n`)
+                            arrDescription.push(`${options.compact ? clubEvent.description.replace(/\n/g, " ") : clubEvent.description}\n`)
                         }
-                        if (clubEvent.joined) {
-                            arrDescription.push("Attending: yes")
+                        if (!options.compact) {
+                            if (clubEvent.joined) {
+                                arrDescription.push("Attending: yes")
+                            }
+                            if (organizer) {
+                                arrDescription.push(`${tOrganizer}: ${organizer}\n`)
+                            }
                         }
-                        if (organizer) {
-                            arrDescription.push(`${tOrganizer}: ${organizer}\n`)
+                        if (options.linkInDescription) {
+                            arrDescription.push(eventLink)
                         }
-                        arrDescription.push(`<a href="${eventLink}">View on Strava</a>`)
 
                         // Base event data.
                         const eventData: ICalEventData = {
