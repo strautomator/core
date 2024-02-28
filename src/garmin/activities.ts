@@ -261,7 +261,7 @@ export class GarminActivities {
 
             // Found devices in the FIT file? Generate device IDs.
             if (fitData.devices?.length > 0) {
-                const getDeviceString = (d) => `${d.source_type}.${d.manufacturer}.${d.serial_number}`.replace(/\_/, "")
+                const getDeviceString = (d) => `${d.manufacturer}.${d.product_name || d.source_type}.${d.serial_number}`.replace(/\_/g, "").replace(/\s/g, "")
                 const filterDevices = fitData.devices.filter((d) => d.source_type && d.manufacturer && d.serial_number)
                 garminActivity.devices = _.uniq(filterDevices.map((d) => getDeviceString(d)))
             }
