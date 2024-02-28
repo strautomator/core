@@ -16,14 +16,16 @@ export interface CalendarOptions {
     dateFrom?: dayjs.Dayjs
     /** Ending date (as DayJS), defaults to the futureCalendarDays setting. */
     dateTo?: dayjs.Dayjs
-    /** Force a shorter cache duration? */
-    shorterCache?: boolean
     /** Exclude commutes? Default is false. */
     excludeCommutes?: boolean
     /** Exclude club events which user hasn't joined to? */
     excludeNotJoined?: boolean
     /** Include club events from other countries? */
     includeAllCountries?: boolean
+    /** Add a link to the target activity / club event in the description? */
+    linkInDescription?: boolean
+    /** Compact details? */
+    compact?: boolean
     /** Filter only specific sport types. Default is all. */
     sportTypes?: string[]
 }
