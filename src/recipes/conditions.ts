@@ -422,7 +422,7 @@ export const checkGarmin = async (user: UserData, activity: StravaActivity, cond
     let valid = false
 
     // If user has no Garmin account linked, stop here.
-    if (!user.garmin) {
+    if (!user.isPro || !user.garmin) {
         logger.debug("Recipes.checkGarmin", logHelper.activity(activity), condition, "Skipped, user has no Garmin profile")
         return op == RecipeOperator.NotEqual || op == RecipeOperator.NotLike
     }
