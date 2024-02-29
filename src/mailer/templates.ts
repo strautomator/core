@@ -98,9 +98,6 @@ export const EmailTemplates = {
             "Hi ${userName}!<br><br>" +
             "It looks like the connection between Strautomator and your Strava account has expired.<br>" +
             'If you wish to keep using Strautomator, please reauthenticate at <a href="${appUrl}auth/login">${appUrl}auth/login</a>' +
-            "</p>" +
-            "<p>" +
-            "<small>Technical details: the OAuth2 refresh token that we have is not valid any longer.</small>" +
             "</p>"
     },
 
@@ -124,7 +121,7 @@ export const EmailTemplates = {
         body:
             "<p>" +
             "Hi ${userName}!<br><br>" +
-            "Thanks for your support! Your Strautomator ${subscriptionSource} subscription was activated and you now have a PRO account.<br>" +
+            "Thanks for your support! Your Strautomator subscription was activated and you now have a PRO account.<br>" +
             "If you have any feature suggestions or critical feedback, I'm all ears, just get back to me by replying to this email. 🙂" +
             "</p>" +
             "<p>" +
@@ -146,7 +143,22 @@ export const EmailTemplates = {
             "Technical reason: ${reason}" +
             "</p>" +
             "<p>" +
-            'To reactivate your account, please login again at <a href="${appUrl}auth/login">${appUrl}auth/login</a>' +
+            'To reactivate your account, please login again at <a href="${appUrl}auth/login">${appUrl}auth/login</a>.' +
+            "</p>"
+    },
+
+    // User must confirm the email address.
+    ConfirmEmail: {
+        subject: "Confirm your email address",
+        body:
+            "<p>" +
+            "Hi ${userName}!<br><br>" +
+            'To confirm your email address "${userEmail}" on Strautomator, please <a href="${appUrl}account/email?token=${token}">click here</a>, ' +
+            "or open the following link in your browser:<br><br>" +
+            "${appUrl}account/email?token=${token}" +
+            "</p>" +
+            "<p>" +
+            "<i>If you haven't registered an email with Strautomator, please ignore this email.</i>" +
             "</p>"
     }
 }
