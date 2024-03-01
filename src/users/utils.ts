@@ -2,6 +2,7 @@
 
 import {FieldValue} from "@google-cloud/firestore"
 import {UserData} from "../users/types"
+import database from "../database"
 import _ from "lodash"
 import logger from "anyhow"
 const settings = require("setmeup").settings
@@ -92,4 +93,33 @@ export const validateUserPreferences = (user: Partial<UserData>): void => {
     } catch (ex) {
         logger.error("Users.validatePreferences", user.id, user.displayName, ex)
     }
+}
+
+/**
+ * Validate the user email address and return it in lowercase.
+ * @param user The user validating an email.
+ * @param email Email to be validated.
+ */
+export const validateEmail = async (user: UserData, email: string): Promise<string> => {
+    const validator = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+
+    // Email value is mandatory.
+    if (!email) {
+        throw new Error("Missing email address")
+    }
+
+    email = email.trim().toLowerCase()
+
+    // Validate email address.
+    if (!validator.test(email)) {
+        throw new Error("Invalid email address")
+    }
+
+    // Make sure email is unique in the database.
+    const existing = await database.search("users", ["email", "==", email])
+    if (existing?.filter((u) => u.id != user.id).length > 0) {
+        throw new Error(`Email ${email} in use by another user`)
+    }
+
+    return email
 }

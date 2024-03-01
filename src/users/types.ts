@@ -33,6 +33,8 @@ export interface UserData {
     stravaTokens?: StravaTokens
     /** User email, optional. */
     email?: string
+    /** User email to be confirmed, prefixed by the confirmation token and using ":" as separator. */
+    confirmEmail?: string
     /** List of user recipes. */
     recipes?: UserRecipeMap
     /** User preferences. */

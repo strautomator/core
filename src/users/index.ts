@@ -1,12 +1,13 @@
 // Strautomator Core: Users
 
-import {disableProPreferences, validateUserPreferences} from "./utils"
+import {disableProPreferences, validateEmail, validateUserPreferences} from "./utils"
 import {UserData} from "../users/types"
 import {BaseSubscription} from "../subscriptions/types"
 import {AuthNotification} from "../notifications/types"
 import {PayPalSubscription} from "../paypal/types"
 import {GitHubSubscription} from "../github/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
+import {EmailSendingOptions} from "../mailer/types"
 import {encryptData} from "../database/crypto"
 import {FieldValue} from "@google-cloud/firestore"
 import database from "../database"
@@ -353,8 +354,9 @@ export class Users {
     /**
      * Get idle users that have not received any activities from Strava, or had their account
      * suspended for a while. Used mostly for cleanup purposes.
+     * @param noLoginDays Optional, force the number of days without login.
      */
-    getIdle = async (): Promise<UserData[]> => {
+    getIdle = async (noLoginDays?: number): Promise<UserData[]> => {
         try {
             const now = dayjs.utc()
 
@@ -368,7 +370,7 @@ export class Users {
             const noActivities = await database.search("users", [whereNoActivities])
 
             // Users that haven't logged in for a while.
-            const whereNoLogin = settings.users.idleDays.noLogin ? ["dateLogin", "<", now.subtract(settings.users.idleDays.noLogin, "days").toDate()] : null
+            const whereNoLogin = settings.users.idleDays.noLogin ? ["dateLogin", "<", now.subtract(noLoginDays || settings.users.idleDays.noLogin, "days").toDate()] : null
             const noLogin = whereNoLogin ? await database.search("users", [whereNoLogin]) : []
 
             logger.info("Users.getIdle", `${suspended.length || "no"} suspended, ${noActivities.length || "no"} with no activities, ${noLogin.length || "no"} with no recent logins`)
@@ -840,23 +842,56 @@ export class Users {
     /**
      * Update the email address of the specified user.
      * @param user User to be updated.
+     * @param email Email address entered by the user that needs to be confirmed.
+     */
+    setConfirmEmail = async (user: UserData, email: string): Promise<void> => {
+        try {
+            email = await validateEmail(user, email)
+
+            // Make sure email has changed before proceeding. If not, stop here.
+            if (user.confirmEmail && user.confirmEmail == email) {
+                logger.warn("Users.setConfirmEmail", user.id, `Email ${email} already waiting to be confirmed`)
+            }
+
+            // Confirmation token.
+            const token = crypto.randomBytes(12).toString("hex").toUpperCase()
+
+            // Set email to be confirmed.
+            const data: Partial<UserData> = {
+                id: user.id,
+                displayName: user.displayName,
+                confirmEmail: `${token}:${email}`
+            }
+            await database.merge("users", data)
+
+            // Send confirmation email.
+            const options: EmailSendingOptions = {
+                to: email,
+                template: "ConfirmEmail",
+                data: {
+                    userId: user.id,
+                    userName: user.displayName,
+                    email: email,
+                    token: token
+                }
+            }
+            await mailer.send(options)
+
+            logger.info("Users.setConfirmEmail", user.id, user.displayName, email, token)
+        } catch (ex) {
+            logger.error("Users.setConfirmEmail", logHelper.user(user), email, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Update the email address of the specified user.
+     * @param user User to be updated.
      * @param email The new email address of the user.
      */
     setEmail = async (user: UserData, email: string): Promise<void> => {
         try {
-            const validator = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-
-            // New email is mandatory.
-            if (!email) {
-                throw new Error("Missing email address")
-            }
-
-            email = email.trim().toLowerCase()
-
-            // Validate email address.
-            if (!validator.test(email)) {
-                throw new Error("Invalid email address")
-            }
+            email = await validateEmail(user, email)
 
             // Make sure email has changed before proceeding. If not, stop here.
             if (user.email && user.email == email) {
@@ -864,28 +899,18 @@ export class Users {
                 return
             }
 
-            // Make sure email is unique in the database.
-            const existing = await database.search("users", ["email", "==", email])
-            if (existing.length > 0) {
-                throw new Error(`Email ${email} in use by another user`)
-            }
-
             // Save new email address.
             const data: Partial<UserData> = {
                 id: user.id,
                 displayName: user.displayName,
-                email: email
+                email: email,
+                confirmEmail: FieldValue.delete() as any
             }
             await database.merge("users", data)
 
             logger.info("Users.setEmail", user.id, user.displayName, email)
         } catch (ex) {
-            if (user.profile) {
-                logger.error("Users.setEmail", user.id, user.displayName, email, ex)
-            } else {
-                logger.error("Users.setEmail", user.id, email, ex)
-            }
-
+            logger.error("Users.setEmail", logHelper.user(user), email, ex)
             throw ex
         }
     }
