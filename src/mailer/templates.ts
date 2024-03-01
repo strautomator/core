@@ -153,9 +153,9 @@ export const EmailTemplates = {
         body:
             "<p>" +
             "Hi ${userName}!<br><br>" +
-            'To confirm your email address "${userEmail}" on Strautomator, please <a href="${appUrl}account/email?token=${token}">click here</a>, ' +
+            'To confirm your email address "${email}" on Strautomator, please <a href="${appUrl}account?email=${email}&token=${token}">click here</a>, ' +
             "or open the following link in your browser:<br><br>" +
-            "${appUrl}account/email?token=${token}" +
+            "${appUrl}account?email=${email}&token=${token}" +
             "</p>" +
             "<p>" +
             "<i>If you haven't registered an email with Strautomator, please ignore this email.</i>" +
