@@ -32,6 +32,29 @@ export class StravaActivityProcessing {
     // --------------------------------------------------------------------------
 
     /**
+     * Get a single processed activity.
+     * @param user The activities owner.
+     * @param id The activity ID.
+     *
+     */
+    getProcessedActivity = async (user: UserData, id: string): Promise<StravaProcessedActivity[]> => {
+        try {
+            const activity = await database.get("activities", id)
+
+            if (activity) {
+                logger.info("Strava.getProcessedActivity", logHelper.user(user), logHelper.activity(activity))
+                return activity
+            }
+
+            logger.warn("Strava.getProcessedActivity", logHelper.user(user), id, "Not found")
+            return null
+        } catch (ex) {
+            logger.error("Strava.getProcessedActivity", logHelper.user(user), id, ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get saved processed activities for the specified user.
      * @param user The activities owner.
      * @param dateFrom Activities processed since date.
