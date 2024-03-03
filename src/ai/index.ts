@@ -95,17 +95,18 @@ export class AI {
             }
 
             // Add weather data?
-            if (options.weatherSummaries.mid?.summary || options.weatherSummaries.start?.summary || options.weatherSummaries.end?.summary) {
-                const weatherText = options.weatherSummaries.mid?.summary || options.weatherSummaries.start?.summary || options.weatherSummaries.end?.summary
+            const weatherSummaries = options.weatherSummaries
+            if (weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary) {
+                const weatherText = weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary
                 arrPrompt.push(`The weather was ${weatherText.toLowerCase()}, `)
 
-                const weatherTemps = _.without([options.weatherSummaries.mid?.temperature || options.weatherSummaries.start?.temperature || options.weatherSummaries.end?.temperature], null, undefined)
+                const weatherTemps = _.without([weatherSummaries.mid?.temperature || weatherSummaries.start?.temperature || weatherSummaries.end?.temperature], null, undefined)
                 const tempSuffix = user.preferences?.weatherUnit == "f" ? "°F" : "°C"
                 const minTemp = _.min(weatherTemps) || 0
                 const maxTemp = _.max(weatherTemps) || 0
                 arrPrompt.push(`with temperatures ranging from ${minTemp}${tempSuffix} to ${maxTemp}${tempSuffix}.`)
 
-                const weatherAqis = _.without([options.weatherSummaries.mid?.aqi, options.weatherSummaries.start?.aqi, options.weatherSummaries.end?.aqi], null, undefined)
+                const weatherAqis = _.without([weatherSummaries.mid?.aqi, weatherSummaries.start?.aqi, weatherSummaries.end?.aqi], null, undefined)
                 const weatherAqi = _.max(weatherAqis) || 0
                 if (weatherAqi > 4) {
                     arrPrompt.push("The air quality was extremely bad.")
