@@ -13,6 +13,7 @@ import {FieldValue} from "@google-cloud/firestore"
 import database from "../database"
 import eventManager from "../eventmanager"
 import mailer from "../mailer"
+import maps from "../maps"
 import notifications from "../notifications"
 import subscriptions from "../subscriptions"
 import _ from "lodash"
@@ -388,7 +389,11 @@ export class Users {
      */
     getById = async (id: string): Promise<UserData> => {
         try {
-            return await database.get("users", id)
+            const user = await database.get("users", id)
+            if (user?.profile) {
+                user.countryCode = maps.getCountryCode(user.profile.country)
+            }
+            return user
         } catch (ex) {
             logger.error("Users.getById", id, ex)
             throw ex
