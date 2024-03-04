@@ -116,21 +116,17 @@ export class AI {
             }
 
             // Add the user's custom AI prompt, otherwise fallback to a generic humour + translation, if needed.
-            if (customPrompt) {
+            if (customPrompt?.length > 3) {
                 arrPrompt.push(customPrompt)
             } else {
                 const humour = options.humour || _.sample(settings.ai.humours)
                 arrPrompt.push(`Please be very ${humour} with the choice of words.`)
 
                 // Translate to the user's language (if other than English).
-                let languagePrompt = "."
                 if (user.preferences.language && user.preferences.language != "en") {
                     const languageName = translation("LanguageName", user.preferences)
-                    languagePrompt = `, translated to ${languageName} language.`
+                    arrPrompt.push(`The answer should be translated to ${languageName}.`)
                 }
-
-                // Avoid boilerplate around the actual answer.
-                arrPrompt.push(`Answer the generated name only, with no additional text${languagePrompt}`)
             }
         } catch (ex) {
             logger.error("AI.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Failure while building the prompt", ex)
@@ -188,7 +184,7 @@ export class AI {
 
             // Generation options.
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            options.maxTokens = 28
+            options.maxTokens = 30
             options.prepend = [`Please generate a single name for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
             options.append = [`Answer the generated name only, with no additional text.`]
 
@@ -224,7 +220,7 @@ export class AI {
 
             // Generation options.
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            options.maxTokens = 160
+            options.maxTokens = 170
             options.prepend = [`Please write a very short poem for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
             options.append = [`Answer the generated poem only, with no additional text, limited to a maximum of 10 lines.`]
 
