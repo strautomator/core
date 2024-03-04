@@ -178,7 +178,7 @@ export class GarminActivities {
                 return null
             }
 
-            logger.info("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), `Matched Garmin activity: ${logHelper.garminActivity(result)}`)
+            logger.info("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), `Matched: ${logHelper.garminActivity(result)}`)
             return result
         } catch (ex) {
             logger.error("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), ex)
