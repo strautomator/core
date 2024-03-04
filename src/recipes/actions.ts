@@ -6,7 +6,7 @@ import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaGear, StravaSport} from "../strava/types"
 import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
-import {axiosRequest} from "../axios"
+import {AxiosConfig, axiosRequest} from "../axios"
 import recipeStats from "./stats"
 import ai from "../ai"
 import garmin from "../garmin"
@@ -884,11 +884,23 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
  */
 export const webhookAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        const options = {
-            method: "POST",
-            url: action.value,
-            timeout: settings.recipes.webhook.timeout,
-            data: activity
+        const arrValue = action.value.split(" ")
+        let targetUrl = arrValue.length > 1 ? arrValue.join(" ") : arrValue[0]
+        let method = arrValue[0]
+
+        // Make sure we're using a valid method. If not, defaults to POST.
+        if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+            method = "POST"
+            targetUrl = action.value
+        }
+
+        const options: AxiosConfig = {
+            method: method,
+            url: encodeURI(jaul.data.replaceTags(targetUrl, activity)),
+            timeout: settings.recipes.webhook.timeout
+        }
+        if (method != "GET") {
+            options.data = activity
         }
 
         await axiosRequest(options)
