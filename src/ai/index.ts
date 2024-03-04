@@ -96,7 +96,7 @@ export class AI {
 
             // Add weather data?
             const weatherSummaries = options.weatherSummaries
-            if (weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary) {
+            if (weatherSummaries && (weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary)) {
                 const weatherText = weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary
                 arrPrompt.push(`The weather was ${weatherText.toLowerCase()}, `)
 
