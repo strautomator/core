@@ -122,7 +122,7 @@ export class StravaAPI {
         } catch (ex) {
             this.extractTokenError(ex)
 
-            logger.error("Strava.getToken", ex)
+            logger.error("Strava.getToken", `Code ending ${code?.substring(code.length - 3)}`, ex)
             throw ex
         }
     }
