@@ -434,9 +434,9 @@
             "conditionValue": 800,
             "actionValue": 800
         },
-        // Webhook timeout is set to 5 seconds by default. Value in milliseconds.
+        // Webhook timeout is set to 4 seconds by default. Value in milliseconds.
         "webhook": {
-            "timeout": 5000
+            "timeout": 4000
         }
     },
     // Navigation routes options (GPS routing, not URLs).
