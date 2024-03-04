@@ -165,7 +165,7 @@ export class GarminActivities {
 
             // No activities found? Stop here.
             if (activities.length == 0) {
-                logger.info("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), "Not found")
+                logger.debug("Garmin.getMatchingActivity", logHelper.user(user), logHelper.activity(activity), "Not found")
                 return null
             }
 
