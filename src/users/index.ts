@@ -389,8 +389,8 @@ export class Users {
      */
     getById = async (id: string): Promise<UserData> => {
         try {
-            const user = await database.get("users", id)
-            if (user?.profile) {
+            const user: UserData = await database.get("users", id)
+            if (user && !user.countryCode && user.profile?.country) {
                 user.countryCode = maps.getCountryCode(user.profile.country)
             }
             return user
@@ -658,6 +658,11 @@ export class Users {
                         userData.writeSuspended = FieldValue.delete() as any
                     }
                 }
+            }
+
+            // Update the user's country code.
+            if (profile.country) {
+                userData.countryCode = maps.getCountryCode(profile.country)
             }
 
             // Users are always PRO on the beta environment.
