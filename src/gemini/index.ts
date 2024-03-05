@@ -3,7 +3,7 @@
 import {AiProvider} from "../ai/types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
-import {FinishReason, GenerateContentRequest, VertexAI} from "@google-cloud/vertexai"
+import {FinishReason, GenerateContentRequest, HarmBlockThreshold, HarmCategory, VertexAI} from "@google-cloud/vertexai"
 import _ from "lodash"
 import Bottleneck from "bottleneck"
 import logger from "anyhow"
@@ -74,6 +74,12 @@ export class Gemini implements AiProvider {
             // Here we go!
             const reqOptions: GenerateContentRequest = {
                 contents: [{role: "user", parts: parts}],
+                safety_settings: [
+                    {category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
+                    {category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
+                    {category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
+                    {category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH}
+                ],
                 generation_config: {
                     max_output_tokens: maxTokens
                 }
