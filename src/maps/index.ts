@@ -225,7 +225,7 @@ export class Maps {
         if (!provider) provider = "google"
 
         try {
-            if (!coordinates && coordinates.length != 2) {
+            if (!coordinates || coordinates.length != 2) {
                 throw new Error("Invalid or missing coordinates")
             }
 
