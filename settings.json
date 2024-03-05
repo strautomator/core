@@ -7,7 +7,7 @@
         // Cache generated AI content for 1 minute.
         "cacheDuration": 60,
         // List of humours (adjectives) to be used on the AI generated content.
-        "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "wicked"]
+        "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "technical", "wicked"]
     },
     "app": {
         // Application title.
@@ -195,7 +195,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 40
+            "maxPerMinute": 45
         }
     },
     "github": {
@@ -483,7 +483,7 @@
             "tokenUrl": "https://www.strava.com/oauth/token",
             "scopes": "read,profile:read_all,profile:write,activity:read_all,activity:write",
             // Maximum concurrent requests per instance.
-            "maxConcurrent": 6,
+            "maxConcurrent": 8,
             // Maximum requests per minute per instance.
             "maxPerMinute": 320,
             // Default page size is the max of 200.
