@@ -55,13 +55,11 @@ export class OpenAI implements AiProvider {
                 headers: {},
                 data: {
                     model: user.isPro && Math.random() < 0.5 ? "gpt-4-1106-preview" : "gpt-3.5-turbo",
+                    max_tokens: maxTokens,
                     messages: [
                         {role: "system", content: "You are an assistant to create creative names and descriptions for Strava activities."},
                         {role: "user", content: content}
-                    ],
-                    max_tokens: maxTokens,
-                    temperature: 1,
-                    top_p: 1
+                    ]
                 },
                 onRetry: (opt) => {
                     if (user.isPro) {
