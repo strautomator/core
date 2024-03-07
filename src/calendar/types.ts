@@ -26,6 +26,8 @@ export interface CalendarOptions {
     linkInDescription?: boolean
     /** Compact details? */
     compact?: boolean
+    /** Enforce a lower TTL for cached calendars. */
+    fresher?: boolean
     /** Filter only specific sport types. Default is all. */
     sportTypes?: string[]
 }
