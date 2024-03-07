@@ -157,10 +157,11 @@ export class Calendar {
                     const cacheTimestamp = dayjs.utc(metadata.timeCreated).valueOf()
                     const cacheSize = metadata.size as number
                     const onlyClubs = options.clubs && !options.activities
+                    const fresher = !_.isNil(options.fresher) ? options.fresher : user.preferences?.calendarOptions?.fresher
 
                     // Calculate the correct cache duration.
                     let cacheDuration = user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
-                    if (user.isPro && user.preferences?.calendarFresher) {
+                    if (user.isPro && fresher) {
                         cacheDuration = cacheDuration / 2
                     }
                     if (onlyClubs && options.clubIds?.length == 1) {
@@ -273,6 +274,8 @@ export class Calendar {
         let eventCount = 0
 
         try {
+            const compact = !_.isNil(options.compact) ? options.compact : user.preferences?.calendarOptions?.compact
+            const linkInDescription = !_.isNil(options.linkInDescription) ? options.linkInDescription : user.preferences?.calendarOptions?.linkInDescription
             const calendarTemplate: UserCalendarTemplate = user.preferences?.calendarTemplate || {}
 
             // Fetch and iterate user activities, checking filters before proceeding.
@@ -299,7 +302,7 @@ export class Calendar {
                 const activityLink = `https://www.strava.com/activities/${activity.id}`
 
                 // Append suffixes to activity values.
-                transformActivityFields(user, activity, options.compact)
+                transformActivityFields(user, activity, compact)
 
                 // Replace boolean tags with yes or no.
                 for (let field of Object.keys(activity)) {
@@ -337,7 +340,7 @@ export class Calendar {
                         arrDetails.push(subDetails.join("\n"))
                     }
 
-                    if (options.linkInDescription) {
+                    if (linkInDescription) {
                         arrDetails.push(activityLink)
                     }
                 }
@@ -346,7 +349,7 @@ export class Calendar {
                 try {
                     const summaryTemplate = calendarTemplate?.eventSummary || settings.calendar.eventSummary
                     const summary = jaul.data.replaceTags(summaryTemplate, activity)
-                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join(options.compact ? "" : "\n")
+                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join(compact ? "" : "\n")
 
                     // Add activity to the calendar as an event.
                     const event = cal.createEvent({
@@ -399,6 +402,9 @@ export class Calendar {
         const tOrganizer = translation("Organizer", user.preferences, true)
 
         try {
+            const compact = !_.isNil(options.compact) ? options.compact : user.preferences?.calendarOptions?.compact
+            const linkInDescription = !_.isNil(options.linkInDescription) ? options.linkInDescription : user.preferences?.calendarOptions?.linkInDescription
+
             let eventCount = 0
 
             // Helper to process club events.
@@ -462,9 +468,9 @@ export class Calendar {
                         // Add all relevant details to the event description.
                         const arrDescription = [`${club.name}\n`]
                         if (clubEvent.description) {
-                            arrDescription.push(`${options.compact ? clubEvent.description.replace(/\n/g, " ") : clubEvent.description}\n`)
+                            arrDescription.push(`${compact ? clubEvent.description.replace(/\n/g, " ") : clubEvent.description}\n`)
                         }
-                        if (!options.compact) {
+                        if (!compact) {
                             if (clubEvent.joined) {
                                 arrDescription.push("Attending: yes")
                             }
@@ -472,7 +478,7 @@ export class Calendar {
                                 arrDescription.push(`${tOrganizer}: ${organizer}\n`)
                             }
                         }
-                        if (options.linkInDescription) {
+                        if (linkInDescription) {
                             arrDescription.push(eventLink)
                         }
 
