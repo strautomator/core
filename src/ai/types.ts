@@ -17,7 +17,7 @@ export interface AiProvider {
  */
 export interface AiGeneratedResponse {
     /** Which AI provider was used. */
-    provider: "gemini" | "openai"
+    provider: "anthropic" | "gemini" | "openai"
     /** Prompt sent to the LLM. */
     prompt: string
     /** Response from LLM. */
@@ -26,7 +26,7 @@ export interface AiGeneratedResponse {
 
 export interface AiGenerateOptions {
     /** AI provider. */
-    provider?: "gemini" | "openai"
+    provider?: "anthropic" | "gemini" | "openai"
     /** Referenced activity. */
     activity: StravaActivity
     /** Max tokens to be used. */

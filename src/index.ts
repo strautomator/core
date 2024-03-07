@@ -77,6 +77,8 @@ import {OpenAI} from "./openai"
 export const openai: OpenAI = OpenAI.Instance
 import {Gemini} from "./gemini"
 export const gemini: Gemini = Gemini.Instance
+import {Anthropic} from "./anthropic"
+export const anthropic: Anthropic = Anthropic.Instance
 import {Garmin} from "./garmin"
 export const garmin: Garmin = Garmin.Instance
 import {Spotify} from "./spotify"
@@ -235,7 +237,7 @@ export const startup = async (quickStart?: boolean) => {
     // Init individual modules now. Start with the most important modules, than the rest.
     const coreModules = [github, paypal, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
-    const otherModules = [ai, announcements, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, weather]
+    const otherModules = [ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, weather]
     await Promise.all(otherModules.map(initModule))
 
     // Running locally? Setup the necessary cron jobs which are

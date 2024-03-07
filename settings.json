@@ -54,6 +54,17 @@
         // Active announcements should be cached for up to 30 minutes.
         "cacheDuration": 1800
     },
+    // Anthropic API options.
+    "anthropic": {
+        "api": {
+            "version": "2023-06-01",
+            "baseUrl": "https://api.anthropic.com/v1/",
+            // Maximum concurrent requests per instance.
+            "maxConcurrent": 2,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 20
+        }
+    },
     "axios": {
         // User agent used to emulate a browser.
         "uaBrowser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",

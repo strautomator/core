@@ -3,6 +3,7 @@
 import {AiGenerateOptions, AiGeneratedResponse, AiProvider} from "./types"
 import {UserData} from "../users/types"
 import {translation} from "../translations"
+import anthropic from "../anthropic"
 import gemini from "../gemini"
 import openai from "../openai"
 import _ from "lodash"
@@ -137,7 +138,7 @@ export class AI {
         }
 
         // Start with the preferred provider, and keep trying until everything fails.
-        const providers = [openai, gemini]
+        const providers = [anthropic, openai, gemini]
         const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == user.preferences.aiProvider)
         let provider: AiProvider = preferredProviders.pop() || providers.pop()
 
