@@ -229,7 +229,8 @@ export class Users {
                 logger.warn("Users.onStravaTokenFailure", logHelper.user(user), "Reauth flags reset")
                 user.dateAuthFailed = now.toDate()
                 user.reauth = 0
-            } else if (!user.reauth) {
+            }
+            if (!user.reauth) {
                 user.reauth = 0
             }
             user.reauth++
