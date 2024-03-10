@@ -232,7 +232,7 @@ export class GarminActivities {
                     trainingLoad: "training_load",
                     aerobicTrainingEffect: "total_training_effect",
                     anaerobicTrainingEffect: "total_anaerobic_effect",
-                    pedalSmoothness: ["avg_left_pedal_smoothness", "avg_right_pedal_smoothness"],
+                    pedalSmoothness: ["avg_combined_pedal_smoothness", "avg_left_pedal_smoothness", "avg_right_pedal_smoothness"],
                     pedalTorqueEffect: ["avg_left_torque_effectiveness", "avg_right_torque_effectiveness"],
                     pedalBalance: "left_right_balance"
                 }
@@ -246,8 +246,9 @@ export class GarminActivities {
                         // If the field key is an array, get the average of the values.
                         if (_.isArray(fields[field])) {
                             const filteredSession = _.pick(session, fields[field])
-                            if (filteredSession.length > 0) {
-                                value = _.mean(Object.values(filteredSession))
+                            const sessionValues = _.without(Object.values(filteredSession), null, undefined)
+                            if (sessionValues.length > 0) {
+                                value = _.mean(sessionValues)
                             }
                         } else {
                             value = session[fieldKey]
