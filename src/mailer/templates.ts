@@ -139,8 +139,7 @@ export const EmailTemplates = {
         body:
             "<p>" +
             "Hi ${userName}!<br><br>" +
-            "Your Strautomator account was automatically suspended due to repeated failures to fetch your Strava data.<br>" +
-            "Technical reason: ${reason}" +
+            "Your Strautomator account was automatically suspended due to repeated failures to fetch your Strava data." +
             "</p>" +
             "<p>" +
             'To reactivate your account, please login again at <a href="${appUrl}auth/login">${appUrl}auth/login</a>.' +
