@@ -24,7 +24,7 @@ export const activity = (lActivity: StravaActivity | StravaProcessedActivity, fu
  */
 export const garminActivity = (lActivity: GarminActivity | GarminPingActivityFile): string => {
     if (!lActivity) return "Activity unknown"
-    const id = (lActivity["id"] || lActivity["activityId"]).replace("activity", "")
+    const id = (lActivity["id"] || lActivity["activityId"]).toString().replace("activity", "")
     const name = lActivity["name"] || lActivity["activityName"]
     return `Activity ${id} - ${name}`
 }
