@@ -1,4 +1,5 @@
 // Strautomator Core: Garmin FIT Parser - Binary helper
+// Largely based on https://github.com/jimmykane/fit-parser
 
 import {FIT, getFitMessage} from "./fit"
 import {Buffer} from "buffer"
@@ -89,21 +90,28 @@ function readData(blob, fDef, startIndex) {
     return blob[startIndex]
 }
 
+function dataRounder(data, scale, offset) {
+    if (data === null) return 0
+    const calculated = scale ? data / parseFloat(scale) + (parseFloat(offset) || 0) : data
+    return Math.round(calculated)
+}
+
 function formatByType(data, type, scale, offset) {
     switch (type) {
         case "date_time":
         case "local_date_time":
             return new Date(data * 1000 + GarminTimeOffset)
         case "sint32":
-            return data * FIT.scConst
+            return Math.round(data * FIT.scConst * 100) / 100
         case "uint8":
         case "sint16":
         case "uint32":
         case "uint16":
-            return scale ? data / scale + offset : data
+            return dataRounder(data, scale, offset)
         case "uint32_array":
         case "uint16_array":
-            return data.map((dataItem) => (scale ? dataItem / scale + offset : dataItem))
+            return data.map((dataItem) => dataRounder(dataItem, scale, offset))
+        case "string":
         default:
             if (!FIT.types[type]) {
                 return data
@@ -326,12 +334,18 @@ export function readRecord(blob, messageTypes, developerFields, startIndex, opti
                 const scale = fDef.scale
                 const offset = fDef.offset
 
-                fields[fDef.name] = applyOptions(formatByType(data, type, scale, offset), field, options)
+                const fieldValue = applyOptions(formatByType(data, type, scale, offset), field, options)
+                if (fieldValue !== undefined) {
+                    fields[fDef.name] = fieldValue
+                }
             } else {
                 const {field, type, scale, offset} = message.getAttributes(fDef.fDefNo)
 
                 if (field !== "unknown" && field !== "" && field !== undefined) {
-                    fields[field] = applyOptions(formatByType(data, type, scale, offset), field, options)
+                    const fieldValue = applyOptions(formatByType(data, type, scale, offset), field, options)
+                    if (fieldValue !== undefined) {
+                        fields[field] = fieldValue
+                    }
                 }
             }
 

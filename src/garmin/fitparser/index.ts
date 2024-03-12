@@ -2,6 +2,7 @@
 // Largely based on https://github.com/jimmykane/fit-parser
 
 import {getArrayBuffer, calculateCRC, readRecord} from "./binary"
+import {FIT} from "./fit"
 import logger from "anyhow"
 
 export default class FitParser {
@@ -87,71 +88,75 @@ export default class FitParser {
             const {nextIndex, messageType, message} = readRecord(blob, messageTypes, developerFields, loopIndex, this.options, startDate, pausedTime)
             loopIndex = nextIndex
 
-            switch (messageType) {
-                case "lap":
-                    laps.push(message)
-                    break
-                case "session":
-                    sessions.push(message)
-                    break
-                case "event":
-                    if (message.event === "timer") {
-                        if (message.event_type === "stop_all") {
-                            lastStopTimestamp = message.timestamp
-                        } else if (message.event_type === "start" && lastStopTimestamp) {
-                            pausedTime += (message.timestamp - lastStopTimestamp) / 1000
+            if (message) {
+                switch (messageType) {
+                    case "lap":
+                        laps.push(message)
+                        break
+                    case "session":
+                        sessions.push(message)
+                        break
+                    case "event":
+                        if (message.event === "timer") {
+                            if (message.event_type === "stop_all") {
+                                lastStopTimestamp = message.timestamp
+                            } else if (message.event_type === "start" && lastStopTimestamp) {
+                                pausedTime += (message.timestamp - lastStopTimestamp) / 1000
+                            }
                         }
-                    }
-                    events.push(message)
-                    break
-                case "length":
-                    lengths.push(message)
-                    break
-                case "field_description":
-                    fieldDescriptions.push(message)
-                    break
-                case "device_info":
-                    devices.push(message)
-                    break
-                case "developer_data_id":
-                    applications.push(message)
-                    break
-                case "dive_gas":
-                    dive_gases.push(message)
-                    break
-                case "course_point":
-                    course_points.push(message)
-                    break
-                case "sport":
-                    sports.push(message)
-                    break
-                case "file_id":
-                    if (message) {
+                        events.push(message)
+                        break
+                    case "length":
+                        lengths.push(message)
+                        break
+                    case "field_description":
+                        fieldDescriptions.push(message)
+                        break
+                    case "device_info":
+                        devices.push(message)
+                        if (!message["product_name"] && message["manufacturer"] && message["product"]) {
+                            const productNames = FIT.types.product[message["manufacturer"]]
+                            if (productNames && productNames[message["product"]]) {
+                                message["product_name"] = productNames[message["product"]]
+                            }
+                        }
+                        break
+                    case "developer_data_id":
+                        applications.push(message)
+                        break
+                    case "dive_gas":
+                        dive_gases.push(message)
+                        break
+                    case "course_point":
+                        course_points.push(message)
+                        break
+                    case "sport":
+                        sports.push(message)
+                        break
+                    case "file_id":
                         file_ids.push(message)
-                    }
-                    break
-                case "definition":
-                    if (message) {
+                        break
+                    case "definition":
                         definitions.push(message)
-                    }
-                    break
-                case "monitoring":
-                    monitors.push(message)
-                    break
-                case "monitoring_info":
-                    monitor_info.push(message)
-                    break
-                case "stress_level":
-                    stress.push(message)
-                    break
-                case "software":
-                    fitObj.software = message
-                    break
-                default:
-                    if (messageType !== "") {
-                        fitObj[messageType] = message
-                    }
-                    break
+                        break
+                    case "monitoring":
+                        monitors.push(message)
+                        break
+                    case "monitoring_info":
+                        monitor_info.push(message)
+                        break
+                    case "stress_level":
+                        stress.push(message)
+                        break
+                    case "software":
+                        fitObj.software = message
+                        break
+                    default:
+                        if (messageType !== "") {
+                            fitObj[messageType] = message
+                        }
+                        break
+                }
             }
         }
 
