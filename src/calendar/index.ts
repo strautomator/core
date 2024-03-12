@@ -348,8 +348,8 @@ export class Calendar {
                 // Get summary and details from options or from defaults.
                 try {
                     const summaryTemplate = calendarTemplate?.eventSummary || settings.calendar.eventSummary
-                    const summary = jaul.data.replaceTags(summaryTemplate, activity)
-                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity) : arrDetails.join(compact ? "" : "\n")
+                    const summary = jaul.data.replaceTags(summaryTemplate, activity, null, true)
+                    const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity, null, true) : arrDetails.join(compact ? "" : "\n")
 
                     // Add activity to the calendar as an event.
                     const event = cal.createEvent({

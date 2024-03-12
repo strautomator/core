@@ -172,7 +172,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
         // Replace tags.
         if (processedValue) {
-            processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
+            processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix, null, true)
         }
 
         // Empty value? Stop here.
@@ -302,7 +302,7 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
             }
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.")
+        processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.", true)
     } catch (ex) {
         logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
@@ -331,7 +331,7 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
             }
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.")
+        processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.", true)
     } catch (ex) {
         logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
