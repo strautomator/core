@@ -102,7 +102,7 @@ export class GearWear {
         }
     }
 
-    // VALIDATION
+    // VALIDATION AND UTILS
     // --------------------------------------------------------------------------
 
     /**
@@ -172,6 +172,18 @@ export class GearWear {
         }
     }
 
+    /**
+     * Sort the components of the GearWear configuration, disabled components should come last.
+     * @param config The GearWear config to be sorted.
+     */
+    sortComponents = (config: GearWearConfig): void => {
+        if (config?.components?.length > 0) {
+            config.components.forEach((comp) => (comp.disabled = comp.disabled || false))
+            const sortedComponents = _.sortBy(config.components, ["disabled", "name"])
+            config.components = sortedComponents
+        }
+    }
+
     // GET
     // --------------------------------------------------------------------------
 
@@ -183,6 +195,7 @@ export class GearWear {
         try {
             const result: GearWearConfig = await database.get("gearwear", id)
 
+            this.sortComponents(result)
             return result
         } catch (ex) {
             logger.error("GearWear.getById", id, ex)
@@ -208,6 +221,7 @@ export class GearWear {
                 logger.info("GearWear.getByUser", logHelper.user(user), `${result.length} total GearWear configurations`)
             }
 
+            result.forEach((config) => this.sortComponents(config))
             return result
         } catch (ex) {
             logger.error("GearWear.getByUser", logHelper.user(user), ex)
