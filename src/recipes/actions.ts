@@ -100,7 +100,7 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
  */
 export const defaultAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        let processedValue = action.value || ""
+        let processedValue = (action.value || "").toString()
         let activityWithSuffix: StravaActivity = _.cloneDeep(activity)
 
         // Pre-process activity data and append suffixes to values before processing.
