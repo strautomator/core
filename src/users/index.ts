@@ -323,6 +323,21 @@ export class Users {
     }
 
     /**
+     * Get PRO users.
+     */
+    getPro = async (): Promise<UserData[]> => {
+        try {
+            const result = await database.search("users", ["isPro", "==", true])
+
+            logger.info("Users.getPro", `${result.length} PRO users`)
+            return result
+        } catch (ex) {
+            logger.error("Users.getPro", ex)
+            throw ex
+        }
+    }
+
+    /**
      * Get active users (with at least 1 recipe).
      */
     getActive = async (): Promise<UserData[]> => {
