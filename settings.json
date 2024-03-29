@@ -565,8 +565,8 @@
         // Consider users idle (for deletion) if they are suspended for longer than 6 months or
         // haven't done any Strava activities for more than 2 years.
         "idleDays": {
-            // Consider pending-approval user subscriptions dangling and ready for deletion after 3 days.
-            "pendingSubscriptions": 3,
+            // How many days to wait before acting on pending or cancelled subscriptions.
+            "subscriptions": 5,
             // Users with no recipes or gearwear activity are considered idle after 180 days.
             "suspended": 180,
             // Users with no activities from Strava are considered idle after 2 years.
