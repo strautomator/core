@@ -38,12 +38,12 @@ export function apiRateLimiter(provider: WeatherProvider, options: any): Bottlen
     // Catch errors.
     limiter.on("error", (err) => {
         provider.stats.errorCount++
-        logger.error(`Weather.${provider.name}.limiter.error`, err)
+        logger.error(`Weather.${provider.name}.limiter`, err)
     })
 
     // Rate limiting warnings
     limiter.on("depleted", () => {
-        logger.warn(`Weather.${provider.name}.limiter.depleted`, "Rate limited")
+        logger.warn(`Weather.${provider.name}.limiter`, "Rate limited")
     })
 
     return limiter

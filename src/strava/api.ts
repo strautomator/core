@@ -67,8 +67,8 @@ export class StravaAPI {
             })
 
             // Rate limiter events.
-            this.limiter.on("error", (err) => logger.error("Strava.limiter.error", err))
-            this.limiter.on("depleted", () => logger.warn("Strava.limiter.depleted", "Rate limited"))
+            this.limiter.on("error", (err) => logger.error("Strava.limiter", err))
+            this.limiter.on("depleted", () => logger.warn("Strava.limiter", "Rate limited"))
 
             logger.info("Strava.init", `Max concurrent: ${settings.strava.api.maxConcurrent}, per minute: ${settings.strava.api.maxPerMinute}`)
         } catch (ex) {

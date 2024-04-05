@@ -66,8 +66,8 @@ export class Maps {
                 })
 
                 // Rate limiter events.
-                this.lociqLimiter.on("error", (err) => logger.error("LocationIQ.limiter.error", err))
-                this.lociqLimiter.on("depleted", () => logger.warn("LocationIQ.limiter.depleted", "Rate limited"))
+                this.lociqLimiter.on("error", (err) => logger.error("LocationIQ.limiter", err))
+                this.lociqLimiter.on("depleted", () => logger.warn("LocationIQ.limiter", "Rate limited"))
             }
 
             this.googleClient = new Client()
