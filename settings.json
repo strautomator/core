@@ -62,7 +62,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 20
+            "maxPerMinute": 40
         }
     },
     "axios": {
@@ -206,7 +206,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 45
+            "maxPerMinute": 40
         }
     },
     "github": {
@@ -331,7 +331,11 @@
     },
     "openai": {
         "api": {
-            "baseUrl": "https://api.openai.com/v1/"
+            "baseUrl": "https://api.openai.com/v1/",
+            // Maximum concurrent requests per instance.
+            "maxConcurrent": 2,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 120
         }
     },
     "paypal": {
