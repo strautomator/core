@@ -23,7 +23,7 @@ export class Gemini implements AiProvider {
     /**
      * API limiter module.
      */
-    private limiter: Bottleneck
+    limiter: Bottleneck
 
     /**
      * The Vertex AI client, created on init().
@@ -38,6 +38,7 @@ export class Gemini implements AiProvider {
      */
     init = async (): Promise<void> => {
         try {
+            this.limiter.currentReservoir
             this.client = new VertexAI({project: settings.gcp.projectId, location: "us-east4"})
 
             // Create the bottleneck rate limiter.
@@ -49,8 +50,8 @@ export class Gemini implements AiProvider {
             })
 
             // Rate limiter events.
-            this.limiter.on("error", (err) => logger.error("Gemini.limiter.error", err))
-            this.limiter.on("depleted", () => logger.warn("Gemini.limiter.depleted", "Rate limited"))
+            this.limiter.on("error", (err) => logger.error("Gemini.limiter", err))
+            this.limiter.on("depleted", () => logger.warn("Gemini.limiter", "Rate limited"))
         } catch (ex) {
             logger.error("Gemini.init", ex)
         }
@@ -84,7 +85,7 @@ export class Gemini implements AiProvider {
                     max_output_tokens: maxTokens
                 }
             }
-            const jobId = `gemini-activity-${activity.id}`
+            const jobId = `${activity.id}-${prompt.length}-${maxTokens}`
             const result = await this.limiter.schedule({id: jobId}, () => model.generateContent(reqOptions))
 
             // Validate the response.

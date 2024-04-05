@@ -24,7 +24,7 @@ export class Anthropic implements AiProvider {
     /**
      * API limiter module.
      */
-    private limiter: Bottleneck
+    limiter: Bottleneck
 
     // INIT
     // --------------------------------------------------------------------------
@@ -47,8 +47,8 @@ export class Anthropic implements AiProvider {
             })
 
             // Rate limiter events.
-            this.limiter.on("error", (err) => logger.error("Anthropic.limiter.error", err))
-            this.limiter.on("depleted", () => logger.warn("Anthropic.limiter.depleted", "Rate limited"))
+            this.limiter.on("error", (err) => logger.error("Anthropic.limiter", err))
+            this.limiter.on("depleted", () => logger.warn("Anthropic.limiter", "Rate limited"))
         } catch (ex) {
             logger.error("Anthropic.init", ex)
         }
@@ -88,11 +88,12 @@ export class Anthropic implements AiProvider {
 
             // Here we go!
             try {
-                const res = await axiosRequest(options)
+                const jobId = `${activity.id}-${prompt.length}-${maxTokens}`
+                const result = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
 
                 // Successful prompt response? Extract the generated activity name.
-                if (res?.content?.length > 0) {
-                    const content = res.content.filter((c) => c.type == "text").map((c) => c.text)
+                if (result?.content?.length > 0) {
+                    const content = result.content.filter((c) => c.type == "text").map((c) => c.text)
                     return content.join(" ")
                 }
             } catch (innerEx) {

@@ -1,5 +1,6 @@
 // Strautomator Core: AI types
 
+import Bottleneck from "bottleneck"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
@@ -10,6 +11,8 @@ import {ActivityWeather} from "../weather/types"
 export interface AiProvider {
     /** Method to generate activity names. */
     activityPrompt(user: UserData, activity: StravaActivity, prompt: string[], maxTokens: number): Promise<string>
+    /** Flag to tell if the provider is currently being rate limited. */
+    limiter: Bottleneck
 }
 
 /**

@@ -5,6 +5,7 @@ import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
+import Bottleneck from "bottleneck"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
@@ -20,6 +21,11 @@ export class OpenAI implements AiProvider {
         return this._instance || (this._instance = new this())
     }
 
+    /**
+     * API limiter module.
+     */
+    limiter: Bottleneck
+
     // INIT
     // --------------------------------------------------------------------------
 
@@ -31,6 +37,18 @@ export class OpenAI implements AiProvider {
             if (!settings.openai.api.key) {
                 throw new Error("Missing the openai.api.key setting")
             }
+
+            // Create the bottleneck rate limiter.
+            this.limiter = new Bottleneck({
+                maxConcurrent: settings.anthropic.api.maxConcurrent,
+                reservoir: settings.anthropic.api.maxPerMinute,
+                reservoirRefreshAmount: settings.anthropic.api.maxPerMinute,
+                reservoirRefreshInterval: 1000 * 60
+            })
+
+            // Rate limiter events.
+            this.limiter.on("error", (err) => logger.error("OpenAI.limiter", err))
+            this.limiter.on("depleted", () => logger.warn("OpenAI.limiter", "Rate limited"))
         } catch (ex) {
             logger.error("OpenAI.init", ex)
         }
@@ -78,11 +96,12 @@ export class OpenAI implements AiProvider {
 
             // Here we go!
             try {
-                const res = await axiosRequest(options)
+                const jobId = `${activity.id}-${prompt.length}-${maxTokens}`
+                const result = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
 
                 // Successful prompt response? Extract the generated activity name.
-                if (res?.choices?.length > 0) {
-                    const arrName = res.choices[0].message.content.split(`"`)
+                if (result?.choices?.length > 0) {
+                    const arrName = result.choices[0].message.content.split(`"`)
                     let text = arrName.length > 1 ? arrName[1] : arrName[0]
 
                     // Ends with a period, but has no question? Remove it.

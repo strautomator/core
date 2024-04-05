@@ -137,8 +137,8 @@ export class AI {
             arrPrompt.push(...options.append)
         }
 
-        // Start with the preferred provider, and keep trying until everything fails.
-        const providers = [anthropic, openai, gemini]
+        // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
+        const providers = [anthropic, openai, gemini].filter(async (p) => (await p.limiter.currentReservoir()) > 0)
         const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == user.preferences.aiProvider)
         let provider: AiProvider = preferredProviders.pop() || providers.pop()
 
