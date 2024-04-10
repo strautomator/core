@@ -397,7 +397,7 @@ export class Recipes {
 
             // First activity of the day condition.
             else if (prop.indexOf("firstOfDay") == 0) {
-                const valid = await conditions.checkFirstOfDay(user, activity, condition, prop.includes(".same"))
+                const valid = await conditions.checkFirstOfDay(user, activity, condition,recipe)
                 if (!valid) return false
             }
 

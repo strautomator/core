@@ -121,8 +121,9 @@ export const recipePropertyList = [
     {value: "weather.humidity", text: "Weather humidity", shortText: "Humidity", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100},
     {value: "weather.aqi", text: "Air Quality Index", shortText: "AQI", type: "number", operators: recipeOperatorList.number, min: 0, max: 5},
     {value: "spotify.track", text: "Listened Spotify track name", type: "text", operators: recipeOperatorList.text},
-    {value: "firstOfDay.any", text: "Is today's first activity (any sport)", type: "boolean", operators: recipeOperatorList.is},
-    {value: "firstOfDay.same", text: "Is today's first activity (same sport)", type: "boolean", operators: recipeOperatorList.is}
+    {value: "firstOfDay.anySport", text: "Is today's first activity (any sport)", type: "boolean", operators: recipeOperatorList.is},
+    {value: "firstOfDay.sameSport", text: "Is today's first activity (same sport)", type: "boolean", operators: recipeOperatorList.is},
+    {value: "firstOfDay.recipe", text: "Automation has been been executed today", type: "boolean", operators: recipeOperatorList.is}
 ]
 
 /**
