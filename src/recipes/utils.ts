@@ -63,7 +63,7 @@ export const getConditionSummary = (condition: RecipeCondition): string => {
     try {
         const property = _.find(recipePropertyList, {value: condition.property})
         const fieldText = property.text
-        const operatorText = _.find(property.operators, {value: condition.operator}).text
+        const operatorText = property.operators ? _.find(property.operators, {value: condition.operator}).text : "is"
         let valueText = condition.friendlyValue || condition.value
 
         if (property.suffix) {
