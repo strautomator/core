@@ -38,7 +38,6 @@ export class Gemini implements AiProvider {
      */
     init = async (): Promise<void> => {
         try {
-            this.limiter.currentReservoir
             this.client = new VertexAI({project: settings.gcp.projectId, location: "us-east4"})
 
             // Create the bottleneck rate limiter.
