@@ -50,7 +50,7 @@ export const recipeOperatorList = {
         {value: "<", text: "is faster than", description: "Pace is faster than the value set below"},
         {value: ">", text: "is slower than", description: "Pace is slower than the value set below"}
     ],
-    // Only "is" as operator.
+    // Yes or no.
     is: [
         {value: "=", text: "is", description: ""},
         {value: "!=", text: "is not", description: ""}
@@ -123,7 +123,7 @@ export const recipePropertyList = [
     {value: "spotify.track", text: "Listened Spotify track name", type: "text", operators: recipeOperatorList.text},
     {value: "firstOfDay.anySport", text: "Is today's first activity (any sport)", type: "boolean", operators: recipeOperatorList.is},
     {value: "firstOfDay.sameSport", text: "Is today's first activity (same sport)", type: "boolean", operators: recipeOperatorList.is},
-    {value: "firstOfDay.recipe", text: "Automation has been been executed today", type: "boolean", operators: recipeOperatorList.is}
+    {value: "firstOfDay.recipe", text: "Automation is executing for the first time today", type: "boolean"}
 ]
 
 /**
