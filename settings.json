@@ -73,10 +73,10 @@
         // Back-off base delay when we're about to hit API rate limits.
         // Value set in milliseconds, will increase as we get closer to the limits.
         "backoffInterval": 500,
-        // Retry axios requests after 2 seconds. Value set in milliseconds.
-        "retryInterval": 2000,
-        // Default timeout of 3 minutes for axios requests. Value set in milliseconds.
-        "timeout": 180000
+        // Retry axios requests after 1.5 seconds. Value set in milliseconds.
+        "retryInterval": 1500,
+        // Default timeout of 2.5 minutes for axios requests. Value set in milliseconds.
+        "timeout": 150000
     },
     // Beta environment and settings disabled by default.
     "beta": {
