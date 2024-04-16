@@ -235,7 +235,7 @@ export class Spotify {
             return tokens
         } catch (ex) {
             const err = logger.error("Spotify.refreshToken", logHelper.user(user), ex)
-            this.processTokenError(user, err)
+            this.processAuthError(user, err)
             throw ex
         }
     }
@@ -264,12 +264,12 @@ export class Spotify {
     }
 
     /**
-     * Process token errors and emit the appropriate event.
+     * Process auth and token errors and emit the appropriate event.
      * @param user The user.
      * @param err The parsed error message.
      */
-    processTokenError = async (user: UserData, err: string): Promise<void> => {
-        if (err.includes("invalid_grant") || err.includes("expired")) {
+    processAuthError = async (user: UserData, err: string): Promise<void> => {
+        if (err.includes("invalid_grant") || err.includes("expired") || err.includes("client scope")) {
             eventManager.emit("Spotify.tokenFailure", user)
         }
     }
@@ -308,7 +308,7 @@ export class Spotify {
             return profile
         } catch (ex) {
             const err = logger.error("Spotify.getProfile", logHelper.user(user), ex)
-            this.processTokenError(user, err)
+            this.processAuthError(user, err)
             throw ex
         }
     }
@@ -360,7 +360,7 @@ export class Spotify {
             return tracks
         } catch (ex) {
             const err = logger.error("Spotify.getActivityTracks", logHelper.user(user), logHelper.activity(activity), ex)
-            this.processTokenError(user, err)
+            this.processAuthError(user, err)
             return null
         }
     }
