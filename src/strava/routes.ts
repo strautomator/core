@@ -43,12 +43,20 @@ export class StravaRoutes {
      * Get detailed route info from Strava.
      * @param user User data.
      * @param idString The route URL ID (for whatever reason, Strava doesn't accept the route ID).
+     * @param cacheOnly Get data from the database cache only.
      */
-    getRoute = async (user: UserData, idString: string): Promise<StravaRoute> => {
+    getRoute = async (user: UserData, idString: string, cacheOnly?: boolean): Promise<StravaRoute> => {
         try {
-            const data = await api.get(user.stravaTokens, `routes/${idString}`)
-            delete data.segments
+            const preProcessor = (data: any): void => {
+                try {
+                    delete data.athlete
+                    delete data.segments
+                } catch (preEx) {
+                    logger.error("Strava.getRoute.preProcessor", logHelper.user(user), idString, preEx)
+                }
+            }
 
+            const data = await api.get(user.stravaTokens, `routes/${idString}`, {cacheOnly: cacheOnly}, preProcessor)
             const route = toStravaRoute(user, data)
 
             logger.info("Strava.getRoute", logHelper.user(user), `Route ${idString}: ${route.name}`)
