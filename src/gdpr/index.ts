@@ -35,7 +35,7 @@ export class GDPR {
     }
 
     /**
-     * Delete archives when an user account is deleted.
+     * Delete archives and cache when an user account is deleted.
      * @param user User that was deleted from the database.
      */
     private onUserDelete = async (user: UserData): Promise<void> => {
@@ -91,6 +91,7 @@ export class GDPR {
             const where = [["userId", "==", user.id]]
             const jsonData: any = {}
             jsonData["user"] = await database.get("users", user.id, true)
+            jsonData["calendars"] = await database.search("calendars", where)
             jsonData["activities"] = await database.search("activities", where)
             jsonData["athlete-records"] = await database.get("athlete-records", user.id, true)
             jsonData["garmin"] = await database.search("garmin", where)

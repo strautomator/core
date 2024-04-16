@@ -3,6 +3,24 @@
 import dayjs from "dayjs"
 
 /**
+ * Cached calendar with base event details.
+ */
+export interface CalendarCache {
+    /** The user ID. */
+    userId: string
+    /** Date when the cache was last updated. */
+    dateUpdated: Date
+    /** Map of cached events with title, start date and end date. */
+    events: {
+        [eventId: string]: {
+            title: string
+            dateStart: Date
+            dateEnd: Date
+        }
+    }
+}
+
+/**
  * Options used to generate activity calendars.
  */
 export interface CalendarOptions {

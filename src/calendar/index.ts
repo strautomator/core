@@ -1,6 +1,6 @@
 // Strautomator Core: Calendar
 
-import {CalendarOptions} from "./types"
+import {CalendarCache, CalendarOptions} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import {StravaBaseSport, StravaClub, StravaRideType, StravaRunType} from "../strava/types"
@@ -9,12 +9,13 @@ import {translation} from "../translations"
 import {File} from "@google-cloud/storage"
 import _ from "lodash"
 import crypto from "crypto"
+import database from "../database"
 import eventManager from "../eventmanager"
 import komoot from "../komoot"
 import maps from "../maps"
 import storage from "../storage"
 import strava from "../strava"
-import ical, {ICalCalendar, ICalAttendeeType, ICalAttendeeRole, ICalAttendeeStatus, ICalEventData} from "ical-generator"
+import ical, {ICalCalendar, ICalAttendeeType, ICalAttendeeRole, ICalAttendeeStatus, ICalEventData, ICalCalendarData} from "ical-generator"
 import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
@@ -55,11 +56,7 @@ export class Calendar {
      * @param user User that was deleted from the database.
      */
     private onUserDelete = async (user: UserData): Promise<void> => {
-        const count = await this.deleteCache(user)
-
-        if (count > 0) {
-            logger.info("Calendar.onUserDelete", logHelper.user(user), "User's cached calendars deleted")
-        }
+        await this.deleteCache(user)
     }
 
     // CACHE
@@ -73,6 +70,12 @@ export class Calendar {
         let result = 0
 
         try {
+            result = await database.delete("calendars", ["userId", "==", user.id])
+        } catch (ex) {
+            logger.error("Calendar.deleteCache", logHelper.user(user), ex)
+        }
+
+        try {
             const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
             if (calendarFiles.length > 0) {
                 for (let file of calendarFiles) {
@@ -83,11 +86,13 @@ export class Calendar {
                         logger.error("Calendar.deleteCache", logHelper.user(user), file.name, fileEx)
                     }
                 }
-
-                logger.info("Calendar.deleteCache", logHelper.user(user), `Deleted ${result || "no"} cached calendars`)
             }
         } catch (ex) {
             logger.error("Calendar.deleteCache", logHelper.user(user), ex)
+        }
+
+        if (result > 0) {
+            logger.info("Calendar.deleteCache", logHelper.user(user), `Deleted ${result} cached calendars`)
         }
 
         return result
@@ -105,7 +110,7 @@ export class Calendar {
      */
     generate = async (user: UserData, options: CalendarOptions): Promise<string> => {
         let optionsLog: string
-        let cacheId: string
+        let cacheFileId: string
         let cachedFile: File
 
         try {
@@ -145,8 +150,8 @@ export class Calendar {
             let hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 14)
             if (settings.beta.enabled) hash += "-beta"
 
-            cacheId = `${user.id}/${user.urlToken}-${hash}.ics`
-            cachedFile = await storage.getFile("calendar", cacheId)
+            cacheFileId = `${user.id}/${user.urlToken}-${hash}.ics`
+            cachedFile = await storage.getFile("calendar", cacheFileId)
 
             // See if cached version of the calendar is still valid.
             // Check cached calendar expiry date (reversed / backwards) and if user has
@@ -179,7 +184,7 @@ export class Calendar {
                     // or if calendar is for club events only.
                     if (notExpired && (notChanged || onlyClubs)) {
                         logger.info("Calendar.generate.fromCache", logHelper.user(user), optionsLog, `${(cacheSize / 1000 / 1024).toFixed(2)} MB`)
-                        return storage.getUrl("calendar", cacheId)
+                        return storage.getUrl("calendar", cacheFileId)
                     } else {
                         logger.info("Calendar.generate.fromCache", logHelper.user(user), optionsLog, "Cache invalidated")
                     }
@@ -197,14 +202,12 @@ export class Calendar {
             if (options.sportTypes) calName += ` (${options.sportTypes.join(", ")})`
 
             // Prepare calendar details.
-            const domain = new URL(settings.app.url).hostname
             const prodId = {company: "Devv", product: "Strautomator", language: "EN"}
             const calUrl = `${settings.app.url}calendar/${user.urlToken}`
 
             // Create ical container.
-            const icalOptions = {
+            const icalOptions: ICalCalendarData = {
                 name: calName,
-                domain: domain,
                 prodId: prodId,
                 url: calUrl,
                 ttl: user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
@@ -214,6 +217,10 @@ export class Calendar {
             // Force set the dates from and to so we can build the activities / club events.
             options.dateFrom = dateFrom
             options.dateTo = dateTo
+
+            // Fetch cached events from the database.
+            const dbCacheId = `${user.id}-${hash}`
+            const dbCache: CalendarCache = (await database.get("calendars", dbCacheId)) || {events: {}}
 
             // User is suspended? Add a single event, otherwise process activities and club events.
             if (user.suspended) {
@@ -229,35 +236,64 @@ export class Calendar {
                         url: "https://strautomator.com/auth/login"
                     })
                 }
+
+                logger.info("Calendar.generate", logHelper.user(user), `${optionsLog}`, "User is suspended, generated just warning events")
             } else {
                 if (options.activities) {
-                    await this.buildActivities(user, options, cal)
+                    await this.buildActivities(user, options, cal, dbCache)
                 }
                 if (options.clubs) {
-                    await this.buildClubs(user, options, cal)
+                    await this.buildClubs(user, options, cal, dbCache)
                 }
+
+                const output = cal.toString()
+                const duration = dayjs().unix() - startTime
+                const size = output.length / 1000 / 1024
+
+                try {
+                    await storage.setFile("calendar", cacheFileId, output, "text/calendar")
+
+                    // If user is PRO, cache the basic events metadata on the database as well.
+                    if (user.isPro) {
+                        dbCache.userId = user.id
+                        dbCache.dateUpdated = nowUtc.toDate()
+                        await database.set("calendars", dbCache, dbCacheId)
+                    }
+                } catch (saveEx) {
+                    logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, "Failed to save to the cache")
+                }
+
+                logger.info("Calendar.generate", logHelper.user(user), `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
             }
 
-            const output = cal.toString()
-            const duration = dayjs().unix() - startTime
-            const size = output.length / 1000 / 1024
-
-            try {
-                await storage.setFile("calendar", cacheId, output, "text/calendar")
-            } catch (saveEx) {
-                logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, "Failed to save to the cache")
-            }
-
-            logger.info("Calendar.generate", logHelper.user(user), `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
-
-            return storage.getUrl("calendar", cacheId)
+            return storage.getUrl("calendar", cacheFileId)
         } catch (ex) {
             if (cachedFile) {
                 logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, ex, "Fallback to cached calendar")
-                return storage.getUrl("calendar", cacheId)
+                return storage.getUrl("calendar", cacheFileId)
             } else {
                 logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, ex)
                 throw ex
+            }
+        }
+    }
+
+    /**
+     * Helper to add an event to the calendar.
+     * @param user The user.
+     * @param cal Calendar being populated.
+     * @param eventDetails Event details.
+     * @param dbCache Cached calendar from the database.
+     */
+    private addCalendarEvent = (user: UserData, cal: ICalCalendar, eventDetails: ICalEventData, dbCache: CalendarCache): void => {
+        cal.createEvent(eventDetails)
+
+        // Only PRO users will have a cache set on the database.
+        if (user.isPro) {
+            dbCache.events[eventDetails.id] = {
+                title: eventDetails.summary,
+                dateStart: eventDetails.start as Date,
+                dateEnd: eventDetails.end as Date
             }
         }
     }
@@ -267,8 +303,9 @@ export class Calendar {
      * @param user The user.
      * @param options Calendar options.
      * @param cal The ical instance.
+     * @param cachedEvents List of cached events from the database.
      */
-    private buildActivities = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
+    private buildActivities = async (user: UserData, options: CalendarOptions, cal: ICalCalendar, dbCache: CalendarCache): Promise<void> => {
         const optionsLog = `From ${options.dateFrom.format("ll")} to ${options.dateTo.format("ll")}`
         const fieldSettings = settings.calendar.activityFields
         let eventCount = 0
@@ -281,25 +318,25 @@ export class Calendar {
             // Fetch and iterate user activities, checking filters before proceeding.
             const activities = await strava.activities.getActivities(user, {after: options.dateFrom, before: options.dateTo})
             for (let activity of activities) {
+                const eventId = `activity-${activity.id}`
                 const arrDetails = []
 
                 // Stop here if the activity was excluded on the calendar options.
                 if (options.sportTypes && !options.sportTypes.includes(activity.sportType)) continue
                 if (options.excludeCommutes && activity.commute) continue
 
-                // For whatever reason Strava sometimes returned no dates on activities, so adding this extra check here
-                // that should go away once the root cause is identified.
+                // Activity conditions.
+                const startDate = activity.dateStart || dbCache.events[eventId]?.dateStart
+                const endDate = activity.dateEnd || dbCache.events[eventId]?.dateEnd
+                const sportType = activity.sportType.toLowerCase()
+                const similarSportType = StravaBaseSport[activity.sportType]?.toLowerCase()
+                const activityLink = `https://www.strava.com/activities/${activity.id}`
+
+                // For whatever reason Strava on rare occasions Strava returned no dates on activities, so double check it here.
                 if (!activity.dateStart || !activity.dateEnd) {
                     logger.info("Calendar.generate", logHelper.user(user), `${logHelper.activity(activity)} has no start or end date`)
                     continue
                 }
-
-                // Activity conditions.
-                const startDate = activity.dateStart
-                const endDate = activity.dateEnd
-                const sportType = activity.sportType.toLowerCase()
-                const similarSportType = StravaBaseSport[activity.sportType]?.toLowerCase()
-                const activityLink = `https://www.strava.com/activities/${activity.id}`
 
                 // Append suffixes to activity values.
                 transformActivityFields(user, activity, compact)
@@ -350,16 +387,14 @@ export class Calendar {
                     const summaryTemplate = calendarTemplate?.eventSummary || settings.calendar.eventSummary
                     const summary = jaul.data.replaceTags(summaryTemplate, activity, null, true)
                     const details = calendarTemplate.eventDetails ? jaul.data.replaceTags(calendarTemplate.eventDetails, activity, null, true) : arrDetails.join(compact ? "" : "\n")
-
-                    // Add activity to the calendar as an event.
-                    const event = cal.createEvent({
-                        id: `activity-${activity.id}`,
+                    const eventData: ICalEventData = {
+                        id: eventId,
                         start: startDate,
                         end: endDate,
                         summary: summary,
                         description: details,
                         url: activityLink
-                    })
+                    }
 
                     // Geo location available?
                     if (activity.locationEnd?.length > 0) {
@@ -375,8 +410,11 @@ export class Calendar {
                             }
                         }
 
-                        event.location(locationString)
+                        eventData.location = locationString
                     }
+
+                    // Add activity to the calendar as an event.
+                    this.addCalendarEvent(user, cal, eventData, dbCache)
                 } catch (innerEx) {
                     logger.error("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), innerEx)
                 }
@@ -395,8 +433,9 @@ export class Calendar {
      * @param user The user.
      * @param options Calendar options.
      * @param cal The ical instance.
+     * @param cachedEvents List of cached events from the database.
      */
-    private buildClubs = async (user: UserData, options: CalendarOptions, cal: ICalCalendar): Promise<void> => {
+    private buildClubs = async (user: UserData, options: CalendarOptions, cal: ICalCalendar, dbCache: CalendarCache): Promise<void> => {
         const optionsLog = `From ${options.dateFrom.format("ll")} to ${options.dateFrom.format("ll")}`
         const today = dayjs().hour(0).toDate()
         const tOrganizer = translation("Organizer", user.preferences, true)
@@ -448,18 +487,21 @@ export class Calendar {
                     }
 
                     // Iterate event dates and add each one of them to the calendar.
-                    for (let eventDate of clubEvent.dates) {
-                        if (options.dateFrom.isAfter(eventDate) || options.dateTo.isBefore(eventDate)) continue
+                    for (let startDate of clubEvent.dates) {
+                        if (options.dateFrom.isAfter(startDate) || options.dateTo.isBefore(startDate)) continue
                         let endDate: Date
 
-                        const evTimestamp = Math.round(eventDate.valueOf() / 1000)
+                        const eventTimestamp = Math.round(startDate.valueOf() / 1000)
+                        const eventId = `${clubEvent.id}-${eventTimestamp}`
                         const estimatedTime = clubEvent.route ? clubEvent.route.totalTime : 0
 
                         // Upcoming event has a route with estimated time? Use it for the end date, otherwise defaults to 15min.
-                        if (eventDate > today && estimatedTime > 0) {
-                            endDate = dayjs(eventDate).add(estimatedTime, "seconds").toDate()
+                        if (startDate > today && estimatedTime > 0) {
+                            endDate = dayjs(startDate).add(estimatedTime, "seconds").toDate()
+                        } else if (dbCache?.events[eventId]) {
+                            endDate = dbCache?.events[eventId].dateEnd
                         } else {
-                            endDate = dayjs(eventDate).add(settings.calendar.defaultDurationMinutes, "minutes").toDate()
+                            endDate = dayjs(startDate).add(settings.calendar.defaultDurationMinutes, "minutes").toDate()
                         }
 
                         const eventLink = `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
@@ -484,8 +526,8 @@ export class Calendar {
 
                         // Base event data.
                         const eventData: ICalEventData = {
-                            id: `club-${clubEvent.id}-${evTimestamp}`,
-                            start: eventDate,
+                            id: `club-${eventId}`,
+                            start: startDate,
                             end: endDate,
                             summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
                             description: arrDescription.join("\n"),
@@ -505,13 +547,13 @@ export class Calendar {
                             ]
                         }
 
-                        // Create event.
-                        const event = cal.createEvent(eventData)
-
                         // Location available?
                         if (clubEvent.address) {
-                            event.location(clubEvent.address)
+                            eventData.location = clubEvent.address
                         }
+
+                        // Create event.
+                        this.addCalendarEvent(user, cal, eventData, dbCache)
 
                         eventCount++
                     }
