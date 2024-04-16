@@ -86,7 +86,8 @@ export class StravaClubs {
             const maxDate = now.add(settings.strava.clubs.maxAgeDays, "days")
             const minDate = now.subtract(settings.strava.clubs.maxAgeDays, "days")
 
-            // Helper to discard events that are out of the allowed event range.
+            // Helper to discard events that are out of the allowed event range,
+            // as well as unnecessary event details.
             const preProcessor = (clubEvents: any): void => {
                 try {
                     const totalCount = clubEvents.length
@@ -95,6 +96,11 @@ export class StravaClubs {
                             const eventDate = dayjs(o)
                             return eventDate.isBefore(maxDate) && eventDate.isAfter(minDate)
                         })
+                    })
+                    clubEvents.forEach((ce) => {
+                        if (ce.organizing_athlete) {
+                            ce.organizing_athlete = _.pick(ce.organizing_athlete, ["id", "username", "firstname", "lastname", "friend", "country"])
+                        }
                     })
                     if (clubEvents.length < totalCount) {
                         logger.info("Strava.getClubEvents.preProcessor", logHelper.user(user), `Club ${id}`, `Discarded ${totalCount - clubEvents.length} out of ${totalCount} events`)
