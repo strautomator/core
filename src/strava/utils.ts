@@ -314,13 +314,19 @@ export function toStravaProfile(data: any): StravaProfile {
         lastName: data.lastname,
         city: data.city || null,
         country: data.country || null,
-        dateCreated: dayjs.utc(data.created_at).toDate(),
-        dateUpdated: dayjs.utc(data.updated_at).toDate(),
         units: data.measurement_preference == "feet" ? "imperial" : "metric",
         ftp: data.ftp || null,
         weight: data.weight || null,
         bikes: [],
         shoes: []
+    }
+
+    // Set profile dates.
+    if (data.created_at) {
+        profile.dateCreated = dayjs.utc(data.created_at).toDate()
+    }
+    if (data.updated_at) {
+        profile.dateUpdated = dayjs.utc(data.updated_at).toDate()
     }
 
     // Has bikes?
@@ -500,8 +506,6 @@ export function toStravaClubEvent(data: any): StravaClubEvent {
             clubEvent.route.polyline = data.route.map.polyline || data.route.map.summary_polyline
         }
     }
-
-    // Estimated time.
 
     // Who's organizing it?
     if (data.organizing_athlete) {

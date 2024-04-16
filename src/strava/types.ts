@@ -302,9 +302,9 @@ export interface StravaProfile {
     /** Athlete's country. */
     country?: string
     /** Athlete's creation date (on Strava). */
-    dateCreated: Date
+    dateCreated?: Date
     /** Athlete's date of last update (on Strava). */
-    dateUpdated: Date
+    dateUpdated?: Date
     /** Athlete's list of registered bikes. */
     bikes?: StravaGear[]
     /** Athlete's list of registered shoes. */
