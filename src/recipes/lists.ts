@@ -104,6 +104,7 @@ export const recipePropertyList = [
     {value: "device", text: "Device or app", type: "text", operators: recipeOperatorList.text},
     {value: "temperature", text: "Device temperature", shortText: "Device temp", type: "anyNumber", operators: recipeOperatorList.number, suffix: "°C", fSuffix: "°F"},
     {value: "co2Saved", text: "CO2 saved", type: "number", operators: recipeOperatorList.number, suffix: "kg"},
+    {value: "commute", text: "Tagged as commute", type: "boolean", operators: recipeOperatorList.is},
     {value: "trainer", text: "Using a trainer machine", type: "boolean", operators: recipeOperatorList.is},
     {value: "manual", text: "Created manually", type: "boolean", operators: recipeOperatorList.is},
     {value: "flagged", text: "Flagged", type: "boolean", operators: recipeOperatorList.is},
