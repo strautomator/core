@@ -124,6 +124,14 @@ export class Maps {
             logger.info("Maps.getGeocode", provider, address, region, `No results`)
             return []
         } catch (ex) {
+            const dmsCoordinates = this.dmsToCoordinates(address)
+
+            // Location passed as DMS?
+            if (dmsCoordinates) {
+                logger.info("Maps.getGeocode", provider, address, `DMS converted to ${dmsCoordinates.latitude}, ${dmsCoordinates.longitude}`)
+                return [dmsCoordinates]
+            }
+
             logger.error("Maps.getGeocode", provider, address, region, ex)
             throw ex
         }
@@ -465,6 +473,46 @@ export class Maps {
 
     // HELPERS
     // --------------------------------------------------------------------------
+
+    /**
+     * Convert degrees / minutes / seconds to decimal coordinates.
+     * @param dms Coordinates in degrees / minutes / seconds format.
+     */
+    dmsToCoordinates = (dms: string): MapCoordinates => {
+        try {
+            if (!dms || dms.length < 14 || dms.length > 26 || (!dms.includes("°") && !dms.includes("'") && !dms.includes('"'))) {
+                return null
+            }
+
+            let parts = dms.trim().split(/[^\d\w]+/)
+            if (parts.length != 8 || isNaN(parts[0] as any) || isNaN(parts[4] as any)) {
+                return null
+            }
+
+            // Internal value convertor.
+            const convert = (d: number, m: number, s: number, c: string): number => {
+                let result = d + m / 60 + s / 3600
+                c = c.toUpperCase()
+                return c == "S" || c == "W" ? -result : result
+            }
+
+            // Make sure lat and long are within the valid range.
+            const lat = convert(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]), parts[3])
+            const long = convert(parseInt(parts[4]), parseInt(parts[5]), parseInt(parts[6]), parts[7])
+            if (lat > 90 || lat < -90 || long > 180 || long < -180) {
+                return null
+            }
+
+            return {
+                address: `Coordinates ${lat}, ${long}`,
+                latitude: lat,
+                longitude: long
+            }
+        } catch (ex) {
+            logger.error("Maps.dmsToCoordinates", dms, ex)
+            return null
+        }
+    }
 
     /**
      * Return the log string for the supplied address.
