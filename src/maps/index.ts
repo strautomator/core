@@ -491,7 +491,7 @@ export class Maps {
 
             // Internal value convertor.
             const convert = (d: number, m: number, s: number, c: string): number => {
-                let result = d + m / 60 + s / 3600
+                let result = parseFloat((d + m / 60 + s / 3600).toFixed(5))
                 c = c.toUpperCase()
                 return c == "S" || c == "W" ? -result : result
             }
@@ -505,8 +505,8 @@ export class Maps {
 
             return {
                 address: `Coordinates ${lat}, ${long}`,
-                latitude: parseFloat(lat.toFixed(5)),
-                longitude: parseFloat(long.toFixed(5))
+                latitude: lat,
+                longitude: long
             }
         } catch (ex) {
             logger.error("Maps.dmsToCoordinates", dms, ex)
