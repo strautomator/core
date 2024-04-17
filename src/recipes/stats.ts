@@ -116,17 +116,21 @@ export class RecipeStats {
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
 
-                // Only add activity ID and update the counter if it not there yet.
+                // Only add activity ID and update the counter if it was not there yet.
                 if (!stats.activities.includes(activity.id)) {
                     stats.activities.push(activity.id)
                     stats.activityCount++
                     stats.counter++
                 }
 
-                // Remove activity IDs from the stats.
+                // Remove activity IDs from the stats if it has hit the array limit.
+                const removedIds = []
                 while (stats.activities.length > settings.recipes.maxActivityIds) {
                     const removedId = stats.activities.shift()
-                    logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${removedId} removed from list`)
+                    removedIds.push(removedId)
+                }
+                if (removedIds.length > 0) {
+                    logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Removed activities (list too long): ${removedIds.join(", ")}`)
                 }
             }
 
