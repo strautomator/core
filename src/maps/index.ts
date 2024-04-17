@@ -478,14 +478,14 @@ export class Maps {
      * Convert degrees / minutes / seconds to decimal coordinates.
      * @param dms Coordinates in degrees / minutes / seconds format.
      */
-    dmsToCoordinates = (dms: string): MapCoordinates => {
+    private dmsToCoordinates = (dms: string): MapCoordinates => {
         try {
-            if (!dms || dms.length < 14 || dms.length > 26 || (!dms.includes("°") && !dms.includes("'") && !dms.includes('"'))) {
+            if (!dms || dms.length < 14 || dms.length > 40 || (!dms.includes("°") && !dms.includes("'") && !dms.includes('"'))) {
                 return null
             }
 
-            let parts = dms.trim().split(/[^\d\w]+/)
-            if (parts.length != 8 || isNaN(parts[0] as any) || isNaN(parts[4] as any)) {
+            let parts = dms.trim().match(/[-]{0,1}[\d.]*[\d]|([NSEW])+/g)
+            if (parts.length < 8 || isNaN(parts[0] as any) || isNaN(parts[4] as any)) {
                 return null
             }
 
@@ -505,8 +505,8 @@ export class Maps {
 
             return {
                 address: `Coordinates ${lat}, ${long}`,
-                latitude: lat,
-                longitude: long
+                latitude: parseFloat(lat.toFixed(5)),
+                longitude: parseFloat(long.toFixed(5))
             }
         } catch (ex) {
             logger.error("Maps.dmsToCoordinates", dms, ex)
