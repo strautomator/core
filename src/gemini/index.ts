@@ -115,6 +115,14 @@ export class Gemini implements AiProvider {
             return null
         } catch (ex) {
             logger.error("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), ex)
+
+            // Force trigger a rate limit in case we get a "quota exceeded" error.
+            const message = JSON.stringify(ex, null, 0)
+            if (message.includes("429") && message.includes("quota")) {
+                const remaining = await this.limiter.currentReservoir()
+                this.limiter.incrementReservoir(-remaining)
+            }
+
             return null
         }
     }
