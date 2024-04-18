@@ -68,7 +68,7 @@ export class Gemini implements AiProvider {
      */
     activityPrompt = async (user: UserData, activity: StravaActivity, prompt: string[], maxTokens: number): Promise<string> => {
         try {
-            const model = this.client.preview.getGenerativeModel({model: user.isPro && Math.random() <= 0.5 ? "gemini-1.5-pro" : "gemini-1.0-pro"})
+            const model = this.client.preview.getGenerativeModel({model: "gemini-1.0-pro"})
             const parts = prompt.map((p) => ({text: p}))
 
             // Here we go!
