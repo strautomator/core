@@ -51,7 +51,8 @@ export class OpenMeteo implements WeatherProvider {
             const baseUrl = settings.weather.openmeteo.baseUrl
             const dateFormat = utcDate.format("YYYY-MM-DD")
             const daysQuery = isFuture ? `start_date=${dateFormat}&end_date=${dateFormat}` : `past_days=${utcNow.dayOfYear() - utcNow.subtract(diffHours, "hours").dayOfYear()}`
-            const weatherUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,pressure_msl,precipitation,weathercode,snow_depth,cloudcover,windspeed_10m,windspeed_80m,winddirection_10m,winddirection_80m,windgusts_10m&windspeed_unit=ms&current_weather=true`
+            const currentQuery = diffHours < 1 ? "&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m" : ""
+            const weatherUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,surface_pressure,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m${currentQuery}`
 
             // Fetch weather data.
             logger.debug("OpenMeteo.getWeather", weatherUrl)
@@ -140,12 +141,12 @@ export class OpenMeteo implements WeatherProvider {
             summary: null,
             temperature: data.hourly.temperature_2m[index],
             feelsLike: data.hourly.apparent_temperature[index],
-            humidity: data.hourly.relativehumidity_2m[index],
+            humidity: data.hourly.relative_humidity_2m[index],
             pressure: data.hourly.pressure_msl[index],
-            windSpeed: data.hourly.windspeed_10m[index] || data.hourly.windspeed_80m[index],
+            windSpeed: data.hourly.wind_speed_10m[index],
             windGust: data.hourly.wind_gusts_10m[index],
-            windDirection: data.hourly.winddirection_10m[index] || data.hourly.winddirection_80m[index],
-            cloudCover: data.hourly.cloudcover[index],
+            windDirection: data.hourly.wind_gusts_10m[index],
+            cloudCover: data.hourly.cloud_cover[index],
             extraData: {
                 timeOfDay: getSuntimes(coordinates, dDate).timeOfDay,
                 mmPrecipitation: data.hourly.precipitation[index]
