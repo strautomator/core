@@ -143,6 +143,7 @@ export class OpenMeteo implements WeatherProvider {
             humidity: data.hourly.relativehumidity_2m[index],
             pressure: data.hourly.pressure_msl[index],
             windSpeed: data.hourly.windspeed_10m[index] || data.hourly.windspeed_80m[index],
+            windGust: data.hourly.wind_gusts_10m[index],
             windDirection: data.hourly.winddirection_10m[index] || data.hourly.winddirection_80m[index],
             cloudCover: data.hourly.cloudcover[index],
             extraData: {

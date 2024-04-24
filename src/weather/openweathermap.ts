@@ -168,6 +168,7 @@ export class OpenWeatherMap implements WeatherProvider {
             humidity: data.humidity,
             pressure: data.pressure,
             windSpeed: data.wind_speed,
+            windGust: data.wind_gust,
             windDirection: data.wind_deg,
             precipitation: mmSnow > 0 ? "Snow" : mmRain > 0 ? "Rain" : null,
             cloudCover: data.clouds,

@@ -79,6 +79,8 @@ export interface WeatherSummary {
     pressure: string | number
     /** Wind speed (m/s). */
     windSpeed: string | number
+    /** Wind gust speed (m/s). */
+    windGust: string | number
     /** Wind direction. */
     windDirection: string | number
     /** Cloud coverage, percentage. */

@@ -7,6 +7,7 @@ import {axiosRequest} from "../axios"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
+import _ from "lodash"
 const settings = require("setmeup").settings
 
 /**
@@ -101,7 +102,8 @@ export class VisualCrossing implements WeatherProvider {
         // Data not found? Stop here.
         if (!data || (!data.temp && !data.humidity && !data.icon)) return null
 
-        // Get precipitation details.
+        // Get wind and precipitation details.
+        const windGust = _.max(_.compact([data.windgust, data.windspeed, data.windspeedmax]))
         const precipLevel = data.precip || 0
         const snowDepth = data.snow || 0
         let precipitation = data.preciptype
@@ -116,6 +118,7 @@ export class VisualCrossing implements WeatherProvider {
             humidity: data.humidity,
             pressure: data.pressure,
             windSpeed: data.windspeed ? data.windspeed / 3.6 : null,
+            windGust: windGust ? windGust / 3.6 : null,
             windDirection: data.winddir,
             precipitation: precipitation,
             cloudCover: data.cloudcover,

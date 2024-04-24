@@ -101,6 +101,7 @@ export class Tomorrow implements WeatherProvider {
             humidity: data.humidity,
             pressure: data.pressureSurfaceLevel,
             windSpeed: data.windSpeed,
+            windGust: data.windGust,
             windDirection: data.windDirection,
             cloudCover: data.cloudCover,
             visibility: data.visibility,

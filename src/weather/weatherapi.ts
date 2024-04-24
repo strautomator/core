@@ -83,6 +83,7 @@ export class WeatherAPI implements WeatherProvider {
 
         // Set wind speed.
         let windSpeed = data.wind_kph || data.maxwind_kph || null
+        let windGust = data.gust_kph || null
 
         // Make sure we don't have sunny at night :-)
         let summary = data.condition && data.condition.text ? data.condition.text.toLowerCase() : null
@@ -102,6 +103,7 @@ export class WeatherAPI implements WeatherProvider {
             humidity: data.humidity || data.avghumidity || null,
             pressure: data.pressure_mb || null,
             windSpeed: windSpeed ? parseFloat(windSpeed) / 3.6 : null,
+            windGust: windGust ? parseFloat(windGust) / 3.6 : null,
             windDirection: data.wind_degree || null,
             precipitation: null,
             cloudCover: data.cloud,
