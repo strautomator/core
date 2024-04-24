@@ -187,8 +187,9 @@ export const startup = async (quickStart?: boolean) => {
         if (settings.gcp.downloadSettings.bucket) {
             const path = require("path")
             const downloadSettings = settings.gcp.downloadSettings
-            const targetFile = path.resolve(path.dirname(require.main.filename), "settings.from-gcp.json")
-            const loadOptions = {crypto: true}
+            const targetFolder = downloadSettings.target || path.dirname(require.main.filename)
+            const targetFile = path.resolve(targetFolder, "settings.from-gcp.json")
+            const loadOptions = {crypto: true, destroy: true}
 
             try {
                 await storage.downloadFile(downloadSettings.bucket, downloadSettings.filename, targetFile)
@@ -196,7 +197,7 @@ export const startup = async (quickStart?: boolean) => {
 
                 // Beta deployment? Load the beta settings.
                 if (settings.beta.enabled) {
-                    const targetBetaFile = path.resolve(path.dirname(require.main.filename), "settings.from-gcp-beta.json")
+                    const targetBetaFile = path.resolve(targetFolder, "settings.from-gcp-beta.json")
                     await storage.downloadFile(downloadSettings.bucket, downloadSettings.betaFilename, targetBetaFile)
                     setmeup.load(targetBetaFile, loadOptions)
                 }

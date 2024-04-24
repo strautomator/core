@@ -184,7 +184,7 @@
         // variables. It's HIGHLY recommended to have the settings files encrypted there.
         "downloadSettings": {
             "bucket": null,
-            "target": "/tmp",
+            "target": "/tmp/",
             "filename": "settings.secret.json",
             "betaFilename": "settings.beta.json"
         }
