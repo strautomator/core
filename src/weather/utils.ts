@@ -155,16 +155,16 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         }
 
         // Wind summary.
-        const isWindy = summary.windSpeed && (summary.windSpeed as number) > 20
-
-        // Wind speed.
+        const isWindy = (summary.windSpeed && (summary.windSpeed as number) > 20) || (summary.windGust && (summary.windGust as number) > 40)
+        const windUnit = preferences.windSpeedUnit ? preferences.windSpeedUnit : preferences.weatherUnit == "f" ? "mph" : "kph"
         if (!_.isNil(summary.windSpeed)) {
-            const windUnit = preferences.windSpeedUnit ? preferences.windSpeedUnit : preferences.weatherUnit == "f" ? "mph" : "kph"
             const windSpeed = windUnit == "m/s" ? summary.windSpeed : windUnit == "mph" ? msToMph(summary.windSpeed as number) : msToKph(summary.windSpeed as number)
             summary.windSpeed = `${Math.round(windSpeed as number)} ${translation(windUnit, preferences)}`
         }
-
-        // Wind direction.
+        if (!_.isNil(summary.windGust)) {
+            const windGust = windUnit == "m/s" ? summary.windGust : windUnit == "mph" ? msToMph(summary.windGust as number) : msToKph(summary.windGust as number)
+            summary.windGust = `${Math.round(windGust as number)} ${translation(windUnit, preferences)}`
+        }
         if (!_.isNil(summary.windDirection)) {
             const direction = degToDirection(summary.windDirection as number)
             summary.windDirection = translation(`Directions.${direction}`, preferences)
