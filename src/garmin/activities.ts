@@ -237,7 +237,7 @@ export class GarminActivities {
                     pedalBalance: "left_right_balance"
                 }
 
-                // Append extra activity data, if present.
+                // Append extra activity data from sessions.
                 for (let session of fitData.sessions) {
                     for (let field in fields) {
                         let fieldKey = fields[field]
@@ -256,6 +256,13 @@ export class GarminActivities {
                         if (!garminActivity[field] && !_.isNil(value)) {
                             garminActivity[field] = value
                         }
+                    }
+                }
+
+                // Get Sport profile.
+                for (let sp of fitData.sports) {
+                    if (sp.name) {
+                        garminActivity.sportProfile = sp.name
                     }
                 }
             }

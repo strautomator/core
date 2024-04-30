@@ -50,12 +50,14 @@ export interface GarminActivity {
     aerobicTrainingEffect?: number
     /** Anaerobic training effect. */
     anaerobicTrainingEffect?: number
-    /** Pedal L/R avg. smoothness (0-100). */
-    pedalSmoothness?: number
     /** Pedal L/R avg. torque effectiveness (0-100). */
     pedalTorqueEffect?: number
+    /** Pedal L/R avg. smoothness (0-100). */
+    pedalSmoothness?: number
     /** Pedal L/R balance. */
     pedalBalance?: string
+    /** The Sport profile used in the Garmin device. */
+    sportProfile?: string
     /** Devices used in the activity. */
     devices?: string[]
     /** Activity UTC start date. */
