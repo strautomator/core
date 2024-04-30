@@ -115,7 +115,7 @@ export class StravaAthletes {
             return null
         }
         if (user.preferences.privacyMode) {
-            logger.debug("Strava.checkActivityRecords", logHelper.user(user), "User has opted in for privacy mode")
+            logger.info("Strava.checkActivityRecords", logHelper.user(user), "User has opted in for privacy mode, won't check")
             return null
         }
         if (!activities || activities.length == 0) {
@@ -255,7 +255,7 @@ export class StravaAthletes {
     prepareAthleteRecords = async (user: UserData): Promise<void> => {
         try {
             if (user.preferences.privacyMode) {
-                logger.info("Strava.prepareAthleteRecords", logHelper.user(user), "User has opted in for privacy mode")
+                logger.info("Strava.prepareAthleteRecords", logHelper.user(user), "User has opted in for privacy mode, won't proceed")
                 return
             }
 
