@@ -212,6 +212,18 @@ export class StravaActivityProcessing {
                 throw ex
             }
 
+            // Check for FTP updates in case user has opted-in and the activity happened in the last few days.
+            try {
+                const shouldUpdateFtp = user.isPro && user.profile.ftp && user.preferences?.ftpAutoUpdate
+                const powerIncreased = activity.hasPower && activity.wattsWeighted >= user.profile.ftp
+                const isRecent = dayjs().utc().subtract(2, "days").isBefore(activity.dateStart)
+                if (shouldUpdateFtp && powerIncreased && isRecent) {
+                    stravaPerformance.processPerformance(user, [activity], true)
+                }
+            } catch (ftpEx) {
+                logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Failed to auto-update FTP", ftpEx)
+            }
+
             // Check for new records.
             stravaAthletes.checkActivityRecords(user, [activity])
 
@@ -294,18 +306,6 @@ export class StravaActivityProcessing {
                 }
             } else {
                 logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, `No matching recipes`)
-            }
-
-            // Check for FTP updates in case user has opted-in and the activity happened in the last few days.
-            try {
-                const shouldUpdateFtp = user.isPro && user.preferences?.ftpAutoUpdate && user.profile.ftp
-                const powerIncreased = activity.hasPower && activity.wattsWeighted >= user.profile.ftp
-                const isRecent = dayjs().utc().subtract(2, "days").isBefore(activity.dateStart)
-                if (shouldUpdateFtp && powerIncreased && isRecent) {
-                    await stravaPerformance.processPerformance(user, [activity], true)
-                }
-            } catch (ftpEx) {
-                logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Failed to auto-update FTP", ftpEx)
             }
         } catch (ex) {
             logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, ex)
