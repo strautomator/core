@@ -11,7 +11,6 @@ import webhooks from "./webhooks"
 import database from "../database"
 import users from "../users"
 import eventManager from "../eventmanager"
-import cache from "bitecache"
 import crypto from "crypto"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
@@ -56,11 +55,7 @@ export class Garmin {
     init = async (): Promise<void> => {
         try {
             await api.init()
-
             eventManager.on("Users.delete", this.onUserDelete)
-
-            cache.setup("garmin", settings.garmin.cacheDuration)
-            logger.info("Garmin.init", `Cache profile for up to ${settings.garmin.cacheDuration} seconds`)
         } catch (ex) {
             logger.error("Garmin.init", ex)
             throw ex

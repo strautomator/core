@@ -109,7 +109,7 @@
         "collectionSuffix": "",
         // Single documents from the database can get cached in memory. Value set in seconds.
         // To disable, set this to null.
-        "cacheDuration": 2,
+        "cacheDuration": 1,
         // Encryption options.
         "crypto": {
             "algorithm": "aes-256-cbc",
@@ -153,8 +153,6 @@
         },
         // Up to 5 seconds waiting time for a Garmin activity to be processed on automations.
         "delaySeconds": 5,
-        // Cache profiles and Garmin data for up to 2 minutes. Value set in seconds.
-        "cacheDuration": 120,
         // Garmin data will be stored in the database for up to 10 days.
         "maxCacheDuration": 864000
     },
@@ -261,8 +259,8 @@
     "maps": {
         // Geocoded results are cached down to a precision of around 1km (2 decimal digits).
         "cachePrecision": 2,
-        // Cache geolocation results in memory for up to 24 hours. Value set in seconds.
-        "cacheDuration": 86400,
+        // Cache geolocation results in memory for up to 12 hours. Value set in seconds.
+        "cacheDuration": 43200,
         // Geolocation will be cached on the database for up to 10 days. Value set in seconds.
         "maxCacheDuration": 864000,
         // Circle color, will also be used as a fill color with half opacity.
@@ -287,8 +285,8 @@
         "api": {
             "baseUrl": "https://api.musixmatch.com/ws/1.1/"
         },
-        // Track lyrics are cached in memory for up to 2 minutes. Value set in seconds.
-        "cacheDuration": 120,
+        // Track lyrics are cached in memory for up to 1 minute. Value set in seconds.
+        "cacheDuration": 60,
         // Track lyrics cached for up to 30 days in the database. Value set in seconds.
         "maxCacheDuration": 2592000
     },
@@ -455,8 +453,8 @@
             "tokenUrl": "https://accounts.spotify.com/api/token",
             "scopes": "user-read-email,user-read-recently-played"
         },
-        // Cache profiles and recently played tracks for up to 2 minutes. Value set in seconds.
-        "cacheDuration": 120,
+        // Cache profiles and recently played tracks for up to 1 minute. Value set in seconds.
+        "cacheDuration": 60,
         // Include tracks that started / ended within a minute of the activity date.
         "dateBufferSeconds": 60,
         // Maximum number of tracks returned.
