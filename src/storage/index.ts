@@ -49,35 +49,35 @@ export class Storage {
             this.client = new cloudStorage.Storage(options)
             this.buckets = {}
 
-            if (!quickStart) {
-                let key: string
-                let config: any
+            let key: string
+            let config: any
 
-                for ([key, config] of Object.entries(settings.storage.buckets)) {
-                    if (config && config.name) {
-                        const bucket = this.client.bucket(config.name)
-                        const [exists] = await bucket.exists()
+            for ([key, config] of Object.entries(settings.storage.buckets)) {
+                if (!config || !config.name) continue
 
-                        // Create buckets that don't exist yet. This is a one-off operation, so if
-                        // you change bucket settings (example: TTL) after they've been created then
-                        // you'll also need to update the existing buckets manually on the console.
-                        if (!exists) {
-                            await bucket.create({location: config.location || settings.gcp.location})
-                            await bucket.setMetadata({iamConfiguration: {uniformBucketLevelAccess: {enabled: true}}})
+                if (!quickStart) {
+                    const bucket = this.client.bucket(config.name)
+                    const [exists] = await bucket.exists()
 
-                            if (config.ttlDays) {
-                                await bucket.addLifecycleRule({action: {type: "Delete"}, condition: {age: Math.round(config.ttlDays)}})
-                            }
+                    // Create buckets that don't exist yet. This is a one-off operation, so if
+                    // you change bucket settings (example: TTL) after they've been created then
+                    // you'll also need to update the existing buckets manually on the console.
+                    if (!exists) {
+                        await bucket.create({location: config.location || settings.gcp.location})
+                        await bucket.setMetadata({iamConfiguration: {uniformBucketLevelAccess: {enabled: true}}})
 
-                            logger.info("Storage.init", `Created bucket: ${config.name}`, `TTL ${config.ttlDays || "not set"}`)
-                        } else {
-                            existingBuckets.push(config.name)
+                        if (config.ttlDays) {
+                            await bucket.addLifecycleRule({action: {type: "Delete"}, condition: {age: Math.round(config.ttlDays)}})
                         }
 
-                        // Add to list of buckets.
-                        this.buckets[key] = config.name
+                        logger.info("Storage.init", `Created bucket: ${config.name}`, `TTL ${config.ttlDays || "not set"}`)
+                    } else {
+                        existingBuckets.push(config.name)
                     }
                 }
+
+                // Add to list of buckets.
+                this.buckets[key] = config.name
             }
 
             if (existingBuckets.length > 0) {
