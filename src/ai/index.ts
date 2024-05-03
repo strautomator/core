@@ -185,7 +185,7 @@ export class AI {
 
             // Generation options.
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            options.maxTokens = 30
+            options.maxTokens = 32
             options.prepend = [`Please generate a single name for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
             options.append = [`Answer the generated name only, with no additional text.`]
 
@@ -221,7 +221,7 @@ export class AI {
 
             // Generation options.
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            options.maxTokens = 170
+            options.maxTokens = 192
             options.prepend = [`Please write a very short poem for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
             options.append = [`Answer the generated poem only, with no additional text, limited to a maximum of 10 lines.`]
 
