@@ -127,10 +127,6 @@ export class PayPalSubscriptions {
         const planName = `${settings.paypal.billingPlan.name} (${price} ${currency} / ${frequency})`
 
         try {
-            if (settings.beta.enabled) {
-                throw new Error("Creation of new billing plans is disabled on the beta environment")
-            }
-
             const options = {
                 url: "billing/plans",
                 method: "POST",
@@ -297,10 +293,6 @@ export class PayPalSubscriptions {
      */
     createSubscription = async (billingPlan: PayPalBillingPlan, userId: string): Promise<PayPalSubscription> => {
         try {
-            if (settings.beta.enabled) {
-                throw new Error("Subscriptions are disabled on the beta environment")
-            }
-
             const options = {
                 url: "billing/subscriptions",
                 method: "POST",

@@ -206,7 +206,7 @@ export class RecipeStats {
      */
     deleteArchivedStats = async (): Promise<void> => {
         try {
-            const maxDate = dayjs.utc().subtract(settings.users.idleDays.suspended, "days")
+            const maxDate = dayjs.utc().subtract(settings.users.idleDays.default, "days")
             const count = await database.delete("recipe-stats", ["dateArchived", "<", maxDate.toDate()])
             logger.info("RecipeStats.deleteArchivedStats", `Deleted ${count} archived recipe stats`)
         } catch (ex) {

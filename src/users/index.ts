@@ -379,7 +379,7 @@ export class Users {
 
             // Suspended users.
             const whereSuspendedFlag = ["suspended", "==", true]
-            const whereSuspended = ["dateLastActivity", "<", now.subtract(settings.users.idleDays.suspended, "days").toDate()]
+            const whereSuspended = ["dateLastActivity", "<", now.subtract(settings.users.idleDays.default, "days").toDate()]
             const suspended = await database.search("users", [whereSuspendedFlag, whereSuspended])
 
             // Users with no activities sent by Strava for a while.
@@ -599,16 +599,6 @@ export class Users {
             if (!exists) {
                 logger.debug("Users.upsert", profile.id, "Will create new user")
 
-                // Beta available to PRO users only.
-                if (settings.beta.enabled) {
-                    const docFromProd = await database.doc("users", profile.id, settings.beta.prodCollectionSuffix).get()
-                    if (!docFromProd.exists || !docFromProd.data().isPro) {
-                        logger.warn("Users.upsert", profile.id, "Beta available to PRO users only")
-                        userData.isPro = false
-                        return userData
-                    }
-                }
-
                 userData.displayName = profile.username || profile.firstName || profile.lastName
                 userData.dateRegistered = now
                 userData.preferences = {}
@@ -679,11 +669,6 @@ export class Users {
             // Update the user's country code.
             if (profile.country) {
                 userData.countryCode = maps.getCountryCode(profile.country)
-            }
-
-            // Users are always PRO on the beta environment.
-            if (settings.beta.enabled) {
-                userData.isPro = true
             }
 
             // Save user to the database.

@@ -39,7 +39,7 @@ export class Database {
 
     /**
      * Init the Database wrapper.
-     * @param dbOptions Custom database access options (ie. for beta deployments).
+     * @param dbOptions Custom database access options.
      */
     init = async (dbOptions?: DatabaseOptions): Promise<void> => {
         try {

@@ -56,10 +56,6 @@ export class PayPalWebhooks {
      */
     createWebhook = async (): Promise<PayPalWebhook> => {
         try {
-            if (settings.beta.enabled) {
-                throw new Error("Webhooks cannot be created on the beta environment")
-            }
-
             const options = {
                 url: "notifications/webhooks",
                 method: "POST",

@@ -163,11 +163,6 @@ export class Mailer {
             body = jaul.data.replaceTags(body, defaultTags)
             subject = jaul.data.replaceTags(subject, defaultTags)
 
-            // Append beta footer on Beta environments.
-            if (settings.beta.enabled) {
-                body += "<br><p><i><b>Email sent via Strautomator's Beta environment!</b></i></p>"
-            }
-
             // Send options.
             sendingOptions = {
                 from: `"${settings.app.title}" <${options.from || settings.mailer.from}>`,

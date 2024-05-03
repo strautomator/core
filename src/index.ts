@@ -166,15 +166,6 @@ export const startup = async (quickStart?: boolean) => {
             logger.options.levels.push("debug")
         }
 
-        // Beta deployment? Override the database collection suffix and other relevant settings.
-        if (settings.beta.enabled) {
-            logger.warn("Strautomator.startup", "BETA DEPLOYMENT")
-            settings.app.url = settings.beta.url
-            settings.app.title += " (Beta)"
-            settings.database.collectionSuffix += settings.beta.collectionSuffix
-            settings.cookie.sessionName += "beta"
-        }
-
         // Storage client must be initiated before everything else.
         if (quickStart) {
             storage.init(quickStart)
@@ -194,13 +185,6 @@ export const startup = async (quickStart?: boolean) => {
             try {
                 await storage.downloadFile(downloadSettings.bucket, downloadSettings.filename, targetFile)
                 setmeup.load(targetFile, loadOptions)
-
-                // Beta deployment? Load the beta settings.
-                if (settings.beta.enabled) {
-                    const targetBetaFile = path.resolve(targetFolder, "settings.from-gcp-beta.json")
-                    await storage.downloadFile(downloadSettings.bucket, downloadSettings.betaFilename, targetBetaFile)
-                    setmeup.load(targetBetaFile, loadOptions)
-                }
             } catch (ex) {
                 logger.error("Strautomator.startup", `Could not download ${downloadSettings.filename} from GCP bucket ${downloadSettings.bucket}`, ex)
             }
@@ -220,8 +204,6 @@ export const startup = async (quickStart?: boolean) => {
 
             if (modSettings?.disabled) {
                 logger.warn("Strautomator.startup", module.constructor.name, "Module is disabled on settings")
-            } else if (modSettings?.beta && !settings.beta.enabled) {
-                logger.warn("Strautomator.startup", module.constructor.name, "Module is currently in beta, won't init in production")
             } else {
                 if (quickStart) {
                     module.init(quickStart)

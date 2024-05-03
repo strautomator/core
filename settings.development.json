@@ -19,10 +19,6 @@
         // Active announcements should be cached for only 30 seconds on dev.
         "cacheDuration": 30
     },
-    // Beta environment on dev.
-    "beta": {
-        "prodCollectionSuffix": "-dev"
-    },
     "calendar": {
         // Calendars are cached only for only 10 minutes on dev.
         "cacheDuration": 1200

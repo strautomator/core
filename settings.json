@@ -78,20 +78,6 @@
         // Default timeout of 2.5 minutes for axios requests. Value set in milliseconds.
         "timeout": 150000
     },
-    // Beta environment and settings disabled by default.
-    "beta": {
-        "enabled": false,
-        // Beta deployment domain.
-        "url": "https://beta.strautomator.com/",
-        // Suffix added to database collections.
-        "collectionSuffix": "-beta",
-        // Collection suffix of the production database to be referenced on the beta environment.
-        "prodCollectionSuffix": "",
-        // Remove beta users that have not logged in for more than a week.
-        "idleDays": {
-            "noLogin": 7
-        }
-    },
     "calendar": {
         // Default activity fields to be added to event details, based on the activity type.
         // Each item is a line, and multiple fields can be added to same line separated by comma.
@@ -185,8 +171,7 @@
         "downloadSettings": {
             "bucket": null,
             "target": "/tmp/",
-            "filename": "settings.secret.json",
-            "betaFilename": "settings.beta.json"
+            "filename": "settings.secret.json"
         }
     },
     "gdpr": {
@@ -570,12 +555,12 @@
         // Consider users idle (for deletion) if they are suspended for longer than 6 months or
         // haven't done any Strava activities for more than 2 years.
         "idleDays": {
-            // How many days to wait before acting on pending or cancelled subscriptions.
-            "subscriptions": 5,
-            // Users with no recipes or gearwear activity are considered idle after 180 days.
-            "suspended": 180,
+            // Default value in days for data to be considered idle if not updated.
+            "default": 180,
             // Users with no activities from Strava are considered idle after 2 years.
-            "noActivities": 730
+            "noActivities": 730,
+            // How many days to wait before acting on pending or cancelled subscriptions.
+            "subscriptions": 5
         }
     },
     // Weather settings. The rate limits set here should be enough for basic usage using free accounts,

@@ -68,7 +68,7 @@ export class GDPR {
             }
 
             const now = dayjs()
-            const extension = settings.beta.enabled ? "-beta.zip" : ".zip"
+            const extension = ".zip"
             const filename = `${user.id}-${user.urlToken}${extension}`
             const saveAs = `strautomator-${user.id}${extension}`
             const minDays = settings.gdpr.requestDays
