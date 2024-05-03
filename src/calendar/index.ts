@@ -264,7 +264,7 @@ export class Calendar {
                         await database.set("calendars", dbCache, dbCacheId)
                     }
                 } catch (saveEx) {
-                    logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, "Failed to save to the cache")
+                    logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, "Failed to save to the cache", saveEx)
                 }
 
                 logger.info("Calendar.generate", logHelper.user(user), `${optionsLog}`, `${cal.events().length} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
@@ -289,11 +289,11 @@ export class Calendar {
      * @param eventDetails Event details.
      * @param dbCache Cached calendar from the database.
      */
-    private addCalendarEvent = (user: UserData, cal: ICalCalendar, eventDetails: ICalEventData, dbCache: CalendarCache): void => {
+    private addCalendarEvent = (user: UserData, cal: ICalCalendar, eventDetails: ICalEventData, dbCache?: CalendarCache): void => {
         cal.createEvent(eventDetails)
 
         // Only PRO users will have a cache set on the database.
-        if (user.isPro) {
+        if (user.isPro && dbCache) {
             dbCache.events[eventDetails.id] = {
                 title: eventDetails.summary,
                 dateStart: eventDetails.start as Date,
@@ -418,7 +418,7 @@ export class Calendar {
                     }
 
                     // Add activity to the calendar as an event.
-                    this.addCalendarEvent(user, cal, eventData, dbCache)
+                    this.addCalendarEvent(user, cal, eventData)
                 } catch (innerEx) {
                     logger.error("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), innerEx)
                 }
