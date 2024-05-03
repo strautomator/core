@@ -63,36 +63,43 @@ export class Calendar {
     // --------------------------------------------------------------------------
 
     /**
-     * Delete cached calendars for the specified user.
-     * @param user The owner user.
+     * Delete cached calendars for the specified user or from the specified date.
+     * @param userOrDate User or max age (date) of calendars to be deleted.
      */
-    deleteCache = async (user: UserData): Promise<number> => {
+    deleteCache = async (userOrDate: UserData | Date): Promise<number> => {
+        const isDate = userOrDate instanceof Date
+        const user = userOrDate as UserData
+        const date = userOrDate as Date
+        const logDetails = isDate ? `Max age: ${dayjs(date).format("ll")}` : logHelper.user(user)
         let result = 0
 
         try {
-            result = await database.delete("calendars", ["userId", "==", user.id])
+            const where = isDate ? ["dateUpdated", "<", date] : ["userId", "==", user.id]
+            result = await database.delete("calendars", where)
         } catch (ex) {
-            logger.error("Calendar.deleteCache", logHelper.user(user), ex)
+            logger.error("Calendar.deleteCache", logDetails, ex)
         }
 
         try {
-            const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
+            const calendarFiles = await storage.listFiles("calendar", isDate ? "/" : `${user.id}/`)
             if (calendarFiles.length > 0) {
                 for (let file of calendarFiles) {
                     try {
-                        await file.delete()
-                        result++
+                        if (isDate && dayjs(file.metadata.updated).isBefore(date)) {
+                            await file.delete()
+                            result++
+                        }
                     } catch (fileEx) {
-                        logger.error("Calendar.deleteCache", logHelper.user(user), file.name, fileEx)
+                        logger.error("Calendar.deleteCache", logDetails, file.name, fileEx)
                     }
                 }
             }
         } catch (ex) {
-            logger.error("Calendar.deleteCache", logHelper.user(user), ex)
+            logger.error("Calendar.deleteCache", logDetails, ex)
         }
 
         if (result > 0) {
-            logger.info("Calendar.deleteCache", logHelper.user(user), `Deleted ${result} cached calendars`)
+            logger.info("Calendar.deleteCache", logDetails, `Deleted ${result} cached calendars`)
         }
 
         return result
@@ -146,10 +153,7 @@ export class Calendar {
             const startTime = dayjs().unix()
 
             // Use "default" if no options were passed, otherwise get a hash to fetch the correct cached calendar.
-            // Append -beta to the hash code in Beta environments.
             let hash = crypto.createHash("sha1").update(JSON.stringify(options, null, 0)).digest("hex").substring(0, 14)
-            if (settings.beta.enabled) hash += "-beta"
-
             cacheFileId = `${user.id}/${user.urlToken}-${hash}.ics`
             cachedFile = await storage.getFile("calendar", cacheFileId)
 
