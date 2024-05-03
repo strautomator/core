@@ -26,15 +26,15 @@ Optional credentials:
 -   OpenAI API
 -   PayPal API
 -   Spotify API
--   Weather providers: OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
+-   Weather providers: Open-Meteo, OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
 
 Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid plans.
 
 ### Getting your GCP credentials
 
-Once you have created a project in GCP, it's recommended to [create](https://console.cloud.google.com/iam-admin/serviceaccounts/create) a dedicated service account with full permissions to Firestore and Storage Buckets. Or if you prefer, just use any existing service accounts.
+Once you have created a project in GCP, it's recommended to [create](https://console.cloud.google.com/iam-admin/serviceaccounts/create) a dedicated service account with full permissions to Firestore and Storage Buckets. You could also use an existing service account, as long as you make sure it has the aforementioned permissions.
 
-Then you'll need to download a set of JSON credentials for that account:
+You'll need to download a set of JSON credentials for that account:
 
 1. Open the credentials [overview](https://console.cloud.google.com/apis/credentials).
 2. On the Service Accounts list, click on the desired service account email.
@@ -62,12 +62,13 @@ Please note that settings specific to the web server, API and other web-specific
 
 By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, such as MongoDB or DynamoDB.
 
-The following collections are currently used:
+The following collections are used:
 
 -   **app-state** general application state
 -   **activities** processed activities
 -   **announcements** website announcements
 -   **athlete-records** athlete sports records
+-   **calendars** cache of club events (title and dates)
 -   **faq** help questions and answers
 -   **garmin** cached Garmin data
 -   **gearwear** GearWear configurations
@@ -80,7 +81,7 @@ The following collections are currently used:
 -   **strava-cache** cached responses from Strava
 -   **users** registered user details
 
-Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`. On beta environments, it's `-beta`, and on production there's no suffix.
+Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
 
 Some indexes are needed in Firestore. At the moment there's no automated creation, so you might see some warnings or errors on the logs asking to create an index before a specific query can be executed. Just follow the links provided directly on the console logs.
 
