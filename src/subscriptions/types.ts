@@ -9,7 +9,7 @@ export interface BaseSubscription {
     /** User ID (set after subscription is created). */
     userId: string
     /** Subscription source. */
-    source: "friend" | "github" | "paypal" | "n26" | "revolut" | "scalable" | "traderepublic"
+    source: "amex" | "friend" | "github" | "paypal" | "n26" | "revolut" | "traderepublic"
     /** Subscription status. */
     status: "APPROVAL_PENDING" | "APPROVED" | "ACTIVE" | "SUSPENDED" | "CANCELLED" | "EXPIRED"
     /** Subscription currency. */
