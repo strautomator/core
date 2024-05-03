@@ -81,7 +81,7 @@ export class Calendar {
         }
 
         try {
-            const calendarFiles = await storage.listFiles("calendar", isDate ? "/" : `${user.id}/`)
+            const calendarFiles = await storage.listFiles("calendar", isDate ? null : `${user.id}/`)
             if (calendarFiles.length > 0) {
                 for (let file of calendarFiles) {
                     try {
