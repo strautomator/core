@@ -1,8 +1,7 @@
 // Strautomator Core: GitHub
 
-import {GitHubChangelog, GitHubCommit, GitHubSubscription} from "./types"
+import {GitHubChangelog, GitHubSubscription} from "./types"
 import api from "./api"
-import cache from "bitecache"
 import database from "../database"
 import dayjs from "../dayjs"
 import eventManager from "../eventmanager"
@@ -31,8 +30,6 @@ export class GitHub {
      */
     init = async (quickStart?: boolean): Promise<void> => {
         try {
-            cache.setup("github-commits", settings.github.cacheDuration)
-
             if (!quickStart) {
                 this.buildChangelog()
             }
@@ -92,42 +89,6 @@ export class GitHub {
         } catch (ex) {
             logger.error("GitHub.getActiveSponsors", ex)
             return null
-        }
-    }
-
-    /**
-     * Get the list of last commits from the Strautomator repos.
-     */
-    getLastCommits = async (): Promise<GitHubCommit[]> => {
-        try {
-            const fromCache = cache.get("github-commits", "last")
-
-            // Cached commits still valid?
-            if (fromCache?.length > 0) {
-                logger.debug("GitHub.getLastCommits.fromCache", `${fromCache.length} commits`)
-                return fromCache
-            }
-
-            const since = dayjs.utc().subtract(3, "month").toISOString()
-            const coreCommits = await api.getRepoCommits(settings.github.api.coreRepo, since, 10, true)
-            const webCommits = await api.getRepoCommits(settings.github.api.repo, since, 10, true)
-            const commits = _.concat(coreCommits, webCommits)
-            const unsortedResults: GitHubCommit[] = []
-
-            // Build list of last commits.
-            for (let c of commits) {
-                const arrGitRepo = c.commit.tree.url.replace("https://api.github.com/repos/", "").split("/").slice(0, 2)
-                unsortedResults.push({repo: arrGitRepo.join("/"), message: c.commit.message, dateCommitted: dayjs.utc(c.commit.committer.date).toDate()})
-            }
-
-            const results = _.orderBy(unsortedResults, "dateCommitted", "desc")
-            cache.set("github-commits", "last", results)
-            logger.info("GitHub.getLastCommits", `Last commit on ${dayjs.utc(results[0].dateCommitted).format("lll")}`)
-
-            return results
-        } catch (ex) {
-            logger.error("GitHub.getLastCommits", ex)
-            throw ex
         }
     }
 

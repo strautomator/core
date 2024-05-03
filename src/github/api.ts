@@ -102,7 +102,7 @@ export class GitHubAPI {
 
             return result
         } catch (ex) {
-            logger.error("GitHub.getLastCommits", ex)
+            logger.error("GitHub.getRepoCommits", ex)
             throw ex
         }
     }

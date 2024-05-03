@@ -201,9 +201,7 @@
             "repo": "strautomator/web",
             "coreRepo": "strautomator/core",
             "username": "igoramadas"
-        },
-        // GitHub data is cached for up to 30 minutes.
-        "cacheDuration": 1800
+        }
     },
     "komoot": {
         "api": {
