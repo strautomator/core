@@ -153,6 +153,8 @@
         },
         // Up to 5 seconds waiting time for a Garmin activity to be processed on automations.
         "delaySeconds": 5,
+        // Cache profiles and Garmin data for up to 2 minutes. Value set in seconds.
+        "cacheDuration": 120,
         // Garmin data will be stored in the database for up to 10 days.
         "maxCacheDuration": 864000
     },
@@ -620,8 +622,8 @@
             /// Visual Crossing API rate limits.
             "rateLimit": {
                 "maxConcurrent": 1,
-                "perHour": 170,
-                "perDay": 580
+                "perHour": 150,
+                "perDay": 550
             },
             // The Visual Crossing API secret MUST be set via secret settings or
             // via the SMU_weather_visualcrossing_secret environment variable.
@@ -633,7 +635,7 @@
             // WeatherAPI.com rate limits.
             "rateLimit": {
                 "maxConcurrent": 4,
-                "perHour": 2000,
+                "perHour": 1000,
                 "perDay": 5000
             },
             // The WeatherAPI.com secret MUST be set via secret settings or
