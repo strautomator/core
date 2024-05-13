@@ -166,9 +166,9 @@ export interface StravaActivity {
     /** Flag: is the activity part of a batch processing operation? */
     batch?: boolean
     /** Flag: was the activity name generated with AI? */
-    aiName?: boolean
+    aiName?: "anthropic" | "gemini" | "openai"
     /** Flag: was the activity description generated with AI? */
-    aiDescription?: boolean
+    aiDescription?: "anthropic" | "gemini" | "openai"
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
 }
