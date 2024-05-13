@@ -382,10 +382,10 @@
             "linksOn": 5,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
-            // Use AI and weather parameters on 50% of "AI generate" recipe actions.
+            // Use AI and weather parameters on 33% of "AI generate" recipe actions.
             "generatedNames": {
-                "ai": 50,
-                "weather": 50
+                "ai": 33,
+                "weather": 33
             }
         },
         "pro": {
