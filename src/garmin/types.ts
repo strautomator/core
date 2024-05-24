@@ -58,6 +58,8 @@ export interface GarminActivity {
     pedalBalance?: string
     /** The Sport profile used in the Garmin device. */
     sportProfile?: string
+    /** The workout name. */
+    workoutName?: string
     /** Devices used in the activity. */
     devices?: string[]
     /** Activity UTC start date. */

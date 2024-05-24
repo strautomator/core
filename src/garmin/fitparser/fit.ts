@@ -456,6 +456,25 @@ export const FIT = {
             25: {field: "source_type", type: "source_type", scale: null, offset: 0, units: ""},
             27: {field: "product_name", type: "string", scale: null, offset: 0, units: ""}
         },
+        26: {
+            name: "workout",
+            4: {field: "sport", type: "sport", scale: null, offset: "", units: ""},
+            5: {field: "capabilities", type: "workout_capabilities", scale: null, offset: "", units: ""},
+            6: {field: "num_valid_steps", type: "uint16", scale: null, offset: "", units: ""},
+            8: {field: "wkt_name", type: "string", scale: null, offset: "", units: ""}
+        },
+        27: {
+            name: "workout_step",
+            254: {field: "message_index", type: "message_index", scale: null, offset: 0, units: ""},
+            0: {field: "wkt_step_name", type: "string", scale: null, offset: 0, units: ""},
+            1: {field: "duration_type", type: "wkt_step_duration", scale: null, offset: 0, units: ""},
+            2: {field: "duration_value", type: "uint32", scale: null, offset: 0, units: ""},
+            3: {field: "target_type", type: "wkt_step_target", scale: null, offset: 0, units: ""},
+            4: {field: "target_value", type: "uint32", scale: null, offset: 0, units: ""},
+            5: {field: "custom_target_value_low", type: "uint32", scale: null, offset: 0, units: ""},
+            6: {field: "custom_target_value_high", type: "uint32", scale: null, offset: 0, units: ""},
+            7: {field: "intensity", type: "intensity", scale: null, offset: 0, units: ""}
+        },
         31: {
             name: "course",
             4: {field: "sport", type: "sport", scale: null, offset: "", units: ""},

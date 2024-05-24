@@ -267,6 +267,11 @@ export class GarminActivities {
                 }
             }
 
+            // Add workout details.
+            if (fitData.workout?.wkt_name) {
+                garminActivity.workoutName = fitData.workout?.wkt_name
+            }
+
             // Found devices in the FIT file? Generate device IDs.
             if (fitData.devices?.length > 0) {
                 const getDeviceString = (d) => `${d.manufacturer}.${d.product_name || d.device_type || d.source_type}.${d.serial_number}`.replace(/\_/g, "").replace(/\s/g, "")

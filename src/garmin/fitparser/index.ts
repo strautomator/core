@@ -60,20 +60,21 @@ export default class FitParser {
         fitObj.protocolVersion = protocolVersion
         fitObj.profileVersion = profileVersion
 
-        let sessions = []
-        let laps = []
+        const sessions = []
+        const workoutSteps = []
+        const laps = []
         const events = []
         const devices = []
         const applications = []
         const fieldDescriptions = []
-        const dive_gases = []
-        const course_points = []
+        const diveGases = []
+        const coursePoints = []
         const sports = []
         const monitors = []
         const stress = []
         const definitions = []
-        const file_ids = []
-        const monitor_info = []
+        const fileIds = []
+        const monitorInfo = []
         const lengths = []
 
         let loopIndex = headerLength
@@ -95,6 +96,9 @@ export default class FitParser {
                         break
                     case "session":
                         sessions.push(message)
+                        break
+                    case "workout_step":
+                        workoutSteps.push(message)
                         break
                     case "event":
                         if (message.event === "timer") {
@@ -125,16 +129,16 @@ export default class FitParser {
                         applications.push(message)
                         break
                     case "dive_gas":
-                        dive_gases.push(message)
+                        diveGases.push(message)
                         break
                     case "course_point":
-                        course_points.push(message)
+                        coursePoints.push(message)
                         break
                     case "sport":
                         sports.push(message)
                         break
                     case "file_id":
-                        file_ids.push(message)
+                        fileIds.push(message)
                         break
                     case "definition":
                         definitions.push(message)
@@ -143,7 +147,7 @@ export default class FitParser {
                         monitors.push(message)
                         break
                     case "monitoring_info":
-                        monitor_info.push(message)
+                        monitorInfo.push(message)
                         break
                     case "stress_level":
                         stress.push(message)
@@ -161,20 +165,21 @@ export default class FitParser {
         }
 
         fitObj.sessions = sessions
+        fitObj.workout_steps = workoutSteps
         fitObj.laps = laps
         fitObj.lengths = lengths
         fitObj.events = events
         fitObj.device_infos = devices
         fitObj.developer_data_ids = applications
         fitObj.field_descriptions = fieldDescriptions
-        fitObj.dive_gases = dive_gases
-        fitObj.course_points = course_points
+        fitObj.dive_gases = diveGases
+        fitObj.course_points = coursePoints
         fitObj.sports = sports
         fitObj.devices = devices
         fitObj.monitors = monitors
         fitObj.stress = stress
-        fitObj.file_ids = file_ids
-        fitObj.monitor_info = monitor_info
+        fitObj.file_ids = fileIds
+        fitObj.monitor_info = monitorInfo
         fitObj.definitions = definitions
 
         return fitObj

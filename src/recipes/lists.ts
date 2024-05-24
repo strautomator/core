@@ -118,6 +118,7 @@ export const recipePropertyList = [
     {value: "garmin.pedalSmoothness", text: "Garmin pedal smoothness", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100},
     {value: "garmin.pedalTorqueEffect", text: "Garmin pedal torque effectiveness", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100},
     {value: "garmin.sportProfile", text: "Garmin sport profile name", type: "string", operators: recipeOperatorList.is},
+    {value: "garmin.workoutName", text: "Garmin workout name", type: "string", operators: recipeOperatorList.is},
     {value: "weather.temperature", text: "Weather temperature", shortText: "Temperature", type: "anyNumber", operators: recipeOperatorList.number, suffix: "°C", fSuffix: "°F"},
     {value: "weather.windSpeed", text: "Weather wind speed", shortText: "Wind", type: "number", operators: recipeOperatorList.number, suffix: "kph", impSuffix: "mph"},
     {value: "weather.humidity", text: "Weather humidity", shortText: "Humidity", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100},
