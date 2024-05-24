@@ -7,7 +7,12 @@
         // Cache generated AI content for 1 minute.
         "cacheDuration": 60,
         // List of humours (adjectives) to be used on the AI generated content.
-        "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "technical", "wicked"]
+        "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "technical", "wicked"],
+        // Max tokens per generation (short for activity names, long for descriptions).
+        "maxTokens": {
+            "short": 34,
+            "long": 196
+        }
     },
     "app": {
         // Application title.
