@@ -70,6 +70,7 @@ export class Gemini implements AiProvider {
         try {
             const model = this.client.preview.getGenerativeModel({model: "gemini-1.0-pro"})
             const parts = prompt.map((p) => ({text: p}))
+            const jobId = `${activity.id}-${prompt.length}-${maxTokens}`
 
             // Here we go!
             const reqOptions: GenerateContentRequest = {
@@ -84,29 +85,39 @@ export class Gemini implements AiProvider {
                     maxOutputTokens: maxTokens
                 }
             }
-            const jobId = `${activity.id}-${prompt.length}-${maxTokens}`
-            const result = await this.limiter.schedule({id: jobId}, () => model.generateContent(reqOptions))
 
-            // Validate the response.
-            if (!result.response) {
-                throw new Error("Response is missing")
+            // Helper to validate and extract the text from the response.
+            const parseResponse = async (response) => {
+                if (!response) {
+                    throw new Error("Response is missing")
+                }
+                if (!response.candidates?.length) {
+                    throw new Error(`Response is missing a candidate: ${JSON.stringify(result.response, null, 0)}`)
+                }
+                const candidate = response.candidates[0]
+                if (!candidate.content.parts?.length) {
+                    throw new Error(`Response is missing the content part: ${JSON.stringify(result.response, null, 0)}`)
+                }
+                return candidate.content.parts[0].text
             }
-            if (!result.response.candidates?.length) {
-                throw new Error(`Response is missing a candidate: ${JSON.stringify(result.response, null, 0)}`)
+
+            let result = await this.limiter.schedule({id: jobId}, () => model.generateContent(reqOptions))
+            let text = parseResponse(result ? result.response : null)
+
+            // If the response was cut due to insufficient tokens and the user is PRO, try again.
+            if (result?.response.candidates[0]?.finishReason === FinishReason.MAX_TOKENS) {
+                logger.warn("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Early stop due to max tokens, will retry", text)
+
+                if (user.isPro) {
+                    reqOptions.generationConfig.maxOutputTokens = Math.round(maxTokens * 1.2)
+                    result = await this.limiter.schedule({id: jobId + "-retry"}, () => model.generateContent(reqOptions))
+                    text = parseResponse(result ? result.response : null)
+                }
             }
-            const candidate = result.response.candidates[0]
-            if (!candidate.content.parts?.length) {
-                throw new Error(`Response is missing the content part: ${JSON.stringify(result.response, null, 0)}`)
-            }
-            const text = candidate.content.parts[0].text
 
             // Extract the generated text.
             if (text) {
-                if (result.response.candidates[0].finishReason === FinishReason.MAX_TOKENS) {
-                    logger.warn("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Early stop due to max tokens", text)
-                } else {
-                    logger.info("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), text)
-                }
+                logger.info("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), text)
                 return text
             }
 
