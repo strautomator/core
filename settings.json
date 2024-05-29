@@ -10,8 +10,8 @@
         "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "technical", "wicked"],
         // Max tokens per generation (short for activity names, long for descriptions).
         "maxTokens": {
-            "short": 34,
-            "long": 196
+            "short": 38,
+            "long": 198
         }
     },
     "app": {
@@ -78,8 +78,8 @@
         // Back-off base delay when we're about to hit API rate limits.
         // Value set in milliseconds, will increase as we get closer to the limits.
         "backoffInterval": 500,
-        // Retry axios requests after 1.5 seconds. Value set in milliseconds.
-        "retryInterval": 1500,
+        // Retry axios requests after 1.1 seconds. Value set in milliseconds.
+        "retryInterval": 1100,
         // Default timeout of 2.5 minutes for axios requests. Value set in milliseconds.
         "timeout": 150000
     },
@@ -88,8 +88,8 @@
         // Each item is a line, and multiple fields can be added to same line separated by comma.
         "activityFields": {
             "default": ["distance,elevationGain", "speedAvg,paceAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"],
-            "ride": ["distance,elevationGain", "speedAvg", "calories", "hrAvg,hrMax,wattsAvg,wattsMax", "totalTime", "description"],
-            "run": ["distance,elevationGain", "paceAvg,speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"],
+            "ride": ["distance,elevationGain", "speedAvg", "calories", "hrAvg,hrMax,wattsAvg,wattsMax", "totalTime,movingTime", "description"],
+            "run": ["distance,elevationGain", "paceAvg,speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTime,movingTime", "description"],
             "swim": ["distance", "speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"],
             "workout": ["calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"]
         },
