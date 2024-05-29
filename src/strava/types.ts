@@ -165,10 +165,14 @@ export interface StravaActivity {
     counter?: number
     /** Flag: is the activity part of a batch processing operation? */
     batch?: boolean
-    /** Flag: was the activity name generated with AI? */
-    aiName?: "anthropic" | "gemini" | "openai"
-    /** Flag: was the activity description generated with AI? */
-    aiDescription?: "anthropic" | "gemini" | "openai"
+    /** AI generated activity name. */
+    aiName?: string
+    /** Flag: provider used to generate the activity name. */
+    aiNameProvider?: "anthropic" | "gemini" | "openai"
+    /** AI generated activity description. */
+    aiDescription?: string
+    /** Flag: provider used to generate the activity description. */
+    aiDescriptionProvider?: "anthropic" | "gemini" | "openai"
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
 }
