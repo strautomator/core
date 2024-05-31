@@ -2,7 +2,7 @@
 
 import {Route} from "../routes/types"
 import {KomootRoute} from "../komoot/types"
-import {GarminActivity} from "../garmin/types"
+import {FitFileActivity} from "../fitparser/types"
 import dayjs from "dayjs"
 
 /**
@@ -254,7 +254,7 @@ export interface StravaProcessedActivity {
     /** Processing date. */
     dateProcessed?: Date
     /** Matching Garmin activity (not saved to the DB, must be populated separately). */
-    garminActivity?: GarminActivity
+    garminActivity?: FitFileActivity
 }
 
 /**

@@ -2,8 +2,8 @@
 
 import {GarminPingPermissions, GarminPing, GarminPingActivityFile, GarminWebhookData} from "./types"
 import {Request} from "express"
-import activities from "./activities"
-import profiles from "./profiles"
+import garminActivities from "./activities"
+import garminProfiles from "./profiles"
 import users from "../users"
 import jaul from "jaul"
 import logger from "anyhow"
@@ -77,7 +77,7 @@ export class GarminWebhooks {
 
                 // Found a matching user and the activity is of type FIT? Get and parse the activity file.
                 if (user?.garmin?.tokens?.accessToken == data.userAccessToken && data.fileType == "FIT") {
-                    await activities.processActivity(user, data)
+                    await garminActivities.processActivity(user, data)
                 } else {
                     logger.warn("Garmin.processWebhook.activityFiles", `Profile ${data.userId} has new activities, but no matching user was found`)
                 }
@@ -99,7 +99,7 @@ export class GarminWebhooks {
                 // Found a matching user? Delete the profile.
                 if (user?.garmin?.tokens?.accessToken == data.userAccessToken) {
                     logger.warn("Garmin.processWebhook.deregistrations", logHelper.user(user), `Profile ${data.userId}`)
-                    await profiles.deleteProfile(user, true)
+                    await garminProfiles.deleteProfile(user, true)
                 } else {
                     logger.warn("Garmin.processWebhook.deregistrations", `Profile ${data.userId} deregistered, but no matching user was found`)
                 }
@@ -123,7 +123,7 @@ export class GarminWebhooks {
                     // Found a matching user? Deregister and delete the profile.
                     if (user?.garmin?.tokens?.accessToken == data.userAccessToken) {
                         logger.warn("Garmin.processWebhook.userPermissionsChange", logHelper.user(user), `Profile ${data.userId} removed the ACTIVITY_EXPORT permission`)
-                        await profiles.deleteProfile(user)
+                        await garminProfiles.deleteProfile(user)
                     } else {
                         logger.warn("Garmin.processWebhook.userPermissionsChange", `Profile ${data.userId} changed permissions, but no matching user was found`)
                     }

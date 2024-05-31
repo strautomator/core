@@ -23,52 +23,6 @@ export interface GarminTokens {
 }
 
 /**
- * Activity details from Garmin. Transformed from GarminPingActivity.
- */
-export interface GarminActivity {
-    /** Activity ID (same as activityId). */
-    id: string
-    /** User ID (from Strava, not from Garmin). */
-    userId: string
-    /** Profile ID (user ID from Garmin). */
-    profileId: string
-    /** Activity name (same as activityName). */
-    name: string
-    /** Activity duration in seconds. */
-    totalTime?: number
-    /** Activity distance in KM. */
-    distance?: number
-    /** Activity primary benefit.*/
-    primaryBenefit?: string
-    /** Training stress score. */
-    tss?: number
-    /** Training load. */
-    trainingLoad?: number
-    /** Intensity factor. */
-    intensityFactor?: number
-    /** Aerobic training effect. */
-    aerobicTrainingEffect?: number
-    /** Anaerobic training effect. */
-    anaerobicTrainingEffect?: number
-    /** Pedal L/R avg. torque effectiveness (0-100). */
-    pedalTorqueEffect?: number
-    /** Pedal L/R avg. smoothness (0-100). */
-    pedalSmoothness?: number
-    /** Pedal L/R balance. */
-    pedalBalance?: string
-    /** The Sport profile used in the Garmin device. */
-    sportProfile?: string
-    /** The workout name. */
-    workoutName?: string
-    /** Devices used in the activity. */
-    devices?: string[]
-    /** Activity UTC start date. */
-    dateStart?: Date
-    /** Date when it should expire (used for the Firestore TTL). */
-    dateExpiry?: Date
-}
-
-/**
  * Webhooks dispatched by Garmin.
  */
 export interface GarminWebhookData {

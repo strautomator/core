@@ -5,12 +5,12 @@ import {UserData} from "../users/types"
 import {Request} from "express"
 import activities from "./activities"
 import api from "./api"
-import courses from "./courses"
-import profiles from "./profiles"
-import webhooks from "./webhooks"
+import garminCourses from "./courses"
+import garminProfiles from "./profiles"
+import garminWebhooks from "./webhooks"
 import database from "../database"
-import users from "../users"
 import eventManager from "../eventmanager"
+import users from "../users"
 import cache from "bitecache"
 import crypto from "crypto"
 import logger from "anyhow"
@@ -35,17 +35,17 @@ export class Garmin {
     /**
      * Garmin courses wrapper.
      */
-    courses = courses
+    courses = garminCourses
 
     /**
      * Garmin profiles wrapper.
      */
-    profiles = profiles
+    profiles = garminProfiles
 
     /**
      * Webhook processing.
      */
-    webhooks = webhooks
+    webhooks = garminWebhooks
 
     // INIT
     // --------------------------------------------------------------------------
@@ -78,7 +78,7 @@ export class Garmin {
                 logger.info("Garmin.onUserDelete", logHelper.user(user), `Deleted ${counter} cached Garmin data`)
             }
             if (user.garmin?.tokens?.accessToken) {
-                await profiles.deleteProfile(user)
+                await garminProfiles.deleteProfile(user)
             }
         } catch (ex) {
             logger.error("Garmin.onUserDelete", logHelper.user(user), ex)
@@ -153,8 +153,8 @@ export class Garmin {
 
             // If token request was successful, now get and save the user profile.
             user.garmin.tokens = {accessToken: tokenData.oauth_token, tokenSecret: tokenData.oauth_token_secret}
-            const profile = await profiles.getProfile(user)
-            await profiles.saveProfile(user, profile)
+            const profile = await garminProfiles.getProfile(user)
+            await garminProfiles.saveProfile(user, profile)
         } catch (ex) {
             logger.error("Garmin.processAuthCallback", user ? logHelper.user(user) : "Unknown user", `State ${req.query.state}`, ex)
             throw ex

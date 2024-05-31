@@ -347,9 +347,9 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            // Garmin conditions.
-            else if (prop.indexOf("garmin") == 0) {
-                const valid = await conditions.checkGarmin(user, activity, condition)
+            // Garmin and Wahoo conditions (FIT file activities).
+            else if (prop.indexOf("garmin") == 0 || prop.indexOf("wahoo") == 0) {
+                const valid = await conditions.checkGarminWahoo(user, activity, condition)
                 if (!valid) return false
             }
 
@@ -397,7 +397,7 @@ export class Recipes {
 
             // First activity of the day condition.
             else if (prop.indexOf("firstOfDay") == 0) {
-                const valid = await conditions.checkFirstOfDay(user, activity, condition,recipe)
+                const valid = await conditions.checkFirstOfDay(user, activity, condition, recipe)
                 if (!valid) return false
             }
 

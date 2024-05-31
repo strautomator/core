@@ -1,12 +1,14 @@
 // Strautomator Core: Log Helper
 
-import {GarminActivity, GarminPingActivityFile} from "./garmin/types"
+import {FitFileActivity} from "./fitparser/types"
+import {GarminPingActivityFile} from "./garmin/types"
 import {GitHubSubscription} from "./github/types"
 import {PayPalSubscription} from "./paypal/types"
 import {RecipeData} from "./recipes/types"
 import {StravaActivity, StravaProcessedActivity} from "./strava/types"
 import {BaseSubscription} from "./subscriptions/types"
 import {UserData} from "./users/types"
+import {WahooWebhookData} from "./wahoo/types"
 
 /**
  * Helper to get activity details for logging.
@@ -19,14 +21,23 @@ export const activity = (lActivity: StravaActivity | StravaProcessedActivity, fu
 }
 
 /**
- * Helper to get Garmin activity details for logging.
- * @param lActivity Activity data.
+ * Helper to get Garmin ping details for logging.
+ * @param lPing FIT file activity data.
  */
-export const garminActivity = (lActivity: GarminActivity | GarminPingActivityFile): string => {
+export const garminPing = (lPing: GarminPingActivityFile): string => {
+    if (!lPing) return "Ping unknown"
+    const id = lPing.activityId.toString().replace("activity", "")
+    const name = lPing.activityName
+    return `Garmin activity ${id} - ${name}`
+}
+
+/**
+ * Helper to get FIT file activity details for logging.
+ * @param lActivity FIT file activity data.
+ */
+export const fitFileActivity = (lActivity: FitFileActivity): string => {
     if (!lActivity) return "Activity unknown"
-    const id = (lActivity["id"] || lActivity["activityId"]).toString().replace("activity", "")
-    const name = lActivity["name"] || lActivity["activityName"]
-    return `Activity ${id} - ${name}`
+    return `FIT file activity ${lActivity.id} - ${lActivity.name}`
 }
 
 /**
@@ -68,4 +79,15 @@ export const user = (lUser: UserData | Partial<UserData>): string => {
     if (!lUser) return "User unknown"
     if (lUser.id && lUser.displayName) return `User ${lUser.id} ${lUser.displayName}`
     return lUser.id || lUser.displayName
+}
+
+/**
+ * Helper to get user details for logging.
+ * @param lUser User data.
+ */
+export const wahooWebhook = (lData: WahooWebhookData): string => {
+    if (!lData) return "User unknown"
+    const user = `Wahoo user ${lData.user?.id || "unknown"}`
+    const workout = `Workout ${lData.workout_summary?.id} || "unknown"`
+    return `${lData.event_type}: ${user} - ${workout}`
 }

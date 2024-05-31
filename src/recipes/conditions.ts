@@ -2,12 +2,12 @@
 
 import {recipePropertyList} from "./lists"
 import {RecipeCondition, RecipeData, RecipeOperator, RecipeStatsData} from "./types"
-import {GarminActivity} from "../garmin/types"
+import {FitFileActivity} from "../fitparser/types"
 import {StravaActivity, StravaActivityQuery} from "../strava/types"
 import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
 import recipeStats from "./stats"
-import garmin from "../garmin"
+import fitParser from "../fitparser"
 import spotify from "../spotify"
 import strava from "../strava"
 import weather from "../weather"
@@ -24,15 +24,15 @@ const settings = require("setmeup").settings
  * This is the the "default" condition.
  * @param activity The Strava activity to be checked.
  * @param condition The text / string based recipe condition.
- * @param garminActivity Optional, check values from a Garmin activity instead.
+ * @param fitFileActivity Optional, check values from a FIT file activity instead.
  */
-export const checkText = (activity: StravaActivity, condition: RecipeCondition, garminActivity?: GarminActivity): boolean => {
+export const checkText = (activity: StravaActivity, condition: RecipeCondition, fitFileActivity?: FitFileActivity): boolean => {
     const prop = condition.property
     const op = condition.operator
     let valid = false
 
     // Activity field has no value? Stop here.
-    let refText = !garminActivity ? activity[prop] : garminActivity[prop.replace("garmin.", "")]
+    let refText = !fitFileActivity ? activity[prop] : fitFileActivity[prop.replace("garmin.", "").replace("wahoo.", "")]
     if (_.isNil(refText)) {
         return false
     }
@@ -77,18 +77,18 @@ export const checkBoolean = (activity: StravaActivity, condition: RecipeConditio
 
 /**
  * Check if the passed number based condition is valid.
- * @param activity The Strava (or Garmin) activity to be checked.
+ * @param activity The Strava (or FIT file) activity to be checked.
  * @param condition The number based recipe condition.
- * @param garminActivity Optional, check values from a Garmin activity instead.
+ * @param fitFileActivity Optional, check values from a FIT file activity instead.
  */
-export const checkNumber = (activity: StravaActivity, condition: RecipeCondition, garminActivity?: GarminActivity): boolean => {
+export const checkNumber = (activity: StravaActivity, condition: RecipeCondition, fitFileActivity?: FitFileActivity): boolean => {
     const prop = condition.property
     const op = condition.operator
     let valid = false
 
-    // If a Garmin activity was passed, use its values instead.
+    // If a FIT file activity was passed, use its values instead.
     // If target is an array, use its length as the target value.
-    let aNumber = !garminActivity ? activity[prop] : garminActivity[prop.replace("garmin.", "")]
+    let aNumber = !fitFileActivity ? activity[prop] : fitFileActivity[prop.replace("garmin.", "").replace("wahoo.", "")]
     if (_.isArray(aNumber)) {
         aNumber = aNumber.length
     }
@@ -413,47 +413,49 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
 }
 
 /**
- * Check if Garmin related metadata matches the activity.
+ * Check if Garmin or Wahoo related metadata matches the activity.
  * @param user User data.
  * @param activity The Strava activity to be checked.
- * @param condition The Garmin based recipe condition.
+ * @param condition The Garmin or Wahoo based recipe condition.
  */
-export const checkGarmin = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+export const checkGarminWahoo = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
     const op = condition.operator
+    const source = condition.property.split(".")[0] as any
     let valid = false
 
-    // If user has no Garmin account linked, stop here.
-    if (!user.isPro || !user.garmin) {
-        logger.debug("Recipes.checkGarmin", logHelper.activity(activity), condition, "Skipped, user has no Garmin profile")
+    // User must be PRO and have a linked account to continue.
+    if (!user.isPro || !user[source]) {
+        logger.debug("Recipes.checkGarminWahoo", logHelper.user(user), logHelper.activity(activity), condition, `Missing ${source} profile`)
         return op == RecipeOperator.NotEqual || op == RecipeOperator.NotLike
     }
 
-    // Try finding the matching Garmin activity for the Strava activity.
-    // If failed and the activity was recorded with a Garmin device, try again in a few seconds.
-    let garminActivity = await garmin.activities.getMatchingActivity(user, activity)
-    if (!garminActivity) {
-        if (activity.device?.includes("Garmin")) {
-            await jaul.io.sleep(settings.garmin.delaySeconds)
-            garminActivity = await garmin.activities.getMatchingActivity(user, activity)
+    // Try finding the matching Garmin or Wahoo activity for the Strava activity.
+    // If failed, retry in a few seconds if the device used to record the activity
+    // matches the target FIT file source.
+    let fitActivity = await fitParser.getMatchingActivity(user, source, activity)
+    if (!fitActivity) {
+        if (activity.device?.toLowerCase().includes(source)) {
+            await jaul.io.sleep(settings.axios.retryInterval * 2)
+            fitActivity = await fitParser.getMatchingActivity(user, source, activity)
         }
-        if (!garminActivity) {
+        if (!fitActivity) {
             return op == RecipeOperator.NotLike
         }
     }
 
-    // Finally check the corresponding field on the Garmin activity.
+    // Finally check the corresponding field on the FIT file activity.
     const field = condition.property.split(".")[1]
     if (field == "sensor") {
-        const hasDevice = garminActivity.devices?.find((d) => d.includes(condition.value as string)) ? true : false
+        const hasDevice = fitActivity.devices?.find((d) => d.includes(condition.value as string)) ? true : false
         valid = (op == RecipeOperator.Equal && hasDevice) || (op == RecipeOperator.NotEqual && !hasDevice)
     } else {
         const propType = recipePropertyList.find((p) => p.value == condition.property).type
 
         // Proxy text and number validators.
         if (propType == "string") {
-            valid = checkText(activity, condition, garminActivity)
+            valid = checkText(activity, condition, fitActivity)
         } else if (propType == "number") {
-            valid = checkNumber(activity, condition, garminActivity)
+            valid = checkNumber(activity, condition, fitActivity)
         }
     }
 
@@ -461,7 +463,7 @@ export const checkGarmin = async (user: UserData, activity: StravaActivity, cond
         return true
     }
 
-    logger.debug("Recipes.checkGarmin", logHelper.activity(activity), condition, "Failed")
+    logger.debug("Recipes.checkGarminWahoo", logHelper.activity(activity), condition, source, "Failed")
     return false
 }
 

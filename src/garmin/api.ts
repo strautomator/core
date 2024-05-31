@@ -34,18 +34,14 @@ export class GarminAPI {
      */
     init = async (): Promise<void> => {
         try {
-            const nodeEnv = process.env.NODE_ENV
-
-            if (nodeEnv != "test") {
-                if (!settings.garmin.api.clientId) {
-                    throw new Error("Missing the garmin.api.clientId setting")
-                }
-                if (!settings.garmin.api.clientSecret) {
-                    throw new Error("Missing the garmin.api.clientSecret setting")
-                }
-                if (!settings.garmin.api.urlToken) {
-                    throw new Error("Missing the garmin.api.urlToken setting")
-                }
+            if (!settings.garmin.api.clientId) {
+                throw new Error("Missing the garmin.api.clientId setting")
+            }
+            if (!settings.garmin.api.clientSecret) {
+                throw new Error("Missing the garmin.api.clientSecret setting")
+            }
+            if (!settings.garmin.api.urlToken) {
+                throw new Error("Missing the garmin.api.urlToken setting")
             }
 
             // Create the bottleneck rate limiter.

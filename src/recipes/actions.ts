@@ -9,7 +9,7 @@ import {ActivityWeather} from "../weather/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import recipeStats from "./stats"
 import ai from "../ai"
-import garmin from "../garmin"
+import fitParser from "../fitparser"
 import maps from "../maps"
 import musixmatch from "../musixmatch"
 import notifications from "../notifications"
@@ -165,9 +165,14 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             processedValue = await addSpotifyTags(user, activity, recipe, processedValue)
         }
 
-        // Garmin tags on the value? Get those from the Garmin activity.
+        // Garmin tags on the value? Get those from the corresponding FIT file activity.
         if (processedValue.includes("${garmin.")) {
             processedValue = await addGarminTags(user, activity, recipe, processedValue)
+        }
+
+        // Wahoo tags on the value? Get those from the corresponding FIT file activity.
+        if (processedValue.includes("${wahoo.")) {
+            processedValue = await addWahooTags(user, activity, recipe, processedValue)
         }
 
         // Replace tags.
@@ -311,19 +316,24 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
 }
 
 /**
- * Default action to add Garmin tags to the activity name or description.
+ * Default action to add Garmin tags to the activity name or description. Available to PRO users only.
  * @param user The activity owner.
  * @param activity The Strava activity details.
  * @param recipe The source recipe.
  * @param processedValue The action's processed value.
  */
 export const addGarminTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    if (!user.isPro) {
+        logger.debug("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
+        return processedValue
+    }
+
     try {
-        let garminActivity = await garmin.activities.getMatchingActivity(user, activity)
+        let garminActivity = await fitParser.getMatchingActivity(user, "garmin", activity)
         if (!garminActivity) {
-            if (activity.device.includes("Garmin")) {
+            if (activity.device?.toLowerCase().includes("Garmin")) {
                 await jaul.io.sleep(settings.garmin.delaySeconds)
-                garminActivity = await garmin.activities.getMatchingActivity(user, activity)
+                garminActivity = await fitParser.getMatchingActivity(user, "garmin", activity)
             }
             if (!garminActivity) {
                 logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Garmin activity")
@@ -334,6 +344,40 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
         processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.", true)
     } catch (ex) {
         logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+    }
+
+    return processedValue
+}
+
+/**
+ * Default action to add Wahoo tags to the activity name or description. Available to PRO users only.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param processedValue The action's processed value.
+ */
+export const addWahooTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    if (!user.isPro) {
+        logger.debug("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
+        return processedValue
+    }
+
+    try {
+        let garminActivity = await fitParser.getMatchingActivity(user, "wahoo", activity)
+        if (!garminActivity) {
+            if (activity.device?.toLowerCase().includes("Wahoo")) {
+                await jaul.io.sleep(settings.garmin.delaySeconds)
+                garminActivity = await fitParser.getMatchingActivity(user, "wahoo", activity)
+            }
+            if (!garminActivity) {
+                logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Wahoo activity")
+                return processedValue
+            }
+        }
+
+        processedValue = jaul.data.replaceTags(processedValue, garminActivity, "wahoo.", true)
+    } catch (ex) {
+        logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
 
     return processedValue
