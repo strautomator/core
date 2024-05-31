@@ -63,7 +63,7 @@ function readData(blob, fDef, startIndex) {
                     return array
             }
         } catch (ex) {
-            logger.error("Garmin.fitParser", "Failed to read data", fDef.type, startIndex, ex)
+            logger.error("FitParser.readData", "Failed to read data", fDef.type, startIndex, ex)
         }
 
         return addEndian(fDef.littleEndian, temp)
@@ -301,7 +301,7 @@ export function readRecord(blob, messageTypes, developerFields, startIndex, opti
 
                 mTypeDef.fieldDefs.push(fDef)
             } catch (ex) {
-                logger.error("Garmin.fitParser", "Failed to parse developer field", startIndex, ex)
+                logger.error("FitParser.readRecord", "Failed to parse developer field", startIndex, ex)
             }
         }
 

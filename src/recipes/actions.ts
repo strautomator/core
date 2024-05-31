@@ -9,7 +9,7 @@ import {ActivityWeather} from "../weather/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import recipeStats from "./stats"
 import ai from "../ai"
-import fitParser from "../fitparser"
+import fitparser from "../fitparser"
 import maps from "../maps"
 import musixmatch from "../musixmatch"
 import notifications from "../notifications"
@@ -329,11 +329,11 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
     }
 
     try {
-        let garminActivity = await fitParser.getMatchingActivity(user, "garmin", activity)
+        let garminActivity = await fitparser.getMatchingActivity(user, "garmin", activity)
         if (!garminActivity) {
             if (activity.device?.toLowerCase().includes("Garmin")) {
                 await jaul.io.sleep(settings.garmin.delaySeconds)
-                garminActivity = await fitParser.getMatchingActivity(user, "garmin", activity)
+                garminActivity = await fitparser.getMatchingActivity(user, "garmin", activity)
             }
             if (!garminActivity) {
                 logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Garmin activity")
@@ -363,11 +363,11 @@ export const addWahooTags = async (user: UserData, activity: StravaActivity, rec
     }
 
     try {
-        let garminActivity = await fitParser.getMatchingActivity(user, "wahoo", activity)
+        let garminActivity = await fitparser.getMatchingActivity(user, "wahoo", activity)
         if (!garminActivity) {
             if (activity.device?.toLowerCase().includes("Wahoo")) {
                 await jaul.io.sleep(settings.garmin.delaySeconds)
-                garminActivity = await fitParser.getMatchingActivity(user, "wahoo", activity)
+                garminActivity = await fitparser.getMatchingActivity(user, "wahoo", activity)
             }
             if (!garminActivity) {
                 logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Wahoo activity")

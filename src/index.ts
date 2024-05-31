@@ -79,12 +79,14 @@ import {Gemini} from "./gemini"
 export const gemini: Gemini = Gemini.Instance
 import {Anthropic} from "./anthropic"
 export const anthropic: Anthropic = Anthropic.Instance
+import {FitParser} from "./fitparser"
+export const fitparser: FitParser = FitParser.Instance
 import {Garmin} from "./garmin"
 export const garmin: Garmin = Garmin.Instance
-import {Spotify} from "./spotify"
-export const spotify: Spotify = Spotify.Instance
 import {Wahoo} from "./wahoo"
 export const wahoo: Wahoo = Wahoo.Instance
+import {Spotify} from "./spotify"
+export const spotify: Spotify = Spotify.Instance
 import {Weather} from "./weather"
 export const weather: Weather = Weather.Instance
 import {Users} from "./users"

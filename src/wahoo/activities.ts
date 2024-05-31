@@ -4,7 +4,7 @@ import {WahooActivity, WahooWebhookData} from "./types"
 import {toWahooActivity} from "./utils"
 import {FitFileActivity} from "../fitparser/types"
 import {UserData} from "../users/types"
-import fitParser from "../fitparser"
+import fitparser from "../fitparser"
 import api from "./api"
 import _ from "lodash"
 import logger from "anyhow"
@@ -52,7 +52,7 @@ export class WahooActivities {
             const rawData = await this.getActivityFile(user, webhookData)
             if (rawData) {
                 try {
-                    await fitParser.parse(user, wahooActivity, rawData)
+                    await fitparser.parse(user, wahooActivity, rawData)
                 } catch (innerEx) {
                     logger.error("Wahoo.processActivity", logHelper.user(user), logHelper.fitFileActivity(wahooActivity), "Failed to parse fit file", innerEx)
                 }
@@ -60,7 +60,7 @@ export class WahooActivities {
         } catch (ex) {
             logger.error("Wahoo.processActivity", logHelper.user(user), logHelper.wahooWebhook(webhookData), ex)
         } finally {
-            await fitParser.saveProcessedActivity(user, "wahoo", wahooActivity)
+            await fitparser.saveProcessedActivity(user, "wahoo", wahooActivity)
         }
     }
 

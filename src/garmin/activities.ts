@@ -3,7 +3,7 @@
 import {GarminPingActivityFile} from "./types"
 import {FitFileActivity} from "../fitparser/types"
 import {UserData} from "../users/types"
-import fitParser from "../fitparser"
+import fitparser from "../fitparser"
 import api from "./api"
 import _ from "lodash"
 import logger from "anyhow"
@@ -46,7 +46,7 @@ export class GarminActivities {
                 const rawData = await this.getActivityFile(user, ping)
                 if (rawData) {
                     try {
-                        await fitParser.parse(user, garminActivity, rawData)
+                        await fitparser.parse(user, garminActivity, rawData)
                     } catch (innerEx) {
                         logger.error("Garmin.processActivity", logHelper.user(user), logHelper.fitFileActivity(garminActivity), "Failed to parse fit file", innerEx)
                     }
@@ -55,7 +55,7 @@ export class GarminActivities {
         } catch (ex) {
             logger.error("Garmin.processActivity", logHelper.user(user), logHelper.garminPing(ping), ex)
         } finally {
-            await fitParser.saveProcessedActivity(user, "garmin", garminActivity)
+            await fitparser.saveProcessedActivity(user, "garmin", garminActivity)
         }
     }
 

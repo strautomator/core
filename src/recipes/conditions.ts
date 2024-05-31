@@ -7,7 +7,7 @@ import {StravaActivity, StravaActivityQuery} from "../strava/types"
 import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
 import recipeStats from "./stats"
-import fitParser from "../fitparser"
+import fitparser from "../fitparser"
 import spotify from "../spotify"
 import strava from "../strava"
 import weather from "../weather"
@@ -432,11 +432,11 @@ export const checkGarminWahoo = async (user: UserData, activity: StravaActivity,
     // Try finding the matching Garmin or Wahoo activity for the Strava activity.
     // If failed, retry in a few seconds if the device used to record the activity
     // matches the target FIT file source.
-    let fitActivity = await fitParser.getMatchingActivity(user, source, activity)
+    let fitActivity = await fitparser.getMatchingActivity(user, source, activity)
     if (!fitActivity) {
         if (activity.device?.toLowerCase().includes(source)) {
             await jaul.io.sleep(settings.axios.retryInterval * 2)
-            fitActivity = await fitParser.getMatchingActivity(user, source, activity)
+            fitActivity = await fitparser.getMatchingActivity(user, source, activity)
         }
         if (!fitActivity) {
             return op == RecipeOperator.NotLike
