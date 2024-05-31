@@ -79,30 +79,30 @@ export class GarminProfiles {
      */
     deleteProfile = async (user: UserData, skipDeregistration?: boolean): Promise<void> => {
         try {
-            if (!user.garmin) {
-                logger.warn("Garmin.deleteProfile", logHelper.user(user), "User has no Garmin profile, abort")
+            if (!user || !user.garmin) {
+                logger.warn("Garmin.deleteProfile", logHelper.user(user), "User has no Garmin profile to delete")
                 return
             }
 
-            const cacheId = `profile-${user.id}`
             const profileId = user.garmin.id
-            const tokens = user.garmin.tokens
+            const cacheId = `profile-${user.id}`
 
             // Make request to unlink profile, unless the skipDeregistration is set.
             if (!skipDeregistration) {
                 try {
+                    const tokens = user.garmin.tokens
                     await api.makeRequest(tokens, "wellness-api/rest/user/registration", "DELETE")
                 } catch (innerEx) {
                     logger.warn("Garmin.deleteProfile", logHelper.user(user), "Failed to deregister user on Garmin")
                 }
             }
 
-            // Remove profile from the database.
-            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, garmin: FieldValue.delete() as any}
+            // Delete profile from cache and database.
+            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, garmin: FieldValue.delete() as any, garminAuthState: FieldValue.delete() as any}
+            cache.del("garmin", cacheId)
             await users.update(data)
 
-            cache.del("garmin", cacheId)
-            logger.info("Garmin.deleteProfile", logHelper.user(user), `ID ${profileId} unlinked`)
+            logger.info("Garmin.deleteProfile", logHelper.user(user), `Profile ${profileId} deleted`)
         } catch (ex) {
             logger.error("Garmin.deleteProfile", logHelper.user(user), ex)
             throw ex

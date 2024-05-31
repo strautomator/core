@@ -1,4 +1,4 @@
-// Strautomator Core: Garmin
+// Strautomator Core: Garmin Webhooks
 
 import {GarminPingPermissions, GarminPing, GarminPingActivityFile, GarminWebhookData} from "./types"
 import {Request} from "express"
@@ -9,7 +9,6 @@ import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import * as ipRanges from "../ipranges"
-const settings = require("setmeup").settings
 
 /**
  * Garmin wrapper.
@@ -33,14 +32,12 @@ export class GarminWebhooks {
         try {
             const body: GarminWebhookData = req.body || null
 
-            // Check user agent and client IP if the checkHeaders flag is set.
-            if (settings.garmin.api.checkHeaders) {
-                if (!userAgent.includes("Garmin")) {
-                    throw new Error(`User agent not authorized: ${userAgent}`)
-                }
-                if (!jaul.network.ipInRange(clientIP, ipRanges.garmin)) {
-                    throw new Error(`Client IP not authorized: ${clientIP}`)
-                }
+            // Check user agent and client IP.
+            if (!userAgent.includes("Garmin")) {
+                throw new Error(`User agent not authorized: ${userAgent}`)
+            }
+            if (!jaul.network.ipInRange(clientIP, ipRanges.garmin)) {
+                throw new Error(`Client IP not authorized: ${clientIP}`)
             }
 
             // No request body? Stop here.
