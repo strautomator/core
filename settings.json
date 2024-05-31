@@ -143,9 +143,6 @@
             "baseUrl": "https://apis.garmin.com/",
             "authUrl": "https://connectapi.garmin.com/oauth-service/oauth/",
             "loginUrl": "https://connect.garmin.com/oauthConfirm",
-            // Restrict webhook pings from Garmin by checking the user agent
-            // and the Cloudflare headers.
-            "checkHeaders": true,
             // Maximum concurrent requests per instance.
             "maxConcurrent": 4,
             // Maximum requests per minute per instance.
@@ -533,12 +530,10 @@
             "minRideTime": 1200
         },
         "processedActivities": {
+            // Activities containing this hashtag on their names will be ignored by Strautomator.
+            "ignoreHashtag": "#strautomator-ignore",
             // Processed activity details will be deleted from the database after 2 years. Value set in days.
             "maxAgeDays": 730
-        },
-        "records": {
-            // For "average" records, consider only the activities that have at least 20 minutes of moving time.
-            "minMovingTimeAvg": 1200
         },
         "processingQueue": {
             // Default delay for queued activities is 10 minutes, value set in seconds.
@@ -552,6 +547,10 @@
             "maxAge": 345600,
             // Retry processing queued activities up to 5 times.
             "retry": 5
+        },
+        "records": {
+            // For "average" records, consider only the activities that have at least 20 minutes of moving time.
+            "minMovingTimeAvg": 1200
         }
     },
     "users": {
@@ -565,6 +564,25 @@
             // How many days to wait before acting on pending or cancelled subscriptions.
             "subscriptions": 5
         }
+    },
+    "wahoo": {
+        "api": {
+            "baseUrl": "https://api.wahooligan.com/",
+            "scopes": "email user_read workouts_read offline_data",
+            // Maximum concurrent requests per instance.
+            "maxConcurrent": 4,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 60,
+            // Token to be appended to the URL of Wahoo webhooks, for
+            // extra security. Can only include alphanumeric characters.
+            // This MUST be set on the settings.secret.json file or via
+            // via the SMU_wahoo_api_urlToken environment variable.
+            "urlToken": null
+        },
+        // Cache profiles and Wahoo data for up to 2 minutes. Value set in seconds.
+        "cacheDuration": 120,
+        // Wahoo data will be stored in the database for up to 10 days.
+        "maxCacheDuration": 864000
     },
     // Weather settings. The rate limits set here should be enough for basic usage using free accounts,
     // but should be updated in production when used with a paid plan.
