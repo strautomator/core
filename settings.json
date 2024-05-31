@@ -153,8 +153,6 @@
             // via the SMU_garmin_api_urlToken environment variable.
             "urlToken": null
         },
-        // Up to 5 seconds waiting time for a Garmin activity to be processed on automations.
-        "delaySeconds": 5,
         // Cache profiles and Garmin data for up to 2 minutes. Value set in seconds.
         "cacheDuration": 120,
         // Garmin data will be stored in the database for up to 10 days.

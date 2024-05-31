@@ -195,7 +195,7 @@ export class Spotify {
      */
     refreshToken = async (user: UserData, refreshToken?: string): Promise<SpotifyTokens> => {
         try {
-            if (!refreshToken) {
+            if (!refreshToken && user.spotify?.tokens) {
                 refreshToken = user.spotify.tokens.refreshToken
             }
 
@@ -257,7 +257,7 @@ export class Spotify {
             }
         } catch (ex) {
             logger.error("Spotify.validateTokens", logHelper.user(user), ex)
-            throw new Error("Failed to refresh token")
+            throw new Error("Token validation has failed")
         }
 
         return tokens
