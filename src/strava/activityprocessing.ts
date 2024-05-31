@@ -1,6 +1,7 @@
 // Strautomator Core: Strava Activity Processing
 
 import {StravaActivity, StravaActivityFilter, StravaProcessedActivity, StravaRideType, StravaRunType} from "./types"
+import {isActivityIgnored} from "./utils"
 import {RecipeData} from "../recipes/types"
 import {getActionSummary, getConditionSummary} from "../recipes/utils"
 import {UserData} from "../users/types"
@@ -192,6 +193,10 @@ export class StravaActivityProcessing {
             // Get activity details from Strava.
             try {
                 activity = await stravaActivities.getActivity(user, activityId)
+                if (isActivityIgnored(user, activity, "automation")) {
+                    return null
+                }
+
                 if (pActivity.batch) {
                     activity.batch = true
                 }

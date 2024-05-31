@@ -8,7 +8,10 @@ import maps from "../maps"
 import routes from "../routes"
 import dayjs from "../dayjs"
 import _ from "lodash"
+import logger from "anyhow"
 import polyline = require("@mapbox/polyline")
+import * as logHelper from "../loghelper"
+const settings = require("setmeup").settings
 
 // Feet and miles ratio.
 const rFeet = 3.28084
@@ -31,7 +34,6 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         sportType: data.sport_type || data.type,
         workoutType: data.workout_type && data.workout_type != 0 && data.workout_type != 10 ? data.workout_type : null,
         name: data.name,
-        description: data.description,
         flagged: data.flagged ? true : false,
         private: data.private ? true : false,
         commute: data.commute ? true : false,
@@ -64,6 +66,11 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         hasPhotos: data.photos && data.photos.count > 0 ? true : false,
         privateNote: data.private_note || null,
         updatedFields: []
+    }
+
+    // Has a description?
+    if (data.description) {
+        activity.description = data.description
     }
 
     // Has an external ID?
@@ -726,4 +733,26 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             activity[key] = ""
         }
     }
+}
+
+/**
+ * Check if the Strava activity has a tag to prevent it from being processed.
+ * @param user The user owning the activity.
+ * @param activity The Strava activity to be transformed.
+ * @param context The context in which the activity is being ignored.
+ */
+export const isActivityIgnored = (user: UserData, activity: StravaActivity, context: "automation" | "gear" | "ftp"): boolean => {
+    if (!user || !activity) {
+        return false
+    }
+
+    const baseHashtag = settings.strava.processedActivities.ignoreHashtag
+    const hashtag = `${baseHashtag}-${context}`
+
+    if (activity.name?.includes(baseHashtag) || activity.name?.includes(hashtag)) {
+        logger.warn("Strava.ignoreActivity", logHelper.user(user), logHelper.activity(activity), `Ignored via hashtag (${context})`)
+        return true
+    }
+
+    return false
 }

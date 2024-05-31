@@ -2,6 +2,7 @@
 
 import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
+import {isActivityIgnored} from "../strava/utils"
 import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
@@ -498,7 +499,7 @@ export class GearWear {
     }
 
     /**
-     * Update gear component distance / time (hours) with the provided Strava activity.
+     * Update gear component distance / time (hours) with the provided Strava activities.
      * @param user The user owner of the gear and component.
      * @param config The GearWear configuration.
      * @param activity Strava activity that should be used to update distances.
@@ -533,6 +534,10 @@ export class GearWear {
 
             // Iterate user activities to update the gear components distance.
             for (let activity of activities) {
+                if (isActivityIgnored(user, activity, "gear")) {
+                    continue
+                }
+
                 try {
                     const distance = activity.distance
 

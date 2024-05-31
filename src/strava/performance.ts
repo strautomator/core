@@ -1,6 +1,7 @@
 // Strautomator Core: Strava Activities
 
 import {StravaActivity, StravaActivityPerformance, StravaCachedResponse, StravaEstimatedFtp, StravaFitnessLevel, StravaSport} from "./types"
+import {isActivityIgnored} from "./utils"
 import {UserData, UserFtpStatus} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
@@ -262,6 +263,10 @@ export class StravaPerformance {
 
             // Helper to process the activity and get power stats.
             const processActivity = async (a: StravaActivity): Promise<void> => {
+                if (isActivityIgnored(user, a, "ftp")) {
+                    return null
+                }
+
                 try {
                     const dateEnd = dayjs(a.dateEnd)
 
