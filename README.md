@@ -26,6 +26,7 @@ Optional credentials:
 -   OpenAI API
 -   PayPal API
 -   Spotify API
+-   Wahoo Cloud API
 -   Weather providers: Open-Meteo, OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
 
 Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid plans.
@@ -80,6 +81,7 @@ The following collections are used:
 -   **subscriptions** PRO subscriptions
 -   **strava-cache** cached responses from Strava
 -   **users** registered user details
+-   **garmin** cached Wahoo data
 
 Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
 

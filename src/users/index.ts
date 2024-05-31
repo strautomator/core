@@ -533,7 +533,7 @@ export class Users {
 
             return user
         } catch (ex) {
-            logger.error("Garmin.getByGarminId", garminProfileId, ex)
+            logger.error("Users.getByGarminId", garminProfileId, ex)
             throw ex
         }
     }
@@ -566,6 +566,44 @@ export class Users {
             return users
         } catch (ex) {
             logger.error("Users.getWithSpotify", ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get a user based on the Wahoo ID.
+     * @param profileId Wahoo profile ID.
+     */
+    getByWahooId = async (wahooProfileId: string): Promise<UserData> => {
+        try {
+            const users = await database.search("users", ["wahoo.id", "==", wahooProfileId])
+            const user = users.length > 0 ? users[0] : null
+
+            if (user) {
+                logger.info("Users.getByWahooId", wahooProfileId, logHelper.user(user))
+            } else {
+                logger.warn("Users.getByWahooId", wahooProfileId, "Not found")
+            }
+
+            return user
+        } catch (ex) {
+            logger.error("Users.getByWahooId", wahooProfileId, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get list of users with a linked Wahoo account.
+     */
+    getWithWahoo = async (): Promise<UserData[]> => {
+        try {
+            const where = [["wahoo.tokens.accessToken", "!=", ""]]
+            const users = await database.search("users", where)
+
+            logger.info("Users.getWithWahoo", `Got ${users.length || "no"} linked Wahoo users`)
+            return users
+        } catch (ex) {
+            logger.error("Users.getWithWahoo", ex)
             throw ex
         }
     }

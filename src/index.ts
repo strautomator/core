@@ -83,6 +83,8 @@ import {Garmin} from "./garmin"
 export const garmin: Garmin = Garmin.Instance
 import {Spotify} from "./spotify"
 export const spotify: Spotify = Spotify.Instance
+import {Wahoo} from "./wahoo"
+export const wahoo: Wahoo = Wahoo.Instance
 import {Weather} from "./weather"
 export const weather: Weather = Weather.Instance
 import {Users} from "./users"
@@ -115,6 +117,7 @@ export * from "./strava/types"
 export * from "./komoot/types"
 export * from "./garmin/types"
 export * from "./spotify/types"
+export * from "./wahoo/types"
 export * from "./users/types"
 export * from "./subscriptions/types"
 export * from "./calendar/types"
@@ -220,7 +223,7 @@ export const startup = async (quickStart?: boolean) => {
     // Init individual modules now. Start with the most important modules, than the rest.
     const coreModules = [github, paypal, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
-    const otherModules = [ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, weather]
+    const otherModules = [ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, wahoo, weather]
     await Promise.all(otherModules.map(initModule))
 
     // Running locally? Setup the necessary cron jobs which are

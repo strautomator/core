@@ -5,6 +5,7 @@ import {GarminProfile} from "../garmin/types"
 import {RecipeData} from "../recipes/types"
 import {SpotifyProfile} from "../spotify/types"
 import {StravaFitnessLevel, StravaProfile, StravaTokens} from "../strava/types"
+import {WahooProfile} from "../wahoo/types"
 
 /**
  * Key-value list of recipes.
@@ -50,6 +51,10 @@ export interface UserData {
     spotify?: SpotifyProfile
     /** Spotify authentication state. */
     spotifyAuthState?: string
+    /** Linked Wahoo profile. */
+    wahoo?: WahooProfile
+    /** Wahoo authentication state. */
+    wahooAuthState?: string
     /** Custom URL token used to get the calendar. */
     urlToken?: string
     /** User's subscription ID. */
