@@ -81,7 +81,7 @@ The following collections are used:
 -   **subscriptions** PRO subscriptions
 -   **strava-cache** cached responses from Strava
 -   **users** registered user details
--   **garmin** cached Wahoo data
+-   **wahoo** cached Wahoo data
 
 Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
 

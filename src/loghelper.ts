@@ -82,8 +82,8 @@ export const user = (lUser: UserData | Partial<UserData>): string => {
 }
 
 /**
- * Helper to get user details for logging.
- * @param lUser User data.
+ * Helper to get Wahoo webhook details for logging.
+ * @param lData User data.
  */
 export const wahooWebhook = (lData: WahooWebhookData): string => {
     if (!lData) return "User unknown"
