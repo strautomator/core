@@ -370,6 +370,9 @@ export class StravaActivityProcessing {
                 data.utcStartOffset = activity.utcStartOffset
                 data.totalTime = activity.totalTime
 
+                if (activity.device) {
+                    data.device = activity.device
+                }
                 if (activity.newRecords) {
                     data.newRecords = activity.newRecords
                 }

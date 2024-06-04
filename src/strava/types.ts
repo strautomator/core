@@ -253,6 +253,8 @@ export interface StravaProcessedActivity {
     dateQueued?: Date
     /** Processing date. */
     dateProcessed?: Date
+    /** Device that recorded the activity. */
+    device?: string
     /** Matching Garmin activity (not saved to the DB, must be populated separately). */
     garminActivity?: FitFileActivity
     /** Matching Wahoo activity (not saved to the DB, must be populated separately). */
