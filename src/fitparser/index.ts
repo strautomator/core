@@ -10,6 +10,7 @@ import {UserData} from "../users/types"
 import database from "../database"
 import _ from "lodash"
 import logger from "anyhow"
+import jaul from "jaul"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
@@ -342,9 +343,13 @@ export class FitParser {
             ]
 
             // Find activities based on the start date.
-            const activities: FitFileActivity[] = await database.search(source, where)
+            // No activities found? Try again once if the activity device matches the passed FIT file source.
+            let activities: FitFileActivity[] = await database.search(source, where)
+            if (activities.length == 0 && activity.device?.toLowerCase().includes(source)) {
+                await jaul.io.sleep(settings.axios.retryInterval * 2)
+                activities = await database.search(source, where)
+            }
 
-            // No activities found? Stop here.
             if (activities.length == 0) {
                 logger.debug("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), "Not found")
                 return null

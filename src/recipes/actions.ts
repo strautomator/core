@@ -327,18 +327,16 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
         logger.debug("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
         return processedValue
     }
+    if (!user.garmin) {
+        logger.debug("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Garmin profile linked, will skip")
+        return processedValue
+    }
 
     try {
         let garminActivity = await fitparser.getMatchingActivity(user, "garmin", activity)
         if (!garminActivity) {
-            if (activity.device?.toLowerCase().includes("Garmin")) {
-                await jaul.io.sleep(settings.garmin.delaySeconds)
-                garminActivity = await fitparser.getMatchingActivity(user, "garmin", activity)
-            }
-            if (!garminActivity) {
-                logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Garmin activity")
-                return processedValue
-            }
+            logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Garmin activity")
+            return processedValue
         }
 
         processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.", true)
@@ -361,21 +359,19 @@ export const addWahooTags = async (user: UserData, activity: StravaActivity, rec
         logger.debug("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
         return processedValue
     }
+    if (!user.wahoo) {
+        logger.debug("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Wahoo profile linked, will skip")
+        return processedValue
+    }
 
     try {
-        let garminActivity = await fitparser.getMatchingActivity(user, "wahoo", activity)
-        if (!garminActivity) {
-            if (activity.device?.toLowerCase().includes("Wahoo")) {
-                await jaul.io.sleep(settings.garmin.delaySeconds)
-                garminActivity = await fitparser.getMatchingActivity(user, "wahoo", activity)
-            }
-            if (!garminActivity) {
-                logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Wahoo activity")
-                return processedValue
-            }
+        let wahooActivity = await fitparser.getMatchingActivity(user, "wahoo", activity)
+        if (!wahooActivity) {
+            logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Wahoo activity")
+            return processedValue
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, garminActivity, "wahoo.", true)
+        processedValue = jaul.data.replaceTags(processedValue, wahooActivity, "wahoo.", true)
     } catch (ex) {
         logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }

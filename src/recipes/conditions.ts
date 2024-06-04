@@ -12,12 +12,10 @@ import spotify from "../spotify"
 import strava from "../strava"
 import weather from "../weather"
 import _ from "lodash"
-import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 import polyline = require("@mapbox/polyline")
-const settings = require("setmeup").settings
 
 /**
  * Check if the passed text / string based condition is valid.
@@ -432,15 +430,9 @@ export const checkGarminWahoo = async (user: UserData, activity: StravaActivity,
     // Try finding the matching Garmin or Wahoo activity for the Strava activity.
     // If failed, retry in a few seconds if the device used to record the activity
     // matches the target FIT file source.
-    let fitActivity = await fitparser.getMatchingActivity(user, source, activity)
+    const fitActivity = await fitparser.getMatchingActivity(user, source, activity)
     if (!fitActivity) {
-        if (activity.device?.toLowerCase().includes(source)) {
-            await jaul.io.sleep(settings.axios.retryInterval * 2)
-            fitActivity = await fitparser.getMatchingActivity(user, source, activity)
-        }
-        if (!fitActivity) {
-            return op == RecipeOperator.NotLike
-        }
+        return op == RecipeOperator.NotLike
     }
 
     // Finally check the corresponding field on the FIT file activity.
