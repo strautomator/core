@@ -93,14 +93,19 @@
             "swim": ["distance", "speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"],
             "workout": ["calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"]
         },
-        // Default template for the event summary.
-        "eventSummary": "${name} ${icon}",
+        // Up to 4 calendars can be processed on a single batch.
+        "batchSize": 4,
+        // Speed up first calendar generation by shortening the date ranges
+        // and limiting the number of events added to 20.
+        "partialFirstBuild": true,
         // Calendar base name.
         "name": "Strava",
+        // Default template for the event summary.
+        "eventSummary": "${name} ${icon}",
         // Default event duration in minutes (ie. for past club events).
-        "defaultDurationMinutes": 15,
-        // Calendars are cached for a maximum of 7 days, even if there were no new activities. Value in seconds.
-        "maxCacheDuration": 604800
+        "eventDurationMinutes": 15,
+        // Calendars will be deleted if no client requests it for 3 days.
+        "maxCacheDuration": 259200
     },
     "cookie": {
         "sessionName": "strautsession",
@@ -112,9 +117,9 @@
         // If you're hosting multiple sites or services within the same Google Project,
         // you might add a default suffix to Firestore collection names.
         "collectionSuffix": "",
-        // Single documents from the database can get cached in memory. Value set in seconds.
-        // To disable, set this to null.
-        "cacheDuration": 1,
+        // Cache duration to keep database documents in memory for different colletions. Value set in seconds.
+
+        "cacheDuration": null,
         // Encryption options.
         "crypto": {
             "algorithm": "aes-256-cbc",
@@ -367,17 +372,18 @@
     },
     "plans": {
         "free": {
-            "apiConcurrency": 2,
+            "apiConcurrency": 4,
             // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
+            "maxCalendars": 1,
             // Free accounts can trigger batch automations for activities up to 60 days old.
-            "batchDays": 60,
+            "batchDays": 30,
             // Free accounts limited to 6 months in the past and up to 5 days in the future.
             "pastCalendarDays": 180,
             "futureCalendarDays": 5,
-            // Free calendars are cached for up to 8 hours.
-            "calendarCacheDuration": 28800,
+            // Free calendars are cached for around 24 hours.
+            "calendarCacheDuration": 86400,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5,
             // Track personal records for which sports?
@@ -398,8 +404,8 @@
             // PRO accounts limited to 10 years in the past and up to 1 year in the future.
             "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
-            // PRO calendars are cached for up to 2 hours.
-            "calendarCacheDuration": 7200,
+            // PRO calendars are cached for around 4 hours.
+            "calendarCacheDuration": 14400,
             // No links on PRO accounts processed activities.
             "linksOn": false,
             // Allow personal records for all sports.

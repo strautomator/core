@@ -136,8 +136,12 @@ import dayjs from "./dayjs"
 // Flag if the server is shutting down.
 let terminating = false
 
-// Startup script.
-export const startup = async (quickStart?: boolean) => {
+/**
+ * Startup routine.
+ * @param quickStart Quick start modules will not wait and do less live requests.
+ * @param onlyModules Optional, if passed only these modules will be started (in addition to the main ones).
+ */
+export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
     // Set it to gracefully shutdown.
@@ -205,10 +209,13 @@ export const startup = async (quickStart?: boolean) => {
     // Helper to init a core module.
     const initModule = async (module) => {
         try {
-            const modSettings = settings[module.constructor.name.toLowerCase()]
+            const moduleName = module.constructor.name.toLowerCase()
+            const modSettings = settings[moduleName]
 
             if (modSettings?.disabled) {
-                logger.warn("Strautomator.startup", module.constructor.name, "Module is disabled on settings")
+                logger.warn("Strautomator.startup", module.constructor.name, "Skip, mModule is disabled on settings")
+            } else if (onlyModules && !onlyModules.includes(moduleName)) {
+                logger.warn("Strautomator.startup", module.constructor.name, "Skip, module not enabled via onlyModules")
             } else {
                 if (quickStart) {
                     module.init(quickStart)
@@ -250,6 +257,12 @@ export const startup = async (quickStart?: boolean) => {
                 }
             }
             setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
+
+            // Regenerate calendars every hour.
+            const regenerateCalendars = async () => {
+                await calendar.regeneratePendingUpdate()
+            }
+            setInterval(regenerateCalendars, 1000 * 60 * 60)
 
             // Cleanup cached Strava responses, processed activities, notifications and GDPR archives right away.
             strava.cleanupCache()

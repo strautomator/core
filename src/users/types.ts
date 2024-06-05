@@ -1,6 +1,5 @@
 // Strautomator Core: User types
 
-import {CalendarOptions} from "../calendar/types"
 import {GarminProfile} from "../garmin/types"
 import {RecipeData} from "../recipes/types"
 import {SpotifyProfile} from "../spotify/types"
@@ -109,8 +108,6 @@ export interface UserPreferences {
     weatherUnit?: "c" | "f"
     /** Wind speed unit. */
     windSpeedUnit?: "m/s" | "kph" | "mph"
-    /** Default exported calendar options for the user. */
-    calendarOptions?: CalendarOptions
     /** Calendar template. */
     calendarTemplate?: UserCalendarTemplate
     /** Preferred AI provider. */

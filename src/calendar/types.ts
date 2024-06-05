@@ -1,23 +1,25 @@
 // Strautomator Core: Calendar types
 
-import dayjs from "dayjs"
-
 /**
- * Cached calendar with base event details.
+ * Calendar details saved to the database.
  */
-export interface CalendarCache {
+export interface CalendarData {
+    /** The cached calendar ID. */
+    id: string
     /** The user ID. */
     userId: string
+    /** Calendar options used to generate the calendar. */
+    options: CalendarOptions
+    /** How many activities the calendar has. */
+    activityCount?: number
+    /** How many club events the calendar has.  */
+    clubEventCount?: number
+    /** Flag to set if the calendar is considered expired and should be updated. */
+    pendingUpdate?: boolean
+    /** Date when the calendar cache was last accessed. */
+    dateAccess?: Date
     /** Date when the cache was last updated. */
-    dateUpdated: Date
-    /** Map of cached events with title, start date and end date. */
-    events: {
-        [eventId: string]: {
-            title: string
-            dateStart: Date
-            dateEnd: Date
-        }
-    }
+    dateUpdated?: Date
 }
 
 /**
@@ -28,12 +30,8 @@ export interface CalendarOptions {
     activities?: boolean
     /** Include club events? */
     clubs?: boolean
-    /** Include only specific clubs (by ID). */
+    /** Include only specific clubs (by ID), mandatory for free accounts. */
     clubIds?: string[]
-    /** Starting date (as DayJS), defaults to the pastCalendarDays setting. */
-    dateFrom?: dayjs.Dayjs
-    /** Ending date (as DayJS), defaults to the futureCalendarDays setting. */
-    dateTo?: dayjs.Dayjs
     /** Exclude commutes? Default is false. */
     excludeCommutes?: boolean
     /** Exclude club events which user hasn't joined to? */
@@ -48,4 +46,19 @@ export interface CalendarOptions {
     fresher?: boolean
     /** Filter only specific sport types. Default is all. */
     sportTypes?: string[]
+    /** Past days, defaults to the pastCalendarDays setting. */
+    daysFrom?: number
+    /** Future days, defaults to the futureCalendarDays setting. */
+    daysTo?: number
+}
+
+/**
+ * Cached calendar event title and dates, indexed by event ID.
+ */
+export interface CalendarCachedEvents {
+    [eventId: string]: {
+        title: string
+        dateStart: Date
+        dateEnd: Date
+    }
 }
