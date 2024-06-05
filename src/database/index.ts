@@ -51,6 +51,11 @@ export class Database {
                 throw new Error("Missing the mandatory database.crypto.key setting")
             }
 
+            // Setup cache only if a duration was set.
+            if (dbOptions.cacheDuration) {
+                cache.setup(`database${this.collectionSuffix}`, dbOptions.cacheDuration)
+            }
+
             const options: FirebaseFirestore.Settings = {
                 projectId: settings.gcp.projectId,
                 ignoreUndefinedProperties: dbOptions.ignoreUndefinedProperties
@@ -62,11 +67,7 @@ export class Database {
             this.firestore = new Firestore(options)
             this.collectionSuffix = dbOptions.collectionSuffix || ""
 
-            // Setup bitecache.
-            cache.setup(`database${this.collectionSuffix}`, dbOptions.cacheDuration)
-
             const logSuffix = this.collectionSuffix ? `Collections suffixed with "${this.collectionSuffix}"` : "No collection suffix"
-
             if (settings.database.writeDisabled) {
                 logger.warn("Database.init", customLog, logSuffix, "Database in read-only mode, writeDisable = true")
             } else {

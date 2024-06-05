@@ -430,7 +430,7 @@ export class GearWear {
             // Process GearWear for users in batches.
             const batchSize = settings.functions.batchSize
             while (userIds.length) {
-                await Promise.all(userIds.splice(0, batchSize).map(processForUser))
+                await Promise.allSettled(userIds.splice(0, batchSize).map(processForUser))
             }
 
             // Save gearwear state to the database.

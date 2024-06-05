@@ -194,7 +194,7 @@ export class StravaClubs {
             // Iterate clubs to get the upcoming events.
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
             while (clubs.length) {
-                await Promise.all(clubs.splice(0, batchSize).map(getEvents))
+                await Promise.allSettled(clubs.splice(0, batchSize).map(getEvents))
             }
 
             logger.info("Strava.getUpcomingClubEvents", logHelper.user(user), `Next ${days} days`, countries.join(", "), `${result.length || "No"} upcoming events`)

@@ -1027,6 +1027,7 @@ export class Users {
 
             await database.merge("users", data)
             logger.info("Users.setUrlToken", user.id, user.displayName, "New token generated", `Old token: ${oldToken}`)
+            eventManager.emit("Users.setUrlToken", user)
 
             return newToken
         } catch (ex) {

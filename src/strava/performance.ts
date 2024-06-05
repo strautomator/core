@@ -332,7 +332,7 @@ export class StravaPerformance {
             // Extract and process power data from activities.
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
             while (activities.length) {
-                await Promise.all(activities.splice(0, batchSize).map(processActivity))
+                await Promise.allSettled(activities.splice(0, batchSize).map(processActivity))
             }
 
             avgWatts = Math.round(_.mean(listWatts))
