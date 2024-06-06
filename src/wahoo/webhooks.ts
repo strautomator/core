@@ -47,7 +47,7 @@ export class WahooWebhooks {
             }
 
             // Validate user.
-            const user = await users.getByWahooId(data.user.id.toString())
+            const user = await users.getByWahooId(data.user.id)
             if (!user) {
                 logger.warn("Wahoo.processWebhook", logFrom, logHelper.wahooWebhook(data), "No matching account found")
                 return

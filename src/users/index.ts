@@ -574,7 +574,7 @@ export class Users {
      * Get a user based on the Wahoo ID.
      * @param profileId Wahoo profile ID.
      */
-    getByWahooId = async (wahooProfileId: string): Promise<UserData> => {
+    getByWahooId = async (wahooProfileId: number): Promise<UserData> => {
         try {
             const users = await database.search("users", ["wahoo.id", "==", wahooProfileId])
             const user = users.length > 0 ? users[0] : null
