@@ -7,6 +7,7 @@ import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
 import api from "./api"
 import database from "../database"
+import notifications from "../notifications"
 import users from "../users"
 import _ from "lodash"
 import logger from "anyhow"
@@ -51,6 +52,14 @@ export class StravaPerformance {
                 logger.warn("Strava.processPerformance", logHelper.user(user), "FTP already updated recently")
             } else {
                 await this.saveFtp(user, ftpEstimation)
+
+                // Notify the user about the FTP update.
+                const nOptions = {
+                    title: `New FTP detected: ${ftpEstimation.ftpWatts} watts`,
+                    body: `Your FTP was updated on Strava, based on results from recent activities.`,
+                    href: "https://www.strava.com/settings/performance"
+                }
+                await notifications.createNotification(user, nOptions)
             }
 
             // Then we check the fitness level, but only if we have at least 4 activities and with
