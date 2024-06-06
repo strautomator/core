@@ -88,6 +88,6 @@ export const user = (lUser: UserData | Partial<UserData>): string => {
 export const wahooWebhook = (lData: WahooWebhookData): string => {
     if (!lData) return "User unknown"
     const user = `Wahoo user ${lData.user?.id || "unknown"}`
-    const workout = `Workout ${lData.workout_summary?.id} || "unknown"`
+    const workout = `Workout ${lData.workout_summary?.id || "unknown"}`
     return `${lData.event_type}: ${user} - ${workout}`
 }
