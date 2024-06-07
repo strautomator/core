@@ -282,6 +282,11 @@ export const addWeatherTags = async (user: UserData, activity: StravaActivity, r
  * @param processedValue The action's processed value.
  */
 export const addSpotifyTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    if (!user.spotify) {
+        logger.debug("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Spotify profile linked, will skip")
+        return processedValue
+    }
+
     try {
         const tracks = await spotify.getActivityTracks(user, activity)
 
