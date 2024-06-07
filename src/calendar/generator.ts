@@ -87,13 +87,17 @@ export class CalendarGenerator {
                 }
             }
 
+            // First time this calendar is being generated? Set the pendingUpdate flag for a full rebuild.
+            if (!dbCalendar.dateAccess && settings.calendar.partialFirstBuild) {
+                dbCalendar.pendingUpdate = true
+            }
+
             const output = cal.toString()
             const duration = dayjs.utc().unix() - startTime
             const size = output.length / 1000 / 1024
             const eventCount = dbCalendar.activityCount + dbCalendar.clubEventCount
-
             logger.info("Calendar.generate", logHelper.user(user), `${optionsLog}`, `${eventCount} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
-            dbCalendar.dateUpdated = new Date()
+
             return output
         } catch (ex) {
             logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, ex)

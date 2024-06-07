@@ -43,12 +43,28 @@ export class Calendar {
 
             logger.info("Calendar.init", `Cache durations: Free ${durationFree}, PRO ${durationPro}`)
 
-            eventManager.on("Users.setUrlToken", this.deleteForUser)
-            eventManager.on("Users.delete", this.deleteForUser)
+            eventManager.on("Users.delete", this.onUserDelete)
+            eventManager.on("Users.setUrlToken", this.onUrlToken)
         } catch (ex) {
             logger.error("Calendar.init", ex)
             throw ex
         }
+    }
+
+    /**
+     * Delete calendars and cached events for the specified deleted user.
+     * @param user User that was deleted from the database.
+     */
+    private onUserDelete = async (user: UserData): Promise<void> => {
+        await this.deleteForUser(user, true)
+    }
+
+    /**
+     * Delete calendars when the user changes the URL token.
+     * @param user User that has a new URL token.
+     */
+    private onUrlToken = async (user: UserData): Promise<void> => {
+        await this.deleteForUser(user)
     }
 
     // MAIN METHODS
@@ -157,13 +173,25 @@ export class Calendar {
     /**
      * Delete calendars for the specified user.
      * @param user User to have the calendars deleted.
+     * @param includeCachedEvents If true, will also delete cached event details (start and end dates).
      */
-    deleteForUser = async (user: UserData): Promise<number> => {
+    deleteForUser = async (user: UserData, includeCachedEvents?: boolean): Promise<number> => {
         const logDetails = logHelper.user(user)
 
         try {
             const dbWhere = ["userId", "==", user.id]
             const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
+
+            // Also deleted cached events?
+            if (includeCachedEvents) {
+                const cachedEvents = await database.doc("calendars", `${user.id}-cached-events`)
+                const docSnapshot = await cachedEvents.get()
+                if (docSnapshot.exists) {
+                    await cachedEvents.delete()
+                    logger.info("Calendar.deleteForUser", logDetails, "Deleted cached events")
+                }
+            }
+
             return this.delete(logDetails, dbWhere, calendarFiles)
         } catch (ex) {
             logger.error("Calendar.deleteForUser", logDetails, ex)
@@ -306,6 +334,8 @@ export class Calendar {
         try {
             const output = await calendarGenerator.build(user, dbCalendar)
             if (output) {
+                dbCalendar.dateUpdated = new Date()
+                await database.merge("calendars", dbCalendar)
                 await storage.setFile("calendar", dbCalendar.id, output, "text/calendar")
                 return storage.getUrl("calendar", dbCalendar.id)
             }
