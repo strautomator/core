@@ -25,6 +25,11 @@ export class Database {
     }
 
     /**
+     * Enable the in-memory cache of DB results?
+     */
+    cacheInMemory: boolean = false
+
+    /**
      * Database collection suffix.
      */
     collectionSuffix: string
@@ -54,6 +59,7 @@ export class Database {
             // Setup cache only if a duration was set.
             if (dbOptions.cacheDuration) {
                 cache.setup(`database${this.collectionSuffix}`, dbOptions.cacheDuration)
+                this.cacheInMemory = true
             }
 
             const options: FirebaseFirestore.Settings = {
@@ -118,13 +124,17 @@ export class Database {
         // Set the document, save to cache and return it.
         try {
             const result = await doc.set(encryptedData)
-            cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
+            if (this.cacheInMemory) {
+                cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
+            }
 
             return result.writeTime.seconds
         } catch (ex) {
             if (this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData)
-                cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
+                if (this.cacheInMemory) {
+                    cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
+                }
 
                 return result.writeTime.seconds
             } else {
@@ -157,13 +167,17 @@ export class Database {
         // Merge the data, save to cache and return it.
         try {
             const result = await doc.set(encryptedData, {merge: true})
-            cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
+            if (this.cacheInMemory) {
+                cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
+            }
 
             return result.writeTime.seconds
         } catch (ex) {
             if (this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData, {merge: true})
-                cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
+                if (this.cacheInMemory) {
+                    cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
+                }
 
                 return result.writeTime.seconds
             } else {
@@ -182,7 +196,7 @@ export class Database {
         let colname = `${collection}${this.collectionSuffix}`
 
         // First check if document is cached.
-        if (!skipCache && settings.database.cacheDuration) {
+        if (!skipCache && this.cacheInMemory) {
             const fromCache = cache.get(`database${this.collectionSuffix}`, `${collection}-${id}`)
             if (fromCache) {
                 return fromCache
@@ -202,7 +216,7 @@ export class Database {
             result.id = doc.id
 
             // Add result to cache, only if enabled.
-            if (settings.database.cacheDuration) {
+            if (this.cacheInMemory) {
                 cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, result)
             }
 
@@ -349,8 +363,10 @@ export class Database {
         // Check if an actual ID was passed, or a query list.
         if (_.isString(queryOrId)) {
             const id = queryOrId as string
-            cache.del(`database${this.collectionSuffix}`, `${collection}-${id}`)
             await this.firestore.collection(colname).doc(id).delete()
+            if (this.cacheInMemory) {
+                cache.del(`database${this.collectionSuffix}`, `${collection}-${id}`)
+            }
 
             logger.info("Database.delete", collection, `ID ${id}`, `Deleted`)
             return 1
