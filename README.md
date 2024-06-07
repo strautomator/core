@@ -69,7 +69,7 @@ The following collections are used:
 -   **activities** processed activities
 -   **announcements** website announcements
 -   **athlete-records** athlete sports records
--   **calendars** cache of club events (title and dates)
+-   **calendars** exported Strava calendars
 -   **faq** help questions and answers
 -   **garmin** cached Garmin data
 -   **gearwear** GearWear configurations
