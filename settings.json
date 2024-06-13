@@ -104,8 +104,8 @@
         "eventSummary": "${name} ${icon}",
         // Default event duration in minutes (ie. for past club events).
         "eventDurationMinutes": 15,
-        // Calendars will be deleted if no client requests it for 3 days.
-        "maxCacheDuration": 259200
+        // Calendars will be deleted if no client requests it after 5 days.
+        "maxCacheDuration": 432000
     },
     "cookie": {
         "sessionName": "strautsession",
