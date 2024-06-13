@@ -78,7 +78,6 @@ export class WeatherAPI implements WeatherProvider {
      * @param roundTo Round to the previous or next hour?
      */
     private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): WeatherSummary => {
-        console.warn(JSON.stringify(rawData, null, 4))
         const data = this.filterData(rawData, dDate, roundTo)
         if (!data) return null
 
