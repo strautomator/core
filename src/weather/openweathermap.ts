@@ -166,6 +166,7 @@ export class OpenWeatherMap implements WeatherProvider {
             temperature: data.temp?.day || data.temp,
             feelsLike: data.feels_like?.day || data.feels_like,
             humidity: data.humidity,
+            dewPoint: data.dew_point,
             pressure: data.pressure,
             windSpeed: data.wind_speed,
             windGust: data.wind_gust,

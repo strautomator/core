@@ -116,6 +116,7 @@ export class VisualCrossing implements WeatherProvider {
             temperature: data.temp,
             feelsLike: data.feelslike,
             humidity: data.humidity,
+            dewPoint: data.dew,
             pressure: data.pressure,
             windSpeed: data.windspeed ? data.windspeed / 3.6 : null,
             windGust: windGust ? windGust / 3.6 : null,

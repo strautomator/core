@@ -75,6 +75,8 @@ export interface WeatherSummary {
     feelsLike: string | number
     /** Humidity percentage. */
     humidity: string | number
+    /** Dew point. */
+    dewPoint?: string | number
     /** Air pressure (hPa). */
     pressure: string | number
     /** Wind speed (m/s). */

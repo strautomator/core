@@ -55,7 +55,7 @@ export class Tomorrow implements WeatherProvider {
             const dateFormat = "YYYY-MM-DDTHH:mm:ss"
             const startTime = utcDate.subtract(settings.weather.dateSubtractMinutes, "minutes").format(dateFormat) + "Z"
             const endTime = utcDate.add(settings.weather.dateAddMinutes, "minutes").format(dateFormat) + "Z"
-            const fields = "weatherCode,temperature,humidity,windSpeed,windGust,windDirection,pressureSurfaceLevel,precipitationType,cloudCover,visibility,epaIndex"
+            const fields = "weatherCode,temperature,humidity,dewPoint,windSpeed,windGust,windDirection,pressureSurfaceLevel,precipitationType,cloudCover,visibility,epaIndex"
             const latlon = coordinates.join(",")
             const weatherUrl = `${baseUrl}timelines?&location=${latlon}&timesteps=1h&startTime=${startTime}&endTime=${endTime}&fields=${fields}&apikey=${secret}`
 
@@ -99,6 +99,7 @@ export class Tomorrow implements WeatherProvider {
             temperature: data.temperature,
             feelsLike: data.temperatureApparent,
             humidity: data.humidity,
+            dewPoint: data.dewPoint,
             pressure: data.pressureSurfaceLevel,
             windSpeed: data.windSpeed,
             windGust: data.windGust,

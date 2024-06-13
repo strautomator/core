@@ -78,6 +78,7 @@ export class WeatherAPI implements WeatherProvider {
      * @param roundTo Round to the previous or next hour?
      */
     private toWeatherSummary = (rawData: any, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): WeatherSummary => {
+        console.warn(JSON.stringify(rawData, null, 4))
         const data = this.filterData(rawData, dDate, roundTo)
         if (!data) return null
 
@@ -101,6 +102,7 @@ export class WeatherAPI implements WeatherProvider {
             temperature: data.temp_c || data.avgtemp_c || 0,
             feelsLike: data.feelslike_c,
             humidity: data.humidity || data.avghumidity || null,
+            dewPoint: data.dewpoint_c || null,
             pressure: data.pressure_mb || null,
             windSpeed: windSpeed ? parseFloat(windSpeed) / 3.6 : null,
             windGust: windGust ? parseFloat(windGust) / 3.6 : null,

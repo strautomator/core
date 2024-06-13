@@ -135,14 +135,22 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
             summary.feelsLike = summary.temperature
         }
 
-        // Temperature.
+        // Temperature conversion.
         const tempUnit = preferences.weatherUnit == "f" ? "F" : "C"
         if (preferences.weatherUnit == "f") {
             summary.feelsLike = celsiusToFahrenheit(summary.feelsLike as number)
             summary.temperature = celsiusToFahrenheit(summary.temperature as number)
+            if (!_.isNil(summary.dewPoint)) {
+                summary.dewPoint = celsiusToFahrenheit(summary.dewPoint as number)
+            }
         }
         summary.feelsLike = `${Math.round(summary.feelsLike as number)}°${tempUnit}`
         summary.temperature = `${Math.round(summary.temperature as number)}°${tempUnit}`
+
+        // Dew point.
+        if (!_.isNil(summary.dewPoint)) {
+            summary.dewPoint = `${Math.round(summary.dewPoint as number)}°${tempUnit}`
+        }
 
         // Humidity.
         if (!_.isNil(summary.humidity)) {

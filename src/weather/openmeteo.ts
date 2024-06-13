@@ -142,6 +142,7 @@ export class OpenMeteo implements WeatherProvider {
             temperature: data.hourly.temperature_2m?.at(index),
             feelsLike: data.hourly.apparent_temperature?.at(index),
             humidity: data.hourly.relative_humidity_2m?.at(index),
+            dewPoint: data.hourly.dew_point_2m?.at(index),
             pressure: data.hourly.pressure_msl?.at(index),
             windSpeed: data.hourly.wind_speed_10m?.at(index),
             windGust: data.hourly.wind_gusts_10m?.at(index),
