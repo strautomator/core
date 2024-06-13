@@ -127,17 +127,13 @@ export class Calendar {
                     logger.info("Calendar.get", logHelper.user(user), optionsLog, "Returning cached calendar")
                 }
             }
+
+            dbCalendar.dateAccess = now.toDate()
+            await database.merge("calendars", dbCalendar)
+            return storage.getUrl("calendar", cacheFileId)
         } catch (ex) {
             logger.error("Calendar.get", logHelper.user(user), `${optionsLog}`, ex)
             throw ex
-        } finally {
-            if (dbCalendar) {
-                dbCalendar.dateAccess = now.toDate()
-                await database.merge("calendars", dbCalendar)
-                return storage.getUrl("calendar", cacheFileId)
-            } else {
-                return null
-            }
         }
     }
 
