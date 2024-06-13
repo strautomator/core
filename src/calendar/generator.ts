@@ -56,7 +56,7 @@ export class CalendarGenerator {
 
             // Check if user is suspended, if so, add a single event to the calendar.
             if (user.suspended) {
-                logger.info("Calendar.generate", logHelper.user(user), `${optionsLog}`, "User is suspended, will not generate")
+                logger.info("Calendar.build", logHelper.user(user), `${optionsLog}`, "User is suspended, will not generate")
 
                 cal.createEvent({
                     start: now.toDate(),
@@ -98,12 +98,12 @@ export class CalendarGenerator {
             const output = cal.toString()
             const duration = dayjs.utc().unix() - startTime
             const size = output.length / 1000 / 1024
-            const eventCount = dbCalendar.activityCount + dbCalendar.clubEventCount
-            logger.info("Calendar.generate", logHelper.user(user), `${optionsLog}`, `${eventCount} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
+            const eventCount = (dbCalendar.activityCount || 0) + (dbCalendar.clubEventCount || 0)
+            logger.info("Calendar.build", logHelper.user(user), `${optionsLog}`, `${eventCount} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
 
             return output
         } catch (ex) {
-            logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, ex)
+            logger.error("Calendar.build", logHelper.user(user), `${optionsLog}`, ex)
             throw ex
         }
     }
