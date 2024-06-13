@@ -319,7 +319,7 @@ export class Calendar {
                 await database.merge("calendars", dbCalendar)
                 await storage.setFile("calendar", `${user.id}/${dbCalendar.id}.ics`, output, "text/calendar")
 
-                logger.info("Calendar.generate", logHelper.user(user), optionsLog, `Saved to ${dbCalendar.id}`)
+                logger.info("Calendar.generate", logHelper.user(user), optionsLog, `Saved: ${dbCalendar.id}.ics`)
                 return storage.getUrl("calendar", dbCalendar.id)
             }
 
