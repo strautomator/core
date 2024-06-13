@@ -1,5 +1,6 @@
 // Strautomator Core: Calendar
 
+import {FieldValue} from "@google-cloud/firestore"
 import {CalendarCachedEvents, CalendarData} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
@@ -87,9 +88,11 @@ export class CalendarGenerator {
                 }
             }
 
-            // First time this calendar is being generated? Set the pendingUpdate flag for a full rebuild.
+            // First time this calendar is being generated? Set the pendingUpdate flag for a full rebuild, otherwise clear it.
             if (!dbCalendar.dateAccess && settings.calendar.partialFirstBuild) {
                 dbCalendar.pendingUpdate = true
+            } else if (dbCalendar.pendingUpdate) {
+                dbCalendar.pendingUpdate = FieldValue.delete() as any
             }
 
             const output = cal.toString()
