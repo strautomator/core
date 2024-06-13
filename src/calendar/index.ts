@@ -128,8 +128,12 @@ export class Calendar {
                 }
             }
 
+            // Update calendar timestamps and save to the database.
             dbCalendar.dateAccess = now.toDate()
+            dbCalendar.dateExpiry = now.add(settings.calendar.maxCacheDuration, "seconds").toDate()
             await database.merge("calendars", dbCalendar)
+
+            // Return the calendar file URL.
             return storage.getUrl("calendar", cacheFileId)
         } catch (ex) {
             logger.error("Calendar.get", logHelper.user(user), `${optionsLog}`, ex)
@@ -191,26 +195,6 @@ export class Calendar {
             return this.delete(logDetails, dbWhere, calendarFiles)
         } catch (ex) {
             logger.error("Calendar.deleteForUser", logDetails, ex)
-            return 0
-        }
-    }
-
-    /**
-     * Delete calendars that have not been updated since the specified date.
-     * @param maxAge Optional date to be passed, defaults to the maxCacheDuration calendar setting.
-     */
-    deleteOld = async (maxAge?: Date): Promise<number> => {
-        if (!maxAge) {
-            maxAge = dayjs().startOf("day").subtract(settings.calendar.maxCacheDuration, "seconds").toDate()
-        }
-        const logDetails = `Max age: ${dayjs(maxAge).format("ll")}`
-
-        try {
-            const dbWhere = ["dateUpdated", "<", maxAge]
-            const calendarFiles = (await storage.listFiles("calendar")).filter((f) => dayjs(f.metadata.updated).isBefore(maxAge))
-            return this.delete(logDetails, dbWhere, calendarFiles)
-        } catch (ex) {
-            logger.error("Calendar.deleteOld", logDetails, ex)
             return 0
         }
     }
