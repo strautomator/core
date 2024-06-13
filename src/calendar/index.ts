@@ -315,15 +315,18 @@ export class Calendar {
             const output = await calendarGenerator.build(user, dbCalendar)
             if (output) {
                 dbCalendar.dateUpdated = new Date()
+
                 await database.merge("calendars", dbCalendar)
-                await storage.setFile("calendar", dbCalendar.id, output, "text/calendar")
+                await storage.setFile("calendar", `${user.id}/${dbCalendar.id}.ics`, output, "text/calendar")
+
+                logger.info("Calendar.generate", logHelper.user(user), optionsLog, `Saved to ${dbCalendar.id}`)
                 return storage.getUrl("calendar", dbCalendar.id)
             }
 
             // Something failed, stop here.
             throw new Error("Calendar output is empty")
         } catch (ex) {
-            logger.error("Calendar.generate", logHelper.user(user), `${optionsLog}`, ex)
+            logger.error("Calendar.generate", logHelper.user(user), optionsLog, ex)
             throw ex
         }
     }
