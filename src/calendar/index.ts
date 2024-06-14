@@ -293,7 +293,7 @@ export class Calendar {
             }
 
             // Fetch pending calendars and regenerate all of them, in small batches.
-            const pendingCalendars = await this.getPendingUpdate()
+            const pendingCalendars = _.shuffle(await this.getPendingUpdate())
             const batchSize = settings.calendar.batchSize
             while (pendingCalendars.length) {
                 await Promise.allSettled(pendingCalendars.splice(0, batchSize).map(processCalendar))
