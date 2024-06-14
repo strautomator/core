@@ -93,8 +93,6 @@
             "swim": ["distance", "speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"],
             "workout": ["calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"]
         },
-        // Up to 4 calendars can be processed on a single batch.
-        "batchSize": 4,
         // Speed up first calendar generation by shortening the date ranges
         // and limiting the number of events added to 20.
         "partialFirstBuild": true,

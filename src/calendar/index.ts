@@ -289,14 +289,17 @@ export class Calendar {
         try {
             const processCalendar = async (calendar: CalendarData) => {
                 const user = await users.getById(calendar.userId)
-                await this.generate(user, calendar)
+                if (user.suspended) {
+                    logger.debug("Calendar.regeneratePendingUpdate", logHelper.user(user), `User is suspended, skipping calendar ${calendar.id}`)
+                } else {
+                    await this.generate(user, calendar)
+                }
             }
 
             // Fetch pending calendars and regenerate all of them, in small batches.
-            const pendingCalendars = _.shuffle(await this.getPendingUpdate())
-            const batchSize = settings.calendar.batchSize
+            const pendingCalendars = await this.getPendingUpdate()
             while (pendingCalendars.length) {
-                await Promise.allSettled(pendingCalendars.splice(0, batchSize).map(processCalendar))
+                await Promise.allSettled(pendingCalendars.splice(0, settings.functions.batchSize).map(processCalendar))
             }
         } catch (ex) {
             logger.error("Calendar.regeneratePendingUpdate", ex)
