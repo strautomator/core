@@ -104,7 +104,7 @@
         "eventSummary": "${name} ${icon}",
         // Default event duration in minutes (ie. for past club events).
         "eventDurationMinutes": 15,
-        // Calendars will be deleted if no client requests it after 5 days.
+        // A calendar will be deleted if no client requests it after 5 days.
         "maxCacheDuration": 432000
     },
     "cookie": {
@@ -376,7 +376,7 @@
             // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
-            "maxCalendars": 1,
+            "maxClubs": 5,
             // Free accounts can trigger batch automations for activities up to 60 days old.
             "batchDays": 30,
             // Free accounts limited to 6 months in the past and up to 5 days in the future.
@@ -399,6 +399,7 @@
             // PRO accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
+            "maxClubs": 999,
             // PRO accounts can trigger batch automations for activities up to 3 years old.
             "batchDays": 1095,
             // PRO accounts limited to 10 years in the past and up to 1 year in the future.

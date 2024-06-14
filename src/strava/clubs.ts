@@ -26,7 +26,7 @@ export class StravaClubs {
     // --------------------------------------------------------------------------
 
     /**
-     * Get athlete clubs from Strava.
+     * Get athlete clubs from Strava. Free users will be limited to the first page of clubs.
      * @param user User data.
      */
     getClubs = async (user: UserData): Promise<StravaClub[]> => {
@@ -36,16 +36,22 @@ export class StravaClubs {
 
             // Keep fetching till we get all clubs.
             while (page) {
-                const data: any[] = await api.get(user.stravaTokens, "athlete/clubs", {per_page: settings.strava.api.pageSize, page: page})
-                const clubs: StravaClub[] = data.map((d) => toStravaClub(d))
-                result.push(...clubs)
+                const pageSize = user.isPro ? settings.strava.api.pageSize : settings.plans.free.maxClubs
+                const data: any[] = await api.get(user.stravaTokens, "athlete/clubs", {per_page: pageSize, page: page})
+                let clubs: StravaClub[] = data.map((d) => toStravaClub(d))
 
-                // If we got less than the page size, we got all clubs.
-                if (clubs.length < settings.strava.api.pageSize) {
-                    page = 0
+                // Full pagination is limited to PRO users.
+                // Check here if we should proceed based on the page size and number of clubs returned.
+                if (!user.isPro) {
+                    clubs = clubs.slice(0, pageSize)
+                    page = null
+                } else if (clubs.length < pageSize) {
+                    page = null
                 } else {
                     page++
                 }
+
+                result.push(...clubs)
             }
 
             logger.info("Strava.getClubs", logHelper.user(user), `Got ${result.length} clubs`)
