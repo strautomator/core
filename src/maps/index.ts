@@ -253,7 +253,7 @@ export class Maps {
             // Location cached in the database?
             const dbCached: MapAddress = await database.get("maps", cacheId)
             if (dbCached && dayjs(dbCached.dateCached).isAfter(now.subtract(settings.maps.maxCacheDuration, "seconds"))) {
-                logger.info("Maps.getReverseGeocode.fromCache", logCoordinates, this.getAddressLog(dbCached, true))
+                logger.debug("Maps.getReverseGeocode.fromCache", logCoordinates, this.getAddressLog(dbCached, true))
                 return dbCached
             }
 
