@@ -139,12 +139,12 @@ export class CalendarGenerator {
         let daysFrom = dbCalendar.options.daysFrom
         let daysTo = dbCalendar.options.daysTo
 
-        // First time that the calendar is being built? Use a shorter date range
-        // to speed things up. The correct ranges will be applied from then on.
+        // First time that the calendar is being built? Use a shorter date range to speed
+        // things up. The correct date range will be applied starting with the next build.
         const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
         if (partialFirstBuild) {
-            daysFrom = Math.ceil(daysFrom / 2)
-            daysTo = Math.ceil(daysTo / 2)
+            daysFrom = Math.ceil(daysFrom / 3)
+            daysTo = Math.ceil(daysTo / 3)
         }
 
         const dateFrom = today.subtract(daysFrom, "days")
@@ -302,7 +302,9 @@ export class CalendarGenerator {
 
             // Helper to process club events.
             const getEvents = async (club: StravaClub) => {
-                if (!dbCalendar.options.includeAllCountries && club.country != user.profile.country) {
+                if (partialFirstBuild && eventCount > 20) return
+
+                if ((!dbCalendar.options.includeAllCountries || partialFirstBuild) && club.country != user.profile.country) {
                     logger.debug("Calendar.buildClubs", logHelper.user(user), `Club ${club.id} from another country (${club.country}), skip it`)
                     return
                 }
