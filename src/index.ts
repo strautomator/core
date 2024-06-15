@@ -258,11 +258,15 @@ export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
             }
             setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
 
-            // Regenerate calendars every hour.
+            // Regenerate calendars every 3 minutes.
             const regenerateCalendars = async () => {
-                await calendar.regeneratePendingUpdate()
+                const pendingCalendars = await calendar.getPendingUpdate()
+                for (let pCalendar of pendingCalendars) {
+                    const cUser = await users.getById(pCalendar.userId)
+                    await calendar.generate(cUser, pCalendar)
+                }
             }
-            setInterval(regenerateCalendars, 1000 * 60 * 60)
+            setInterval(regenerateCalendars, 1000 * 60 * 3)
 
             // Cleanup cached Strava responses, processed activities, notifications and GDPR archives right away.
             strava.cleanupCache()
