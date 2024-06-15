@@ -36,16 +36,11 @@ export class StravaClubs {
 
             // Keep fetching till we get all clubs.
             while (page) {
-                const pageSize = user.isPro ? settings.strava.api.pageSize : settings.plans.free.maxClubs
-                const data: any[] = await api.get(user.stravaTokens, "athlete/clubs", {per_page: pageSize, page: page})
+                const data: any[] = await api.get(user.stravaTokens, "athlete/clubs", {per_page: settings.strava.api.pageSize, page: page})
                 let clubs: StravaClub[] = data.map((d) => toStravaClub(d))
 
-                // Full pagination is limited to PRO users.
                 // Check here if we should proceed based on the page size and number of clubs returned.
-                if (!user.isPro) {
-                    clubs = clubs.slice(0, pageSize)
-                    page = null
-                } else if (clubs.length < pageSize) {
+                if (clubs.length < settings.strava.api.pageSize) {
                     page = null
                 } else {
                     page++
