@@ -119,6 +119,7 @@ export class Storage {
      * Returns a file from the specified bucket.
      * @param bucketKey Key or name of the storage bucket.
      * @param filename The full filename.
+     * @param silent Avoid logging.
      */
     getFile = async (bucketKey: "calendar" | "gdpr", filename: string): Promise<cloudStorage.File> => {
         try {
@@ -126,11 +127,11 @@ export class Storage {
             const file = this.client.bucket(bucket).file(filename)
             const [exists] = await file.exists()
             if (!exists) {
-                logger.warn("Storage.getFile", bucketKey, filename, "File not found")
+                logger.debug("Storage.getFile", bucketKey, filename, "File not found")
                 return null
             }
 
-            logger.info("Storage.getFile", bucketKey, filename)
+            logger.debug("Storage.getFile", bucketKey, filename)
             return file
         } catch (ex) {
             logger.error("Storage.getFile", bucketKey, filename, ex)
@@ -167,13 +168,19 @@ export class Storage {
      * @param filename The full filename.
      * @param data File data.
      * @param contentType MIME type.
+     * @param metadata Optional expiration time in seconds.
      */
-    setFile = async (bucketKey: "calendar" | "gdpr", filename: string, data: string | Buffer, contentType?: string): Promise<void> => {
+    setFile = async (bucketKey: "calendar" | "gdpr", filename: string, data: string | Buffer, contentType?: string, metadata?: any): Promise<void> => {
         try {
             const bucket: string = this.buckets[bucketKey] || bucketKey
             const file = this.client.bucket(bucket).file(filename)
-
             await file.save(data, {contentType: contentType ? contentType : "auto", resumable: false})
+
+            // Set expiry date on the customTime metadata, if set.
+            if (metadata) {
+                await file.setMetadata(metadata)
+            }
+
             logger.info("Storage.setFile", bucketKey, filename)
         } catch (ex) {
             logger.error("Storage.setFile", bucketKey, filename, ex)
@@ -188,12 +195,10 @@ export class Storage {
      */
     deleteFile = async (bucketKey: "calendar" | "gdpr", filename: string): Promise<void> => {
         try {
-            const bucket: string = this.buckets[bucketKey] || bucketKey
-            const file = this.client.bucket(bucket).file(filename)
-            const [exists] = await file.exists()
-            if (!exists) {
+            const file = await this.getFile(bucketKey, filename)
+            if (!file) {
                 logger.debug("Storage.deleteFile", bucketKey, filename, "File not found")
-                return null
+                return
             }
 
             await file.delete({ignoreNotFound: true})
