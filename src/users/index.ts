@@ -1,7 +1,7 @@
 // Strautomator Core: Users
 
 import {disableProPreferences, validateEmail, validateUserPreferences} from "./utils"
-import {UserData} from "../users/types"
+import {UserCalendarTemplate, UserData} from "../users/types"
 import {BaseSubscription} from "../subscriptions/types"
 import {AuthNotification} from "../notifications/types"
 import {PayPalSubscription} from "../paypal/types"
@@ -926,7 +926,7 @@ export class Users {
             }
             await mailer.send(options)
 
-            logger.info("Users.setConfirmEmail", user.id, user.displayName, email, token)
+            logger.info("Users.setConfirmEmail", logHelper.user(user), email, token)
         } catch (ex) {
             logger.error("Users.setConfirmEmail", logHelper.user(user), email, ex)
             throw ex
@@ -957,7 +957,7 @@ export class Users {
             }
             await database.merge("users", data)
 
-            logger.info("Users.setEmail", user.id, user.displayName, email)
+            logger.info("Users.setEmail", logHelper.user(user), email)
         } catch (ex) {
             logger.error("Users.setEmail", logHelper.user(user), email, ex)
             throw ex
@@ -971,9 +971,9 @@ export class Users {
     setActivityCount = async (user: UserData): Promise<void> => {
         try {
             await database.increment("users", user.id, "activityCount")
-            logger.info("Users.setActivityCount", user.id, user.displayName, `Activity count: ${user.activityCount + 1}`)
+            logger.info("Users.setActivityCount", logHelper.user(user), `Activity count: ${user.activityCount + 1}`)
         } catch (ex) {
-            logger.error("Users.setActivityCount", user.id, user.displayName, ex)
+            logger.error("Users.setActivityCount", logHelper.user(user), ex)
         }
     }
 
@@ -1004,9 +1004,40 @@ export class Users {
             }
 
             await this.update(data)
-            logger.info("Users.setRecipesOrder", user.id, user.displayName, logOrder.join(", "))
+            logger.info("Users.setRecipesOrder", logHelper.user(user), logOrder.join(", "))
         } catch (ex) {
-            logger.error("Users.setRecipesOrder", user.id, user.displayName, ex)
+            logger.error("Users.setRecipesOrder", logHelper.user(user), ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Update the calendar activities template for the user.
+     * @param user The user.
+     * @param template The new calendar template.
+     */
+    setCalendarTemplate = async (user: UserData, template: UserCalendarTemplate): Promise<void> => {
+        try {
+            if (!template || (!template.eventSummary && !template.eventDetails)) {
+                template = FieldValue.delete() as any
+            } else if (!template.eventSummary) {
+                template.eventSummary = FieldValue.delete() as any
+            } else if (!template.eventDetails) {
+                template.eventDetails = FieldValue.delete() as any
+            }
+
+            // Set user calendar template and save to the database.
+            const data: Partial<UserData> = {
+                id: user.id,
+                displayName: user.displayName,
+                preferences: {calendarTemplate: template}
+            }
+
+            await this.update(data)
+            logger.info("Users.setCalendarTemplate", logHelper.user(user), template ? "Template updated" : "Template removed")
+            eventManager.emit("Users.setCalendarTemplate", user)
+        } catch (ex) {
+            logger.error("Users.setCalendarTemplate", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -1026,12 +1057,13 @@ export class Users {
             }
 
             await database.merge("users", data)
-            logger.info("Users.setUrlToken", user.id, user.displayName, "New token generated", `Old token: ${oldToken}`)
+            logger.info("Users.setUrlToken", logHelper.user(user), "New token generated", `Old token: ${oldToken}`)
             eventManager.emit("Users.setUrlToken", user)
 
             return newToken
         } catch (ex) {
-            logger.error("Users.setUrlToken", user.id, user.displayName, ex)
+            logger.error("Users.setUrlToken", logHelper.user(user), ex)
+            throw ex
         }
     }
 
@@ -1050,7 +1082,7 @@ export class Users {
 
             // Reset the batch date, if there's one, so the user can run a new batch sync straight away.
             if (user.dateLastBatchProcessing) {
-                logger.info("Users.switchToPro", user.id, user.displayName, "Resetting the last batch processing date")
+                logger.info("Users.switchToPro", logHelper.user(user), "Resetting the last batch processing date")
                 user.dateLastBatchProcessing = user.dateRegistered
             }
 
@@ -1083,10 +1115,10 @@ export class Users {
                 mailer.send(options)
             }
 
-            logger.info("Users.switchToPro", user.id, user.displayName, `Subscription: ${subscription.source} ${subscription.id}`)
+            logger.info("Users.switchToPro", logHelper.user(user), `Subscription: ${subscription.source} ${subscription.id}`)
             eventManager.emit("Users.switchToPro", user, subscription)
         } catch (ex) {
-            logger.error("Users.switchToPro", user.id, user.displayName, ex)
+            logger.error("Users.switchToPro", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -1127,10 +1159,10 @@ export class Users {
             }
 
             const status = subscription?.status.toLowerCase() || "cancelled"
-            logger.info("Users.switchToFree", user.id, user.displayName, `Subscription: ${subscription.source} ${subscription.id} - ${status}`)
+            logger.info("Users.switchToFree", logHelper.user(user), `Subscription: ${subscription.source} ${subscription.id} - ${status}`)
             eventManager.emit("Users.switchToFree", user, subscription)
         } catch (ex) {
-            logger.error("Users.switchToFree", user.id, user.displayName, ex)
+            logger.error("Users.switchToFree", logHelper.user(user), ex)
             throw ex
         }
     }
