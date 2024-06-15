@@ -94,8 +94,8 @@
             "workout": ["calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"]
         },
         // Speed up first calendar generation by shortening the date ranges and
-        // limiting the number of events added to 20. Set to null or false to disable.
-        "partialFirstBuild": 20,
+        // limiting the number of events added to 50. Set to null or false to disable.
+        "partialFirstBuild": 50,
         // Calendar base name.
         "name": "Strava",
         // Default template for the event summary.
