@@ -255,6 +255,15 @@ export class CalendarGenerator {
                         }
                     }
 
+                    // Rare condition where an activity might have been already added to the calendar via cache.
+                    if (cachedEvents && cachedEvents[eventId]) {
+                        const existing = _.remove(cal.events(), (e) => e.id() == eventId)
+                        if (existing.length > 0) {
+                            logger.warn("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), "Duplicate from the cache, will replace it")
+                            dbCalendar.activityCount--
+                        }
+                    }
+
                     // Add activity to the calendar.
                     cal.createEvent(eventData)
                     dbCalendar.activityCount++
@@ -344,7 +353,7 @@ export class CalendarGenerator {
                         let endDate = dayjs(startDate).add(settings.calendar.eventDurationMinutes, "minutes").toDate()
 
                         const eventTimestamp = Math.round(startDate.valueOf() / 1000)
-                        const eventId = `${clubEvent.id}-${eventTimestamp}`
+                        const eventId = `club-${clubEvent.id}-${eventTimestamp}`
                         const estimatedTime = clubEvent.route ? clubEvent.route.totalTime : 0
 
                         // Upcoming event has a route with estimated time? Use it for the end date, otherwise get the end date
@@ -352,7 +361,7 @@ export class CalendarGenerator {
                         if (today.isBefore(startDate) && estimatedTime > 0) {
                             endDate = dayjs(startDate).add(estimatedTime, "seconds").toDate()
                         } else if (cachedEvents) {
-                            const existing = cachedEvents[`club-${eventId}`]
+                            const existing = cachedEvents[eventId]
                             if (existing) {
                                 endDate = dayjs(existing.end as string).toDate()
                                 dbCalendar.cacheCount++
@@ -381,7 +390,7 @@ export class CalendarGenerator {
 
                         // Base event data.
                         const eventData: ICalEventData = {
-                            id: `club-${eventId}`,
+                            id: eventId,
                             start: startDate,
                             end: endDate,
                             summary: `${clubEvent.title} ${getSportIcon(clubEvent)}`,
