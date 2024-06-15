@@ -337,7 +337,9 @@ export class CalendarGenerator {
                     }
 
                     // Iterate event dates and add each one of them to the calendar.
-                    for (let startDate of clubEvent.dates) {
+                    // If it's the first build, sort dates by proximity to today.
+                    const eventDates = partialFirstBuild ? _.sortBy(clubEvent.dates, (d) => Math.abs(today.diff(d, "hours"))) : clubEvent.dates
+                    for (let startDate of eventDates) {
                         if (dateFrom.isAfter(startDate) || dateTo.isBefore(startDate)) continue
                         let endDate = dayjs(startDate).add(settings.calendar.eventDurationMinutes, "minutes").toDate()
 
