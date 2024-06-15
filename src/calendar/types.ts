@@ -1,5 +1,7 @@
 // Strautomator Core: Calendar types
 
+import {ICalEventData} from "ical-generator"
+
 /**
  * Calendar details saved to the database.
  */
@@ -10,6 +12,8 @@ export interface CalendarData {
     userId: string
     /** Calendar options used to generate the calendar. */
     options: CalendarOptions
+    /** How many events were added using cached data? */
+    cacheCount?: number
     /** How many activities the calendar has. */
     activityCount?: number
     /** How many club events the calendar has.  */
@@ -55,12 +59,18 @@ export interface CalendarOptions {
 }
 
 /**
- * Cached calendar event title and dates, indexed by event ID.
+ * Generated calendar output with the ICS and serialized events.
+ */
+export interface CalendarOutput {
+    /** ICS output string. */
+    ics: string
+    /** Serialized calendar events (as JSON string). */
+    events?: string
+}
+
+/**
+ * Generated calendar output with the ICS and serialized events.
  */
 export interface CalendarCachedEvents {
-    [eventId: string]: {
-        title: string
-        dateStart: Date
-        dateEnd: Date
-    }
+    [id: string]: ICalEventData
 }

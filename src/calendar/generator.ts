@@ -1,18 +1,17 @@
 // Strautomator Core: Calendar
 
+import ical, {ICalCalendar, ICalAttendeeType, ICalAttendeeRole, ICalAttendeeStatus, ICalEventData, ICalCalendarData} from "ical-generator"
 import {FieldValue} from "@google-cloud/firestore"
-import {CalendarCachedEvents, CalendarData} from "./types"
+import {CalendarCachedEvents, CalendarData, CalendarOutput} from "./types"
 import {UserCalendarTemplate, UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
-import {StravaBaseSport, StravaClub, StravaRideType, StravaRunType} from "../strava/types"
+import {StravaActivity, StravaBaseSport, StravaClub, StravaClubEvent, StravaRideType, StravaRunType} from "../strava/types"
 import {getSportIcon, transformActivityFields} from "../strava/utils"
 import {translation} from "../translations"
 import _ from "lodash"
-import database from "../database"
 import komoot from "../komoot"
 import maps from "../maps"
 import strava from "../strava"
-import ical, {ICalCalendar, ICalAttendeeType, ICalAttendeeRole, ICalAttendeeStatus, ICalEventData, ICalCalendarData} from "ical-generator"
 import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
@@ -33,8 +32,9 @@ export class CalendarGenerator {
      * Generate a calendar and return its iCal string representation.
      * @param user The user requesting the calendar.
      * @param dbCalendar The calendar data, including options.
+     * @param cachedEvents Cached activities and club events to be added to the calendar.
      */
-    build = async (user: UserData, dbCalendar: CalendarData): Promise<string> => {
+    build = async (user: UserData, dbCalendar: CalendarData, cachedEvents: CalendarCachedEvents): Promise<CalendarOutput> => {
         const now = dayjs().utc()
         const startTime = now.unix()
         const optionsLog = _.map(_.toPairs(dbCalendar.options), (r) => r.join("=")).join(" | ")
@@ -46,62 +46,54 @@ export class CalendarGenerator {
             if (dbCalendar.options.sportTypes) calName += ` / ${dbCalendar.options.sportTypes.join(", ")})`
 
             // Create ical container.
-            const icalOptions: ICalCalendarData = {
+            const calData: ICalCalendarData = {
                 name: calName,
                 prodId: {company: "Devv", product: "Strautomator", language: "EN"},
                 url: `${settings.app.url}calendar/${user.urlToken}`,
                 ttl: user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
             }
-            const cal = ical(icalOptions)
+            const cal = ical(calData)
 
-            // Check if user is suspended, if so, add a single event to the calendar.
-            if (user.suspended) {
-                logger.info("Calendar.build", logHelper.user(user), `${optionsLog}`, "User is suspended, will not generate")
+            logger.info("Calendar.build", logHelper.user(user), `${optionsLog}`, "Build starting")
 
-                cal.createEvent({
-                    start: now.toDate(),
-                    end: now.add(24, "hours").toDate(),
-                    summary: "Strautomator account is suspended!",
-                    description: "Your Strautomator account is suspended!\n\nTo reactivate it and enable the calendar, please login again at strautomator.com.",
-                    url: "https://strautomator.com/auth/login"
-                })
-            } else {
-                const eventsCacheId = `${user.id}-cached-events`
-
-                // If user is PRO, get cached events to keep the original dates.
-                let cachedEvents: CalendarCachedEvents
-                if (user.isPro) {
-                    cachedEvents = (await database.get("calendars", eventsCacheId)) || {}
-                }
-
-                // Build activities and clubs according to the options.
-                if (dbCalendar.options.activities) {
-                    dbCalendar.activityCount = await this.buildActivities(user, dbCalendar, cal)
-                }
-                if (dbCalendar.options.clubs) {
-                    dbCalendar.clubEventCount = await this.buildClubs(user, dbCalendar, cal, cachedEvents)
-                }
-
-                // If user is PRO, save cached events back to the database.
-                if (user.isPro && Object.keys(cachedEvents).length > 0) {
-                    await database.set("calendars", cachedEvents, eventsCacheId)
-                }
+            // Build activities and clubs according to the options.
+            dbCalendar.cacheCount = 0
+            if (dbCalendar.options.activities) {
+                dbCalendar.activityCount = 0
+                await this.buildActivities(user, dbCalendar, cachedEvents, cal)
+            }
+            if (dbCalendar.options.clubs) {
+                dbCalendar.clubEventCount = 0
+                await this.buildClubs(user, dbCalendar, cachedEvents, cal)
             }
 
             // First time this calendar is being generated? Set the pendingUpdate flag for a full rebuild, otherwise clear it.
-            if (!dbCalendar.dateAccess && settings.calendar.partialFirstBuild) {
+            const isPartialFirst = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
+            if (isPartialFirst) {
                 dbCalendar.pendingUpdate = true
             } else if (dbCalendar.pendingUpdate) {
                 dbCalendar.pendingUpdate = FieldValue.delete() as any
             }
 
-            const output = cal.toString()
+            const outputIcs = cal.toString()
             const duration = dayjs.utc().unix() - startTime
-            const size = output.length / 1000 / 1024
+            const size = outputIcs.length / 1000 / 1024
             const eventCount = (dbCalendar.activityCount || 0) + (dbCalendar.clubEventCount || 0)
-            logger.info("Calendar.build", logHelper.user(user), `${optionsLog}`, `${eventCount} events`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
 
-            return output
+            // Remove recent events from the cached config output.
+            const minCacheDate = now.subtract(settings.calendar.minAgeForCachingDays, "days")
+            const removed = _.remove(cal.events(), (e) => minCacheDate.isBefore(dayjs(e.start() as any))).length
+
+            logger.info("Calendar.build", logHelper.user(user), `${optionsLog}`, `${eventCount} total events, ${isPartialFirst ? eventCount : removed} won't be cached`, `${size.toFixed(2)} MB`, `Generated in ${duration} seconds`)
+
+            // If this is the first partial build, we don't want to cache anything yet.
+            // Otherwise, compact the cached events and map them by ID, before returning the final result.
+            if (isPartialFirst) {
+                return {ics: outputIcs}
+            } else {
+                const compactEvents = cal.toJSON().events.map((e) => _.omitBy(e, (v) => _.isNil(v) || (_.isArray(v) && v.length == 0)))
+                return {ics: outputIcs, events: JSON.stringify(_.keyBy(compactEvents, "id"), null, 0)}
+            }
         } catch (ex) {
             logger.error("Calendar.build", logHelper.user(user), `${optionsLog}`, ex)
             throw ex
@@ -109,32 +101,13 @@ export class CalendarGenerator {
     }
 
     /**
-     * Helper to add an event to the calendar.
-     * @param user The user.
-     * @param cal Calendar being populated.
-     * @param eventDetails Event details.
-     * @param cachedEvents Cached calendar from the database.
-     */
-    private addCalendarEvent = (user: UserData, cal: ICalCalendar, eventDetails: ICalEventData, cachedEvents?: CalendarCachedEvents): void => {
-        cal.createEvent(eventDetails)
-
-        // Only PRO users will have a cache set on the database.
-        if (user.isPro && cachedEvents) {
-            cachedEvents[eventDetails.id] = {
-                title: eventDetails.summary,
-                dateStart: eventDetails.start as Date,
-                dateEnd: eventDetails.end as Date
-            }
-        }
-    }
-
-    /**
-     * Build the user activities events in the calendar. Returns the number of calendar events created.
+     * Build the user activities events in the calendar.
      * @param user The user.
      * @param dbCalendar Calendar data.
+     * @param cachedEvents Cached events.
      * @param cal The ical instance.
      */
-    private buildActivities = async (user: UserData, dbCalendar: CalendarData, cal: ICalCalendar): Promise<number> => {
+    private buildActivities = async (user: UserData, dbCalendar: CalendarData, cachedEvents: CalendarCachedEvents, cal: ICalCalendar): Promise<void> => {
         const today = dayjs.utc().startOf("day")
         let daysFrom = dbCalendar.options.daysFrom
         let daysTo = dbCalendar.options.daysTo
@@ -143,8 +116,8 @@ export class CalendarGenerator {
         // things up. The correct date range will be applied starting with the next build.
         const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
         if (partialFirstBuild) {
-            daysFrom = Math.ceil(daysFrom / 3)
-            daysTo = Math.ceil(daysTo / 3)
+            daysFrom = Math.ceil(daysFrom / 4)
+            daysTo = Math.ceil(daysTo / 4)
         }
 
         const dateFrom = today.subtract(daysFrom, "days")
@@ -153,14 +126,40 @@ export class CalendarGenerator {
         const fieldSettings = settings.calendar.activityFields
         const calendarTemplate: UserCalendarTemplate = user.preferences?.calendarTemplate || {}
 
-        let eventCount = 0
+        let activities: StravaActivity[]
         try {
-            logger.debug("Calendar.buildClubs", logHelper.user(user), optionsLog, "Preparing to build")
+            logger.debug("Calendar.buildActivities", logHelper.user(user), optionsLog, "Preparing to build")
 
-            // Fetch and iterate user activities, checking filters before proceeding.
-            const activities = await strava.activities.getActivities(user, {after: dateFrom, before: dateTo})
+            if (cachedEvents) {
+                let lastCachedDate = dateFrom
+
+                // First we add the cached events.
+                for (let id in cachedEvents) {
+                    const eventData = cachedEvents[id]
+                    try {
+                        cal.createEvent(eventData)
+                        dbCalendar.activityCount++
+                        dbCalendar.cacheCount++
+                    } catch (cacheEx) {
+                        logger.error("Calendar.buildActivities", logHelper.user(user), `Failure adding cached event ${id}`, cacheEx)
+                    }
+
+                    // Get the date of the last cached event and use it to filter live activities
+                    // by increasing the "after" query timestamp.
+                    const startDate = dayjs(eventData.start as string)
+                    if (lastCachedDate.isBefore(startDate)) {
+                        lastCachedDate = startDate.add(1, "second")
+                    }
+                }
+
+                activities = await strava.activities.getActivities(user, {after: lastCachedDate, before: dateTo})
+            } else {
+                activities = await strava.activities.getActivities(user, {after: dateFrom, before: dateTo})
+            }
+
+            // Iterate and process live activities.
             for (let activity of activities) {
-                if (partialFirstBuild && eventCount > 20) continue
+                if (partialFirstBuild && dbCalendar.activityCount >= settings.calendar.partialFirstBuild) continue
                 if (dbCalendar.options.sportTypes && !dbCalendar.options.sportTypes.includes(activity.sportType)) continue
                 if (dbCalendar.options.excludeCommutes && activity.commute) continue
 
@@ -251,34 +250,31 @@ export class CalendarGenerator {
                             }
                         }
 
-                        eventData.location = locationString
+                        if (locationString) {
+                            eventData.location = locationString
+                        }
                     }
 
-                    // Add activity to the calendar as an event.
-                    this.addCalendarEvent(user, cal, eventData)
+                    // Add activity to the calendar.
+                    cal.createEvent(eventData)
+                    dbCalendar.activityCount++
                 } catch (innerEx) {
                     logger.error("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), innerEx)
                 }
-
-                eventCount++
             }
-
-            logger.debug("Calendar.buildActivities", logHelper.user(user), optionsLog, `Got ${eventCount} activity events`)
         } catch (ex) {
             logger.error("Calendar.buildActivities", logHelper.user(user), optionsLog, ex)
-        } finally {
-            return eventCount
         }
     }
 
     /**
-     * Build the club events in the calendar. Returns the number of calendar events created.
+     * Build the club events in the calendar.
      * @param user The user.
      * @param dbCalendar Calendar data.
+     * @param cachedEvents Cached events.
      * @param cal The ical instance.
-     * @param cachedEvents List of cached events from the database.
      */
-    private buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: ICalCalendar, cachedEvents?: CalendarCachedEvents): Promise<number> => {
+    private buildClubs = async (user: UserData, dbCalendar: CalendarData, cachedEvents: CalendarCachedEvents, cal: ICalCalendar): Promise<void> => {
         const today = dayjs.utc().startOf("day")
         let daysFrom = dbCalendar.options.daysFrom
         let daysTo = dbCalendar.options.daysTo
@@ -296,24 +292,22 @@ export class CalendarGenerator {
         const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
         const tOrganizer = translation("Organizer", user.preferences, true)
 
-        let eventCount = 0
         try {
             logger.debug("Calendar.buildClubs", logHelper.user(user), optionsLog, "Preparing to build")
 
             // Helper to process club events.
             const getEvents = async (club: StravaClub) => {
-                if (partialFirstBuild && eventCount > 20) return
+                if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) return
 
                 if ((!dbCalendar.options.includeAllCountries || partialFirstBuild) && club.country != user.profile.country) {
                     logger.debug("Calendar.buildClubs", logHelper.user(user), `Club ${club.id} from another country (${club.country}), skip it`)
                     return
                 }
 
-                const clubEvents = await strava.clubs.getClubEvents(user, club.id)
-                for (let clubEvent of clubEvents) {
-                    if (partialFirstBuild && eventCount > 20) continue
-                    if (dbCalendar.options.sportTypes && !dbCalendar.options.sportTypes.includes(clubEvent.type)) continue
-                    if (dbCalendar.options.excludeNotJoined && !clubEvent.joined) continue
+                const addClubEvent = async (clubEvent: StravaClubEvent) => {
+                    if (partialFirstBuild && dbCalendar.clubEventCount > settings.calendar.partialFirstBuild) return
+                    if (dbCalendar.options.sportTypes && !dbCalendar.options.sportTypes.includes(clubEvent.type)) return
+                    if (dbCalendar.options.excludeNotJoined && !clubEvent.joined) return
 
                     // Check if event has future dates.
                     const hasFutureDate = clubEvent.dates.find((d) => today.isBefore(d))
@@ -345,19 +339,22 @@ export class CalendarGenerator {
                     // Iterate event dates and add each one of them to the calendar.
                     for (let startDate of clubEvent.dates) {
                         if (dateFrom.isAfter(startDate) || dateTo.isBefore(startDate)) continue
-                        let endDate: Date
+                        let endDate = dayjs(startDate).add(settings.calendar.eventDurationMinutes, "minutes").toDate()
 
                         const eventTimestamp = Math.round(startDate.valueOf() / 1000)
                         const eventId = `${clubEvent.id}-${eventTimestamp}`
                         const estimatedTime = clubEvent.route ? clubEvent.route.totalTime : 0
 
-                        // Upcoming event has a route with estimated time? Use it for the end date, otherwise defaults to 15min.
+                        // Upcoming event has a route with estimated time? Use it for the end date, otherwise get the end date
+                        // from the cached events, and if not found, defaults to 15min.
                         if (today.isBefore(startDate) && estimatedTime > 0) {
                             endDate = dayjs(startDate).add(estimatedTime, "seconds").toDate()
-                        } else if (cachedEvents[eventId]) {
-                            endDate = cachedEvents[eventId].dateEnd
-                        } else {
-                            endDate = dayjs(startDate).add(settings.calendar.eventDurationMinutes, "minutes").toDate()
+                        } else if (cachedEvents) {
+                            const existing = cachedEvents[`club-${eventId}`]
+                            if (existing) {
+                                endDate = dayjs(existing.end as string).toDate()
+                                dbCalendar.cacheCount++
+                            }
                         }
 
                         const eventLink = `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
@@ -408,30 +405,38 @@ export class CalendarGenerator {
                             eventData.location = clubEvent.address
                         }
 
-                        // Create event.
-                        this.addCalendarEvent(user, cal, eventData, cachedEvents)
-
-                        eventCount++
+                        // Add club event to the calendar.
+                        cal.createEvent(eventData)
+                        dbCalendar.clubEventCount++
                     }
+                }
+
+                const clubEvents = await strava.clubs.getClubEvents(user, club.id)
+
+                // Iterate user's club events to get their details and push to the calendar.
+                const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
+                while (clubEvents.length) {
+                    await Promise.allSettled(clubEvents.splice(0, batchSize).map(addClubEvent))
                 }
             }
 
             // Get relevant clubs (all, or filtered by ID).
             const allClubs = await strava.clubs.getClubs(user)
             const clubFilter = (c: StravaClub) => dbCalendar.options.clubIds.includes(c.id.toString()) || (c.url && dbCalendar.options.clubIds.includes(c.url))
-            const clubs = dbCalendar.options.clubIds?.length > 0 ? allClubs.filter(clubFilter) : allClubs
+            let clubs = dbCalendar.options.clubIds?.length > 0 ? allClubs.filter(clubFilter) : allClubs
+
+            // Free accounts have a limit on how many clubs can be processed.
+            if (clubs.length > settings.plans.free.maxClubs) {
+                clubs = clubs.splice(0, settings.plans.free.maxClubs)
+            }
 
             // Iterate user's clubs to get their events and push to the calendar.
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
             while (clubs.length) {
                 await Promise.allSettled(clubs.splice(0, batchSize).map(getEvents))
             }
-
-            logger.debug("Calendar.buildClubs", logHelper.user(user), optionsLog, `Got ${eventCount} club events`)
         } catch (ex) {
             logger.error("Calendar.buildClubs", logHelper.user(user), optionsLog, ex)
-        } finally {
-            return eventCount
         }
     }
 }

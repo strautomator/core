@@ -2,14 +2,13 @@
 
 import {CalendarData, CalendarOptions} from "./types"
 import {UserData} from "../users/types"
-import {File} from "@google-cloud/storage"
 import calendarGenerator from "./generator"
 import _ from "lodash"
 import crypto from "crypto"
 import database from "../database"
 import eventManager from "../eventmanager"
 import storage from "../storage"
-import users from "../users"
+import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
@@ -30,6 +29,11 @@ export class Calendar {
      */
     generator = calendarGenerator
 
+    /**
+     * Map of IDs and timestamps of the calendars being built at the moment.
+     */
+    building: {[calendarId: string]: Date} = {}
+
     // INIT
     // --------------------------------------------------------------------------
 
@@ -43,28 +47,13 @@ export class Calendar {
 
             logger.info("Calendar.init", `Cache durations: Free ${durationFree}, PRO ${durationPro}`)
 
-            eventManager.on("Users.delete", this.onUserDelete)
-            eventManager.on("Users.setUrlToken", this.onUrlToken)
+            eventManager.on("Users.delete", this.deleteForUser)
+            eventManager.on("Users.setUrlToken", this.deleteForUser)
+            eventManager.on("Users.setCalendarTemplate", this.deleteForUser)
         } catch (ex) {
             logger.error("Calendar.init", ex)
             throw ex
         }
-    }
-
-    /**
-     * Delete calendars and cached events for the specified deleted user.
-     * @param user User that was deleted from the database.
-     */
-    private onUserDelete = async (user: UserData): Promise<void> => {
-        await this.deleteForUser(user, true)
-    }
-
-    /**
-     * Delete calendars when the user changes the URL token.
-     * @param user User that has a new URL token.
-     */
-    private onUrlToken = async (user: UserData): Promise<void> => {
-        await this.deleteForUser(user)
     }
 
     // MAIN METHODS
@@ -90,7 +79,7 @@ export class Calendar {
 
             // If the calendar was already generated, reuse the options saved to the DB, otherwise
             // validate them and created a new database record for that specific calendar.
-            if (dbCalendar) {
+            if (dbCalendar?.options) {
                 options = dbCalendar.options
             } else {
                 dbCalendar = {id: calendarId, userId: user.id, options: options, dateUpdated: now.toDate()}
@@ -104,7 +93,7 @@ export class Calendar {
 
             // If the calendar is being requested for the first time, do a faster, partial generation first.
             if (!cachedFile) {
-                logger.info("Calendar.get", logHelper.user(user), optionsLog, "Calendar will be generated for the first time")
+                delete dbCalendar.dateAccess
                 await this.generate(user, dbCalendar)
             } else {
                 const onlyClubs = options.clubs && !options.activities
@@ -175,64 +164,36 @@ export class Calendar {
      * @param user User to have the calendars deleted.
      * @param includeCachedEvents If true, will also delete cached event details (start and end dates).
      */
-    deleteForUser = async (user: UserData, includeCachedEvents?: boolean): Promise<number> => {
-        const logDetails = logHelper.user(user)
-
-        try {
-            const dbWhere = ["userId", "==", user.id]
-            const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
-
-            // Also deleted cached events?
-            if (includeCachedEvents) {
-                const cachedEvents = await database.doc("calendars", `${user.id}-cached-events`)
-                const docSnapshot = await cachedEvents.get()
-                if (docSnapshot.exists) {
-                    await cachedEvents.delete()
-                    logger.info("Calendar.deleteForUser", logDetails, "Deleted cached events")
-                }
-            }
-
-            return this.delete(logDetails, dbWhere, calendarFiles)
-        } catch (ex) {
-            logger.error("Calendar.deleteForUser", logDetails, ex)
-            return 0
-        }
-    }
-
-    /**
-     * Delete cached calendars for the specified user or from the specified date.
-     * Returns the total number of calendars deleted (from DB and storage).
-     * @param maxAge Calendars older than this date will be deleted.
-     */
-    delete = async (logDetails: string, dbWhere: any[], calendarFiles: File[]): Promise<number> => {
+    deleteForUser = async (user: UserData): Promise<number> => {
         let dbCount = 0
         let fileCount = 0
 
         // First delete calendars from the database.
         try {
-            dbCount = await database.delete("calendars", dbWhere)
+            dbCount = await database.delete("calendars", ["userId", "==", user.id])
         } catch (ex) {
-            logger.error("Calendar.delete", logDetails, ex)
+            logger.error("Calendar.delete", logHelper.user(user), "From database", ex)
         }
 
         // Then the .ics files from the calendar storage bucket.
         try {
+            const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
             for (let file of calendarFiles) {
                 try {
                     await file.delete()
                     fileCount++
                 } catch (fileEx) {
-                    logger.error("Calendar.delete", logDetails, file.name, fileEx)
+                    logger.error("Calendar.delete", logHelper.user(user), file.name, fileEx)
                 }
             }
         } catch (ex) {
-            logger.error("Calendar.delete", logDetails, ex)
+            logger.error("Calendar.delete", logHelper.user(user), "From storage", ex)
         }
 
         if (dbCount > 0 || fileCount > 0) {
-            logger.info("Calendar.delete", logDetails, `Deleted ${dbCount} from database and ${fileCount} from storage`)
+            logger.info("Calendar.delete", logHelper.user(user), `Deleted ${dbCount} from database and ${fileCount} from storage`)
         } else {
-            logger.debug("Calendar.delete", logDetails, "Nothing deleted")
+            logger.debug("Calendar.delete", logHelper.user(user), "Nothing deleted")
         }
 
         return dbCount + fileCount
@@ -283,30 +244,6 @@ export class Calendar {
     // --------------------------------------------------------------------------
 
     /**
-     * This will trigger a rebuild of all calendars flagged with pendingUpdate.
-     */
-    regeneratePendingUpdate = async (): Promise<void> => {
-        try {
-            const processCalendar = async (calendar: CalendarData) => {
-                const user = await users.getById(calendar.userId)
-                if (user.suspended) {
-                    logger.debug("Calendar.regeneratePendingUpdate", logHelper.user(user), `User is suspended, skipping calendar ${calendar.id}`)
-                } else {
-                    await this.generate(user, calendar)
-                }
-            }
-
-            // Fetch pending calendars and regenerate all of them, in small batches.
-            const pendingCalendars = await this.getPendingUpdate()
-            while (pendingCalendars.length) {
-                await Promise.allSettled(pendingCalendars.splice(0, settings.functions.batchSize).map(processCalendar))
-            }
-        } catch (ex) {
-            logger.error("Calendar.regeneratePendingUpdate", ex)
-        }
-    }
-
-    /**
      * Build the .ics output and save to the calendar storage bucket.
      * @param user The user requesting the calendar.
      * @param dbCalendar The calendar data, including options.
@@ -315,15 +252,54 @@ export class Calendar {
         const optionsLog = _.map(_.toPairs(dbCalendar.options), (r) => r.join("=")).join(" | ")
 
         try {
-            const output = await calendarGenerator.build(user, dbCalendar)
-            if (output) {
-                dbCalendar.dateUpdated = new Date()
+            const fileId = `${user.id}/${dbCalendar.id}`
+            const cachedFile = await storage.getFile("calendar", `${fileId}.json`)
 
+            // Check if the calendar is already being built. If that's the case,
+            // wait till it finishes (or times out) and return the URL directly.
+            const buildingTimestamp = this.building[dbCalendar.id]
+            if (buildingTimestamp) {
+                logger.warn("Calendar.generate", logHelper.user(user), optionsLog, `Already building: ${dbCalendar.id}`)
+
+                const maxDate = dayjs(buildingTimestamp).add(settings.axios.timeout / 2, "seconds")
+                while (this.building[dbCalendar.id] && maxDate.isAfter(new Date())) {
+                    await jaul.io.sleep(settings.axios.backoffInterval)
+                }
+
+                return storage.getUrl("calendar", `${fileId}.ics`)
+            }
+
+            this.building[dbCalendar.id] = new Date()
+
+            // Parse cached events from file, if there's one.
+            let cachedEvents
+            if (cachedFile) {
+                const fileData = await cachedFile.download()
+                cachedEvents = fileData ? JSON.parse(fileData.toString()) : null
+            }
+
+            // Build the calendar.
+            const result = await calendarGenerator.build(user, dbCalendar, cachedEvents)
+            if (result?.ics) {
+                logger.debug("Calendar.generate", logHelper.user(user), optionsLog, "Ready to save")
+
+                // First we save the cache files, setting the right expiry time (as the customTime metadata).
+                try {
+                    const customTime = {customTime: dayjs().add(settings.calendar.maxCacheDuration, "seconds").format("YYYY-MM-DDTHH:mm:ssZ")}
+                    await storage.setFile("calendar", `${fileId}.ics`, result.ics, "text/calendar", customTime)
+                    if (result.events) {
+                        await storage.setFile("calendar", `${fileId}.json`, result.events, "application/json", customTime)
+                    }
+                } catch (cacheEx) {
+                    logger.error("Calendar.generate", logHelper.user(user), optionsLog, "Failed to save cache files", cacheEx)
+                }
+
+                // Then we update the calendar record in the database.
+                dbCalendar.dateUpdated = new Date()
                 await database.merge("calendars", dbCalendar)
-                await storage.setFile("calendar", `${user.id}/${dbCalendar.id}.ics`, output, "text/calendar")
 
                 logger.info("Calendar.generate", logHelper.user(user), optionsLog, `Saved: ${dbCalendar.id}.ics`)
-                return storage.getUrl("calendar", dbCalendar.id)
+                return storage.getUrl("calendar", `${fileId}.ics`)
             }
 
             // Something failed, stop here.
@@ -331,6 +307,8 @@ export class Calendar {
         } catch (ex) {
             logger.error("Calendar.generate", logHelper.user(user), optionsLog, ex)
             throw ex
+        } finally {
+            delete this.building[dbCalendar.id]
         }
     }
 }

@@ -93,9 +93,9 @@
             "swim": ["distance", "speedAvg", "calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"],
             "workout": ["calories", "hrAvg,hrMax,wattsAvg", "totalTime", "description"]
         },
-        // Speed up first calendar generation by shortening the date ranges
-        // and limiting the number of events added to 20.
-        "partialFirstBuild": true,
+        // Speed up first calendar generation by shortening the date ranges and
+        // limiting the number of events added to 20. Set to null or false to disable.
+        "partialFirstBuild": 20,
         // Calendar base name.
         "name": "Strava",
         // Default template for the event summary.
@@ -103,7 +103,9 @@
         // Default event duration in minutes (ie. for past club events).
         "eventDurationMinutes": 15,
         // A calendar will be deleted if no client requests it after 5 days.
-        "maxCacheDuration": 432000
+        "maxCacheDuration": 432000,
+        // Calendar events will be taken from the cache if they're older than 30 days by default.
+        "minAgeForCachingDays": 30
     },
     "cookie": {
         "sessionName": "strautsession",
@@ -116,7 +118,6 @@
         // you might add a default suffix to Firestore collection names.
         "collectionSuffix": "",
         // Cache duration to keep database documents in memory for different colletions. Value set in seconds.
-
         "cacheDuration": null,
         // Encryption options.
         "crypto": {
@@ -375,13 +376,13 @@
             "maxRecipes": 3,
             "maxGearWear": 2,
             "maxClubs": 5,
-            // Free accounts can trigger batch automations for activities up to 60 days old.
+            // Free accounts can trigger batch automations for activities up to 30 days old.
             "batchDays": 30,
             // Free accounts limited to 6 months in the past and up to 5 days in the future.
             "pastCalendarDays": 180,
             "futureCalendarDays": 5,
-            // Free calendars are cached for around 24 hours.
-            "calendarCacheDuration": 86400,
+            // Free calendars are cached for around 12 hours.
+            "calendarCacheDuration": 43200,
             // Links on 1 out of 5 processed activities on free accounts by default.
             "linksOn": 5,
             // Track personal records for which sports?
@@ -398,13 +399,13 @@
             "maxRecipes": 999,
             "maxGearWear": 999,
             "maxClubs": 999,
-            // PRO accounts can trigger batch automations for activities up to 3 years old.
-            "batchDays": 1095,
-            // PRO accounts limited to 10 years in the past and up to 1 year in the future.
-            "pastCalendarDays": 3650,
+            // PRO accounts can trigger batch automations for activities up to 5 years old.
+            "batchDays": 1825,
+            // PRO accounts limited to 5 years in the past and up to 1 year in the future.
+            "pastCalendarDays": 1825,
             "futureCalendarDays": 365,
             // PRO calendars are cached for around 4 hours.
-            "calendarCacheDuration": 14400,
+            "calendarCacheDuration": 10800,
             // No links on PRO accounts processed activities.
             "linksOn": false,
             // Allow personal records for all sports.
@@ -506,9 +507,9 @@
         "cacheDuration": {
             "activities-streams": 1209600,
             "athletes-stats": 180,
-            "clubs": 3600,
+            "clubs": 7200,
             "clubs-group-events": 1800,
-            "routes": 3600,
+            "routes": 7200,
             "power-intervals": 2419200
         },
         // Do not process club events with more than 2 years of age (past or future).
