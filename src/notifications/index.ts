@@ -158,7 +158,7 @@ export class Notifications {
      * @param user The user to get notifications for.
      * @param notification Notification options and data.
      */
-    createNotification = async (user: UserData, notification: Partial<AuthNotification> | Partial<FailedRecipeNotification> | Partial<GearWearNotification>): Promise<void> => {
+    createNotification = async (user: UserData, notification: Partial<BaseNotification> | Partial<AuthNotification> | Partial<FailedRecipeNotification> | Partial<GearWearNotification>): Promise<void> => {
         try {
             if (!user.id) throw new Error("Invalid user")
             if (!notification.title) throw new Error("Missing notification title")
