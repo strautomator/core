@@ -47,7 +47,7 @@ export class WahooActivities {
             dateStart: dayjs(summary.workout.starts).utc().toDate()
         }
 
-        // Activity has a callback URL? Download and process the FIT file to extract the device IDs.
+        // Activity has a file URL? Download and process the FIT file to extract the device IDs.
         try {
             const rawData = await this.getActivityFile(user, webhookData)
             if (rawData) {
@@ -102,7 +102,7 @@ export class WahooActivities {
             }
 
             // Try fetching the FIT file specified in the webhook data.
-            const res = await api.makeRequest(null, webhookData.workout_summary.file.url)
+            const res = await api.makeRequest(null, webhookData.workout_summary.file.url, true)
             if (res) {
                 return Buffer.from(res)
             }
