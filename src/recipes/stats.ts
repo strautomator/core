@@ -139,12 +139,12 @@ export class RecipeStats {
 
             // Increase failure counter if recipe execution was not successful.
             if (success) {
-                logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`)
                 stats.recentFailures = 0
+                logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`)
             } else {
-                logger.warn("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`, `Recent recipe failures: ${stats.recentFailures}`)
                 stats.recentFailures = (stats.recentFailures || 0) + 1
                 stats.dateLastFailure = now
+                logger.warn("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`, `Recent recipe failures: ${stats.recentFailures}`)
             }
 
             // Save stats to the database.
