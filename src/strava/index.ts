@@ -87,7 +87,26 @@ export class Strava {
             logger.error("Strava.init", ex)
         }
 
+        eventManager.on("Strava.activityDeleted", this.onActivityDeleted)
         eventManager.on("Users.delete", this.onUserDelete)
+    }
+
+    /**
+     * Remove the activity from the database if it gets deleted on Strava itself.
+     * @param user The user.
+     * @param activityId The Strava activity ID.
+     */
+    private onActivityDeleted = async (user: UserData, activityId: string): Promise<void> => {
+        const activityLog = `Activity ${activityId}`
+
+        try {
+            const count = await database.delete("activities", activityId)
+            if (count > 0) {
+                logger.info("Strava.onActivityDeleted", logHelper.user(user), activityLog, "Deleted from the database")
+            }
+        } catch (ex) {
+            logger.error("Strava.onActivityDeleted", logHelper.user(user), activityLog, ex)
+        }
     }
 
     /**

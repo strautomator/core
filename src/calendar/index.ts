@@ -12,6 +12,7 @@ import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
+import {File} from "@google-cloud/storage"
 const settings = require("setmeup").settings
 
 /**
@@ -47,12 +48,64 @@ export class Calendar {
 
             logger.info("Calendar.init", `Cache durations: Free ${durationFree}, PRO ${durationPro}`)
 
+            eventManager.on("Strava.activityDeleted", this.onActivityDeleted)
             eventManager.on("Users.delete", this.deleteForUser)
             eventManager.on("Users.setUrlToken", this.deleteForUser)
             eventManager.on("Users.setCalendarTemplate", this.deleteForUser)
         } catch (ex) {
             logger.error("Calendar.init", ex)
             throw ex
+        }
+    }
+
+    /**
+     * Remove the activity from cached calendar events if the user deletes it from Strava.
+     * @param user The user.
+     * @param activityId The Strava activity ID.
+     */
+    private onActivityDeleted = async (user: UserData, activityId: string): Promise<void> => {
+        const activityLog = `Activity ${activityId}`
+        const eventId = `activity-${activityId}`
+
+        try {
+            const cachedFiles = await this.getCachedFilesForUser(user)
+
+            // Get and iterate only the cached events files (.json extensions, won't touch the actual .ics files for now).
+            for (let file of cachedFiles) {
+                try {
+                    const buffer = await file.download()
+                    if (!buffer) {
+                        logger.debug("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `No data for ${file.name}`)
+                        continue
+                    }
+
+                    const data = buffer.toString()
+
+                    // Update files depending on the extension (cached events as JSON, or calendar output as ICS).
+                    if (file.name.endsWith(".json")) {
+                        const cachedEvents = JSON.parse(data)
+
+                        // Found a matching activity on the cache? Delete and save the file back.
+                        if (cachedEvents[eventId]) {
+                            delete cachedEvents[eventId]
+                            await storage.setFile("calendar", file.name, JSON.stringify(cachedEvents, null, 2), "application/json")
+                            logger.info("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
+                        }
+                    } else if (file.name.endsWith(".ics")) {
+                        const updatedIcs = await this.removeEventFromIcs(data, eventId)
+
+                        // Found a matching activity on the ICS output? Delete and save the file back.
+                        if (updatedIcs) {
+                            await storage.setFile("calendar", file.name, updatedIcs, "text/calendar")
+                            logger.info("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
+                        }
+                    }
+                } catch (fileEx) {
+                    logger.error("Calendar.onActivityDeleted", logHelper.user(user), activityLog, file.name, fileEx)
+                }
+            }
+        } catch (ex) {
+            logger.error("Strava.onActivityDeleted", logHelper.user(user), activityLog, ex)
         }
     }
 
@@ -160,6 +213,20 @@ export class Calendar {
     }
 
     /**
+     * Get the cached calendar files for the specified user.
+     * @param user The user.
+     */
+    getCachedFilesForUser = async (user: UserData): Promise<File[]> => {
+        try {
+            const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
+            logger.info("Calendar.getCachedFilesForUser", logHelper.user(user), `Got ${calendarFiles.length || "no"} files from storage`)
+            return calendarFiles
+        } catch (ex) {
+            logger.error("Calendar.getCachedFilesForUser", logHelper.user(user), ex)
+        }
+    }
+
+    /**
      * Delete calendars for the specified user.
      * @param user User to have the calendars deleted.
      * @param includeCachedEvents If true, will also delete cached event details (start and end dates).
@@ -172,28 +239,30 @@ export class Calendar {
         try {
             dbCount = await database.delete("calendars", ["userId", "==", user.id])
         } catch (ex) {
-            logger.error("Calendar.delete", logHelper.user(user), "From database", ex)
+            logger.error("Calendar.deleteForUser", logHelper.user(user), "From database", ex)
         }
 
         // Then the .ics files from the calendar storage bucket.
         try {
-            const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
+            const calendarFiles = await this.getCachedFilesForUser(user)
             for (let file of calendarFiles) {
+                const filename = file.name
                 try {
                     await file.delete()
                     fileCount++
+                    logger.info("Calendar.deleteForUser", logHelper.user(user), filename)
                 } catch (fileEx) {
-                    logger.error("Calendar.delete", logHelper.user(user), file.name, fileEx)
+                    logger.error("Calendar.deleteForUser", logHelper.user(user), filename, fileEx)
                 }
             }
         } catch (ex) {
-            logger.error("Calendar.delete", logHelper.user(user), "From storage", ex)
+            logger.error("Calendar.deleteForUser", logHelper.user(user), "From storage", ex)
         }
 
         if (dbCount > 0 || fileCount > 0) {
-            logger.info("Calendar.delete", logHelper.user(user), `Deleted ${dbCount} from database and ${fileCount} from storage`)
+            logger.info("Calendar.deleteForUser", logHelper.user(user), `Deleted ${dbCount} from database and ${fileCount} from storage`)
         } else {
-            logger.debug("Calendar.delete", logHelper.user(user), "Nothing deleted")
+            logger.debug("Calendar.deleteForUser", logHelper.user(user), "Nothing deleted")
         }
 
         return dbCount + fileCount
@@ -240,7 +309,7 @@ export class Calendar {
         }
     }
 
-    // GENERATION
+    // GENERATION AND PARSING
     // --------------------------------------------------------------------------
 
     /**
@@ -309,6 +378,41 @@ export class Calendar {
             throw ex
         } finally {
             delete this.building[dbCalendar.id]
+        }
+    }
+
+    /**
+     * Remove the specified event from the calendar and returns the updated output.
+     * If nothing was removed, returns null.
+     * @param ics The calendar ICS string.
+     * @param eventId The calendar event UID.
+     */
+    removeEventFromIcs = (ics: string, uid: string): string => {
+        const arrLog = [`Event ${uid}`]
+
+        try {
+            const urlPos = ics.indexOf("URL:")
+            if (urlPos) {
+                const calendarUrl = ics.substring(urlPos + 4, ics.indexOf("\n", urlPos)).trim()
+                arrLog.unshift(calendarUrl)
+            }
+
+            // Find the position of the event UID first.
+            const pos = ics.indexOf(`UID:${uid}`)
+            if (!pos) {
+                logger.debug("Calendar.removeEventFromIcs", arrLog.join(" | "), "Not found")
+                return
+            }
+
+            // Find the BEGIN:VEVENT and END:VEVENT blocks and remove the event from the ICS string.
+            const firstHalf = ics.substring(0, pos)
+            const begin = firstHalf.lastIndexOf("BEGIN:VEVENT")
+            const end = ics.indexOf("END:VEVENT", begin)
+
+            logger.info("Calendar.removeEventFromIcs", arrLog.join(" | "), "Removed")
+            return ics.substring(0, begin) + ics.substring(end + 10)
+        } catch (ex) {
+            logger.error("Calendar.removeEventFromIcs", arrLog.join(" | "), ex)
         }
     }
 }
