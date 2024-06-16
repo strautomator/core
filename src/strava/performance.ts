@@ -2,6 +2,7 @@
 
 import {StravaActivity, StravaActivityPerformance, StravaCachedResponse, StravaEstimatedFtp, StravaFitnessLevel, StravaSport} from "./types"
 import {isActivityIgnored} from "./utils"
+import {BaseNotification} from "../notifications/types"
 import {UserData, UserFtpStatus} from "../users/types"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
@@ -54,10 +55,11 @@ export class StravaPerformance {
                 await this.saveFtp(user, ftpEstimation)
 
                 // Notify the user about the FTP update.
-                const nOptions = {
+                const nOptions: Partial<BaseNotification> = {
                     title: `New FTP detected: ${ftpEstimation.ftpWatts} watts`,
                     body: `Your FTP was updated on Strava, based on results from recent activities.`,
-                    href: "https://www.strava.com/settings/performance"
+                    href: "https://www.strava.com/settings/performance",
+                    dateExpiry: dayjs().add(30, "days").toDate()
                 }
                 await notifications.createNotification(user, nOptions)
             }
