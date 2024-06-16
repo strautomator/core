@@ -73,8 +73,8 @@
     // not available via CNAME records.
     "storage": {
         "buckets": {
-            "calendar": {"name": "bucket-calendar-dev", "ttlDays": 2},
-            "gdpr": {"name": "bucket-gdpr-dev", "ttlDays": 2}
+            "calendar": {"name": "bucket-calendar-dev", "ttlDays": 1},
+            "gdpr": {"name": "bucket-gdpr-dev", "ttlDays": 1}
         },
         "cname": false
     },
