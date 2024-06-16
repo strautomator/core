@@ -272,9 +272,10 @@ export class StravaActivityProcessing {
                     return null
                 }
 
-                // Save, and if it fails try again once.
+                // Save to Strava and emit the activity process event.
                 try {
                     await stravaActivities.setActivity(user, activity)
+                    eventManager.emit("Strava.processActivity", user, activity)
                 } catch (ex) {
                     logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, ex)
                     saveError = ex.friendlyMessage || ex.message || ex
@@ -306,8 +307,6 @@ export class StravaActivityProcessing {
                     return await this.saveProcessedActivity(user, activity, recipeIds, saveError)
                 } catch (ex) {
                     logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Not saved to database", ex)
-                } finally {
-                    eventManager.emit("Strava.processActivity", user, activity)
                 }
             } else {
                 logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, `No matching recipes`)

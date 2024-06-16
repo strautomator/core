@@ -1,6 +1,7 @@
 // Strautomator Core: Calendar
 
 import {CalendarData, CalendarOptions} from "./types"
+import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import calendarGenerator from "./generator"
 import _ from "lodash"
@@ -48,7 +49,8 @@ export class Calendar {
 
             logger.info("Calendar.init", `Cache durations: Free ${durationFree}, PRO ${durationPro}`)
 
-            eventManager.on("Strava.activityDeleted", this.onActivityDeleted)
+            eventManager.on("Strava.deleteActivity", this.onDeleteActivity)
+            eventManager.on("Strava.processActivity", this.onProcessActivity)
             eventManager.on("Users.delete", this.deleteForUser)
             eventManager.on("Users.setUrlToken", this.deleteForUser)
             eventManager.on("Users.setCalendarTemplate", this.deleteForUser)
@@ -63,7 +65,7 @@ export class Calendar {
      * @param user The user.
      * @param activityId The Strava activity ID.
      */
-    private onActivityDeleted = async (user: UserData, activityId: string): Promise<void> => {
+    private onDeleteActivity = async (user: UserData, activityId: string): Promise<void> => {
         const activityLog = `Activity ${activityId}`
         const eventId = `activity-${activityId}`
 
@@ -75,7 +77,7 @@ export class Calendar {
                 try {
                     const buffer = await file.download()
                     if (!buffer) {
-                        logger.debug("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `No data for ${file.name}`)
+                        logger.debug("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `No data for ${file.name}`)
                         continue
                     }
 
@@ -89,7 +91,7 @@ export class Calendar {
                         if (cachedEvents[eventId]) {
                             delete cachedEvents[eventId]
                             await storage.setFile("calendar", file.name, JSON.stringify(cachedEvents, null, 2), "application/json")
-                            logger.info("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
+                            logger.info("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
                         }
                     } else if (file.name.endsWith(".ics")) {
                         const updatedIcs = await this.removeEventFromIcs(data, eventId)
@@ -97,15 +99,36 @@ export class Calendar {
                         // Found a matching activity on the ICS output? Delete and save the file back.
                         if (updatedIcs) {
                             await storage.setFile("calendar", file.name, updatedIcs, "text/calendar")
-                            logger.info("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
+                            logger.info("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
                         }
                     }
                 } catch (fileEx) {
-                    logger.error("Calendar.onActivityDeleted", logHelper.user(user), activityLog, file.name, fileEx)
+                    logger.error("Calendar.onDeleteActivity", logHelper.user(user), activityLog, file.name, fileEx)
                 }
             }
         } catch (ex) {
-            logger.error("Strava.onActivityDeleted", logHelper.user(user), activityLog, ex)
+            logger.error("Strava.onDeleteActivity", logHelper.user(user), activityLog, ex)
+        }
+    }
+
+    /**
+     * PRO users will have their calendars marked for update as soon as a new activity is processed.
+     * @param user The user.
+     * @param activityId The Strava activity.
+     */
+    private onProcessActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
+        try {
+            if (!user.isPro || activity.batch) {
+                return
+            }
+
+            const calendars = await this.getForUser(user, {activities: true})
+            if (calendars.length > 0) {
+                calendars.forEach(async (cal) => await database.merge("calendars", {id: cal.id, pendingUpdate: true}))
+                logger.info("Strava.onProcessActivity", logHelper.user(user), logHelper.activity(activity), `${calendars.length} calendars set as pending update`)
+            }
+        } catch (ex) {
+            logger.error("Strava.onProcessActivity", logHelper.user(user), logHelper.activity(activity), ex)
         }
     }
 
@@ -200,10 +223,18 @@ export class Calendar {
     /**
      * Get all calendars for the specified user.
      * @param user The user.
+     * @param filterOptions Optional, get only calendars that match the passed options.
      */
-    getForUser = async (user: UserData): Promise<CalendarData[]> => {
+    getForUser = async (user: UserData, filterOptions?: CalendarOptions): Promise<CalendarData[]> => {
         try {
-            const result = await database.search("calendars", ["userId", "==", user.id])
+            const where = [["userId", "==", user.id]]
+            if (filterOptions) {
+                for (let key in filterOptions) {
+                    where.push([`options.${key}`, "==", filterOptions[key]])
+                }
+            }
+
+            const result = await database.search("calendars", where)
             logger.info("Calendar.getForUser", logHelper.user(user), `Got ${result.length || "no"} calendars`)
             return result
         } catch (ex) {
