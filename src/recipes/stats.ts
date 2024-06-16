@@ -130,7 +130,7 @@ export class RecipeStats {
                     removedIds.push(removedId)
                 }
                 if (removedIds.length > 0) {
-                    logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Removed activities (list too long): ${removedIds.join(", ")}`)
+                    logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Removed activities from list: ${removedIds.join(", ")}`)
                 }
             }
 
