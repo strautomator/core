@@ -102,8 +102,8 @@
         "eventSummary": "${name} ${icon}",
         // Default event duration in minutes (ie. for past club events).
         "eventDurationMinutes": 15,
-        // A calendar will be deleted if no client requests it after 5 days.
-        "maxCacheDuration": 432000,
+        // A calendar will be deleted if no client requests it after 4 days.
+        "maxCacheDuration": 345600,
         // Calendar events will be taken from the cache if they're older than 30 days by default.
         "minAgeForCachingDays": 30
     },
@@ -473,7 +473,7 @@
     "storage": {
         "buckets": {
             "calendar": {"name": "bucket-calendar.strautomator.com", "ttlDays": 7},
-            "gdpr": {"name": "bucket-gdpr.strautomator.com", "ttlDays": 15}
+            "gdpr": {"name": "bucket-gdpr.strautomator.com", "ttlDays": 2}
         },
         // Storage buckets are configured as CNAME in production.
         "cname": true
