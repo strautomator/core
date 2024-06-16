@@ -74,6 +74,9 @@ export class Storage {
                         const rules = metadata.lifecycle?.rule || []
 
                         if (rules.find((r) => r.action?.type == "Delete" && r.condition?.age == config.ttlDays)) {
+                            logger.debug("Storage.init", `Bucket ${config.name} TTL already set to ${config.ttlDays} days`)
+                        } else {
+                            logger.info("Storage.init", `Bucket ${config.name} TTL set to ${config.ttlDays} days`)
                             await bucket.setMetadata({
                                 lifecycle: {
                                     rule: [
@@ -84,9 +87,6 @@ export class Storage {
                                     ]
                                 }
                             })
-                            logger.debug("Storage.init", `Bucket ${config.name} TTL already set to ${config.ttlDays} days`)
-                        } else {
-                            logger.info("Storage.init", `Bucket ${config.name} TTL set to ${config.ttlDays} days`)
                         }
                     }
                 }
