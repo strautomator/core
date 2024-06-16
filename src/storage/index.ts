@@ -59,20 +59,35 @@ export class Storage {
                     const bucket = this.client.bucket(config.name)
                     const [exists] = await bucket.exists()
 
-                    // Create buckets that don't exist yet. This is a one-off operation, so if
-                    // you change bucket settings (example: TTL) after they've been created then
-                    // you'll also need to update the existing buckets manually on the console.
+                    // Create buckets that don't exist yet.
                     if (!exists) {
                         await bucket.create({location: config.location || settings.gcp.location})
                         await bucket.setMetadata({iamConfiguration: {uniformBucketLevelAccess: {enabled: true}}})
-
-                        if (config.ttlDays) {
-                            await bucket.addLifecycleRule({action: {type: "Delete"}, condition: {age: Math.round(config.ttlDays)}})
-                        }
-
-                        logger.info("Storage.init", `Created bucket: ${config.name}`, `TTL ${config.ttlDays || "not set"}`)
+                        logger.info("Storage.init", `Created bucket: ${config.name}`)
                     } else {
                         existingBuckets.push(config.name)
+                    }
+
+                    // Set the right expiration date by adding a "age" based lifecycle rule, if needed.
+                    if (config.ttlDays) {
+                        const [metadata] = await bucket.getMetadata()
+                        const rules = metadata.lifecycle?.rule || []
+
+                        if (rules.find((r) => r.action?.type == "Delete" && r.condition?.age == config.ttlDays)) {
+                            await bucket.setMetadata({
+                                lifecycle: {
+                                    rule: [
+                                        {
+                                            action: {type: "Delete"},
+                                            condition: {age: config.ttlDays}
+                                        }
+                                    ]
+                                }
+                            })
+                            logger.debug("Storage.init", `Bucket ${config.name} TTL already set to ${config.ttlDays} days`)
+                        } else {
+                            logger.info("Storage.init", `Bucket ${config.name} TTL set to ${config.ttlDays} days`)
+                        }
                     }
                 }
 
@@ -176,7 +191,7 @@ export class Storage {
             const file = this.client.bucket(bucket).file(filename)
             await file.save(data, {contentType: contentType ? contentType : "auto", resumable: false})
 
-            // Set expiry date on the customTime metadata, if set.
+            // Set the metadata, if set.
             if (metadata) {
                 await file.setMetadata(metadata)
             }
