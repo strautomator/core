@@ -352,12 +352,11 @@ export class Calendar {
             if (result?.ics) {
                 logger.debug("Calendar.generate", logHelper.user(user), optionsLog, "Ready to save")
 
-                // First we save the cache files, setting the right expiry time (as the customTime metadata).
+                // First we save the cache files.
                 try {
-                    const customTime = {customTime: dayjs().add(settings.calendar.maxCacheDuration, "seconds").format("YYYY-MM-DDTHH:mm:ssZ")}
-                    await storage.setFile("calendar", `${fileId}.ics`, result.ics, "text/calendar", customTime)
+                    await storage.setFile("calendar", `${fileId}.ics`, result.ics, "text/calendar")
                     if (result.events) {
-                        await storage.setFile("calendar", `${fileId}.json`, result.events, "application/json", customTime)
+                        await storage.setFile("calendar", `${fileId}.json`, result.events, "application/json")
                     }
                 } catch (cacheEx) {
                     logger.error("Calendar.generate", logHelper.user(user), optionsLog, "Failed to save cache files", cacheEx)
