@@ -404,7 +404,7 @@
             // PRO accounts limited to 5 years in the past and up to 1 year in the future.
             "pastCalendarDays": 1825,
             "futureCalendarDays": 365,
-            // PRO calendars are cached for around 4 hours.
+            // PRO calendars are cached for around 3 hours.
             "calendarCacheDuration": 10800,
             // No links on PRO accounts processed activities.
             "linksOn": false,
