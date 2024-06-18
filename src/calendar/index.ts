@@ -186,8 +186,12 @@ export class Calendar {
 
                 // Calendar needs to be refreshed? Set the flag for the next scheduled function.
                 if (shouldUpdate) {
+                    if (dbCalendar.pendingUpdate) {
+                        logger.info("Calendar.get", logHelper.user(user), optionsLog, "Calendar is pending update")
+                    } else {
+                        logger.info("Calendar.get", logHelper.user(user), optionsLog, "Cache invalidated, calendar marked for update")
+                    }
                     dbCalendar.pendingUpdate = true
-                    logger.info("Calendar.get", logHelper.user(user), optionsLog, "Cache invalidated, calendar marked for update")
                 } else {
                     logger.info("Calendar.get", logHelper.user(user), optionsLog, "Returning cached calendar")
                 }

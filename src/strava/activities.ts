@@ -318,7 +318,7 @@ export class StravaActivities {
                     data.stats_visibility.push({type: arrFieldName.join("_").toLowerCase(), visibility: targetValue})
                 }
 
-                let targetLog = `${field}=${targetName || activity[field] || activity[targetField]}`
+                let targetLog = `${field} = ${targetName || activity[field] || activity[targetField]}`
 
                 if (targetField) {
                     data[targetField] = targetValue
@@ -329,13 +329,13 @@ export class StravaActivities {
 
             // If running on test mode, log the activity instead.
             if (settings.strava.testMode) {
-                logger.warn("Strava.setActivity", "TEST MODE (do not write to Strava)", activity.id, logResult.join(", "))
+                logger.warn("Strava.setActivity", "TEST MODE (do not write to Strava)", activity.id, logResult.join(" | "))
             } else {
                 await api.put(user.stravaTokens, `activities/${activity.id}`, null, data)
-                logger.info("Strava.setActivity", `${activity.id}, from user ${user.id}`, logResult.join(", "))
+                logger.info("Strava.setActivity", `${activity.id}, from user ${user.id}`, logResult.join(" | "))
             }
         } catch (ex) {
-            logger.error("Strava.setActivity", `${activity.id}, from user ${user.id}`, logResult.join(", "), ex)
+            logger.error("Strava.setActivity", `${activity.id}, from user ${user.id}`, logResult.join(" | "), ex)
             throw ex
         }
     }
