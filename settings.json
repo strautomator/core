@@ -490,7 +490,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 8,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 320,
+            "maxPerMinute": 400,
             // Default page size is the max of 200.
             "pageSize": 200,
             // Token to be appended to the URL of Strava webhooks, for
