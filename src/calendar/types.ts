@@ -18,6 +18,8 @@ export interface CalendarData {
     activityCount?: number
     /** How many club events the calendar has.  */
     clubEventCount?: number
+    /** How many GearWear component changes the calendar has. */
+    gearEventCount?: number
     /** Flag to set if the calendar is considered expired and should be updated. */
     pendingUpdate?: boolean
     /** Date when the calendar cache was last accessed. */
@@ -38,6 +40,8 @@ export interface CalendarOptions {
     clubs?: boolean
     /** Include only specific clubs (by ID), mandatory for free accounts. */
     clubIds?: string[]
+    /** Include GearWear notifications and changes? */
+    gear?: boolean
     /** Exclude commutes? Default is false. */
     excludeCommutes?: boolean
     /** Exclude club events which user hasn't joined to? */

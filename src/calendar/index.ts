@@ -3,7 +3,7 @@
 import {CalendarData, CalendarOptions} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
-import calendarGenerator from "./generator"
+import calendarGenerator from "./builder"
 import _ from "lodash"
 import crypto from "crypto"
 import database from "../database"
@@ -153,9 +153,10 @@ export class Calendar {
             const calendarId = crypto.createHash("sha1").update(hashContent).digest("hex")
             dbCalendar = await database.get("calendars", calendarId)
 
-            // If the calendar was already generated, reuse the options saved to the DB, otherwise
+            // If the calendar was already generated, reuse some of options saved to the DB, otherwise
             // validate them and created a new database record for that specific calendar.
             if (dbCalendar?.options) {
+                _.assign(dbCalendar.options, _.pick(options, ["daysFrom", "daysTo"]))
                 options = dbCalendar.options
             } else {
                 dbCalendar = {id: calendarId, userId: user.id, options: options, dateUpdated: now.toDate()}
