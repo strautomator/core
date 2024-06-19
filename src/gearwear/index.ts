@@ -1,5 +1,6 @@
 // Strautomator Core: GearWear
 
+import {FieldValue} from "@google-cloud/firestore"
 import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {isActivityIgnored} from "../strava/utils"
@@ -475,6 +476,17 @@ export class GearWear {
             // Iterate user's active gearwear configurations and process activities for each one of them.
             const activeConfigs = configs.filter((c) => !c.disabled)
             for (let config of activeConfigs) {
+                const findId = {id: config.id}
+
+                // Make sure the Gear is still valid on the user profile.
+                if (!_.find(user.profile.bikes, findId) && !_.find(user.profile.shoes, findId)) {
+                    await database.merge("gearwear", {id: config.id, disabled: true})
+                    eventManager.emit("GearWear.gearNotFound", user, config)
+                    logger.warn("GearWear.processUserActivities", logHelper.user(user), `Gear ${config.id} not found on user profile, disabled it`)
+                    continue
+                }
+
+                // Get recent activities and update tracking.
                 const gearActivities = _.remove(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
                 await this.updateTracking(user, config, gearActivities)
                 count += gearActivities.length
@@ -689,8 +701,8 @@ export class GearWear {
             }
 
             // Reset the actual distance / time / activity count.
-            component.datePreAlertSent = null
-            component.dateAlertSent = null
+            component.datePreAlertSent = FieldValue.delete() as any
+            component.dateAlertSent = FieldValue.delete() as any
             component.currentDistance = 0
             component.currentTime = 0
             component.activityCount = 0
