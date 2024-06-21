@@ -11,7 +11,8 @@
         // Max tokens per generation (short for activity names, long for descriptions).
         "maxTokens": {
             "short": 38,
-            "long": 198
+            "medium": 198,
+            "long": 1024
         }
     },
     "app": {
