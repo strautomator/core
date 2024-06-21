@@ -76,6 +76,8 @@ export interface UserData {
     recipeCount?: number
     /** Processed activities counter. */
     activityCount?: number
+    /** Enable debugging logs for the user? */
+    debug?: boolean
     /** Temporarily disable the user? */
     suspended?: boolean
     /** Temporarily disable writing to Strava? */
