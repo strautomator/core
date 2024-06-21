@@ -1,7 +1,7 @@
 // Strautomator Core: AI types
 
 import Bottleneck from "bottleneck"
-import {StravaActivity} from "../strava/types"
+import {StravaActivity, StravaActivityPerformance, StravaActivityStreams} from "../strava/types"
 import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
 
@@ -32,6 +32,12 @@ export interface AiGenerateOptions {
     provider?: "anthropic" | "gemini" | "openai"
     /** Referenced activity. */
     activity: StravaActivity
+    /** Optional activity streams for a more detailed prompt. */
+    activityStreams?: StravaActivityStreams
+    /** Optional activity performance (power intervals). */
+    activityPerformance?: StravaActivityPerformance
+    /** Use full activity details regardless of their values. */
+    fullDetails?: boolean
     /** Max tokens to be used. */
     maxTokens?: number
     /** Humour to be used on the prompt. */

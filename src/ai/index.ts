@@ -1,6 +1,7 @@
 // Strautomator Core: AI / LLM
 
 import {AiGenerateOptions, AiGeneratedResponse, AiProvider} from "./types"
+import {calculatePowerIntervals} from "../strava/utils"
 import {UserData} from "../users/types"
 import {translation} from "../translations"
 import anthropic from "../anthropic"
@@ -64,8 +65,8 @@ export class AI {
                 arrPrompt.push("That was one of the hardest workouts I've ever done.")
             } else if (activity.relativeEffort > 300) {
                 arrPrompt.push("The workout felt pretty hard.")
-            } else if (activity.relativeEffort < 30) {
-                arrPrompt.push("The workout felt very easy.")
+            } else if (activity.relativeEffort < 40) {
+                arrPrompt.push("The workout was very easy.")
             }
 
             // Only add distance if moving time was also set.
@@ -73,26 +74,58 @@ export class AI {
                 arrPrompt.push(`I ${verb} ${activity.distance}${activity.distanceUnit} in ${activity.movingTimeString}.`)
             }
 
-            // Add elevation mostly if less than 100m or more than 700m.
+            // Add elevation mostly if less than 150m or more than 800m.
             const elevationUnit = activity.elevationUnit || "m"
-            const skipElevationRange = elevationUnit == "ft" ? {min: 300, max: 2100} : {min: 100, max: 700}
-            const rndElevation = Math.random() < 0.2
-            if (!_.isNil(activity.elevationGain) && (rndElevation || activity.elevationGain < skipElevationRange.min || activity.elevationGain > skipElevationRange.max)) {
+            const skipElevationRange = elevationUnit == "ft" ? {min: 450, max: 2400} : {min: 150, max: 800}
+            const rndElevation = Math.random() < 0.4
+            if (!_.isNil(activity.elevationGain) && (options.fullDetails || rndElevation || activity.elevationGain < skipElevationRange.min || activity.elevationGain > skipElevationRange.max)) {
                 arrPrompt.push(`Elevation gain was ${activity.elevationGain}${elevationUnit}.`)
             }
 
-            // Add power data mostly if less than 140W or more than 200W, otherwise add heart rate data.
-            const rndPower = Math.random() < 0.2
-            if (activity.hasPower && (rndPower || activity.wattsWeighted < 140 || activity.wattsWeighted > 200)) {
-                arrPrompt.push(`Average power was ${activity.wattsWeighted} watts.`)
+            // Add power data mostly if less than 140W or more than 200W.
+            const rndPower = Math.random() < 0.4
+            if (activity.hasPower && (options.fullDetails || rndPower || activity.wattsWeighted < 140 || activity.wattsWeighted > 200)) {
+                if (options.activityStreams?.watts?.avg) {
+                    const wattsAvg = options.activityStreams?.watts?.avg
+                    arrPrompt.push(`Average power was ${wattsAvg.firstHalf} watts on the first half, and ${wattsAvg.secondHalf} watts on the second half.`)
+                } else {
+                    arrPrompt.push(`Average power was ${activity.wattsWeighted} watts.`)
+                }
+
+                // Power intervals calculated and FTP sent only when full details are requested.
+                if (options.fullDetails) {
+                    if (options.activityStreams?.watts.data) {
+                        const activityPerformance = calculatePowerIntervals(options.activityStreams.watts.data)
+                        arrPrompt.push(`My best 5 minutes power was ${activityPerformance.power5min} watts.`)
+                    }
+                    if (user.profile.ftp) {
+                        arrPrompt.push(`My current FTP is ${user.profile.ftp} watts.`)
+                    }
+                }
+            }
+
+            // Add heart rate data, if available.
+            if (options.activityStreams?.hr?.avg) {
+                const hrAvg = options.activityStreams?.hr?.avg
+                arrPrompt.push(`Average heart rate was ${hrAvg.firstHalf} BPM on the first half, and ${hrAvg.secondHalf} BPM on the second half.`)
             } else if (activity.hrAvg > 0) {
                 arrPrompt.push(`Average heart rate was ${activity.hrAvg} BPM.`)
             }
 
             // Add max speed in case it was high enough.
-            const rndSpeed = Math.random() < 0.2
-            if (rndSpeed || activity.speedMax > 65 || (activity.speedMax > 40 && user.profile.units == "imperial")) {
-                arrPrompt.push(`Maximum speed was very high at ${activity.speedMax}${activity.speedUnit}.`)
+            const rndSpeed = Math.random() < 0.4
+            if (activity.speedMax > 0 && (options.fullDetails || rndSpeed || activity.speedMax > 65 || (activity.speedMax > 40 && user.profile.units == "imperial"))) {
+                arrPrompt.push(`Maximum speed was ${activity.speedMax}${activity.speedUnit}.`)
+            }
+
+            // Add cadence data only if full details were requested.
+            if (options.fullDetails) {
+                if (options.activityStreams?.cadence?.avg) {
+                    const cadenceAvg = options.activityStreams?.cadence?.avg
+                    arrPrompt.push(`Average cadence was ${cadenceAvg.firstHalf} on the first half, and ${cadenceAvg.secondHalf} on the second half.`)
+                } else if (activity.cadenceAvg > 0) {
+                    arrPrompt.push(`Average cadence was ${activity.cadenceAvg}.`)
+                }
             }
 
             // Add weather data?
@@ -117,11 +150,13 @@ export class AI {
             }
 
             // Add the user's custom AI prompt, otherwise fallback to a generic humour + translation, if needed.
-            if (customPrompt?.length > 3) {
+            if (!options.fullDetails && customPrompt?.length > 3) {
                 arrPrompt.push(customPrompt)
             } else {
                 const humour = options.humour || _.sample(settings.ai.humours)
-                arrPrompt.push(`Please be very ${humour} with the choice of words.`)
+                if (humour != "none") {
+                    arrPrompt.push(`Please be very ${humour} with the choice of words.`)
+                }
 
                 // Translate to the user's language (if other than English).
                 if (user.preferences.language && user.preferences.language != "en") {
@@ -139,7 +174,7 @@ export class AI {
 
         // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
         const providers = [anthropic, openai, gemini].filter(async (p) => (await p.limiter.currentReservoir()) > 0)
-        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == user.preferences.aiProvider)
+        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
         let provider: AiProvider = preferredProviders.pop() || providers.pop()
 
         // Keep trying with different providers.
@@ -158,11 +193,15 @@ export class AI {
 
         // Got a valid response?
         if (response) {
-            return {
+            const result = {
                 provider: provider.constructor.name.toLowerCase() as any,
                 prompt: arrPrompt.join(" "),
                 response: response
             }
+            if (user.debug) {
+                logger.warn("AI.activityPrompt.debug", logHelper.user(user), logHelper.activity(options.activity), result.provider, `Prompt: ${result.prompt}`, `Response: ${result.response}`)
+            }
+            return result
         }
 
         // Everything else failed.
@@ -221,7 +260,7 @@ export class AI {
 
             // Generation options.
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            options.maxTokens = settings.ai.maxTokens.long
+            options.maxTokens = settings.ai.maxTokens.medium
             options.prepend = [`Please write a very short poem for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
             options.append = [`Answer the generated poem only, with no additional text, limited to a maximum of 10 lines.`]
 
@@ -233,10 +272,39 @@ export class AI {
                 return result
             }
 
-            logger.warn("AI.generateActivityName", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
+            logger.warn("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
             return null
         } catch (ex) {
             logger.error("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(options.activity), ex)
+            return null
+        }
+    }
+
+    /**
+     * Get insights about the passed activity. Insights are never cached.
+     * @param user The user.
+     * @param options AI generation options.
+     */
+    generateActivityInsights = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
+        try {
+            const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
+            options.fullDetails = true
+            options.maxTokens = settings.ai.maxTokens.long
+            options.humour = "none"
+            options.prepend = [`Please analyse and give some actionable insights about my ${sportType.toLowerCase()}.`]
+            options.append = ["The response should be made in bullet points, having only the most important analysis and if you think it's necessary, some suggestions for improvement."]
+
+            // Generate the insights.
+            const result = await this.activityPrompt(user, options)
+            if (result) {
+                logger.info("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), result.provider, `Response length: ${result.response.length}`)
+                return result
+            }
+
+            logger.warn("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
+            return null
+        } catch (ex) {
+            logger.error("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), ex)
             return null
         }
     }

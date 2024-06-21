@@ -193,6 +193,10 @@ export interface StravaActivityPerformance {
  * Combined activity streams. At the moment allowing only watts to be used.
  */
 export interface StravaActivityStreams {
+    /** Cadence data points. */
+    cadence?: StravaStream
+    /** Heart rate data points. */
+    hr?: StravaStream
     /** Power data points. */
     watts?: StravaStream
 }
@@ -361,6 +365,17 @@ export interface StravaStream {
     resolution?: "high" | "medium" | "low"
     /** Data points, usually indexed by seconds. */
     data?: number[]
+    /** Calculated averages based on moving time. */
+    avg?: {
+        /** First 10%. */
+        first10pc?: number
+        /** First half. */
+        firstHalf?: number
+        /** Second half. */
+        secondHalf?: number
+        /** Last 10%. */
+        last10pc?: number
+    }
 }
 
 /**
