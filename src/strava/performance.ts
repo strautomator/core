@@ -1,7 +1,7 @@
 // Strautomator Core: Strava Activities
 
 import {StravaActivity, StravaActivityPerformance, StravaCachedResponse, StravaEstimatedFtp, StravaFitnessLevel, StravaSport} from "./types"
-import {isActivityIgnored} from "./utils"
+import {calculatePowerIntervals, isActivityIgnored} from "./utils"
 import {BaseNotification} from "../notifications/types"
 import {UserData, UserFtpStatus} from "../users/types"
 import stravaActivities from "./activities"
@@ -461,7 +461,7 @@ export class StravaPerformance {
     // --------------------------------------------------------------------------
 
     /**
-     * The the power intervals (1min, 5min, 20min and 1 hour) for the specified activity.
+     * The power intervals (5min, 20min and 1 hour) for the specified activity.
      * @param user User data.
      * @param activity The Strava activity.
      */
@@ -504,35 +504,8 @@ export class StravaPerformance {
                 return null
             }
 
-            const watts = streams.watts.data
-            const result: StravaActivityPerformance = {}
-            const intervals: StravaActivityPerformance = {
-                power5min: 300,
-                power20min: 1200,
-                power60min: 3600
-            }
-
-            // Iterate intervals and then the watts data points to get the
-            // highest sum for each interval. This could be improved in the
-            // future to iterate the array only once and get the intervals
-            // all in a single pass.
-            for (let [key, interval] of Object.entries(intervals)) {
-                if (watts.length < interval) {
-                    continue
-                }
-
-                let best = 0
-
-                for (let i = 0; i < watts.length - interval; i++) {
-                    const sum = _.sum(watts.slice(i, i + interval))
-
-                    if (sum > best) {
-                        best = sum
-                    }
-                }
-
-                result[key] = Math.round(best / interval)
-            }
+            // Calculate the splits.
+            const result: StravaActivityPerformance = calculatePowerIntervals(streams.watts.data)
 
             // Save to cache.
             try {

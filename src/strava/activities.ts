@@ -182,23 +182,32 @@ export class StravaActivities {
         try {
             const tokens = user.stravaTokens
 
-            // At the moment we only use the "watts" stream, so we discard everything else from the response.
+            // Discard unused data from the response.
             const preProcessor = (streams: any): void => {
                 try {
                     const originalKeys = Object.keys(streams)
-                    for (let key of originalKeys) {
-                        if (key != "watts") {
-                            delete streams[key]
-                        }
-                    }
+                    originalKeys.forEach((key) => (["cadence", "hr", "watts"].includes(key) ? null : delete streams[key]))
                 } catch (preEx) {
                     logger.error("Strava.getStreams.preProcessor", logHelper.user(user), `Activity ${id}`, preEx)
                 }
             }
 
-            const data: StravaActivityStreams = await api.get(tokens, `activities/${id}/streams`, {keys: "watts", key_by_type: true}, preProcessor)
-            logger.info("Strava.getStreams", logHelper.user(user), `Activity ${id}`, data.watts?.data ? `${data.watts.data.length} data points` : "No data points")
-            return data
+            const streams: StravaActivityStreams = await api.get(tokens, `activities/${id}/streams`, {keys: "cadence,hr,watts", key_by_type: true}, preProcessor)
+            const streamValues = Object.values(streams)
+            for (let s of streamValues) {
+                const total = s.data.length
+                const pc10 = Math.round(total / 10)
+                const half = Math.round(total / 2)
+                s.avg = {
+                    first10pc: Math.round(_.mean(s.data.slice(0, pc10))),
+                    firstHalf: Math.round(_.mean(s.data.slice(0, half))),
+                    secondHalf: Math.round(_.mean(s.data.slice(total - half))),
+                    last10pc: Math.round(_.mean(s.data.slice(total - pc10)))
+                }
+            }
+
+            logger.info("Strava.getStreams", logHelper.user(user), `Activity ${id}`, `Data points: hr ${streams.hr?.data.length || 0}, watts ${streams.watts?.data.length || 0}`)
+            return streams
         } catch (ex) {
             logger.error("Strava.getStreams", logHelper.user(user), `Activity ${id}`, ex)
             throw ex

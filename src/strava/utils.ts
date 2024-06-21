@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Utils
 
-import {StravaActivity, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaProfileStats, StravaRoute, StravaSport, StravaTotals} from "./types"
+import {StravaActivity, StravaActivityPerformance, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaProfileStats, StravaRoute, StravaSport, StravaTotals} from "./types"
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import {translation} from "../translations"
@@ -577,6 +577,43 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
     routes.process(user, route)
 
     return route
+}
+
+/**
+ * Calculates the best 5, 20 and 60min power splits.
+ * @param watts Watts data points.
+ */
+export const calculatePowerIntervals = (watts: number[]): StravaActivityPerformance => {
+    const result: StravaActivityPerformance = {}
+    const intervals: StravaActivityPerformance = {
+        power5min: 300,
+        power20min: 1200,
+        power60min: 3600
+    }
+
+    // Iterate intervals and then the watts data points to get the
+    // highest sum for each interval. This could be improved in the
+    // future to iterate the array only once and get the intervals
+    // all in a single pass.
+    for (let [key, interval] of Object.entries(intervals)) {
+        if (watts.length < interval) {
+            continue
+        }
+
+        let best = 0
+
+        for (let i = 0; i < watts.length - interval; i++) {
+            const sum = _.sum(watts.slice(i, i + interval))
+
+            if (sum > best) {
+                best = sum
+            }
+        }
+
+        result[key] = Math.round(best / interval)
+    }
+
+    return result
 }
 
 /**
