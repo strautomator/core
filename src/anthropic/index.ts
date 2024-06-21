@@ -72,7 +72,7 @@ export class Anthropic implements AiProvider {
                 method: "POST",
                 headers: {},
                 data: {
-                    model: "claude-3-sonnet-20240229",
+                    model: "claude-3-5-sonnet-20240620",
                     max_tokens: maxTokens,
                     system: "You are an assistant to create creative names and descriptions for Strava activities.",
                     messages: [{role: "user", content: content}]
