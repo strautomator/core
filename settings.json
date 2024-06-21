@@ -12,7 +12,7 @@
         "maxTokens": {
             "short": 38,
             "medium": 198,
-            "long": 1024
+            "long": 1088
         }
     },
     "app": {
