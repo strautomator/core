@@ -681,10 +681,10 @@ export class Users {
 
                 // User has opted for the privacy mode?
                 if (existingData.preferences.privacyMode) {
-                    delete userData.profile.username
-                    delete userData.profile.firstName
-                    delete userData.profile.lastName
-                    delete userData.profile.city
+                    userData.profile.username = FieldValue.delete() as any
+                    userData.profile.firstName = FieldValue.delete() as any
+                    userData.profile.lastName = FieldValue.delete() as any
+                    userData.profile.city = FieldValue.delete() as any
                     userData.displayName = existingData.displayName
                 } else {
                     userData.displayName = profile.username || profile.firstName || profile.lastName
@@ -701,6 +701,11 @@ export class Users {
                     if (!_.isNil(existingData.writeSuspended)) {
                         userData.writeSuspended = FieldValue.delete() as any
                     }
+                }
+
+                if (existingData.debug) {
+                    const diff = _.reduce(existingData, (result, value, key) => (_.isEqual(value, userData[key]) ? result : result.concat(key)), [])
+                    logger.info("Users.upsert.debug", logHelper.user(userData), JSON.stringify(diff, null, 0))
                 }
             }
 
@@ -788,6 +793,9 @@ export class Users {
             }
 
             logger.info("Users.update", logHelper.user(user), logs.length > 0 ? logs.join(" | ") : "Updated")
+            if (user.debug) {
+                logger.info("Users.update.debug", logHelper.user(user), JSON.stringify(user, null, 0))
+            }
         } catch (ex) {
             logger.error("Users.update", logHelper.user(user), ex)
             throw ex

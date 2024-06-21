@@ -120,7 +120,7 @@ export class Notifications {
      * @param gearId The gear ID.
      * @param all If true, will get also read and expired notifications, default is false.
      */
-    getForGear = async (user: UserData, gearId: string, all?: boolean): Promise<BaseNotification[]> => {
+    getByGear = async (user: UserData, gearId: string, all?: boolean): Promise<BaseNotification[]> => {
         const whichLog = all ? "All" : "Unread only"
 
         try {
@@ -140,14 +140,14 @@ export class Notifications {
             const result = await database.search("notifications", queries)
 
             if (result.length > 0) {
-                logger.info("Notifications.getForGear", logHelper.user(user), `Gear ${gearId}`, whichLog, `Got ${result.length} notification(s)`)
+                logger.info("Notifications.getByGear", logHelper.user(user), `Gear ${gearId}`, whichLog, `Got ${result.length} notification(s)`)
             } else {
-                logger.debug("Notifications.getForGear", logHelper.user(user), `Gear ${gearId}`, whichLog, `Got no notification(s)`)
+                logger.debug("Notifications.getByGear", logHelper.user(user), `Gear ${gearId}`, whichLog, `Got no notification(s)`)
             }
 
             return result
         } catch (ex) {
-            logger.error("Notifications.getForGear", logHelper.user(user), `Gear ${gearId}`, whichLog, ex)
+            logger.error("Notifications.getByGear", logHelper.user(user), `Gear ${gearId}`, whichLog, ex)
             throw ex
         }
     }

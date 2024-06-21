@@ -122,7 +122,7 @@ export class Calendar {
                 return
             }
 
-            const calendars = await this.getForUser(user, {activities: true})
+            const calendars = await this.getByUser(user, {activities: true})
             if (calendars.length > 0) {
                 calendars.forEach(async (cal) => await database.merge("calendars", {id: cal.id, pendingUpdate: true}))
                 logger.info("Strava.onProcessActivity", logHelper.user(user), logHelper.activity(activity), `${calendars.length} calendars set as pending update`)
@@ -230,7 +230,7 @@ export class Calendar {
      * @param user The user.
      * @param filterOptions Optional, get only calendars that match the passed options.
      */
-    getForUser = async (user: UserData, filterOptions?: CalendarOptions): Promise<CalendarData[]> => {
+    getByUser = async (user: UserData, filterOptions?: CalendarOptions): Promise<CalendarData[]> => {
         try {
             const where = [["userId", "==", user.id]]
             if (filterOptions) {
@@ -240,10 +240,10 @@ export class Calendar {
             }
 
             const result = await database.search("calendars", where)
-            logger.info("Calendar.getForUser", logHelper.user(user), `Got ${result.length || "no"} calendars`)
+            logger.info("Calendar.getByUser", logHelper.user(user), `Got ${result.length || "no"} calendars`)
             return result
         } catch (ex) {
-            logger.error("Calendar.getForUser", logHelper.user(user), ex)
+            logger.error("Calendar.getByUser", logHelper.user(user), ex)
             throw ex
         }
     }

@@ -718,7 +718,7 @@ export class GearWear {
 
             // Clear pending gear notifications (mark them as read) if user has no email set.
             if (!user.email) {
-                const gearNotifications = await notifications.getForGear(user, config.id)
+                const gearNotifications = await notifications.getByGear(user, config.id)
 
                 if (gearNotifications.length > 0) {
                     for (let n of gearNotifications) {
