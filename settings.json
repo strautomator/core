@@ -402,8 +402,8 @@
             "maxClubs": 999,
             // PRO accounts can trigger batch automations for activities up to 5 years old.
             "batchDays": 1825,
-            // PRO accounts limited to 5 years in the past and up to 1 year in the future.
-            "pastCalendarDays": 1825,
+            // PRO accounts limited to 10 years in the past and up to 1 year in the future.
+            "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
             // PRO calendars are cached for around 3 hours.
             "calendarCacheDuration": 10800,
