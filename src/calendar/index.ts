@@ -153,15 +153,23 @@ export class Calendar {
             const calendarId = crypto.createHash("sha1").update(hashContent).digest("hex")
             dbCalendar = await database.get("calendars", calendarId)
 
+            // Default daysFrom and daysTo in case they were not set via URL.
+            if (!options.daysFrom) {
+                options.daysFrom = user.isPro ? settings.plans.pro.pastCalendarDays : settings.plans.free.pastCalendarDays
+            }
+            if (!options.daysTo) {
+                options.daysTo = user.isPro ? settings.plans.pro.futureCalendarDays : settings.plans.free.futureCalendarDays
+            }
+
             // If the calendar was already generated, reuse some of options saved to the DB, otherwise
             // validate them and created a new database record for that specific calendar.
             if (dbCalendar?.options) {
-                _.assign(dbCalendar.options, _.pick(options, ["daysFrom", "daysTo"]))
+                _.assign(dbCalendar.options, _.pick(options, ["daysFrom", "daysTo", "fresher"]))
                 options = dbCalendar.options
             } else {
                 dbCalendar = {id: calendarId, userId: user.id, options: options, dateUpdated: now.toDate()}
-                await this.validateOptions(user, options)
             }
+            this.validateOptions(user, options)
             optionsLog = _.map(_.toPairs(options), (r) => r.join("=")).join(" | ")
 
             // Fetch cached calendar from storage (if it exists).
@@ -309,7 +317,7 @@ export class Calendar {
      * @param user The user.
      * @param options Options to be validated (mutated by this method).
      */
-    validateOptions = async (user: UserData, options: CalendarOptions): Promise<void> => {
+    validateOptions = (user: UserData, options: CalendarOptions) => {
         const optionsLog = _.map(_.toPairs(options), (r) => r.join("=")).join(" | ")
 
         try {
