@@ -173,6 +173,10 @@ export interface StravaActivity {
     aiDescription?: string
     /** Flag: provider used to generate the activity description. */
     aiDescriptionProvider?: "anthropic" | "gemini" | "openai"
+    /** AI generated activity insights. */
+    aiInsights?: string
+    /** Flag: provider used to generate the activity insights. */
+    aiInsightsProvider?: "anthropic" | "gemini" | "openai"
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
 }

@@ -532,25 +532,31 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         } else if (action.type == RecipeActionType.GenerateDescription && activity.aiDescriptionProvider) {
             logger.info("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Using cached AI generated description by ${activity.aiDescriptionProvider}`)
             return true
+        } else if (action.type == RecipeActionType.GenerateInsights && activity.aiInsightsProvider) {
+            logger.info("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Using cached AI generated insights by ${activity.aiInsightsProvider}`)
+            return true
         }
 
         // Weather based checks for activities that happened in the last 3 days.
-        const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
-        const isRecent = now.subtract(3, "days").isBefore(activity.dateEnd)
-        const rndWeather = user.isPro ? settings.plans.pro.generatedNames.weather : settings.plans.free.generatedNames.weather
+        // Not necessary when generating insights.
         let weatherSummaries: ActivityWeather
-        if (activity.hasLocation && isRecent && Math.random() * 100 <= rndWeather) {
-            const language = user.preferences.language
+        if (action.type != RecipeActionType.GenerateInsights) {
+            const isRecent = now.subtract(3, "days").isBefore(activity.dateEnd)
+            const rndWeather = user.isPro ? settings.plans.pro.generatedNames.weather : settings.plans.free.generatedNames.weather
 
-            // Force English language, fetch weather summaries for activity,
-            // then reset the user language back to its default.
-            user.preferences.language = "en"
-            try {
-                weatherSummaries = await weather.getActivityWeather(user, activity, true)
-            } catch (weatherEx) {
-                logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Failed to get the activity weather summary")
+            if (activity.hasLocation && isRecent && Math.random() * 100 <= rndWeather) {
+                const language = user.preferences.language
+
+                // Force English language, fetch weather summaries for activity,
+                // then reset the user language back to its default.
+                user.preferences.language = "en"
+                try {
+                    weatherSummaries = await weather.getActivityWeather(user, activity, true)
+                } catch (weatherEx) {
+                    logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Failed to get the activity weather summary")
+                }
+                user.preferences.language = language
             }
-            user.preferences.language = language
         }
 
         // Decide if we should use AI or fallback to template-based names.
@@ -558,6 +564,9 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         let rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : settings.plans.free.generatedNames.ai
         if (activity.batch) {
             rndAi -= settings.plans.free.generatedNames.ai
+        }
+        if (action.type == RecipeActionType.GenerateInsights) {
+            rndAi = 100
         }
         if (!user.preferences.privacyMode && Math.random() * 100 <= rndAi) {
             if (action.type == RecipeActionType.GenerateName) {
@@ -575,6 +584,17 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                     activity.aiDescription = activity.description = aiResponse.response
                     activity.updatedFields.push("description")
                     return true
+                }
+            } else if (action.type == RecipeActionType.GenerateInsights) {
+                const aiResponse = await ai.generateActivityInsights(user, {activity, humour, weatherSummaries})
+                if (aiResponse) {
+                    activity.aiInsightsProvider = aiResponse.provider
+                    activity.aiInsights = activity.privateNote = aiResponse.response
+                    activity.updatedFields.push("privateNote")
+                    return true
+                } else {
+                    logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "AI insights failed")
+                    return false
                 }
             }
 
@@ -836,6 +856,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
 
         // Got the activity weather summary? Add a few
         if (weatherSummaries) {
+            const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
             let wPrefixes: string[] = []
 
             // Check for weather on start and end of the activity.

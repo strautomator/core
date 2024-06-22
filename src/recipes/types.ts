@@ -136,6 +136,7 @@ export enum RecipeActionType {
     AppendName = "appendName",
     GenerateName = "generateName",
     GenerateDescription = "generateDescription",
+    GenerateInsights = "generateInsights",
     Description = "description",
     PrependDescription = "prependDescription",
     AppendDescription = "appendDescription",
