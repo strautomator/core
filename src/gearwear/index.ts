@@ -1,6 +1,5 @@
 // Strautomator Core: GearWear
 
-import {FieldValue} from "@google-cloud/firestore"
 import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {isActivityIgnored} from "../strava/utils"
