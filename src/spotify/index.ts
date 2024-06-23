@@ -198,6 +198,9 @@ export class Spotify {
             if (!refreshToken && user.spotify?.tokens) {
                 refreshToken = user.spotify.tokens.refreshToken
             }
+            if (!refreshToken) {
+                throw new Error("Missing refresh token")
+            }
 
             const now = dayjs()
             const qs = {
