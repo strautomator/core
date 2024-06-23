@@ -155,12 +155,15 @@ export class Wahoo {
      */
     refreshToken = async (user: UserData, refreshToken?: string): Promise<WahooTokens> => {
         try {
-            if (!refreshToken && user.spotify?.tokens) {
+            if (!refreshToken && user.wahoo?.tokens) {
                 refreshToken = user.wahoo.tokens.refreshToken
+            }
+            if (!refreshToken) {
+                throw new Error("Missing refresh token")
             }
 
             const now = dayjs()
-            const tokenUrl = `${settings.wahoo.api.baseUrl}oauth/token?client_id=${settings.wahoo.api.clientId}&client_secret=${settings.wahoo.api.clientSecret}&refresh_token=${refreshToken}&grant_type=refresh_token`
+            const tokenUrl = `${settings.wahoo.api.baseUrl}oauth/token?client_id=${settings.wahoo.api.clientId}&client_secret=${settings.wahoo.api.clientSecret}&grant_type=refresh_token&refresh_token=${refreshToken}`
             const headers = {"Content-Type": "application/json"}
             const reqOptions: AxiosConfig = {
                 method: "POST",
