@@ -701,8 +701,8 @@ export class GearWear {
             }
 
             // Reset the actual distance / time / activity count.
-            component.datePreAlertSent = FieldValue.delete() as any
-            component.dateAlertSent = FieldValue.delete() as any
+            component.datePreAlertSent = null
+            component.dateAlertSent = null
             component.currentDistance = 0
             component.currentTime = 0
             component.activityCount = 0
