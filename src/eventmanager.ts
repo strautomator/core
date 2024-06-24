@@ -1,5 +1,6 @@
 // Strautomator Core: Event Manager
 
+import _ from "lodash"
 import events from "events"
 import logger from "anyhow"
 
@@ -22,10 +23,20 @@ export class EventManager extends events.EventEmitter {
      * @param eventName The event name.
      * @param args Event args.
      */
-    emit(eventName: string | symbol, ...args: any[]): boolean {
+    emit(eventName: string, ...args: any[]): boolean {
+        const isTokenEvent = eventName.toLowerCase().includes("token")
+
+        // Build the log details depending on argument types and data.
         const details = []
         for (let arg of args) {
-            if (arg !== null && (typeof arg === "string" || typeof arg === "number" || typeof arg === "boolean")) {
+            if (arg === null) continue
+            if (typeof arg === "string") {
+                if (isTokenEvent && !arg.includes(" ") && ((arg.length > 36 && arg.length < 44) || (arg.split("\\.").length == 3 && arg.length > 32))) {
+                    details.push(`${arg.substring(0, 2)}*${arg.substring(-2)}`)
+                } else {
+                    details.push(arg)
+                }
+            } else if (typeof arg === "number" || typeof arg === "boolean" || _.isDate(arg)) {
                 details.push(arg)
             } else {
                 if (arg["id"]) details.push(arg["id"])
