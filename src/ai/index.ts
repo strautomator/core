@@ -291,8 +291,12 @@ export class AI {
             options.fullDetails = true
             options.maxTokens = settings.ai.maxTokens.long
             options.humour = "none"
-            options.prepend = [`Please analyse and give some actionable insights about my ${sportType.toLowerCase()}.`]
-            options.append = ["The response should be made in bullet points, having only the most important analysis and if you think it's necessary, some suggestions for improvement."]
+            options.prepend = [
+                `Please analyse and give me insights and suggestions about my ${sportType.toLowerCase()}.`,
+                `I want you to focus and give suggestions based on this the activity only, with no broader analysis.`,
+                `The response should be very short and made in bullet points.`,
+                `Please do not add any formatting to the response, use just plain text and dashes.`
+            ]
 
             // Generate the insights.
             const result = await this.activityPrompt(user, options)
