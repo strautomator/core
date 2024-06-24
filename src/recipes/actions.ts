@@ -515,6 +515,7 @@ export const workoutTypeAction = async (user: UserData, activity: StravaActivity
 
 /**
  * Gets a random activity name or description using AI or using pre-defined templates.
+ * The action value can represent the AI provider or the humour to be used.
  * @param user The user.
  * @param activity The Strava activity.
  * @param recipe The source recipe, optional.
@@ -523,7 +524,9 @@ export const workoutTypeAction = async (user: UserData, activity: StravaActivity
 export const aiGenerateAction = async (user: UserData, activity: StravaActivity, recipe?: RecipeData, action?: RecipeAction): Promise<boolean> => {
     try {
         const now = dayjs.utc()
-        let humour = action ? action.value : _.sample(settings.ai.humours)
+        const actionValue = action?.value || null
+        const provider = user.isPro && ["anthropic", "gemini", "openai"].includes(actionValue) ? actionValue : null
+        const humour = !provider && actionValue ? actionValue : _.sample(settings.ai.humours)
 
         // Stop here if the activity already has an AI generated name or description.
         if (action.type == RecipeActionType.GenerateName && activity.aiNameProvider) {
@@ -566,11 +569,11 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
             rndAi -= settings.plans.free.generatedNames.ai
         }
         if (action.type == RecipeActionType.GenerateInsights) {
-            rndAi = 100
+            rndAi = 30
         }
         if (!user.preferences.privacyMode && Math.random() * 100 <= rndAi) {
             if (action.type == RecipeActionType.GenerateName) {
-                const aiResponse = await ai.generateActivityName(user, {activity, humour, weatherSummaries})
+                const aiResponse = await ai.generateActivityName(user, {activity, humour, provider, weatherSummaries})
                 if (aiResponse) {
                     activity.aiNameProvider = aiResponse.provider
                     activity.aiName = activity.name = aiResponse.response
@@ -578,7 +581,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                     return true
                 }
             } else if (action.type == RecipeActionType.GenerateDescription) {
-                const aiResponse = await ai.generateActivityDescription(user, {activity, humour, weatherSummaries})
+                const aiResponse = await ai.generateActivityDescription(user, {activity, humour, provider, weatherSummaries})
                 if (aiResponse) {
                     activity.aiDescriptionProvider = aiResponse.provider
                     activity.aiDescription = activity.description = aiResponse.response
@@ -586,7 +589,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                     return true
                 }
             } else if (action.type == RecipeActionType.GenerateInsights) {
-                const aiResponse = await ai.generateActivityInsights(user, {activity, humour, weatherSummaries})
+                const aiResponse = await ai.generateActivityInsights(user, {activity, humour, provider, weatherSummaries})
                 if (aiResponse) {
                     activity.aiInsightsProvider = aiResponse.provider
                     activity.aiInsights = activity.privateNote = aiResponse.response
