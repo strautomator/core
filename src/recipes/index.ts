@@ -467,7 +467,7 @@ export class Recipes {
         }
 
         // Auto generated activity names?
-        else if (action.type == RecipeActionType.GenerateName || action.type == RecipeActionType.GenerateDescription) {
+        else if (action.type == RecipeActionType.GenerateName || action.type == RecipeActionType.GenerateDescription || action.type == RecipeActionType.GenerateInsights) {
             return actions.aiGenerateAction(user, activity, recipe, action)
         }
 
