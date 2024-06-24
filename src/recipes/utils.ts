@@ -41,7 +41,12 @@ export const getSummary = (recipe: RecipeData): string => {
  */
 export const getActionSummary = (action: RecipeAction): string => {
     try {
-        const actionType = _.find(recipeActionList, {value: action.type}).text
+        const actionObj = _.find(recipeActionList, {value: action.type})
+        if (!actionObj) {
+            return `${action.type}: ${action.value || action.friendlyValue}`
+        }
+
+        const actionType = actionObj.text
         const valueText = action.friendlyValue || action.value
 
         if (action.value && action.type != "commute") {
@@ -51,7 +56,7 @@ export const getActionSummary = (action: RecipeAction): string => {
         }
     } catch (ex) {
         logger.error("Recipes.getActionSummary", action.type, ex)
-        return `${action.type}: ${action.value}`
+        return `${action.type}: ${action.value || action.friendlyValue}`
     }
 }
 
