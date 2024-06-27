@@ -50,11 +50,11 @@ export class CalendarBuilder {
             const cal = ical(calData)
 
             // First time that the calendar is being built? Use a shorter date range
-            // to speed things up. The correct ranges will be applied from then on.
+            // to speed things up. The correct ranges will be applied subsequently.
             const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
             if (partialFirstBuild) {
-                dbCalendar.options.daysFrom = Math.ceil(dbCalendar.options.daysFrom / 3)
-                dbCalendar.options.daysTo = Math.ceil(dbCalendar.options.daysTo / 3)
+                dbCalendar.options.daysFrom = Math.ceil(dbCalendar.options.daysFrom / 4)
+                dbCalendar.options.daysTo = Math.ceil(dbCalendar.options.daysTo / 4)
                 dbCalendar.pendingUpdate = true
             } else if (dbCalendar.pendingUpdate) {
                 dbCalendar.pendingUpdate = FieldValue.delete() as any
