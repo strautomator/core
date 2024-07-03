@@ -501,8 +501,13 @@
             "urlToken": null,
             // Default verification token to be sent by Strava on subcriptions, MUST be set
             // via secret settings or the SMU_strava_api_verifyToken environment variable.
-            "verifyToken": null
-            // The clientId and clientSecret must be set
+            "verifyToken": null,
+            // Strava will be considered has having an incident going on if more than 20
+            // timeouts have happened in less than 10 minutes.
+            "timeoutThresholds": {
+                "count": 20,
+                "seconds": 600
+            }
         },
         // Some Strava resources might be cached. Duration in seconds.
         "cacheDuration": {
