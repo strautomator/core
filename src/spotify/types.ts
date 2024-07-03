@@ -43,3 +43,23 @@ export interface SpotifyTrack {
     /** Played date. */
     datePlayed?: Date
 }
+
+/**
+ * Spotify API request options.
+ */
+export interface SpotifyRequestOptions {
+    /** Body to be posted to the API. */
+    data?: any
+    /** Request method. */
+    method?: "GET" | "POST"
+    /** Additional request headers. */
+    headers?: any
+    /** Path to be appended to the base API URL. */
+    path?: string
+    /** Target request URL including https://. */
+    url?: string
+    /** Custom timeout, in milliseconds. */
+    timeout?: number
+    /** Spotify tokens used to generate the Bearer auth header. */
+    tokens?: SpotifyTokens
+}

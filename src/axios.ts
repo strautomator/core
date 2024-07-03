@@ -25,6 +25,18 @@ export interface AxiosConfig extends AxiosRequestConfig {
 }
 
 /**
+ * Axios request error counters and last date.
+ */
+export interface AxiosErrorCounter {
+    /** How many errors. */
+    count: number
+    /** Date when the first error occurred since counter was reset. */
+    first?: Date
+    /** Date when the last error occurred. */
+    last?: Date
+}
+
+/**
  * A rudimentary rate-limit logging and throttling mechanism that activates
  * when we are about to reach the API's predefined rate limits.
  * @param res The response from the target API.
@@ -131,12 +143,15 @@ export const axiosRequest = async (options: AxiosConfig): Promise<AxiosResponse 
                 return res.status == 204 && !res.data ? true : options.returnResponse ? res : res.data
             } catch (innerEx) {
                 if (!innerEx.url) innerEx.url = options.url
+                if (isTimeout) innerEx.isTimeout = true
                 logger.warn("Axios.axiosRequest", options.method, logUrl, ex, "Failed twice, will not retry")
+
                 throw innerEx
             }
         }
 
         if (!ex.url) ex.url = options.url
+        if (isTimeout) ex.isTimeout = true
         throw ex
     }
 }

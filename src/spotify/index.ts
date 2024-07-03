@@ -1,6 +1,6 @@
 // Strautomator Core: Spotify
 
-import {SpotifyProfile, SpotifyTokens, SpotifyTrack} from "./types"
+import {SpotifyProfile, SpotifyRequestOptions, SpotifyTokens, SpotifyTrack} from "./types"
 import {toSpotifyTrack} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
@@ -12,6 +12,7 @@ import users from "../users"
 import _ from "lodash"
 import cache from "bitecache"
 import crypto from "crypto"
+import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
@@ -27,6 +28,11 @@ export class Spotify {
     static get Instance() {
         return this._instance || (this._instance = new this())
     }
+
+    /**
+     * Spotify requests should wait till this timestamp before proceeding.
+     */
+    rateLimitedUntil: number = 0
 
     // INIT
     // --------------------------------------------------------------------------
@@ -53,25 +59,69 @@ export class Spotify {
 
     /**
      * Make a request to the Spotify API.
-     * @param tokens User access tokens.
-     * @param path URL path.
+     * @param reqOptions Spotify request options.
      */
-    private makeRequest = async (tokens: SpotifyTokens, path: string): Promise<any> => {
-        const options: AxiosConfig = {
-            method: "GET",
-            returnResponse: true,
-            url: `${settings.spotify.api.baseUrl}${path}`,
-            headers: {
-                Authorization: `Bearer ${tokens.accessToken}`,
-                "User-Agent": `${settings.app.title} / ${packageVersion}`
-            }
+    private makeRequest = async (reqOptions: SpotifyRequestOptions): Promise<any> => {
+        const now = dayjs().unix()
+
+        // Set final headers.
+        reqOptions.headers = _.assign(reqOptions.headers || {}, {"User-Agent": `${settings.app.title} / ${packageVersion}`})
+        if (reqOptions.tokens) {
+            reqOptions.headers.Authorization = `Bearer ${reqOptions.tokens.accessToken}`
         }
 
+        //  Defaults to GET.
+        if (!reqOptions.method) {
+            reqOptions.method = "GET"
+        }
+
+        // Transform to axios specific options.
+        const options: AxiosConfig = {
+            method: reqOptions.method,
+            returnResponse: true,
+            url: reqOptions.url || `${settings.spotify.api.baseUrl}${reqOptions.path}`,
+            timeout: reqOptions.tokens ? settings.oauth.tokenTimeout : null,
+            headers: reqOptions.headers
+        }
+        if (reqOptions.data) {
+            options.data = reqOptions.data
+        }
+
+        // If we hit the rate limit, make sure to wait before proceeding.
+        if (this.rateLimitedUntil > now) {
+            const diff = this.rateLimitedUntil - now
+            logger.warn("Spotify.makeRequest", reqOptions.method, reqOptions.url || reqOptions.path, `Rate limited, will wait ${diff} seconds before proceeding`)
+            await jaul.io.sleep(diff * 1001)
+        }
+
+        // Dispatch the request now.
         try {
             const res = await axiosRequest(options)
-            return res ? res.data : null
+            return res ? res.data || res : null
         } catch (ex) {
-            logger.error("Spotify.makeRequest", path, ex)
+            const status = ex.response?.status || null
+            const headers = ex.response?.headers || null
+
+            // Rate limited? Try again later.
+            if (status == 429 && headers["retry-after"]) {
+                const seconds = parseInt(headers["retry-after"])
+                logger.error("Spotify.makeRequest", reqOptions.method, reqOptions.url || reqOptions.path, `Rate limited, will try again in around ${seconds} seconds`)
+
+                if (this.rateLimitedUntil <= now) {
+                    this.rateLimitedUntil = now + seconds
+                }
+
+                await jaul.io.sleep(seconds * 1001)
+                try {
+                    const res = await axiosRequest(options)
+                    return res ? res.data || res : null
+                } catch (innerEx) {
+                    logger.error("Spotify.makeRequest", reqOptions.method, reqOptions.url || reqOptions.path, "Failed again, won't retry", ex)
+                    throw ex
+                }
+            }
+
+            logger.error("Spotify.makeRequest", reqOptions.method, reqOptions.url || reqOptions.path, ex)
             throw ex
         }
     }
@@ -157,7 +207,7 @@ export class Spotify {
             const postData = new URLSearchParams(qs)
             const basicAuth = Buffer.from(`${settings.spotify.api.clientId}:${settings.spotify.api.clientSecret}`).toString("base64")
             const headers = {Authorization: `Basic ${basicAuth}`, "Content-Type": "application/x-www-form-urlencoded"}
-            const reqOptions: AxiosConfig = {
+            const reqOptions: SpotifyRequestOptions = {
                 method: "POST",
                 url: settings.spotify.api.tokenUrl,
                 timeout: settings.oauth.tokenTimeout,
@@ -166,7 +216,7 @@ export class Spotify {
             }
 
             // Post auth data to Spotify.
-            const res = await axiosRequest(reqOptions)
+            const res = await this.makeRequest(reqOptions)
             if (!res) {
                 throw new Error("Invalid token response")
             }
@@ -211,7 +261,7 @@ export class Spotify {
             const postData = new URLSearchParams(qs)
             const basicAuth = Buffer.from(`${settings.spotify.api.clientId}:${settings.spotify.api.clientSecret}`).toString("base64")
             const headers = {Authorization: `Basic ${basicAuth}`, "Content-Type": "application/x-www-form-urlencoded"}
-            const reqOptions: AxiosConfig = {
+            const reqOptions: SpotifyRequestOptions = {
                 method: "POST",
                 url: settings.spotify.api.tokenUrl,
                 timeout: settings.oauth.tokenTimeout,
@@ -220,7 +270,7 @@ export class Spotify {
             }
 
             // Post auth refresh data to Spotify.
-            const res = await axiosRequest(reqOptions)
+            const res = await this.makeRequest(reqOptions)
             if (!res) {
                 throw new Error("Invalid token response")
             }
@@ -298,7 +348,7 @@ export class Spotify {
             tokens = await this.validateTokens(user, tokens)
 
             // Make request to fetch profile.
-            const res = await this.makeRequest(tokens, "me")
+            const res = await this.makeRequest({tokens, path: "me"})
             const profile: SpotifyProfile = {
                 id: res.id,
                 email: res.email,
@@ -345,7 +395,7 @@ export class Spotify {
             // Make request to fetch list of recent tracks, and iterate results
             // to populate the list of matching tracks for the activity timespan.
             // Tracks will be sorted by play date.
-            const res = await this.makeRequest(tokens, `me/player/recently-played?after=${tsFrom}&limit=${settings.spotify.trackLimit}`)
+            const res = await this.makeRequest({tokens, path: `me/player/recently-played?after=${tsFrom}&limit=${settings.spotify.trackLimit}`})
             const items = _.sortBy(res.items || [], "played_at")
 
             // Iterate, transform and populate track list.
