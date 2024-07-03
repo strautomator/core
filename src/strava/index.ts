@@ -62,6 +62,19 @@ export class Strava {
      */
     webhooks = stravaWebhooks
 
+    /**
+     * Helper to check if the Strava API might is currently having an incident based on timeouts.
+     */
+    get incident(): string {
+        const thresholds = settings.strava.api.timeoutThresholds
+        const gatewayTimeouts = api.gatewayTimeouts
+        if (gatewayTimeouts.count >= thresholds.count && dayjs().subtract(thresholds.seconds, "seconds").isBefore(gatewayTimeouts.last)) {
+            const since = dayjs(gatewayTimeouts.first).format("lll")
+            return `API connections are timing out since ${since}`
+        }
+        return null
+    }
+
     // INIT
     // --------------------------------------------------------------------------
 

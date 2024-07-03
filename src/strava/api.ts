@@ -1,7 +1,7 @@
 // Strautomator Core: Strava API
 
 import {StravaCachedResponse, StravaTokens} from "./types"
-import {AxiosConfig, axiosRequest} from "../axios"
+import {AxiosConfig, AxiosErrorCounter, axiosRequest} from "../axios"
 import {AxiosResponse} from "axios"
 import {URLSearchParams} from "url"
 import database from "../database"
@@ -22,6 +22,11 @@ export class StravaAPI {
     static get Instance(): StravaAPI {
         return this._instance || (this._instance = new this())
     }
+
+    /**
+     * Gateway timeout counters.
+     */
+    gatewayTimeouts: AxiosErrorCounter = {count: 0}
 
     /**
      * API limiter module.
@@ -67,6 +72,17 @@ export class StravaAPI {
             // Rate limiter events.
             this.limiter.on("error", (err) => logger.error("Strava.limiter", err))
             this.limiter.on("depleted", () => logger.warn("Strava.limiter", "Rate limited"))
+
+            // Clear gateway timeout counters every few minutes.
+            const counterSeconds = settings.strava.api.timeoutThresholds.seconds
+            setInterval(() => {
+                if (this.gatewayTimeouts.last && dayjs().subtract(counterSeconds, "seconds").isAfter(this.gatewayTimeouts.last)) {
+                    this.gatewayTimeouts.first = null
+                    this.gatewayTimeouts.last = null
+                    this.gatewayTimeouts.count = 0
+                    logger.info("Strava.gatewayTimeouts", `Cleared counter, last timestamp: ${this.gatewayTimeouts.last.toTimeString()}`)
+                }
+            }, counterSeconds * 3 * 1000)
 
             logger.info("Strava.init", `Max concurrent: ${settings.strava.api.maxConcurrent}, per minute: ${settings.strava.api.maxPerMinute}`)
         } catch (ex) {
@@ -300,6 +316,16 @@ export class StravaAPI {
             const status = ex.response?.status || 500
             const accessDenied = token && (status == 401 || status == 403)
 
+            // Update gateway timeout counters if it's a timeout.
+            if (ex.isTimeout) {
+                const now = new Date()
+                this.gatewayTimeouts.count++
+                this.gatewayTimeouts.last = now
+                if (!this.gatewayTimeouts.first) {
+                    this.gatewayTimeouts.first = now
+                }
+            }
+
             // Has a error response data? Add it to the exception message.
             if (ex.response?.data) {
                 let details: any
@@ -458,7 +484,15 @@ export class StravaAPI {
      */
     extractTokenError = (ex: any): void => {
         try {
-            if (ex.response && ex.response.data && ex.response.data.errors) {
+            if (ex.isTimeout) {
+                const now = new Date()
+                this.gatewayTimeouts.count++
+                this.gatewayTimeouts.last = now
+                if (!this.gatewayTimeouts.first) {
+                    this.gatewayTimeouts.first = now
+                }
+            }
+            if (ex.response?.data?.errors) {
                 ex.friendlyMessage = _.map(ex.response.data.errors, (e) => Object.values(e).join(" - ")).join(" | ")
             }
         } catch (ex) {
