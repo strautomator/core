@@ -125,6 +125,12 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
                     arrDetails.push(subDetails.join("\n"))
                 }
 
+                // If the activity started at 1 past midnight, there's a high chance it has the start time hidden.
+                if (dayjs(activity.dateStart).format("hh:mm:ss") == "00:00:01") {
+                    arrDetails.push("Note: activity started at 00:00:01, it might have a hidden start time.")
+                }
+
+                // Add link to the description?
                 if (dbCalendar.options.linkInDescription) {
                     arrDetails.push(activityLink)
                 }
