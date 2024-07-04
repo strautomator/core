@@ -41,6 +41,8 @@ export interface StravaActivity {
     hideStatHeartRate?: boolean
     /** Hide power on the activity stats? */
     hideStatPower?: boolean
+    /** Hide start time? */
+    hideStatStartTime?: boolean
     /** Activity done on a trainer machine? */
     trainer?: boolean
     /** Start date and time, local time. */

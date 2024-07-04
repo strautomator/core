@@ -149,10 +149,11 @@ export const recipeActionList = [
     {value: "privateNote", text: "Set private notes"},
     {value: "mapStyle", text: "Set map style"},
     {value: "hideHome", text: "Mute (activity hidden on home feeds)"},
-    {value: "hideStatPace", text: "Hide stats - pace"},
-    {value: "hideStatSpeed", text: "Hide stats - speed"},
-    {value: "hideStatCalories", text: "Hide stats - calories"},
-    {value: "hideStatHeartRate", text: "Hide stats - heart rate"},
-    {value: "hideStatPower", text: "Hide stats - power"},
+    {value: "hideStatPace", text: "Hide pace"},
+    {value: "hideStatSpeed", text: "Hide speed"},
+    {value: "hideStatCalories", text: "Hide calories"},
+    {value: "hideStatHeartRate", text: "Hide heart rate"},
+    {value: "hideStatPower", text: "Hide power"},
+    {value: "hideStatStartTime", text: "Hide start time"},
     {value: "webhook", text: "Webhook"}
 ]

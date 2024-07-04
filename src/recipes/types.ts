@@ -147,6 +147,7 @@ export enum RecipeActionType {
     HideStatCalories = "hideStatCalories",
     HideStatHeartRate = "hideStatHeartRate",
     HideStatPower = "hideStatPower",
+    HideStatStartTime = "hideStatStartTime",
     SportType = "sportType",
     WorkoutType = "workoutType",
     PrivateNote = "privateNote",

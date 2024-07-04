@@ -128,6 +128,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
             else if (sv.type == "calories") activity.hideStatCalories = sv.visibility == "only_me"
             else if (sv.type == "heart_rate") activity.hideStatHeartRate = sv.visibility == "only_me"
             else if (sv.type == "power") activity.hideStatPower = sv.visibility == "only_me"
+            else if (sv.type == "start_time") activity.hideStatStartTime = sv.visibility == "only_me"
         }
     }
 
