@@ -33,6 +33,10 @@ export class CalendarBuilder {
         const now = dayjs().utc()
         const startTime = now.unix()
         const optionsLog = _.map(_.toPairs(dbCalendar.options), (r) => r.join("=")).join(" | ")
+        const diffLog = []
+        let diffCountActivities = dbCalendar.activityCount || 0
+        let diffCountClubEvent = dbCalendar.clubEventCount || 0
+        let diffCountGearEvent = dbCalendar.gearEventCount || 0
 
         try {
             let calName = settings.calendar.name
@@ -69,14 +73,26 @@ export class CalendarBuilder {
             if (dbCalendar.options.activities) {
                 dbCalendar.activityCount = 0
                 await buildActivities(user, dbCalendar, cal, cachedEvents)
+                diffCountActivities = dbCalendar.activityCount - diffCountActivities
+                if (diffCountActivities != 0) {
+                    diffLog.push(`activities ${diffCountActivities > 0 ? "+" : ""}${diffCountActivities}`)
+                }
             }
             if (dbCalendar.options.clubs) {
                 dbCalendar.clubEventCount = 0
                 await buildClubs(user, dbCalendar, cal, cachedEvents)
+                diffCountClubEvent = dbCalendar.clubEventCount - diffCountClubEvent
+                if (diffCountClubEvent) {
+                    diffLog.push(`club events ${diffCountClubEvent > 0 ? "+" : ""}${diffCountClubEvent}`)
+                }
             }
             if (dbCalendar.options.gear) {
                 dbCalendar.gearEventCount = 0
                 await buildGearWear(user, dbCalendar, cal)
+                diffCountGearEvent = dbCalendar.gearEventCount - diffCountGearEvent
+                if (diffCountGearEvent != 0) {
+                    diffLog.push(`gear history ${diffCountGearEvent > 0 ? "+" : ""}${diffCountGearEvent}`)
+                }
             }
 
             const outputIcs = cal.toString()
@@ -89,10 +105,10 @@ export class CalendarBuilder {
             const removed = _.remove(cal.events(), (e) => minCacheDate.isBefore(dayjs(e.start() as any))).length
             const uncachedCount = partialFirstBuild ? eventCount : removed + (dbCalendar.gearEventCount || 0)
 
-            const countLog = `${eventCount} total events, ${uncachedCount} won't be cached`
+            const countLog = `Total ${eventCount}, ${uncachedCount} not cached`
             const sizeLog = `${size.toFixed(2)} MB`
             const timeLog = `Generated in ${duration} seconds`
-            logger.info("Calendar.build", logHelper.user(user), optionsLog, countLog, sizeLog, timeLog)
+            logger.info("Calendar.build", logHelper.user(user), optionsLog, countLog, `Diff: ${diffLog.length > 0 ? diffLog.join(", ") : "nothing added"}`, sizeLog, timeLog)
 
             // If this is the first partial build, we don't want to cache anything yet.
             // Otherwise, exclude GearWear events, compact the cached events and map them
