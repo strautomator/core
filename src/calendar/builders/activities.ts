@@ -4,7 +4,7 @@ import {ICalCalendar, ICalEventData} from "ical-generator"
 import {CalendarCachedEvents, CalendarData} from "./../types"
 import {UserCalendarTemplate, UserData} from "../../users/types"
 import {recipePropertyList} from "../../recipes/lists"
-import {StravaActivity, StravaBaseSport, StravaRideType, StravaRunType} from "../../strava/types"
+import {StravaBaseSport, StravaRideType, StravaRunType} from "../../strava/types"
 import {transformActivityFields} from "../../strava/utils"
 import maps from "../../maps"
 import strava from "../../strava"
@@ -34,7 +34,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
     const fieldSettings = settings.calendar.activityFields
     const calendarTemplate: UserCalendarTemplate = user.preferences?.calendarTemplate || {}
 
-    let activities: StravaActivity[]
+    let after = dateFrom
     try {
         logger.debug("Calendar.buildActivities", logHelper.user(user), optionsLog, "Preparing to build")
 
@@ -60,20 +60,29 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
                 }
             }
 
-            activities = await strava.activities.getActivities(user, {after: lastCachedDate, before: dateTo})
-        } else {
-            activities = await strava.activities.getActivities(user, {after: dateFrom, before: dateTo})
+            after = lastCachedDate
         }
+
+        // Filter activities based on calendar options.
+        const sourceActivities = await strava.activities.getActivities(user, {after: after, before: dateTo})
+        const activities = sourceActivities.filter((a) => {
+            if (dbCalendar.options.sportTypes?.length > 0 && !dbCalendar.options.sportTypes.includes(a.sportType)) return false
+            if (dbCalendar.options.excludeCommutes && a.commute) return false
+            return true
+        })
+
+        logger.info("Calendar.buildActivities", logHelper.user(user), optionsLog, `Will process ${activities.length} out of ${sourceActivities.length} source activities`)
 
         // Iterate and process live activities.
         for (let activity of activities) {
-            if (partialFirstBuild && dbCalendar.activityCount >= settings.calendar.partialFirstBuild) continue
-            if (dbCalendar.options.sportTypes?.length > 0 && !dbCalendar.options.sportTypes.includes(activity.sportType)) continue
-            if (dbCalendar.options.excludeCommutes && activity.commute) continue
+            if (partialFirstBuild && dbCalendar.activityCount >= settings.calendar.partialFirstBuild) {
+                logger.info("Calendar.buildActivities", logHelper.user(user), `Reached ${settings.calendar.partialFirstBuild} activities on the initial partial build, stop here`)
+                break
+            }
 
             // For whatever reason Strava on rare occasions Strava returned no dates on activities, so double check it here.
             if (!activity.dateStart || !activity.dateEnd) {
-                logger.info("Calendar.generate", logHelper.user(user), `${logHelper.activity(activity)} has no start or end date`)
+                logger.info("Calendar.buildActivities", logHelper.user(user), `${logHelper.activity(activity)} has no start or end date`)
                 continue
             }
 

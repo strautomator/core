@@ -45,9 +45,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
             }
 
             const addClubEvent = async (clubEvent: StravaClubEvent) => {
-                if (partialFirstBuild && dbCalendar.clubEventCount > settings.calendar.partialFirstBuild) return
-                if (dbCalendar.options.sportTypes && !dbCalendar.options.sportTypes.includes(clubEvent.type)) return
-                if (dbCalendar.options.excludeNotJoined && !clubEvent.joined) return
+                if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) return
 
                 // Check if event has future dates.
                 const hasFutureDate = clubEvent.dates.find((d) => today.isBefore(d))
@@ -153,7 +151,13 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                 }
             }
 
-            const clubEvents = await strava.clubs.getClubEvents(user, club.id)
+            // Filter club events based on calendar options.
+            const sourceClubEvents = await strava.clubs.getClubEvents(user, club.id)
+            const clubEvents = sourceClubEvents.filter((e) => {
+                if (dbCalendar.options.sportTypes?.length > 0 && !dbCalendar.options.sportTypes.includes(e.type)) return false
+                if (dbCalendar.options.excludeNotJoined && !e.joined) return false
+                return true
+            })
 
             // Iterate user's club events to get their details and push to the calendar.
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
