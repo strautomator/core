@@ -68,7 +68,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
         // Iterate and process live activities.
         for (let activity of activities) {
             if (partialFirstBuild && dbCalendar.activityCount >= settings.calendar.partialFirstBuild) continue
-            if (dbCalendar.options.sportTypes && !dbCalendar.options.sportTypes.includes(activity.sportType)) continue
+            if (dbCalendar.options.sportTypes?.length > 0 && !dbCalendar.options.sportTypes.includes(activity.sportType)) continue
             if (dbCalendar.options.excludeCommutes && activity.commute) continue
 
             // For whatever reason Strava on rare occasions Strava returned no dates on activities, so double check it here.
