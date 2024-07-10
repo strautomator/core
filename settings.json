@@ -105,7 +105,7 @@
         "eventDurationMinutes": 15,
         // A calendar will be deleted if no client requests it after 4 days.
         "maxCacheDuration": 345600,
-        // Calendar events will be taken from the cache if they're older than 30 days by default.
+        // Calendar events will cached if they're older than 30 days, by default.
         "minAgeForCachingDays": 30
     },
     "cookie": {
