@@ -4,7 +4,7 @@ import {ICalCalendar, ICalEventData} from "ical-generator"
 import {CalendarCachedEvents, CalendarData} from "./../types"
 import {UserCalendarTemplate, UserData} from "../../users/types"
 import {recipePropertyList} from "../../recipes/lists"
-import {StravaBaseSport, StravaRideType, StravaRunType} from "../../strava/types"
+import {StravaActivity, StravaBaseSport, StravaRideType, StravaRunType} from "../../strava/types"
 import {transformActivityFields} from "../../strava/utils"
 import maps from "../../maps"
 import strava from "../../strava"
@@ -32,7 +32,8 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
     const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
     const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
     const fieldSettings = settings.calendar.activityFields
-    const calendarTemplate: UserCalendarTemplate = user.preferences?.calendarTemplate || {}
+    const calendarTemplate: UserCalendarTemplate = user.isPro ? user.preferences?.calendarTemplate || {} : {}
+    const needsDescription = !partialFirstBuild && calendarTemplate.eventDetails?.includes("${description}")
 
     let after = dateFrom
     try {
@@ -63,27 +64,19 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
             after = lastCachedDate
         }
 
-        // Filter activities based on calendar options.
-        const sourceActivities = await strava.activities.getActivities(user, {after: after, before: dateTo})
-        const activities = sourceActivities.filter((a) => {
-            if (dbCalendar.options.sportTypes?.length > 0 && !dbCalendar.options.sportTypes.includes(a.sportType)) return false
-            if (dbCalendar.options.excludeCommutes && a.commute) return false
-            return true
-        })
-
-        logger.info("Calendar.buildActivities", logHelper.user(user), optionsLog, `Will process ${activities.length} out of ${sourceActivities.length} source activities`)
-
-        // Iterate and process live activities.
-        for (let activity of activities) {
+        // Helper to process and add an activity to the calendar.
+        const addActivity = async (activity: StravaActivity) => {
             if (partialFirstBuild && dbCalendar.activityCount >= settings.calendar.partialFirstBuild) {
-                logger.info("Calendar.buildActivities", logHelper.user(user), `Reached ${settings.calendar.partialFirstBuild} activities on the initial partial build, stop here`)
-                break
+                if (dbCalendar.activityCount == settings.calendar.partialFirstBuild) {
+                    logger.info("Calendar.buildActivities", logHelper.user(user), `Reached ${settings.calendar.partialFirstBuild} activities on the initial partial build, stop here`)
+                }
+                return
             }
 
-            // For whatever reason Strava on rare occasions Strava returned no dates on activities, so double check it here.
-            if (!activity.dateStart || !activity.dateEnd) {
-                logger.info("Calendar.buildActivities", logHelper.user(user), `${logHelper.activity(activity)} has no start or end date`)
-                continue
+            // Not ideal but... if the activity description should be added to the calendar, then we need a separate
+            // call to get the full activity details, as the activity listing endpoint won't return it.
+            if (needsDescription) {
+                activity = await strava.activities.getActivity(user, activity.id)
             }
 
             // Activity event metadata.
@@ -193,6 +186,23 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
             } catch (innerEx) {
                 logger.error("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), innerEx)
             }
+        }
+
+        // Filter activities based on calendar options.
+        const sourceActivities = await strava.activities.getActivities(user, {after: after, before: dateTo})
+        const activities = sourceActivities.filter((a) => {
+            if (!a.dateStart || !a.dateEnd) return false
+            if (dbCalendar.options.sportTypes?.length > 0 && !dbCalendar.options.sportTypes.includes(a.sportType)) return false
+            if (dbCalendar.options.excludeCommutes && a.commute) return false
+            return true
+        })
+
+        logger.info("Calendar.buildActivities", logHelper.user(user), optionsLog, `Will process ${activities.length} out of ${sourceActivities.length} activities${needsDescription ? ", fetching individually (needs description)" : ""}`)
+
+        // Iterate user's club events to get their details and push to the calendar.
+        const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
+        while (activities.length) {
+            await Promise.allSettled(activities.splice(0, batchSize).map(addActivity))
         }
     } catch (ex) {
         logger.error("Calendar.buildActivities", logHelper.user(user), optionsLog, ex)
