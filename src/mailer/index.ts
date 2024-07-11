@@ -93,7 +93,11 @@ export class Mailer {
      */
     send = async (options: EmailSendingOptions): Promise<void> => {
         if (settings.mailer.disabled) {
-            logger.warn("Mailer.init", "Disabled on settings, will not send", options.to, options.subject)
+            logger.warn("Mailer.send", "Disabled on settings, will not send", options.to, options.subject)
+            return
+        }
+        if (!this.client) {
+            logger.warn("Mailer.send", "SMTP client was not initialized properly", options.to, options.subject)
             return
         }
 
