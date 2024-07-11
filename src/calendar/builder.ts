@@ -100,8 +100,12 @@ export class CalendarBuilder {
             const size = outputIcs.length / 1000 / 1024
             const eventCount = (dbCalendar.activityCount || 0) + (dbCalendar.clubEventCount || 0) + (dbCalendar.gearEventCount || 0)
 
-            // Remove recent events from the cached config output.
-            const minCacheDate = now.subtract(settings.calendar.minAgeForCachingDays, "days")
+            // Remove recent events from the cached config output, as they are more likely to be edited by the user
+            // and hence have their details updated. If user is using a custom template with activity descriptions,
+            // use a lower value for the minimum age for caching.
+            const needsDescription = user.isPro && user.preferences?.calendarTemplate?.eventDetails?.includes("${description}")
+            const cacheDays = needsDescription ? Math.round(settings.calendar.minAgeForCachingDays / 2) : settings.calendar.minAgeForCachingDays
+            const minCacheDate = now.subtract(cacheDays, "days")
             const removed = _.remove(cal.events(), (e) => minCacheDate.isBefore(dayjs(e.start() as any))).length
             const uncachedCount = partialFirstBuild ? eventCount : removed + (dbCalendar.gearEventCount || 0)
 
