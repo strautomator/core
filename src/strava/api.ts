@@ -77,10 +77,10 @@ export class StravaAPI {
             const counterSeconds = settings.strava.api.timeoutThresholds.seconds
             setInterval(() => {
                 if (this.gatewayTimeouts.last && dayjs().subtract(counterSeconds, "seconds").isAfter(this.gatewayTimeouts.last)) {
+                    logger.info("Strava.gatewayTimeouts", `Cleared counter, last timestamp: ${this.gatewayTimeouts.last.toTimeString()}`)
                     this.gatewayTimeouts.first = null
                     this.gatewayTimeouts.last = null
                     this.gatewayTimeouts.count = 0
-                    logger.info("Strava.gatewayTimeouts", `Cleared counter, last timestamp: ${this.gatewayTimeouts.last.toTimeString()}`)
                 }
             }, counterSeconds * 3 * 1000)
 
