@@ -106,11 +106,11 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         // Pre-process activity data and append suffixes to values before processing.
         transformActivityFields(user, activityWithSuffix)
 
-        // City tag(s) set? Trigger a reverse geocode for the specified coordinates, at the moment PRO users only.
+        // City tag(s) set? Trigger a reverse geocode for the specified coordinates.
         const hasCityStart = processedValue.includes("${cityStart}")
         const hasCityMid = processedValue.includes("${cityMid}")
         const hasCityEnd = processedValue.includes("${cityEnd}")
-        if (user.isPro && (hasCityStart || hasCityMid || hasCityEnd)) {
+        if (hasCityStart || hasCityMid || hasCityEnd) {
             const cityObj = {cityStart: "", cityMid: "", cityEnd: ""}
 
             if (activity.hasLocation) {
