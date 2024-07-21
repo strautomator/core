@@ -72,7 +72,7 @@ export class OpenAI implements AiProvider {
                 method: "POST",
                 headers: {},
                 data: {
-                    model: user.isPro && Math.random() < 0.5 ? "gpt-4o" : "gpt-3.5-turbo",
+                    model: user.isPro && Math.random() < 0.5 ? "gpt-4o" : "gpt-4o-mini",
                     max_tokens: maxTokens,
                     messages: [
                         {role: "system", content: "You are an assistant to create creative names and descriptions for Strava activities."},
@@ -81,7 +81,7 @@ export class OpenAI implements AiProvider {
                 },
                 onRetry: (opt) => {
                     if (user.isPro) {
-                        opt.data.model = "gpt-3.5-turbo"
+                        opt.data.model = "gpt-4o-mini"
                         return true
                     }
                     return false
