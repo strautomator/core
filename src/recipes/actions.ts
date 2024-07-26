@@ -322,7 +322,7 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
             }
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.", true)
+        processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.")
     } catch (ex) {
         logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
@@ -354,7 +354,7 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
             return processedValue
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.", true)
+        processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.")
     } catch (ex) {
         logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
@@ -386,7 +386,7 @@ export const addWahooTags = async (user: UserData, activity: StravaActivity, rec
             return processedValue
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, wahooActivity, "wahoo.", true)
+        processedValue = jaul.data.replaceTags(processedValue, wahooActivity, "wahoo.")
     } catch (ex) {
         logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
