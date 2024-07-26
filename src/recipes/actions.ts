@@ -210,19 +210,29 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         else if (action.type == RecipeActionType.PrependDescription) {
             if (!activity.description) activity.description = processedValue
             else activity.description = `${processedValue} ${activity.description}`
-
             activity.updatedFields.push("description")
         }
         // Append to the activity description?
         else if (action.type == RecipeActionType.AppendDescription) {
             if (!activity.description) activity.description = processedValue
             else activity.description = `${activity.description} ${processedValue}`
-
             activity.updatedFields.push("description")
         }
-        // Set the activity's private note?
+        // Set the activity private note?
         else if (action.type == RecipeActionType.PrivateNote) {
             activity.privateNote = processedValue
+            activity.updatedFields.push("privateNote")
+        }
+        // Prepend to the activity private note?
+        else if (action.type == RecipeActionType.PrependPrivateNote) {
+            if (!activity.privateNote) activity.privateNote = processedValue
+            else activity.privateNote = `${processedValue} ${activity.privateNote}`
+            activity.updatedFields.push("privateNote")
+        }
+        // Append to the activity private note?
+        else if (action.type == RecipeActionType.AppendPrivateNote) {
+            if (!activity.privateNote) activity.privateNote = processedValue
+            else activity.privateNote = `${activity.privateNote} ${processedValue}`
             activity.updatedFields.push("privateNote")
         }
 
