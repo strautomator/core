@@ -33,7 +33,8 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
     const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
     const fieldSettings = settings.calendar.activityFields
     const calendarTemplate: UserCalendarTemplate = user.isPro ? user.preferences?.calendarTemplate || {} : {}
-    const needsDescription = !partialFirstBuild && calendarTemplate.eventDetails?.includes("${description}")
+    const customEventDetails = calendarTemplate.eventDetails || ""
+    const needsFullData = !partialFirstBuild && (customEventDetails.includes("${description}") || customEventDetails.includes("${calories}"))
 
     let after = dateFrom
     try {
@@ -75,7 +76,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
 
             // Not ideal but... if the activity description should be added to the calendar, then we need a separate
             // call to get the full activity details, as the activity listing endpoint won't return it.
-            if (needsDescription) {
+            if (needsFullData) {
                 activity = await strava.activities.getActivity(user, activity.id)
             }
 
@@ -197,7 +198,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
             return true
         })
 
-        logger.info("Calendar.buildActivities", logHelper.user(user), optionsLog, `Will process ${activities.length} out of ${sourceActivities.length} activities${needsDescription ? ", fetching individually (needs description)" : ""}`)
+        logger.info("Calendar.buildActivities", logHelper.user(user), optionsLog, `Will process ${activities.length} out of ${sourceActivities.length} activities${needsFullData ? ", fetching individually (needs full data)" : ""}`)
 
         // Iterate user's club events to get their details and push to the calendar.
         const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
