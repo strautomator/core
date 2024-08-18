@@ -222,7 +222,13 @@ export class GearWear {
                 logger.info("GearWear.getByUser", logHelper.user(user), `${result.length} total GearWear configurations`)
             }
 
-            result.forEach((config) => this.sortComponents(config))
+            // Set gear name and sort components.
+            result.forEach((config) => {
+                const gear = user.profile.bikes?.find((b) => b.id == config.id) || user.profile.shoes?.find((s) => s.id == config.id)
+                config.name = gear?.name || "RETIRED GEAR"
+                this.sortComponents(config)
+            })
+
             return result
         } catch (ex) {
             logger.error("GearWear.getByUser", logHelper.user(user), ex)

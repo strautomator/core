@@ -20,6 +20,8 @@ export interface GearWearDbState {
 export interface GearWearConfig {
     /** User's gear ID (same as Strava's gear). */
     id: string
+    /** Gear name (taken directly from the Strava gear). */
+    name?: string
     /** User owner of the configuration. */
     userId: string
     /** Tracking information. */
