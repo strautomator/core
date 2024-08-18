@@ -111,10 +111,14 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     // Has location data?
     activity.hasLocation = activity.locationStart?.length > 0 || activity.locationEnd?.length > 0
 
-    // Get country from start and end locations.
+    // Get country from start, mid and end locations.
     if (activity.locationStart?.length > 0) {
         activity.countryStart = maps.getCountryCode(activity.locationStart)
         activity.countryFlagStart = maps.getCountryFlag(activity.locationStart)
+    }
+    if (activity.locationMid?.length > 0) {
+        activity.countryMid = maps.getCountryCode(activity.locationMid)
+        activity.countryFlagMid = maps.getCountryFlag(activity.locationMid)
     }
     if (activity.locationEnd?.length > 0) {
         activity.countryEnd = maps.getCountryCode(activity.locationEnd)

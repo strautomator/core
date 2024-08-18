@@ -87,6 +87,10 @@ export interface StravaActivity {
     countryStart?: string
     /** Country (flag) where the activity has started. */
     countryFlagStart?: string
+    /** Country (name) at the mid point of the activity. */
+    countryMid?: string
+    /** Country (flag) at the mid point of the activity. */
+    countryFlagMid?: string
     /** Country (name) where the activity has ended. */
     countryEnd?: string
     /** Country (flag) where the activity has ended. */
