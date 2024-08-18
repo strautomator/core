@@ -10,6 +10,7 @@ import {AxiosConfig, axiosRequest} from "../axios"
 import recipeStats from "./stats"
 import ai from "../ai"
 import fitparser from "../fitparser"
+import gearwear from "../gearwear"
 import maps from "../maps"
 import musixmatch from "../musixmatch"
 import notifications from "../notifications"
@@ -945,6 +946,44 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         } else if (action.type == RecipeActionType.GenerateDescription) {
             activity.description = result
             activity.updatedFields.push("description")
+        }
+
+        return true
+    } catch (ex) {
+        failedAction(user, activity, recipe, action, ex)
+        return false
+    }
+}
+
+/**
+ * Enable or disable a GearWear component.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param action The action details.
+ */
+export const toggleGearComponent = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+    try {
+        const arrGear: string[] = action.value.split(":")
+        const gearId = arrGear.shift()
+
+        // Make sure the specified gear is still valid.
+        const gear = await gearwear.getById(gearId)
+        if (!gear) {
+            throw new Error(`Gear ${gearId} not found`)
+        }
+
+        // Make sure the component exists.
+        const componentName = arrGear.join(":")
+        const component = gear.components.find((c) => c.name == componentName)
+        if (!component) {
+            throw new Error(`Gear ${gearId}, component ${componentName} not found`)
+        }
+
+        // Enable or disable only if the status has changed.
+        const disable = action.type == RecipeActionType.DisableGearComponent
+        if (component.disabled != disable) {
+            await gearwear.upsert(user, gear)
         }
 
         return true

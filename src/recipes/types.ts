@@ -153,6 +153,8 @@ export enum RecipeActionType {
     PrivateNote = "privateNote",
     PrependPrivateNote = "prependPrivateNote",
     AppendPrivateNote = "appendPrivateNote",
+    EnableGearComponent = "enableGearComponent",
+    DisableGearComponent = "disableGearComponent",
     MapStyle = "mapStyle",
     Webhook = "webhook"
 }

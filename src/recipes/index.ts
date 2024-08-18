@@ -471,6 +471,11 @@ export class Recipes {
             return actions.aiGenerateAction(user, activity, recipe, action)
         }
 
+        // Enable or disable GearWear component?
+        else if (action.type == RecipeActionType.EnableGearComponent || action.type == RecipeActionType.DisableGearComponent) {
+            return actions.toggleGearComponent(user, activity, recipe, action)
+        }
+
         // Dispatch activity to webhook?
         else if (action.type == RecipeActionType.Webhook) {
             return actions.webhookAction(user, activity, recipe, action)
