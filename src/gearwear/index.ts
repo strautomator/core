@@ -296,15 +296,16 @@ export class GearWear {
      * Create or update a GearWear config.
      * @param user The user owner of the gear.
      * @param gearwear The GearWear configuration.
+     * @param toggledComponents Optional in case of toggling components, which components were toggled? User for logging only.
      */
-    upsert = async (user: UserData, gearwear: GearWearConfig): Promise<GearWearConfig> => {
+    upsert = async (user: UserData, gearwear: GearWearConfig, toggledComponents?: GearWearComponent[]): Promise<GearWearConfig> => {
         const doc = database.doc("gearwear", gearwear.id)
         let action: string
 
         try {
             const docSnapshot = await doc.get()
             const exists = docSnapshot.exists
-            action = gearwear.disabled ? "Disabled" : exists ? "Created" : "Updated"
+            action = gearwear.disabled ? "Disabled" : exists ? "Updated" : "Created"
 
             const bike = _.find(user.profile.bikes, {id: gearwear.id})
             const shoe = _.find(user.profile.shoes, {id: gearwear.id})
@@ -321,12 +322,12 @@ export class GearWear {
             // Validate configuration before proceeding.
             this.validate(user, gearwear)
 
-            // Get names of the components registered.
-            const componentNames = _.map(gearwear.components, "name").join(", ")
-
-            // Save user to the database.
+            // Save to the database.
             await database.merge("gearwear", gearwear, doc)
-            logger.info("GearWear.upsert", logHelper.user(user), `${action} ${gearwear.id} - ${gear.name}`, `Components: ${componentNames}`)
+
+            // Details to be logged depending on toggled components.
+            const logDetails = toggledComponents ? toggledComponents.map((c) => `${c.name}: ${c.disabled ? "disabled" : "enabled"}`) : `Components: ${_.map(gearwear.components, "name").join(", ")}`
+            logger.info("GearWear.upsert", logHelper.user(user), `${action} ${gearwear.id} - ${gear.name}`, logDetails)
 
             return gearwear
         } catch (ex) {

@@ -960,35 +960,54 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
  * @param user The activity owner.
  * @param activity The Strava activity details.
  * @param recipe The source recipe.
- * @param action The action details.
+ * @param actions The GearWear component actions.
  */
-export const toggleGearComponent = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+export const toggleGearComponents = async (user: UserData, activity: StravaActivity, recipe: RecipeData, actions: RecipeAction[]): Promise<boolean> => {
     try {
-        const arrGear: string[] = action.value.split(":")
-        const gearId = arrGear.shift()
+        const updatedGear = {}
 
-        // Make sure the specified gear is still valid.
-        const gear = await gearwear.getById(gearId)
-        if (!gear) {
-            throw new Error(`Gear ${gearId} not found`)
+        // Iterate over each GearWear based action, and keep the updated stuff in the updatedGear object
+        // so we can updated everything at once later on (to avoid possible repeated updates to the same GearWear).
+        for (let action of actions) {
+            try {
+                const arrGear: string[] = action.value.split(":")
+                const gearId = arrGear.shift()
+
+                // Make sure the specified gear is still valid.
+                const gear = updatedGear[gearId] || (await gearwear.getById(gearId))
+                if (!gear) {
+                    throw new Error(`Gear ${gearId} not found`)
+                }
+
+                // Make sure the component exists.
+                const componentName = arrGear.join(":").trim()
+                const component = gear.components?.find((c) => c.name.trim().toLowerCase() == componentName.toLowerCase())
+                if (!component) {
+                    throw new Error(`Gear ${gearId}, component "${componentName}" not found`)
+                }
+
+                // Enable or disable only if the status has changed.
+                const disable = action.type == RecipeActionType.DisableGearComponent
+                if (component.disabled != disable) {
+                    if (!updatedGear[gearId]) {
+                        updatedGear[gearId] = {config: gear, toggledComponents: []}
+                    }
+                    component.disabled = disable
+                    updatedGear[gearId].toggledComponents.push(component)
+                }
+            } catch (actionEx) {
+                failedAction(user, activity, recipe, action, actionEx)
+            }
         }
 
-        // Make sure the component exists.
-        const componentName = arrGear.join(":")
-        const component = gear.components.find((c) => c.name == componentName)
-        if (!component) {
-            throw new Error(`Gear ${gearId}, component ${componentName} not found`)
-        }
-
-        // Enable or disable only if the status has changed.
-        const disable = action.type == RecipeActionType.DisableGearComponent
-        if (component.disabled != disable) {
-            await gearwear.upsert(user, gear)
+        // Updated the relevant gear components in one go.
+        for (let gearId in updatedGear) {
+            await gearwear.upsert(user, updatedGear[gearId].config, updatedGear[gearId].toggledComponents)
         }
 
         return true
     } catch (ex) {
-        failedAction(user, activity, recipe, action, ex)
+        logger.error("Recipes.actions.toggleGearComponents", logHelper.user(user), logHelper.activity(activity), ex)
         return false
     }
 }

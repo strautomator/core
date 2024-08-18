@@ -316,12 +316,16 @@ export class Recipes {
 
         // Sort recipe actions, webhook should come last.
         const sortedActions = _.sortBy(recipe.actions, ["type"])
+        const gearwearActions = _.remove(recipe.actions, (a) => a.type.includes("GearComponent"))
 
-        // Iterate and execute actions.
+        // Execute activity actions first.
         let success: boolean = true
         for (let action of sortedActions) {
             success = success && (await this.processAction(user, activity, recipe, action))
         }
+
+        // Then execute GearWear component actions, processing all GearWear at once before updating them in the database.
+        success = success && (await actions.toggleGearComponents(user, activity, recipe, gearwearActions))
 
         // Update recipe stats.
         await recipeStats.updateStats(user, recipe, activity, success)
@@ -469,11 +473,6 @@ export class Recipes {
         // Auto generated activity names?
         else if (action.type == RecipeActionType.GenerateName || action.type == RecipeActionType.GenerateDescription || action.type == RecipeActionType.GenerateInsights) {
             return actions.aiGenerateAction(user, activity, recipe, action)
-        }
-
-        // Enable or disable GearWear component?
-        else if (action.type == RecipeActionType.EnableGearComponent || action.type == RecipeActionType.DisableGearComponent) {
-            return actions.toggleGearComponent(user, activity, recipe, action)
         }
 
         // Dispatch activity to webhook?
