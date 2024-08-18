@@ -124,19 +124,19 @@ export class Weather {
                 logger.error("Weather.getActivityWeather", userLog, activityLog, innerEx)
             }
 
-            // Weather in the middle of the activity is restricted to PRO users and activities longer than 3 hours.
-            if (user.isPro && activity.totalTime > 10800) {
+            // Weather in the middle of the activity is restricted to PRO users and activities longer than 2 hours.
+            if (user.isPro && activity.totalTime > 7200) {
                 try {
                     const seconds = activity.totalTime / 2
                     const dateMid = dayjs(activity.dateStart).add(seconds, "seconds").utcOffset(activity.utcStartOffset)
-                    weather.mid = await this.getLocationWeather({user: user, coordinates: activity.locationStart, dDate: dateMid, aqi: aqi, provider: weather.start?.provider || provider || null})
+                    weather.mid = await this.getLocationWeather({user: user, coordinates: activity.locationMid || activity.locationStart, dDate: dateMid, aqi: aqi, provider: weather.start?.provider || provider || null})
                 } catch (innerEx) {
                     logger.error("Weather.getActivityWeather", userLog, activityLog, "Mid location", innerEx)
                 }
             }
 
             // Make sure weather result is valid.
-            if (!weather.start && !weather.end) {
+            if (!weather.start && !weather.mid && !weather.end) {
                 throw new Error("Failed to get the activity weather")
             }
 
