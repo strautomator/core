@@ -10,6 +10,7 @@ import openai from "../openai"
 import _ from "lodash"
 import cache from "bitecache"
 import logger from "anyhow"
+import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
@@ -224,9 +225,13 @@ export class AI {
 
             // Generation options.
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
+            let aDate = dayjs(options.activity.dateStart)
+            if (options.activity.utcStartOffset) {
+                aDate = aDate.add(options.activity.utcStartOffset, "minutes")
+            }
             options.maxTokens = settings.ai.maxTokens.short
             options.prepend = [`Please generate a single name for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
-            options.append = [`Answer the generated name only, with no additional text.`]
+            options.append = [`Answer the generated name only, with no additional text. The activity started at ${aDate.format("HH:MM")}.`]
 
             // Generate and cache the result.
             const result = await this.activityPrompt(user, options)
