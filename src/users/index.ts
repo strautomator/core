@@ -134,7 +134,7 @@ export class Users {
             logger.warn("Users.onStravaMissingPermission", logHelper.user(user), permission, url || "No URL provided")
 
             // Notify user about missing read or write permissions.
-            if (permission == "read" && [settings.oauth.tokenFailuresDisable, settings.oauth.tokenFailuresAlert].includes(user.reauth)) {
+            if (permission == "read" && [settings.oauth.tokenFailuresDisable, settings.oauth.tokenFailuresAlert].includes(user.authFailures)) {
                 body = "You haven't authorized Strautomator to read your full Strava details (missing read permissions). Please login again."
             } else if (permission == "write" && !user.writeSuspended) {
                 body = "You haven't authorized Strautomator to make changes to your Strava account (missing write permissions). Please login again."
@@ -221,26 +221,26 @@ export class Users {
                 return
             }
 
-            // Set the auth failed date (if not set yet) and increment the reauth counter.
-            // The reauth counter is reset after 14 days by default, so sporadic failures should not cause problems.
+            // Set the auth failed date (if not set yet) and increment the auth failures counter.
+            // The auth failure counter is reset after 14 days by default, so sporadic failures should not cause problems.
             if (!user.dateAuthFailed) {
                 user.dateAuthFailed = now.toDate()
             } else if (user.dateAuthFailed < now.subtract(settings.oauth.reauthResetDays, "days").toDate()) {
-                logger.warn("Users.onStravaTokenFailure", logHelper.user(user), "Reauth flags reset")
+                logger.warn("Users.onStravaTokenFailure", logHelper.user(user), "Auth failures reset")
                 user.dateAuthFailed = now.toDate()
-                user.reauth = 0
+                user.authFailures = 0
             }
-            if (!user.reauth) {
-                user.reauth = 0
+            if (!user.authFailures) {
+                user.authFailures = 0
             }
-            user.reauth++
+            user.authFailures++
 
-            const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, reauth: user.reauth, dateAuthFailed: user.dateAuthFailed}
-            logger.warn("Strava.onStravaTokenFailure", logHelper.user(user), `Reauth count: ${user.reauth}`)
+            const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, authFailures: user.authFailures, dateAuthFailed: user.dateAuthFailed}
+            logger.warn("Strava.onStravaTokenFailure", logHelper.user(user), `Auth failures: ${user.authFailures}`)
 
             // User has an email address? Contact asking to connect to Strautomator again,
             // and if it fails too many times, disable the user.
-            if (user.email && [settings.oauth.tokenFailuresAlert, settings.oauth.tokenFailuresDisable].includes(user.reauth)) {
+            if (user.email && [settings.oauth.tokenFailuresAlert, settings.oauth.tokenFailuresDisable].includes(user.authFailures)) {
                 const data = {
                     userId: user.id,
                     userName: user.profile.firstName || user.displayName
@@ -258,7 +258,7 @@ export class Users {
             await this.update(updatedUser)
 
             // Reached the failures limit? Suspend the user.
-            if (user.reauth >= settings.oauth.tokenFailuresDisable) {
+            if (user.authFailures >= settings.oauth.tokenFailuresDisable) {
                 logger.warn("Users.onStravaTokenFailure", logHelper.user(user), "User suspended due to too many token failures")
                 await this.suspend(user, "Too many Strava token failures")
             }
@@ -655,7 +655,7 @@ export class Users {
                 // Remove the auth flags.
                 if (existingData.dateAuthFailed) {
                     userData.dateAuthFailed = FieldValue.delete() as any
-                    userData.reauth = FieldValue.delete() as any
+                    userData.authFailures = FieldValue.delete() as any
                 }
 
                 // Update recipe count.

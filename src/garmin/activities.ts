@@ -108,7 +108,12 @@ export class GarminActivities {
             return null
         } catch (ex) {
             logger.error("Garmin.getActivityFile", logHelper.user(user), logHelper.garminPing(ping), ex)
-            throw ex
+
+            if (ex?.response?.status == 410) {
+                throw new Error("Activity file does not exist anymore")
+            } else {
+                throw ex
+            }
         }
     }
 }

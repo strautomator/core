@@ -82,8 +82,8 @@ export interface UserData {
     suspended?: boolean
     /** Temporarily disable writing to Strava? */
     writeSuspended?: boolean
-    /** Reauthentication count. */
-    reauth?: number
+    /** Authentication error count. */
+    authFailures?: number
 }
 
 /**
