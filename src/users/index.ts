@@ -68,6 +68,7 @@ export class Users {
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
         eventManager.on("Strava.tokenFailure", this.onStravaTokenFailure)
         eventManager.on("Spotify.tokenFailure", this.onSpotifyTokenFailure)
+        eventManager.on("Garmin.activityFailure", this.onGarminActivityFailure)
     }
 
     /**
@@ -301,6 +302,31 @@ export class Users {
             await this.update(updatedUser)
         } catch (ex) {
             logger.error("Users.onSpotifyTokenFailure", ex)
+        }
+    }
+
+    /**
+     * When a Garmin API request fails, check if we should disable further requests and notify the user.
+     * @param user The user.
+     */
+    private onGarminActivityFailure = async (user: UserData): Promise<void> => {
+        const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, garminFailures: user.garminFailures ? user.garminFailures + 1 : 1}
+
+        // Too many repeated failures? Notify the user to reauthorize Garmin.
+        try {
+            if (user.garminFailures == settings.oauth.tokenFailuresDisable) {
+                const nOptions: Partial<AuthNotification> = {
+                    title: "Garmin reauthentication needed",
+                    body: "The service failed to connect to your Garmin data too many times, please login again.",
+                    href: "/account?garmin=link",
+                    auth: true
+                }
+                await notifications.createNotification(user, nOptions)
+            }
+
+            await this.update(updatedUser)
+        } catch (ex) {
+            logger.error("Users.onGarminActivityFailure", ex)
         }
     }
 

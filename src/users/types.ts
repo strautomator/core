@@ -46,6 +46,8 @@ export interface UserData {
     garmin?: GarminProfile
     /** Garmin authentication state. */
     garminAuthState?: string
+    /** Garmin repeated failures count. */
+    garminFailures?: number
     /** Linked Spotify account. */
     spotify?: SpotifyProfile
     /** Spotify authentication state. */

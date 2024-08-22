@@ -312,7 +312,7 @@
         "reauthResetDays": 14,
         // Alert users after 3 token failures.
         "tokenFailuresAlert": 3,
-        // Suspend users after 10 token failures.
+        // Suspend further API requests if user reaches 10 failures on that specific API.
         "tokenFailuresDisable": 10,
         // Token exchange requests times out in 8 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).

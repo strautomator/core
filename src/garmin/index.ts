@@ -57,6 +57,7 @@ export class Garmin {
         try {
             await api.init()
 
+            eventManager.on("Garmin.activityFailure", this.onActivityFailure)
             eventManager.on("Users.delete", this.onUserDelete)
 
             cache.setup("garmin", settings.garmin.cacheDuration)
@@ -64,6 +65,22 @@ export class Garmin {
         } catch (ex) {
             logger.error("Garmin.init", ex)
             throw ex
+        }
+    }
+
+    /**
+     * Deregister the user's Garmin profile if it keeps failing to fetch activities.
+     * @param user The user.
+     * @param fitActivity Last Garmin activity details.
+     */
+    private onActivityFailure = async (user: UserData): Promise<void> => {
+        try {
+            if (user.garminFailures == settings.oauth.tokenFailuresDisable) {
+                logger.warn("Garmin.onActivityFailure", logHelper.user(user), "Will remove the Garmin profile due to too many activity failures")
+                await garminProfiles.deleteProfile(user)
+            }
+        } catch (ex) {
+            logger.error("Garmin.onActivityFailure", ex)
         }
     }
 

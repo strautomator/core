@@ -98,7 +98,7 @@ export class GarminProfiles {
             }
 
             // Delete profile from cache and database.
-            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, garmin: FieldValue.delete() as any, garminAuthState: FieldValue.delete() as any}
+            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, garmin: FieldValue.delete() as any, garminAuthState: FieldValue.delete() as any, garminFailures: FieldValue.delete() as any}
             cache.del("garmin", cacheId)
             await users.update(data)
 

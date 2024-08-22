@@ -1,10 +1,13 @@
 // Strautomator Core: Garmin Activities
 
+import {FieldValue} from "@google-cloud/firestore"
 import {GarminPingActivityFile} from "./types"
 import {FitFileActivity} from "../fitparser/types"
 import {UserData} from "../users/types"
-import fitparser from "../fitparser"
 import api from "./api"
+import eventManager from "../eventmanager"
+import fitparser from "../fitparser"
+import users from "../users"
 import _ from "lodash"
 import logger from "anyhow"
 import dayjs from "../dayjs"
@@ -47,6 +50,12 @@ export class GarminActivities {
                 if (rawData) {
                     try {
                         await fitparser.parse(user, garminActivity, rawData)
+
+                        // Reset the Garmin failures counter, if there's one.
+                        if (user.garminFailures && user.garminFailures > 0) {
+                            delete user.garminFailures
+                            await users.update({id: user.id, displayName: user.displayName, garminFailures: FieldValue.delete() as any})
+                        }
                     } catch (innerEx) {
                         logger.error("Garmin.processActivity", logHelper.user(user), logHelper.fitFileActivity(garminActivity), "Failed to parse fit file", innerEx)
                     }
@@ -54,6 +63,7 @@ export class GarminActivities {
             }
         } catch (ex) {
             logger.error("Garmin.processActivity", logHelper.user(user), logHelper.garminPing(ping), ex)
+            eventManager.emit("Garmin.activityFailure", user)
         } finally {
             await fitparser.saveProcessedActivity(user, "garmin", garminActivity)
         }
