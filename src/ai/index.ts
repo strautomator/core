@@ -62,12 +62,14 @@ export class AI {
             const verb = sportType.includes("ride") ? "rode" : sportType.includes("run") ? "ran" : "did"
 
             // Add relative effort context.
-            if (activity.relativeEffort > 600) {
-                arrPrompt.push("That was one of the hardest workouts I've ever done.")
-            } else if (activity.relativeEffort > 300) {
-                arrPrompt.push("The workout felt pretty hard.")
-            } else if (activity.relativeEffort < 40) {
-                arrPrompt.push("The workout was very easy.")
+            if (activity.relativeEffort && activity.relativeEffort > 5) {
+                if (activity.relativeEffort > 600) {
+                    arrPrompt.push("That was one of the hardest workouts I've ever done.")
+                } else if (activity.relativeEffort > 300) {
+                    arrPrompt.push("The workout felt pretty hard.")
+                } else if (activity.relativeEffort < 40) {
+                    arrPrompt.push("The workout was very easy.")
+                }
             }
 
             // Only add distance if moving time was also set.
