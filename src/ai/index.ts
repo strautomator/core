@@ -232,8 +232,8 @@ export class AI {
                 aDate = aDate.add(options.activity.utcStartOffset, "minutes")
             }
             options.maxTokens = settings.ai.maxTokens.short
-            options.prepend = [`Please generate a single name for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
-            options.append = [`Answer the generated name only, with no additional text. The activity started at ${aDate.format("HH:MM")}.`]
+            options.prepend = [`Please generate a single name for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}. The activity started at ${aDate.format("HH:MM")}.`]
+            options.append = [`Answer the generated name only, with no additional text or Markdown formatting.`]
 
             // Generate and cache the result.
             const result = await this.activityPrompt(user, options)
