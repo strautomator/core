@@ -91,7 +91,7 @@ export class Spotify {
         if (this.rateLimitedUntil > now) {
             const diff = this.rateLimitedUntil - now
             logger.warn("Spotify.makeRequest", reqOptions.method, reqOptions.url || reqOptions.path, `Rate limited, will wait ${diff} seconds before proceeding`)
-            await jaul.io.sleep(diff * 1001)
+            await jaul.io.sleep(diff * 1050)
         }
 
         // Dispatch the request now.
@@ -105,13 +105,13 @@ export class Spotify {
             // Rate limited? Try again later.
             if (status == 429 && headers["retry-after"]) {
                 const seconds = parseInt(headers["retry-after"])
-                logger.error("Spotify.makeRequest", reqOptions.method, reqOptions.url || reqOptions.path, `Rate limited, will try again in around ${seconds} seconds`)
+                logger.error("Spotify.makeRequest", reqOptions.method, reqOptions.url || reqOptions.path, `Rate limited, will try again in around ${seconds}s`)
 
                 if (this.rateLimitedUntil <= now) {
                     this.rateLimitedUntil = now + seconds
                 }
 
-                await jaul.io.sleep(seconds * 1001)
+                await jaul.io.sleep(seconds * 1050)
                 try {
                     const res = await axiosRequest(options)
                     return res ? res.data || res : null
