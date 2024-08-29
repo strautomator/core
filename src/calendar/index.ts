@@ -49,14 +49,57 @@ export class Calendar {
 
             logger.info("Calendar.init", `Cache durations: Free ${durationFree}, PRO ${durationPro}`)
 
-            eventManager.on("Strava.deleteActivity", this.onDeleteActivity)
+            eventManager.on("Strava.createActivity", this.onCreateActivity)
             eventManager.on("Strava.processActivity", this.onProcessActivity)
+            eventManager.on("Strava.deleteActivity", this.onDeleteActivity)
             eventManager.on("Users.delete", this.deleteForUser)
             eventManager.on("Users.setUrlToken", this.deleteForUser)
             eventManager.on("Users.setCalendarTemplate", this.deleteForUser)
         } catch (ex) {
             logger.error("Calendar.init", ex)
             throw ex
+        }
+    }
+
+    /**
+     * PRO users will have their calendars marked as "pending update" as soon as a new activity is created.
+     * @param user The user.
+     * @param activityId The Strava activity ID.
+     * @param processedActivity Optional processed activity (if an automation was triggered).
+     */
+    private onCreateActivity = async (user: UserData, activityId: string): Promise<void> => {
+        if (!user.isPro) return
+
+        const activityLog = `Activity ${activityId}`
+
+        try {
+            const calendars = await this.getByUser(user, {activities: true})
+            if (calendars.length > 0) {
+                calendars.forEach(async (cal) => (cal.pendingUpdate ? false : await database.merge("calendars", {id: cal.id, pendingUpdate: true})))
+                logger.info("Calendar.onCreateActivity", logHelper.user(user), activityLog, `${calendars.length} calendars pending update`)
+            }
+        } catch (ex) {
+            logger.error("Calendar.onCreateActivity", logHelper.user(user), activityLog, ex)
+        }
+    }
+
+    /**
+     * A small percentage of processed activities will also trigger a calendar refresh, except for batch processed ones.
+     * @param user The user.
+     * @param activity The Strava activity.
+     */
+    private onProcessActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
+        if (activity.batch) return
+        if (Math.random() < 0.6) return
+
+        try {
+            const calendars = await this.getByUser(user, {activities: true})
+            if (calendars.length > 0) {
+                calendars.forEach(async (cal) => (cal.pendingUpdate ? false : await database.merge("calendars", {id: cal.id, pendingUpdate: true})))
+                logger.info("Calendar.onProcessActivity", logHelper.user(user), logHelper.activity(activity), `${calendars.length} calendars pending update`)
+            }
+        } catch (ex) {
+            logger.error("Calendar.onProcessActivity", logHelper.user(user), logHelper.activity(activity), ex)
         }
     }
 
@@ -107,28 +150,7 @@ export class Calendar {
                 }
             }
         } catch (ex) {
-            logger.error("Strava.onDeleteActivity", logHelper.user(user), activityLog, ex)
-        }
-    }
-
-    /**
-     * PRO users will have their calendars marked for update as soon as a new activity is processed.
-     * @param user The user.
-     * @param activityId The Strava activity.
-     */
-    private onProcessActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
-        try {
-            if (!user.isPro || activity.batch) {
-                return
-            }
-
-            const calendars = await this.getByUser(user, {activities: true})
-            if (calendars.length > 0) {
-                calendars.forEach(async (cal) => await database.merge("calendars", {id: cal.id, pendingUpdate: true}))
-                logger.info("Strava.onProcessActivity", logHelper.user(user), logHelper.activity(activity), `${calendars.length} calendars set as pending update`)
-            }
-        } catch (ex) {
-            logger.error("Strava.onProcessActivity", logHelper.user(user), logHelper.activity(activity), ex)
+            logger.error("Calendar.onDeleteActivity", logHelper.user(user), activityLog, ex)
         }
     }
 
