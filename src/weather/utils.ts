@@ -7,6 +7,7 @@ import Bottleneck from "bottleneck"
 import _ from "lodash"
 import logger from "anyhow"
 import dayjs from "../dayjs"
+const settings = require("setmeup").settings
 
 /**
  * Helper to get an API rate limiter (bottleneck) for the specified provider.
@@ -265,6 +266,13 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         } else {
             summary.summary = `${tempSummary}, ${translation(extraData.iconText, preferences)}`
             if (isWindy) summary.summary += `, ${translation("Windy", preferences)}`
+        }
+
+        // Replace empty strings (if defined via settings).
+        for (let key of Object.keys(summary)) {
+            if (summary[key] === "" || summary[key] === null) {
+                summary[key] = settings.weather.emptyString
+            }
         }
 
         // Final trimmed summary should be always Capital cased.
