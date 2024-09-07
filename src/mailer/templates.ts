@@ -115,24 +115,6 @@ export const EmailTemplates = {
             "</p>"
     },
 
-    // User has subscribed to the PRO plan.
-    UpgradedToPro: {
-        subject: "Welcome to Strautomator PRO!",
-        body:
-            "<p>" +
-            "Hi ${userName}!<br><br>" +
-            "Thanks for your support! Your Strautomator subscription was activated and you now have a PRO account.<br>" +
-            "If you have any feature suggestions or critical feedback, I'm all ears, just get back to me by replying to this email. 🙂" +
-            "</p>" +
-            "<p>" +
-            "For your reference, this is your subscription ID: ${subscriptionId}" +
-            "</p>" +
-            "<p>" +
-            "Kind regards,<br><br>" +
-            "Igor Ramadas" +
-            "</p>"
-    },
-
     // User was suspended.
     UserSuspended: {
         subject: "Your account was suspended",

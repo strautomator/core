@@ -102,112 +102,14 @@ export class PayPalSubscriptions {
             }
 
             // Plan is enabled only if matching the current product ID , frequency and price.
-            const frequencyPrice = settings.plans.pro.price[billingPlan.frequency]
-            const matchingPrice = frequencyPrice && frequencyPrice.toFixed(2) == billingPlan.price.toFixed(2)
             const matchingProduct = api.currentProduct && api.currentProduct.id == billingPlan.productId
-            if (matchingPrice && matchingProduct) {
+            if (matchingProduct) {
                 billingPlan.enabled = true
             }
 
             return billingPlan
         } catch (ex) {
             logger.error("PayPal.getBillingPlan", `Could not fetch billing plans for product ${id}`)
-            throw ex
-        }
-    }
-
-    /**
-     * Create a new billing plan on PayPal. Returns the created billing plan object.
-     * @param productId The corresponding product ID.
-     * @param currency The billing currency (EUR, USD, GBP).
-     * @param frequency The billing frequency (by default, month or year).
-     */
-    createBillingPlan = async (productId: string, currency: string, frequency: string): Promise<PayPalBillingPlan> => {
-        const price = settings.plans.pro.price[frequency].toFixed(2)
-        const planName = `${settings.paypal.billingPlan.name} (${price} ${currency} / ${frequency})`
-
-        try {
-            const options = {
-                url: "billing/plans",
-                method: "POST",
-                returnRepresentation: true,
-                data: {
-                    product_id: productId,
-                    name: planName,
-                    description: settings.paypal.billingPlan.description,
-                    status: "ACTIVE",
-                    billing_cycles: [
-                        {
-                            frequency: {
-                                interval_unit: frequency.toUpperCase(),
-                                interval_count: 1
-                            },
-                            tenure_type: "REGULAR",
-                            sequence: 1,
-                            total_cycles: 0,
-                            pricing_scheme: {
-                                fixed_price: {
-                                    value: price,
-                                    currency_code: currency
-                                }
-                            }
-                        }
-                    ],
-                    payment_preferences: {
-                        auto_bill_outstanding: true,
-                        payment_failure_threshold: 0
-                    }
-                }
-            }
-
-            const res = await api.makeRequest(options)
-
-            // Make sure response has a valid ID.
-            if (!res || !res.id) {
-                throw new Error("Invalid response from PayPal")
-            }
-
-            logger.info("PayPal.createBillingPlan", `Product ${productId}, ${price} ${currency} / ${frequency}`, `New billing plan ID: ${res.id}`)
-
-            // Return the created plan.
-            return {
-                id: res.id,
-                productId: productId,
-                name: res.name,
-                dateCreated: dayjs.utc(res.create_time).toDate(),
-                price: price,
-                currency: currency,
-                frequency: frequency,
-                enabled: true
-            }
-        } catch (ex) {
-            logger.error("PayPal.createBillingPlan", `Could not create billing plans for product ${productId}, ${price} ${currency} / ${frequency}`)
-            throw ex
-        }
-    }
-
-    /**
-     * Deactivate the specified billing plan.
-     * @param id The corresponding billing plan ID.
-     * @param frequency The billing frequency (by default, month or year).
-     */
-    deactivateBillingPlan = async (id: string): Promise<void> => {
-        try {
-            const options = {
-                url: `billing/plans/${id}/deactivate`,
-                method: "POST"
-            }
-
-            await api.makeRequest(options)
-
-            // Remove plan from cache of current billing plans.
-            if (api.currentBillingPlans) {
-                delete api.currentBillingPlans[id]
-            }
-
-            logger.info("PayPal.deactivateBillingPlan", id, "Deactivated")
-        } catch (ex) {
-            logger.error("PayPal.deactivateBillingPlan", id, ex)
             throw ex
         }
     }
@@ -264,11 +166,7 @@ export class PayPalSubscriptions {
 
                 // A payment was already made? Fill last payment details.
                 if (res.billing_info.last_payment) {
-                    subscription.lastPayment = {
-                        amount: parseFloat(res.billing_info.last_payment.amount.value),
-                        currency: res.billing_info.last_payment.amount.currency_code,
-                        date: dayjs.utc(res.billing_info.last_payment.time).toDate()
-                    }
+                    subscription.dateLastPayment = dayjs.utc(res.billing_info.last_payment.time).toDate()
                 }
             }
 

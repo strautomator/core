@@ -9,12 +9,12 @@ export interface BaseSubscription {
     /** User ID (set after subscription is created). */
     userId: string
     /** Subscription source. */
-    source: "amex" | "friend" | "github" | "paypal" | "n26" | "revolut" | "traderepublic"
+    source: "amex" | "friend" | "github" | "paddle" | "paypal" | "n26" | "revolut" | "traderepublic"
     /** Subscription status. */
     status: "APPROVAL_PENDING" | "APPROVED" | "ACTIVE" | "SUSPENDED" | "CANCELLED" | "EXPIRED"
-    /** Subscription currency. */
+    /** Payment currency. */
     currency?: string
-    /** Price paid. */
+    /** Payment price. */
     price?: number
     /** Subscription frequency. */
     frequency?: "monthly" | "yearly" | "lifetime"
@@ -22,6 +22,10 @@ export interface BaseSubscription {
     dateCreated?: Date
     /** Date of last update of the subscription. */
     dateUpdated?: Date
+    /** Last payment summary. */
+    dateLastPayment?: Date
+    /** Next payment summary. */
+    dateNextPayment?: Date
     /** Subscription end date. */
     dateExpiry?: Date
     /** Flag used to decide if subscription has pending updates to be saved to the database. */

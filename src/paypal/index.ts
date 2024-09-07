@@ -62,13 +62,6 @@ export class PayPal {
     }
 
     /**
-     * Shortcut to api.legacyBillingPlans.
-     */
-    get legacyBillingPlans(): {[id: string]: PayPalBillingPlan} {
-        return api.legacyBillingPlans
-    }
-
-    /**
      * Shortcut to api.webhookUrl.
      */
     get webhookUrl(): string {
@@ -130,7 +123,7 @@ export class PayPal {
                 }
             }
         } catch (ex) {
-            logger.warn("PayPal.onUserDelete", logHelper.user(user), "Failed to cancel user subscriptions")
+            logger.warn("PayPal.onUserDelete", logHelper.user(user), "Failed to cancel user subscription")
         }
     }
 
@@ -165,19 +158,10 @@ export class PayPal {
      * Authenticate with PayPal and load product details and billing plans from the live API.
      */
     loadLive = async (): Promise<void> => {
-        const loader = async () => {
-            await this.setupProduct()
-            await this.setupBillingPlans()
-            if (!settings.paypal.cacheDisabled) {
-                await database.appState.set("paypal", {product: api.currentProduct, billingPlans: this.currentBillingPlans})
-            }
-        }
-
         try {
             const authenticated = await api.authenticate()
 
             if (authenticated) {
-                await loader()
             } else if (api.auth.expiresAt <= dayjs().unix()) {
                 throw new Error("PayPal authentication failed")
             }
@@ -187,94 +171,9 @@ export class PayPal {
             try {
                 await jaul.io.sleep(settings.axios.retryInterval)
                 await api.authenticate()
-                await loader()
             } catch (innerEx) {
                 logger.error("PayPal.loadLive", innerEx)
             }
-        }
-    }
-
-    /**
-     * Create the Strautomator product on PayPal, if one does not exist yet.
-     */
-    setupProduct = async (): Promise<void> => {
-        try {
-            const productName = settings.paypal.billingPlan.productName
-            const products = await paypalProducts.getProducts()
-            let existingProduct
-
-            // Try matching a product with the same name as the one defined on the settings.
-            if (products.length > 0) {
-                existingProduct = _.find(products, {name: productName})
-
-                // Product found? Get its ID.
-                if (existingProduct) {
-                    api.currentProduct = existingProduct
-                    logger.info("PayPal.setupProduct", `Product ID: ${existingProduct.id}`)
-                    return
-                }
-
-                logger.warn("PayPal.setupProduct", `Found no products matching name: ${productName}`, "Will create a new one")
-            }
-
-            // Create new product if none was found before.
-            api.currentProduct = await paypalProducts.createProduct()
-        } catch (ex) {
-            logger.error("PayPal.setupProduct", ex)
-            throw ex
-        }
-    }
-
-    /**
-     * Get and / or create the necessary billing plans on PayPal. Only the last created billing
-     * plans will be marked as enabled (one for each currency + frequency).
-     */
-    setupBillingPlans = async () => {
-        try {
-            const billingPlans = await paypalSubscriptions.getBillingPlans()
-            const frequencies = _.intersection(Object.keys(settings.plans.pro.price), ["day", "week", "month", "year"])
-
-            api.currentBillingPlans = {}
-            api.legacyBillingPlans = {}
-
-            // Match existing plans by looking for the currency / frequency and price.
-            for (let plan of billingPlans) {
-                const price = settings.plans.pro.price[plan.frequency]
-
-                if (plan.price == price && settings.paypal.billingPlan.currency.includes(plan.currency)) {
-                    api.currentBillingPlans[plan.id] = plan
-                } else {
-                    api.legacyBillingPlans[plan.id] = plan
-                }
-            }
-
-            // Make sure we have a billing plan for each currency / frequency defined on the settings.
-            // Create new plans as needed.
-            for (let frequency of frequencies) {
-                const price = settings.plans.pro.price[frequency]
-
-                for (let currency of settings.paypal.billingPlan.currency) {
-                    const existing = _.find(api.currentBillingPlans, {price: price, currency: currency, frequency: frequency})
-
-                    if (!existing) {
-                        const newPlan = await paypalSubscriptions.createBillingPlan(api.currentProduct.id, currency, frequency)
-                        api.currentBillingPlans[newPlan.id] = newPlan
-
-                        logger.info("PayPal.setupBillingPlans", newPlan.id, newPlan.name, "New!")
-                    } else {
-                        logger.info("PayPal.setupBillingPlans", existing.id, existing.name)
-                    }
-                }
-            }
-
-            // Has legacy plans?
-            const legacy = Object.keys(api.legacyBillingPlans)
-            if (legacy.length > 0) {
-                logger.info("PayPal.setupBillingPlans", `Legacy plans: ${legacy.join(", ")}`)
-            }
-        } catch (ex) {
-            logger.error("PayPal.setupBillingPlans", ex)
-            throw ex
         }
     }
 }

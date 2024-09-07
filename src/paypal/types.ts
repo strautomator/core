@@ -52,8 +52,6 @@ export interface PayPalProduct {
 export interface PayPalSubscription extends BaseSubscription {
     /** Email of the subscriber. */
     email?: string
-    /** Date of next payment (on the PayPal side). */
-    dateNextPayment?: Date
     /** URL for the user to proceed and approve the subscription. */
     approvalUrl?: string
     /** Billing plan summary. */
@@ -63,13 +61,10 @@ export interface PayPalSubscription extends BaseSubscription {
         /** Product ID. */
         productId?: string
     }
-    /** Last payment summary. */
+    /** Last payment data. */
     lastPayment?: {
-        /** Payment amount. */
         amount: number
-        /** Payment currency. */
         currency: string
-        /** Payment date. */
         date: Date
     }
 }

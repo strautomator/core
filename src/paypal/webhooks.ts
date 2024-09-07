@@ -176,12 +176,8 @@ export class PayPalWebhooks {
                 // Payment data present on subscription details?
                 if (subscription.status == "ACTIVE") {
                     if (res.amount?.total) {
-                        subscription.lastPayment = {
-                            amount: res.amount.total,
-                            currency: res.amount.currency,
-                            date: dateUpdated
-                        }
-                        updatedSubscription.lastPayment = subscription.lastPayment
+                        subscription.dateLastPayment = dateUpdated
+                        updatedSubscription.dateLastPayment = dateUpdated
                     }
                     if (res.billing_info?.next_billing_time) {
                         subscription.dateNextPayment = dayjs.utc(res.billing_info.next_billing_time).toDate()

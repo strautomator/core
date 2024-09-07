@@ -1,5 +1,6 @@
 // Strautomator Core: Log Helper
 
+import {EventEntity} from "@paddle/paddle-node-sdk"
 import {FitFileActivity} from "./fitparser/types"
 import {GarminPingActivityFile} from "./garmin/types"
 import {GitHubSubscription} from "./github/types"
@@ -38,6 +39,15 @@ export const garminPing = (lPing: GarminPingActivityFile): string => {
 export const fitFileActivity = (lActivity: FitFileActivity): string => {
     if (!lActivity) return "Activity unknown"
     return `FIT file activity ${lActivity.id} - ${lActivity.name}`
+}
+
+/**
+ * Helper to get the Paddle webhook event details for logging.
+ * @param lEvent Paddle webhook event.
+ */
+export const paddleEvent = (lEvent: EventEntity): string => {
+    if (!paddleEvent) return "Activity unknown"
+    return `${lEvent.eventType}: ${lEvent.eventId} - ${lEvent.data.id}`
 }
 
 /**

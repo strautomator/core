@@ -58,6 +58,10 @@ export interface UserData {
     wahooAuthState?: string
     /** Custom URL token used to get the calendar. */
     urlToken?: string
+    /** User's customer ID at Paddle. */
+    paddleId?: string
+    /** Last transaction ID at Paddle. */
+    paddleTransactionId?: string
     /** User's subscription ID. */
     subscriptionId?: string
     /** Last login date (UTC). */

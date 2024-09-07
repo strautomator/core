@@ -171,7 +171,7 @@ export class Maps {
             }
 
             // Error returned by the Maps API?
-            if (res.data && res.data.error_message) {
+            if (res.data?.error_message) {
                 throw new Error(res.data.error_message)
             }
 
@@ -293,7 +293,7 @@ export class Maps {
 
             // Fetch geocode result from Google.
             const res = await this.googleClient.reverseGeocode(geoRequest)
-            if (res.data && res.data.results && res.data.results.length > 0) {
+            if (res?.data?.results?.length > 0) {
                 const components = res.data.results[0].address_components
 
                 // Get relevant address components.
@@ -342,7 +342,7 @@ export class Maps {
 
             // Fetch geocode result from LocationIQ.
             const res: any = await this.lociqLimiter.schedule({id: coordinates.join("-")}, () => axiosRequest(options))
-            if (res.data && res.data.address) {
+            if (res?.data?.address) {
                 const addressInfo = res.data.address
                 const address: MapAddress = {}
 
