@@ -16,6 +16,7 @@ import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 import polyline = require("@mapbox/polyline")
+const settings = require("setmeup").settings
 
 /**
  * Check if the passed text / string based condition is valid.
@@ -382,23 +383,30 @@ export const checkWeather = async (user: UserData, activity: StravaActivity, con
             continue
         }
 
+        let isEmpty = _.isString(settings.weather.emptyString) && settings.weather.emptyString === summary[weatherProp]
         let weatherPropValue = summary[weatherProp]?.toString().replace(/[^\d.-]/g, "") || ""
-        if (!isNaN(weatherPropValue)) {
+
+        // Ignore empty values, if a default emptyString was set.
+        if (!isEmpty && !isNaN(weatherPropValue)) {
             weatherPropValue = parseFloat(weatherPropValue)
         }
 
         if (op == RecipeOperator.Equal) {
             valid = valid || weatherPropValue == value
-        } else if (op == RecipeOperator.Approximate) {
-            const diff = value * 0.03
-            valid = value <= weatherPropValue + diff && value >= weatherPropValue - diff
-        } else if (op == RecipeOperator.Like) {
-            const diff = value * 0.1
-            valid = value <= weatherPropValue + diff && value >= weatherPropValue - diff
-        } else if (op == RecipeOperator.LessThan) {
-            valid = valid || weatherPropValue < value
-        } else if (op == RecipeOperator.GreaterThan) {
-            valid = valid || weatherPropValue > value
+        } else if (op == RecipeOperator.NotEqual) {
+            valid = valid || weatherPropValue != value
+        } else if (!isEmpty) {
+            if (op == RecipeOperator.Approximate) {
+                const diff = value * 0.03
+                valid = value <= weatherPropValue + diff && value >= weatherPropValue - diff
+            } else if (op == RecipeOperator.Like) {
+                const diff = value * 0.1
+                valid = value <= weatherPropValue + diff && value >= weatherPropValue - diff
+            } else if (op == RecipeOperator.LessThan) {
+                valid = valid || weatherPropValue < value
+            } else if (op == RecipeOperator.GreaterThan) {
+                valid = valid || weatherPropValue > value
+            }
         }
     }
 
