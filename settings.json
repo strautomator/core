@@ -327,6 +327,23 @@
             "maxPerMinute": 120
         }
     },
+    "paddle": {
+        "api": {
+            "environment": "production",
+            // Default page size is the max of 200.
+            "pageSize": 200,
+            // The API key and client token must be set on the settings.secret.json file,
+            // or via the SMU_paddle_api_key and SMU_paddle_api_clientToken env variables.
+            "key": null,
+            "clientToken": null
+        },
+        // The price and webhook IDs must be taken from Paddle and set on the settings.secret.json file,
+        // or via the SMU_paddle_priceId and SMU_paddle_webhookId env variables.
+        "priceId": null,
+        "webhookId": null,
+        // If you wish to accept Paddle webhook events from any IP, set the ips to null.
+        "ips": ["34.232.58.13", "34.195.105.136", "34.237.3.244", "35.155.119.135", "52.11.166.252", "34.212.5.7"]
+    },
     "paypal": {
         "api": {
             "mode": "live",
@@ -361,7 +378,7 @@
         },
         "billingPlan": {
             // Accept payments in USD, EUR and GBP.
-            "currency": ["USD", "EUR", "GBP"],
+            "currency": ["CHF", "EUR", "USD", "GBP"],
             // Names and descriptions used on PayPal billing plans.
             "name": "Strautomator Pro subscription",
             "productName": "Strautomator Pro account",
@@ -411,13 +428,6 @@
             "linksOn": false,
             // Allow personal records for all sports.
             "recordSports": true,
-            // Subscription prices to get a PRO account.
-            "price": {
-                "year": 7.99,
-                "github": 1.0,
-                // Set the upcoming price increase, or null if there's no upcoming change.
-                "upcoming": null
-            },
             // Use AI and weather parameters on around 99% of "AI generate" recipe actions.
             "generatedNames": {
                 "ai": 99,
@@ -604,6 +614,8 @@
         // When fetching weather, add a buffer of 30 minutes before and 60 after the target date.
         "dateSubtractMinutes": 30,
         "dateAddMinutes": 60,
+        // Add N/A if a specific weather property was not returned by the provider.
+        "emptyString": "N/A",
         // Set the default weather providers.
         "defaultProviders": {
             "free": ["openmeteo", "weatherapi"],
