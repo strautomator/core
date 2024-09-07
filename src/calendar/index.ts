@@ -55,6 +55,7 @@ export class Calendar {
             eventManager.on("Users.delete", this.deleteForUser)
             eventManager.on("Users.setUrlToken", this.deleteForUser)
             eventManager.on("Users.setCalendarTemplate", this.deleteForUser)
+            eventManager.on("Users.switchToFree", this.deleteForUser)
         } catch (ex) {
             logger.error("Calendar.init", ex)
             throw ex
