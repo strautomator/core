@@ -76,7 +76,7 @@ export class PaddleWrapper {
 
             // Load live data if quickStart was not set.
             if (!quickStart) {
-                this.loadLive()
+                await this.loadLive()
             }
 
             // Unsubscribe when user gets deleted.
@@ -117,10 +117,11 @@ export class PaddleWrapper {
                 return
             }
 
-            // Set initial auth, product and billing plans.
+            // Set webhook and cached prices.
             this.webhookSecret = fromCache.webhookSecret
+            this.prices.yearlyPrice = fromCache.yearlyPrice
 
-            logger.info("Paddle.loadFromCache", "Loaded from database")
+            logger.info("Paddle.loadFromCache", "Loaded from the database")
         } catch (ex) {
             logger.error("Paddle.loadFromCache", ex)
         }
@@ -133,11 +134,11 @@ export class PaddleWrapper {
         try {
             const webhookSettings = await this.api.client.notificationSettings.get(settings.paddle.webhookId)
             this.webhookSecret = webhookSettings.endpointSecretKey
-
-            await database.appState.set("paddle", {webhookSecret: webhookSettings.endpointSecretKey})
             await this.prices.getPrices()
 
-            logger.info("Paddle.loadLive", `Current yearly price: ${parseFloat(this.prices.yearlyPrice.unitPrice.amount) / 100}`)
+            await database.appState.set("paddle", {yearlyPrice: JSON.parse(JSON.stringify(this.prices.yearlyPrice)), webhookSecret: webhookSettings.endpointSecretKey})
+
+            logger.info("Paddle.loadLive", `Yearly price: ${parseFloat(this.prices.yearlyPrice.unitPrice.amount) / 100}`)
         } catch (ex) {
             logger.warn("Paddle.loadLive", ex)
         }

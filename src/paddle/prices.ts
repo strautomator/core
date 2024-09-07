@@ -17,16 +17,9 @@ export class PaddlePrices {
     }
 
     /**
-     * Cache of current available prices.
+     * Cache of the yearly price info.
      */
-    currentPrices: {[id: string]: Price} = {}
-
-    /**
-     * Shortcut to get the default yearly price info.
-     */
-    get yearlyPrice(): Price {
-        return this.currentPrices[settings.paddle.priceId]
-    }
+    yearlyPrice: Price
 
     // METHODS
     // --------------------------------------------------------------------------
@@ -48,11 +41,12 @@ export class PaddlePrices {
                 result.push(...page)
             }
 
-            // Set current cache of prices.
-            result.forEach((p) => (this.currentPrices[p.id] = p))
+            // Cache the yearly price.
+            this.yearlyPrice = result.find((p) => p.billingCycle.interval == "year")
 
-            const logDetails = result.map((p) => `${p.name} - ${p.unitPrice.amount} / ${p.billingCycle.frequency} ${p.billingCycle.interval}`).join(", ")
+            const logDetails = result.map((p) => `${p.name} - ${parseFloat(p.unitPrice.amount) / 100} / ${p.billingCycle.frequency} ${p.billingCycle.interval}`).join(", ")
             logger.info("Paddle.getPrices", logDetails)
+
             return result
         } catch (ex) {
             logger.error("Paddle.getPrices", ex)
