@@ -316,7 +316,7 @@ export class GearWear {
                     gearwear.disabled = true
                 }
 
-                throw new Error(`Gear ${gearwear.id} does not exist`)
+                throw new Error(`Gear ${gearwear.id} does not exist`, {cause: {status: 404}})
             }
 
             // Validate configuration before proceeding.
@@ -331,14 +331,15 @@ export class GearWear {
 
             return gearwear
         } catch (ex) {
-            logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, ex)
-
-            if (doc && action == "Disabled") {
+            if (doc && ex.cause?.status == 404) {
                 try {
                     await database.merge("gearwear", gearwear, doc)
+                    logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id} not found, will disable its GearWear`)
                 } catch (innerEx) {
                     logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, innerEx)
                 }
+            } else {
+                logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, ex)
             }
 
             throw ex
