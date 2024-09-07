@@ -63,6 +63,8 @@ import {Maps} from "./maps"
 export const maps: Maps = Maps.Instance
 import {PayPal} from "./paypal"
 export const paypal: PayPal = PayPal.Instance
+import {PaddleWrapper} from "./paddle"
+export const paddle: PaddleWrapper = PaddleWrapper.Instance
 import {Routes} from "./routes"
 export const routes: Routes = Routes.Instance
 import {Strava} from "./strava"
@@ -127,6 +129,7 @@ export * from "./notifications/types"
 export * from "./announcements/types"
 export * from "./github/types"
 export * from "./paypal/types"
+export * from "./paddle/types"
 export * from "./weather/types"
 export * as logHelper from "./loghelper"
 
@@ -230,7 +233,7 @@ export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
     }
 
     // Init individual modules now. Start with the most important modules, than the rest.
-    const coreModules = [github, paypal, strava, users, subscriptions]
+    const coreModules = [github, paypal, paddle, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
     const otherModules = [ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, wahoo, weather]
     await Promise.all(otherModules.map(initModule))
