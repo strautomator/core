@@ -12,18 +12,19 @@ Some main points to know before you start:
 
 ### Required 3rd party services
 
-Mandatory credentials:
+Main integrations:
 
 -   [GCP](https://console.cloud.google.com/apis/credentials)
 -   [Strava API](https://www.strava.com/settings/api)
 
-Optional credentials:
+Additional integrations:
 
 -   Garmin Connect API
 -   GitHub API
 -   LocationIQ API
 -   musixmatch API
 -   OpenAI API
+-   Paddle API
 -   PayPal API
 -   Spotify API
 -   Wahoo Cloud API
