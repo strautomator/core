@@ -100,6 +100,13 @@ export class Users {
                 await this.switchToPro(user, subscription)
             } else if (user.isPro && ["CANCELLED", "EXPIRED", "SUSPENDED"].includes(subscription.status)) {
                 await this.switchToFree(user, subscription)
+            } else if (subscription.source == "paddle" && user.paddleTransactionId) {
+                await this.update({id: user.id, displayName: user.displayName, paddleTransactionId: FieldValue.delete() as any})
+            }
+
+            // Make sure we don't have dangling subscription IDs if user is not PRO for more than 24h.
+            if (!user.isPro && user.subscriptionId && subscription.status == "CANCELLED" && dayjs(subscription.dateLastPayment || subscription.dateUpdated).diff(new Date(), "days") > 1) {
+                await this.update({id: user.id, displayName: user.displayName, subscriptionId: FieldValue.delete() as any})
             }
         } catch (ex) {
             logger.error("Users.onSubscription", `Failed to update user ${subscription.userId} subscription ${subscription.id} details`, ex)
@@ -1138,7 +1145,18 @@ export class Users {
      */
     switchToPro = async (user: UserData, subscription?: BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
-            const proUser: Partial<UserData> = {id: user.id, displayName: user.displayName, subscriptionId: subscription.id, isPro: true}
+            const proUser: Partial<UserData> = {
+                id: user.id,
+                displayName: user.displayName,
+                subscriptionId: subscription.id,
+                isPro: true,
+                preferences: {
+                    linksOn: settings.plans.pro.linksOn
+                }
+            }
+            if (user.paddleTransactionId) {
+                proUser.paddleTransactionId = FieldValue.delete() as any
+            }
 
             // Additional subscription processing for email and transaction ID.
             if (subscription.source == "paddle" || subscription.source == "paypal") {
@@ -1180,7 +1198,15 @@ export class Users {
      */
     switchToFree = async (user: UserData, subscription?: BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
-            const freeUser: Partial<UserData> = {id: user.id, displayName: user.displayName, subscriptionId: FieldValue.delete() as any, isPro: false}
+            const freeUser: Partial<UserData> = {
+                id: user.id,
+                displayName: user.displayName,
+                subscriptionId: FieldValue.delete() as any,
+                isPro: false
+            }
+            if (user.paddleTransactionId) {
+                freeUser.paddleTransactionId = FieldValue.delete() as any
+            }
 
             // Remove PRO only preferences.
             if (user.preferences) {

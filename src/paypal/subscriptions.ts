@@ -1,12 +1,14 @@
 // Strautomator Core: PayPal Subscriptions
 
-import {PayPalBillingPlan, PayPalSubscription} from "./types"
+import {PayPalBillingPlan, PayPalSubscription, PayPalTransaction} from "./types"
+import {UserData} from "../users/types"
 import api from "./api"
 import eventManager from "../eventmanager"
 import subscriptions from "../subscriptions"
 import _ from "lodash"
 import logger from "anyhow"
 import dayjs from "../dayjs"
+import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
 /**
@@ -31,7 +33,7 @@ export class PayPalSubscriptions {
         try {
             const plans: PayPalBillingPlan[] = []
             const options: any = {
-                url: "billing/plans",
+                url: "v1/billing/plans",
                 params: {
                     page: 1,
                     page_size: 20
@@ -78,7 +80,7 @@ export class PayPalSubscriptions {
     getBillingPlan = async (id: string): Promise<PayPalBillingPlan> => {
         try {
             const options: any = {
-                url: `billing/plans/${id}`,
+                url: `v1/billing/plans/${id}`,
                 returnRepresentation: true
             }
 
@@ -124,7 +126,7 @@ export class PayPalSubscriptions {
     getSubscription = async (id: string): Promise<PayPalSubscription> => {
         try {
             const options = {
-                url: `billing/subscriptions/${id}`,
+                url: `v1/billing/subscriptions/${id}`,
                 returnRepresentation: true
             }
 
@@ -164,9 +166,10 @@ export class PayPalSubscriptions {
                     subscription.dateNextPayment = dayjs.utc(res.billing_info.next_billing_time).toDate()
                 }
 
-                // A payment was already made? Fill last payment details.
                 if (res.billing_info.last_payment) {
                     subscription.dateLastPayment = dayjs.utc(res.billing_info.last_payment.time).toDate()
+                    subscription.price = res.billing_info.last_payment.amount.value
+                    subscription.currency = res.billing_info.last_payment.amount.currency_code
                 }
             }
 
@@ -192,7 +195,7 @@ export class PayPalSubscriptions {
     createSubscription = async (billingPlan: PayPalBillingPlan, userId: string): Promise<PayPalSubscription> => {
         try {
             const options = {
-                url: "billing/subscriptions",
+                url: "v1/billing/subscriptions",
                 method: "POST",
                 returnRepresentation: true,
                 data: {
@@ -253,7 +256,7 @@ export class PayPalSubscriptions {
 
         try {
             const options = {
-                url: `billing/subscriptions/${subscription.id}/cancel`,
+                url: `v1/billing/subscriptions/${subscription.id}/cancel`,
                 method: "POST",
                 data: {
                     reason: reason
@@ -270,6 +273,108 @@ export class PayPalSubscriptions {
                 logger.error("PayPal.cancelSubscription", subscription.id, `User ${subscription.userId} - ${subscription.email}`, "Could not cancel")
                 throw ex
             }
+        }
+    }
+
+    // TRANSACTIONS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Return list of transactions for the specified subscription.
+     * @param subscriptionId The subscription ID.
+     * @param fromDate Filter by start date.
+     * @param toDate Filter by end date.
+     */
+    getTransactions = async (subscriptionId: String, fromDate: Date, toDate: Date): Promise<PayPalTransaction[]> => {
+        const dFrom = dayjs(fromDate).startOf("day")
+        const dTo = dayjs(toDate).endOf("day")
+        const dateLog = `${dFrom.format("YYYY-MM-DD")} to ${dTo.format("YYYY-MM-DD")}`
+
+        try {
+            const options: any = {
+                url: `v1/billing/subscriptions/${subscriptionId}/transactions?start_time=${fromDate.toISOString()}&end_time=${toDate.toISOString()}`
+            }
+            const res = await api.makeRequest(options, true)
+
+            // No transactions found? Stop here.
+            if (!res.transactions || res.transactions.length == 0) {
+                logger.info("PayPal.getTransactions", subscriptionId, dateLog, "No transactions found")
+                return []
+            }
+
+            const result: PayPalTransaction[] = res.transactions.map((t) => {
+                return {
+                    id: t.id,
+                    amount: t.amount_with_breakdown.gross_amount.value,
+                    currency: t.amount_with_breakdown.gross_amount.currency_code,
+                    date: dayjs(t.time).toDate(),
+                    subscriptionId: subscriptionId,
+                    email: t.payer_email,
+                    status: t.status
+                }
+            })
+
+            logger.info("PayPal.getTransactions", subscriptionId, dateLog, `Got ${result.length} transactions`)
+            return result
+        } catch (ex) {
+            logger.error("PayPal.getTransactions", subscriptionId, dateLog, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Refund (if possible) and cancel the specified subscription, and return the refunded amount as string
+     * @param user The user data.
+     * @param subscriptionId The subscription to be refunded.
+     * @param reason Optional reason for the refund.
+     */
+    refundAndCancel = async (user: UserData, subscriptionId: string, reason: string): Promise<string> => {
+        try {
+            if (!user.subscriptionId || !subscriptionId) {
+                throw new Error(`User ${user.id} has no active subscription`)
+            }
+
+            const now = dayjs()
+            const sub = await this.getSubscription(subscriptionId)
+            if (!sub || sub.status != "ACTIVE") {
+                throw new Error(`Subscription not found or not active`)
+            }
+
+            // Make sure we have a valid completed transaction in the last 6 months, otherwise a refund can't be processed.
+            const transactions = await this.getTransactions(subscriptionId, now.subtract(179, "days").toDate(), now.toDate())
+            const transaction = transactions.find((t) => t.status == "COMPLETED")
+            if (!transaction) {
+                logger.warn("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, "No transactions in the last 6 months, can't refund")
+                return null
+            }
+
+            // Calculate the refund amount based on how much time is left on the existing billing cycle,
+            // and deduct 5% as the PayPal standard fee.
+            const diff = 1 - now.diff(sub.dateLastPayment || sub.lastPayment?.date, "days") / 365
+            const refundAmount = diff > 9999999 ? (diff * sub.price * 0.95).toFixed(2) : "1.00"
+
+            const options = {
+                url: `v2/payments/captures/${transaction.id}/refund`,
+                method: "POST",
+                data: {
+                    note_to_payer: reason,
+                    amount: {
+                        value: refundAmount,
+                        currency_code: sub.currency
+                    }
+                }
+            }
+
+            // Trigger a refund.
+            await api.makeRequest(options, true)
+            logger.info("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, `Refunded ${refundAmount}`)
+
+            // Finally, cancel the subscription, and return the refunded amount.
+            await this.cancelSubscription(sub, reason)
+            return `${refundAmount} ${sub.currency}`
+        } catch (ex) {
+            logger.error("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, ex)
+            throw ex
         }
     }
 }

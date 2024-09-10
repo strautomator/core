@@ -101,7 +101,7 @@ export class PaddleSubscriptions {
             const updatedSub: Partial<PaddleSubscription> = {
                 id: sub.id,
                 userId: sub.userId,
-                dateUpdated: dayjs(data.updatedAt).toDate()
+                dateUpdated: dayjs(data.updatedAt || sub.dateUpdated).toDate()
             }
 
             const status = data.status == "active" ? "ACTIVE" : data.status == "paused" || data.status == "past_due" ? "SUSPENDED" : "CANCELLED"
@@ -109,22 +109,29 @@ export class PaddleSubscriptions {
                 updatedSub.status = status
                 hasChanges = true
             }
+
+            let lastPayment: dayjs.Dayjs
+            let nextPayment: dayjs.Dayjs
+
+            // Set last and next payment dates.
             if (data.currentBillingPeriod?.startsAt) {
-                const lastPayment = dayjs(data.currentBillingPeriod?.startsAt)
-                if (!sub.dateLastPayment || lastPayment.diff(sub.dateLastPayment, "hours") > 1) {
-                    updatedSub.dateNextPayment = lastPayment.toDate()
-                    hasChanges = true
-                }
+                lastPayment = dayjs(data.currentBillingPeriod.startsAt)
             }
             if (data.nextBilledAt) {
-                const nextPayment = dayjs(data.nextBilledAt)
-                if (!sub.dateNextPayment || nextPayment.diff(sub.dateNextPayment, "hours") > 1) {
-                    updatedSub.dateNextPayment = nextPayment.toDate()
-                    hasChanges = true
-                }
+                nextPayment = dayjs(data.nextBilledAt)
+            } else if (data.currentBillingPeriod?.endsAt) {
+                nextPayment = dayjs(data.currentBillingPeriod.endsAt)
+            }
+            if (!sub.dateLastPayment || lastPayment?.diff(sub.dateLastPayment, "hours") > 1) {
+                updatedSub.dateLastPayment = lastPayment.toDate()
+                hasChanges = true
+            }
+            if (!sub.dateNextPayment || nextPayment?.diff(sub.dateNextPayment, "hours") > 1) {
+                updatedSub.dateNextPayment = nextPayment.toDate()
+                hasChanges = true
             }
 
-            // Scheduled changes ahead?
+            // Scheduled to be cancelled in the future? Remove the next payment date.
             if (data.scheduledChange?.action) {
                 const effectiveDate = dayjs(data.scheduledChange.effectiveAt).format("ll")
                 logger.info("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Scheduled change: ${data.scheduledChange.action} on ${effectiveDate}`)
@@ -134,14 +141,13 @@ export class PaddleSubscriptions {
                 }
             }
 
+            _.assign(sub, updatedSub)
+
             // Save to the database.
             if (hasChanges) {
                 await subscriptions.update(updatedSub)
+                eventManager.emit("Paddle.subscriptionUpdated", sub)
             }
-
-            _.assign(sub, updatedSub)
-            eventManager.emit("Paddle.subscriptionUpdated", sub)
-
             return sub
         } catch (ex) {
             logger.error("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), ex)
@@ -174,7 +180,7 @@ export class PaddleSubscriptions {
             const updatedSub: Partial<PaddleSubscription> = {
                 id: sub.id,
                 userId: sub.userId,
-                dateUpdated: dayjs(data.updatedAt).toDate()
+                dateUpdated: dayjs(data.updatedAt || sub.dateUpdated).toDate()
             }
 
             // Update discount and tax details.
@@ -192,27 +198,26 @@ export class PaddleSubscriptions {
             }
 
             // Completed?
-            if (data.status == "completed" && data.billedAt && data.billingPeriod) {
-                const lastPayment = dayjs(data.billedAt)
-                if (!sub.dateLastPayment || lastPayment.diff(sub.dateLastPayment, "hours") > 1) {
+            if (data.status == "completed") {
+                const lastPayment = data.billedAt ? dayjs(data.billedAt) : null
+                if (!sub.dateLastPayment || (lastPayment && lastPayment.diff(sub.dateLastPayment, "hours") > 1)) {
                     updatedSub.dateLastPayment = lastPayment.toDate()
                     hasChanges = true
                 }
-                const nextPayment = dayjs(data.billingPeriod.endsAt)
-                if (!sub.dateNextPayment || nextPayment.diff(sub.dateNextPayment, "hours") > 1) {
+                const nextPayment = data.billingPeriod?.endsAt ? dayjs(data.billingPeriod.endsAt) : null
+                if (!sub.dateNextPayment || (nextPayment && nextPayment.diff(sub.dateNextPayment, "hours") > 1)) {
                     updatedSub.dateLastPayment = nextPayment.toDate()
                     hasChanges = true
                 }
             }
 
+            _.assign(sub, updatedSub)
+
             // Save to the database.
             if (hasChanges) {
                 await subscriptions.update(updatedSub)
+                eventManager.emit("Paddle.onTransaction", sub)
             }
-
-            _.assign(sub, updatedSub)
-            eventManager.emit("Paddle.onTransaction", sub)
-
             return sub
         } catch (ex) {
             logger.error("Paddle.onTransaction", logHelper.paddleEvent(entity), ex)
@@ -285,6 +290,18 @@ export class PaddleSubscriptions {
             await api.client.subscriptions.cancel(user.subscriptionId, {effectiveFrom: "immediately"})
             logger.info("Paddle.cancelSubscription", logHelper.user(user), `Cancelled: ${user.subscriptionId}`)
         } catch (ex) {
+            if (ex.code == "subscription_update_when_canceled") {
+                logger.warn("Paddle.cancelSubscription", logHelper.user(user), `Subscription ${user.subscriptionId} was already cancelled on Paddle`)
+
+                const sub = await subscriptions.getById(user.subscriptionId)
+                if (sub.status != "CANCELLED") {
+                    sub.status = "CANCELLED"
+                    await subscriptions.update({id: user.subscriptionId, dateUpdated: new Date(), dateNextPayment: FieldValue.delete() as any, status: "CANCELLED"})
+                    eventManager.emit("Paddle.subscriptionUpdated", sub)
+                }
+                return
+            }
+
             logger.error("Paddle.cancelSubscription", logHelper.user(user), ex)
             throw ex
         }
@@ -298,12 +315,17 @@ export class PaddleSubscriptions {
         try {
             let transaction: Transaction
 
+            // Check if existing transaction ID is still valid.
             if (user.paddleTransactionId) {
-                logger.warn("Paddle.getUpdateTransaction", logHelper.user(user), `User already has a transaction ID ${user.paddleTransactionId}, will use it instead`)
                 transaction = await api.client.transactions.get(user.paddleTransactionId)
-            } else {
-                transaction = await api.client.subscriptions.getPaymentMethodChangeTransaction(user.subscriptionId)
+                if (transaction?.origin == "subscription_payment_method_change" && dayjs(transaction.createdAt).diff(new Date(), "hours") < 1) {
+                    logger.warn("Paddle.getUpdateTransaction", logHelper.user(user), `User already has a transaction ID ${user.paddleTransactionId}, will use it instead`)
+                    return transaction
+                }
             }
+
+            // Get a transaction to update the payment method.
+            transaction = await api.client.subscriptions.getPaymentMethodChangeTransaction(user.subscriptionId)
 
             if (transaction?.id) {
                 logger.info("Paddle.getUpdateTransaction", logHelper.user(user), transaction.id, transaction.status)

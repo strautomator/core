@@ -92,7 +92,7 @@ export class PayPalAPI {
         try {
             const options = {
                 method: "POST",
-                url: `${mEndpoint ? settings.paypal.api.mBaseUrl : settings.paypal.api.baseUrl}oauth2/token`,
+                url: `${mEndpoint ? settings.paypal.api.mBaseUrl : settings.paypal.api.baseUrl}v1/oauth2/token`,
                 timeout: settings.oauth.tokenTimeout,
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"

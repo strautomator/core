@@ -8,7 +8,6 @@ import eventManager from "../eventmanager"
 import subscriptions from "../subscriptions"
 import paypalProducts from "./products"
 import paypalSubscriptions from "./subscriptions"
-import paypalTransactions from "./transactions"
 import paypalWebhooks from "./webhooks"
 import _ from "lodash"
 import jaul from "jaul"
@@ -36,11 +35,6 @@ export class PayPal {
      * Subscription methods.
      */
     subscriptions = paypalSubscriptions
-
-    /**
-     * Transaction methods.
-     */
-    transactions = paypalTransactions
 
     /**
      * Webhook methods.

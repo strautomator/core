@@ -26,7 +26,7 @@ export class PayPalProducts {
         try {
             const products: PayPalProduct[] = []
             const options = {
-                url: "catalogs/products",
+                url: "v1/catalogs/products",
                 returnRepresentation: true,
                 params: {
                     page: 1,
@@ -65,7 +65,7 @@ export class PayPalProducts {
     createProduct = async (): Promise<PayPalProduct> => {
         try {
             const options = {
-                url: "catalogs/products",
+                url: "v1/catalogs/products",
                 method: "POST",
                 returnRepresentation: true,
                 data: {

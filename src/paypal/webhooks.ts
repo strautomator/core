@@ -30,7 +30,7 @@ export class PayPalWebhooks {
     getWebhooks = async (): Promise<PayPalWebhook[]> => {
         try {
             const options = {
-                url: "notifications/webhooks",
+                url: "v1/notifications/webhooks",
                 returnRepresentation: true
             }
 
@@ -57,7 +57,7 @@ export class PayPalWebhooks {
     createWebhook = async (): Promise<PayPalWebhook> => {
         try {
             const options = {
-                url: "notifications/webhooks",
+                url: "v1/notifications/webhooks",
                 method: "POST",
                 returnRepresentation: true,
                 data: {
@@ -92,7 +92,7 @@ export class PayPalWebhooks {
     getWebhookEventDetails = async (id: string): Promise<any> => {
         try {
             const options = {
-                url: `notifications/webhooks-events/${id}`
+                url: `v1/notifications/webhooks-events/${id}`
             }
 
             const res = await api.makeRequest(options)

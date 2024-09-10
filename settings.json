@@ -347,8 +347,8 @@
     "paypal": {
         "api": {
             "mode": "live",
-            "baseUrl": "https://api.paypal.com/v1/",
-            "mBaseUrl": "https://api-m.paypal.com/v1/",
+            "baseUrl": "https://api.paypal.com/",
+            "mBaseUrl": "https://api-m.paypal.com/",
             // Token to be appended to the URL of PayPal webhooks, for
             // extra security. Can only include alphanumeric characters.
             // This MUST be set on the settings.secret.json file or via
@@ -425,7 +425,7 @@
             // PRO calendars are cached for around 3 hours.
             "calendarCacheDuration": 10800,
             // No links on PRO accounts processed activities.
-            "linksOn": false,
+            "linksOn": 0,
             // Allow personal records for all sports.
             "recordSports": true,
             // Use AI and weather parameters on around 99% of "AI generate" recipe actions.

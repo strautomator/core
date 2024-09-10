@@ -59,8 +59,8 @@
     },
     "paypal": {
         "api": {
-            "baseUrl": "https://api.sandbox.paypal.com/v1/",
-            "mBaseUrl": "https://api-m.sandbox.paypal.com/v1/",
+            "baseUrl": "https://api.sandbox.paypal.com/",
+            "mBaseUrl": "https://api-m.sandbox.paypal.com/",
             "mode": "sandbox",
             // Token to be appended to the URL of PayPal webhooks, for
             // extra security. Can only include alphanumeric characters.

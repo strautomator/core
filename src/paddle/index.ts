@@ -159,7 +159,7 @@ export class PaddleWrapper {
 
             // Basic validation.
             if (settings.paddle.ips?.length > 0 && !jaul.network.ipInRange(clientIP, settings.paddle.ips)) {
-                throw new Error("Client IP denied")
+                throw new Error(`Client IP ${clientIP} denied`)
             }
             if (!signature) {
                 throw new Error("Missing signature")
@@ -174,17 +174,21 @@ export class PaddleWrapper {
                 throw new Error("Invalid event signature")
             }
 
-            logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
-
             // Process webhook according to the event type.
             if (ev.eventType == EventName.CustomerUpdated) {
                 await this.customers.onCustomerUpdated(ev)
+                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
             } else if (ev.eventType == EventName.SubscriptionActivated) {
                 await this.subscriptions.onSubscriptionCreated(ev)
+                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
             } else if ([EventName.SubscriptionPastDue, EventName.SubscriptionPaused, EventName.SubscriptionResumed, EventName.SubscriptionCanceled].includes(ev.eventType)) {
                 await this.subscriptions.onSubscriptionUpdated(ev)
+                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
             } else if ([EventName.TransactionCompleted].includes(ev.eventType)) {
                 await this.subscriptions.onTransaction(ev)
+                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
+            } else {
+                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id, "No action taken")
             }
         } catch (ex) {
             logger.error("Paddle.processWebhook", ex)

@@ -85,6 +85,8 @@ export interface PayPalTransaction {
     subscriptionId?: string
     /** Payer's email. */
     email?: string
+    /** Transaction status. */
+    status?: string
 }
 
 /**

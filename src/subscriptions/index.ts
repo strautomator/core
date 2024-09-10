@@ -205,7 +205,10 @@ export class Subscriptions {
                 logs.push("Payment recently made")
             }
             if (subscription.dateNextPayment) {
-                logs.push(`Next payment: ${dayjs(subscription.dateNextPayment).format("YYYY-MM-DD")}`)
+                const nextPayment = dayjs(subscription.dateNextPayment)
+                if (nextPayment.isValid()) {
+                    logs.push(`Next payment: ${nextPayment.format("YYYY-MM-DD")}`)
+                }
             }
 
             // Remove the pending update flag, it should never be sent to the database.

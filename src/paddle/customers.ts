@@ -94,11 +94,18 @@ export class PaddleCustomers {
                 throw new Error("User has no Paddle ID")
             }
 
+            // Make sure we do not have duplicates.
+            const existing = await users.getByPaddleId(user.paddleId)
+            if (existing && existing.id != user.id) {
+                throw new Error("That email or customer ID is already in use by another user")
+            }
+
             const name = user.profile.firstName && user.profile.lastName ? `${user.profile.firstName} ${user.profile.lastName}` : user.displayName
             await api.client.customers.update(user.paddleId, {name: name, customData: {userId: user.id}})
             logger.info("Paddle.setCustomerUser", logHelper.user(user), `Updated customer ${user.paddleId}`)
         } catch (ex) {
             logger.error("Paddle.setCustomerUser", logHelper.user(user), ex)
+            throw ex
         }
     }
 }
