@@ -346,6 +346,52 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
 }
 
 /**
+ * Check if the activity happened within a specific date range.
+ * @param activity The Strava activity to be checked.
+ * @param condition The date range based recipe condition.
+ */
+export const checkDateRange = (activity: StravaActivity, condition: RecipeCondition): boolean => {
+    const op = condition.operator
+    let valid = false
+
+    // No valid date? Stop here.
+    if (!activity.dateStart || !activity.dateEnd) {
+        return false
+    }
+
+    // Activity start and end date.
+    let aStartDate = dayjs.utc(activity["dateStart"])
+    let aEndDate = dayjs.utc(activity["dateEnd"])
+    if (activity.utcStartOffset) {
+        aStartDate = aStartDate.add(activity.utcStartOffset, "minutes")
+        aEndDate = aEndDate.add(activity.utcStartOffset, "minutes")
+    }
+
+    // Parse and validate condition date range.
+    const arrValue = condition.value.toString().split(",")
+    const cFrom = dayjs.utc(`${aStartDate.year()}-${arrValue[0]}T00:00:00`)
+    const cTo = dayjs.utc(`${aEndDate.year()}-${arrValue[1]}T23:59:59`)
+    if (!cFrom.isValid() || !cTo.isValid()) {
+        logger.warn("Recipes.checkDateRange", logHelper.activity(activity), condition, `Invalid range: ${condition.value}`)
+        return false
+    }
+
+    // Check date range.
+    if (op == RecipeOperator.Equal) {
+        valid = cFrom.isBefore(aStartDate) && cTo.isAfter(aEndDate)
+    } else if (op == RecipeOperator.NotEqual) {
+        valid = cFrom.isAfter(aStartDate) || cTo.isBefore(aEndDate)
+    }
+
+    if (valid) {
+        return true
+    }
+
+    logger.debug("Recipes.checkDateRange", logHelper.activity(activity), condition, "Failed")
+    return false
+}
+
+/**
  * Check if weather for activity matches the specified condition.
  * @param user User data.
  * @param activity The Strava activity to be checked.

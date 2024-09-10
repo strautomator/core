@@ -381,6 +381,12 @@ export class Recipes {
                 if (!valid) return false
             }
 
+            // Date range condition.
+            else if (prop == "dateRange") {
+                const valid = conditions.checkDateRange(activity, condition)
+                if (!valid) return false
+            }
+
             // New records?
             else if (prop == "newRecords" || prop == "komSegments" || prop == "prSegments") {
                 const valid = conditions.checkNewRecords(activity, condition)

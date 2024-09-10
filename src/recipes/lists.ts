@@ -74,6 +74,7 @@ export const recipePropertyList = [
     {value: "movingTime", text: "Moving time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "h"},
     {value: "totalTime", text: "Total time", type: "time", operators: recipeOperatorList.elapsedTime, suffix: "h"},
     {value: "weekday", text: "Weekday", type: "day", operators: recipeOperatorList.is},
+    {value: "dateRange", text: "Happened within a date range", shortText: "Date range", type: "date", operators: recipeOperatorList.is},
     {value: "hasLocation", text: "Has location data", type: "boolean", operators: recipeOperatorList.is},
     {value: "locationStart", text: "Start location", type: "location", operators: recipeOperatorList.location},
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
