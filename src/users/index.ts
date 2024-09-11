@@ -805,9 +805,6 @@ export class Users {
                     user.displayName = user.profile.username || user.profile.firstName || user.profile.lastName
                 }
 
-                // Update user on the database.
-                await database.merge("users", user)
-
                 // Check updated properties which should be logged.
                 if (user.suspended) {
                     logs.push("Suspended")
@@ -836,6 +833,8 @@ export class Users {
                     const prefs = Object.keys(user.preferences).map((k) => `${k}=${logValue(user.preferences[k])}`)
                     if (prefs.length > 0) {
                         logs.push(prefs.join(" | "))
+                    } else if (!replace) {
+                        delete user.preferences
                     }
                 }
                 if (user.spotify) {
@@ -847,6 +846,9 @@ export class Users {
                 if (user.subscriptionId) {
                     logs.push(`Subscription: ${logValue(user.subscriptionId)}`)
                 }
+
+                // Update user on the database.
+                await database.merge("users", user)
             } else {
                 await database.set("users", user, user.id)
                 logs.push("Replaced entire user data")
