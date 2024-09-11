@@ -122,11 +122,11 @@ export class PaddleSubscriptions {
             } else if (data.currentBillingPeriod?.endsAt) {
                 nextPayment = dayjs(data.currentBillingPeriod.endsAt)
             }
-            if (!sub.dateLastPayment || lastPayment?.diff(sub.dateLastPayment, "hours") > 1) {
+            if (lastPayment && (!sub.dateLastPayment || lastPayment.diff(sub.dateLastPayment, "hours") > 1)) {
                 updatedSub.dateLastPayment = lastPayment.toDate()
                 hasChanges = true
             }
-            if (!sub.dateNextPayment || nextPayment?.diff(sub.dateNextPayment, "hours") > 1) {
+            if (nextPayment && (!sub.dateNextPayment || nextPayment.diff(sub.dateNextPayment, "hours") > 1)) {
                 updatedSub.dateNextPayment = nextPayment.toDate()
                 hasChanges = true
             }
