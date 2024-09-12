@@ -542,9 +542,9 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
         if (op == RecipeOperator.Equal) {
             valid = trackTitles.filter((t) => t == value).length > 0
         } else if (op == RecipeOperator.Like) {
-            valid = trackTitles.filter((t) => t.includes(t)).length > 0
+            valid = trackTitles.filter((t) => t.includes(value)).length > 0
         } else if (op == RecipeOperator.NotLike) {
-            valid = trackTitles.filter((t) => !t.includes(t)).length > 0
+            valid = trackTitles.filter((t) => !t.includes(value)).length > 0
         }
     } else if (op == RecipeOperator.NotLike) {
         valid = true
