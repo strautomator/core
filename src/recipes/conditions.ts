@@ -368,9 +368,13 @@ export const checkDateRange = (activity: StravaActivity, condition: RecipeCondit
     }
 
     // Parse and validate condition date range.
-    const arrValue = condition.value.toString().split(",")
-    const cFrom = dayjs.utc(`${aStartDate.year()}-${arrValue[0]}T00:00:00`)
-    const cTo = dayjs.utc(`${aEndDate.year()}-${arrValue[1]}T23:59:59`)
+    const cValue = condition.value.toString()
+    const arrValue = cValue.split(",").map((v) => v.trim())
+    const vFrom = arrValue[0].length == 5 ? `${aStartDate.year()}-${arrValue[0]}` : arrValue[0]
+    const cFrom = dayjs.utc(`${vFrom}T00:00:00`)
+    const vTo = arrValue[1].length == 5 ? `${aEndDate.year()}-${arrValue[1]}` : arrValue[1]
+    const cTo = dayjs.utc(`${vTo}T23:59:59`)
+
     if (!cFrom.isValid() || !cTo.isValid()) {
         logger.warn("Recipes.checkDateRange", logHelper.activity(activity), condition, `Invalid range: ${condition.value}`)
         return false
@@ -537,7 +541,6 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
     // Check Spotify.
     // Set as valid if user has tracks and either no specific track name was set,
     // or a track name was set and it matches one of the played tracks.
-
     if (tracks.length > 0) {
         if (op == RecipeOperator.Equal) {
             valid = trackTitles.filter((t) => t == value).length > 0
