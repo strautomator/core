@@ -8,7 +8,7 @@ Some main points to know before you start:
 
 -   Code is mostly TypeScript
 -   Should run on Node 18+
--   Highly optimized for GCP (Google Cloud Platform)
+-   Optimized for GCP (Google Cloud Platform)
 
 ### Required 3rd party services
 
@@ -62,7 +62,7 @@ Please note that settings specific to the web server, API and other web-specific
 
 ## Database
 
-By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, such as MongoDB or DynamoDB.
+By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, like MongoDB or DynamoDB.
 
 The following collections are used:
 
@@ -84,7 +84,7 @@ The following collections are used:
 -   **users** registered user details
 -   **wahoo** cached Wahoo data
 
-Also note that these collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
+These collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
 
 Some indexes are needed in Firestore. At the moment there's no automated creation, so you might see some warnings or errors on the logs asking to create an index before a specific query can be executed. Just follow the links provided directly on the console logs.
 
@@ -114,7 +114,3 @@ Or to do a "dry run" and test the startup routine with the current settings:
     $ make dry-run
 
 Please have a look on the provided Makefile for all available commands.
-
-## Hosting on GCP
-
-Strautomator is currently optimized to run on Google Cloud Platform. It makes use of Firestore, Cloud Storage, and various other Google APIs to get things working. There are no plans to port the code to make it work in other ecosystems, but as all the code is wrapped in its own specific set of modules, such tasks should be easily doable.
