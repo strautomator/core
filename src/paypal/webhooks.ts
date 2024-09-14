@@ -5,6 +5,7 @@ import api from "./api"
 import database from "../database"
 import eventManager from "../eventmanager"
 import subscriptions from "../subscriptions"
+import users from "../users"
 import _ from "lodash"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
@@ -185,8 +186,17 @@ export class PayPalWebhooks {
                     }
                 }
 
-                // Save updated subscription on the database, and emit event to update the user.
+                // Save updated subscription on the database.
                 await subscriptions.update(updatedSubscription)
+
+                // Is it due to a Paddle migration? If so, do not dispatch an event, otherwise the user would be reverted back to Free.
+                if (subscription.status == "CANCELLED") {
+                    const user = await users.getById(subscription.userId)
+                    if (user?.subscriptionId?.startsWith("sub_")) {
+                        logger.info("PayPal.processWebhook", logHelper.user(user), logHelper.subscription(subscription), `Migration to Paddle confirmed: ${user.subscriptionId}`)
+                        return
+                    }
+                }
                 eventManager.emit("PayPal.subscriptionUpdated", subscription)
             }
         } catch (ex) {
