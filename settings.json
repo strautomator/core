@@ -667,8 +667,8 @@
             /// Visual Crossing API rate limits.
             "rateLimit": {
                 "maxConcurrent": 1,
-                "perHour": 150,
-                "perDay": 550
+                "perHour": 120,
+                "perDay": 500
             },
             // The Visual Crossing API secret MUST be set via secret settings or
             // via the SMU_weather_visualcrossing_secret environment variable.
