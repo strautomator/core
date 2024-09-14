@@ -94,8 +94,20 @@ export class GearWear {
                 logger.info("GearWear.onUserSwitchToFree", logHelper.user(user), `Will disable ${arrGearwear.length - settings.plans.free.maxGearWear} GearWear configs`)
 
                 for (let i = settings.plans.free.maxGearWear; i < arrGearwear.length; i++) {
-                    arrGearwear[i].disabled = true
-                    await this.upsert(user, arrGearwear[i])
+                    const gw = arrGearwear[i]
+                    try {
+                        const existing = user.profile.bikes?.find((b) => b.id == gw.id) || user.profile.shoes?.find((s) => s.id == gw.id)
+
+                        // Disable (or delete, if not found) GearWear over the free plan limit.
+                        if (existing) {
+                            gw.disabled = true
+                            await this.upsert(user, gw)
+                        } else {
+                            await this.delete(gw)
+                        }
+                    } catch (innerEx) {
+                        logger.error("GearWear.onUserSwitchToFree", logHelper.user(user), `Gear ${gw.id}`, innerEx)
+                    }
                 }
             }
         } catch (ex) {
