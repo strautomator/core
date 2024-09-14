@@ -25,6 +25,47 @@ export class PaddleSubscriptions {
     }
 
     /**
+     * Helper to set the last and next payment dates.
+     * @param sub Subscription to be updated.
+     * @param data The webhook notification data.
+     */
+    private setPaymentDates = async (sub: Partial<PaddleSubscription>, data: SubscriptionNotification): Promise<boolean> => {
+        let hasChanges = false
+        let lastPayment: dayjs.Dayjs
+        let nextPayment: dayjs.Dayjs
+
+        // Set last and next payment dates.
+        if (data.currentBillingPeriod?.startsAt) {
+            lastPayment = dayjs(data.currentBillingPeriod.startsAt)
+        }
+        if (data.nextBilledAt) {
+            nextPayment = dayjs(data.nextBilledAt)
+        } else if (data.currentBillingPeriod?.endsAt) {
+            nextPayment = dayjs(data.currentBillingPeriod.endsAt)
+        }
+        if (lastPayment && (!sub.dateLastPayment || lastPayment.diff(sub.dateLastPayment, "hours") > 1)) {
+            sub.dateLastPayment = lastPayment.toDate()
+            hasChanges = true
+        }
+        if (nextPayment && (!sub.dateNextPayment || nextPayment.diff(sub.dateNextPayment, "hours") > 1)) {
+            sub.dateNextPayment = nextPayment.toDate()
+            hasChanges = true
+        }
+
+        // Scheduled to be cancelled in the future? Remove the next payment date.
+        if (data.scheduledChange?.action) {
+            const effectiveDate = dayjs(data.scheduledChange.effectiveAt).format("ll")
+            logger.info("Paddle.onSubscriptionUpdated", logHelper.subscription(sub as PaddleSubscription), `Scheduled change: ${data.scheduledChange.action} on ${effectiveDate}`)
+            if (sub.dateNextPayment) {
+                sub.dateNextPayment = FieldValue.delete() as any
+                hasChanges = true
+            }
+        }
+
+        return hasChanges
+    }
+
+    /**
      * Create a matching subscription when it gets activated by Paddle.
      * @param entity Subscription notification.
      */
@@ -62,6 +103,8 @@ export class PaddleSubscriptions {
                     sub.frequency = "lifetime"
                 }
             }
+
+            this.setPaymentDates(sub, data)
 
             // Save to the database.
             await subscriptions.create(sub)
@@ -104,41 +147,14 @@ export class PaddleSubscriptions {
                 dateUpdated: dayjs(data.updatedAt || sub.dateUpdated).toDate()
             }
 
+            // Check status updates and payment dates.
             const status = data.status == "active" ? "ACTIVE" : data.status == "paused" || data.status == "past_due" ? "SUSPENDED" : "CANCELLED"
             if (status != sub.status) {
                 updatedSub.status = status
                 hasChanges = true
             }
-
-            let lastPayment: dayjs.Dayjs
-            let nextPayment: dayjs.Dayjs
-
-            // Set last and next payment dates.
-            if (data.currentBillingPeriod?.startsAt) {
-                lastPayment = dayjs(data.currentBillingPeriod.startsAt)
-            }
-            if (data.nextBilledAt) {
-                nextPayment = dayjs(data.nextBilledAt)
-            } else if (data.currentBillingPeriod?.endsAt) {
-                nextPayment = dayjs(data.currentBillingPeriod.endsAt)
-            }
-            if (lastPayment && (!sub.dateLastPayment || lastPayment.diff(sub.dateLastPayment, "hours") > 1)) {
-                updatedSub.dateLastPayment = lastPayment.toDate()
+            if (this.setPaymentDates(updatedSub, data)) {
                 hasChanges = true
-            }
-            if (nextPayment && (!sub.dateNextPayment || nextPayment.diff(sub.dateNextPayment, "hours") > 1)) {
-                updatedSub.dateNextPayment = nextPayment.toDate()
-                hasChanges = true
-            }
-
-            // Scheduled to be cancelled in the future? Remove the next payment date.
-            if (data.scheduledChange?.action) {
-                const effectiveDate = dayjs(data.scheduledChange.effectiveAt).format("ll")
-                logger.info("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Scheduled change: ${data.scheduledChange.action} on ${effectiveDate}`)
-                if (updatedSub.dateNextPayment) {
-                    updatedSub.dateNextPayment = FieldValue.delete() as any
-                    hasChanges = true
-                }
             }
 
             _.assign(sub, updatedSub)
