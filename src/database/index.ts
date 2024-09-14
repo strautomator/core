@@ -530,7 +530,7 @@ export class Database {
     isRetryable = async (err: Error): Promise<boolean> => {
         try {
             const message = err.toString()
-            if (message.includes("DEADLINE_EXCEEDED") || message.includes("RST_STREAM")) {
+            if (message.includes("DEADLINE_EXCEEDED") || message.includes("RST_STREAM") || message.includes("An internal error occurred")) {
                 await jaul.io.sleep(deadlineTimeout)
                 return true
             }
