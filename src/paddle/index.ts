@@ -1,7 +1,7 @@
 // Strautomator Core: Paddle
 
 import {UserData} from "../users/types"
-import {Environment, EventName, Paddle, PaddleOptions} from "@paddle/paddle-node-sdk"
+import {Environment, EventName, LogLevel, Paddle, PaddleOptions} from "@paddle/paddle-node-sdk"
 import paddleApi from "./api"
 import paddleCustomers from "./customers"
 import paddlePrices from "./prices"
@@ -69,7 +69,10 @@ export class PaddleWrapper {
             }
 
             const isProduction = settings.paddle.api.environment == "production"
-            const options: PaddleOptions = {environment: isProduction ? Environment.production : Environment.sandbox}
+            const options: PaddleOptions = {
+                environment: isProduction ? Environment.production : Environment.sandbox,
+                logLevel: isProduction ? LogLevel.warn : LogLevel.verbose
+            }
             this.api.client = new Paddle(settings.paddle.api.key, options)
 
             await this.loadFromCache()
