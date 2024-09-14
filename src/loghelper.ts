@@ -4,6 +4,7 @@ import {EventEntity} from "@paddle/paddle-node-sdk"
 import {FitFileActivity} from "./fitparser/types"
 import {GarminPingActivityFile} from "./garmin/types"
 import {GitHubSubscription} from "./github/types"
+import {PaddleSubscription} from "./paddle/types"
 import {PayPalSubscription} from "./paypal/types"
 import {RecipeData} from "./recipes/types"
 import {StravaActivity, StravaProcessedActivity} from "./strava/types"
@@ -67,7 +68,7 @@ export const recipe = (lRecipe: RecipeData): string => {
  * Helper to get subscription details for logging.
  * @param lSubscription Subscription data.
  */
-export const subscription = (lSubscription: BaseSubscription | GitHubSubscription | PayPalSubscription): string => {
+export const subscription = (lSubscription: BaseSubscription | GitHubSubscription | PaddleSubscription | PayPalSubscription): string => {
     if (!lSubscription) return "Subscription unknown"
     return `Subscription ${lSubscription.source} ${lSubscription.id} - ${lSubscription.status}`
 }
@@ -76,7 +77,7 @@ export const subscription = (lSubscription: BaseSubscription | GitHubSubscriptio
  * Helper to get subscription and user summary for logging.
  * @param lSubscription Subscription data.
  */
-export const subscriptionUser = (lSubscription: BaseSubscription | GitHubSubscription | PayPalSubscription): string => {
+export const subscriptionUser = (lSubscription: BaseSubscription | GitHubSubscription | PaddleSubscription | PayPalSubscription): string => {
     if (!lSubscription) return "Subscription unknown"
     return `User ${lSubscription.userId} - Subscription ${lSubscription.source} ${lSubscription.id} (${lSubscription.status})`
 }
