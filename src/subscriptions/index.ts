@@ -175,7 +175,7 @@ export class Subscriptions {
             }
 
             await database.set("subscriptions", subscription, subscription.id)
-            logger.info("Subscriptions.create", `User ${subscription.userId}`, subscription.id, subscription.source, subscription.currency, subscription.frequency)
+            logger.info("Subscriptions.create", `User ${subscription.userId}`, subscription.id, subscription.source, `${subscription.price} ${subscription.currency}`, subscription.frequency)
         } catch (ex) {
             logger.error("Subscriptions.create", `ID ${subscription.id || "unset"}`, `User ${subscription.userId || "unset"}`, ex)
             throw ex
