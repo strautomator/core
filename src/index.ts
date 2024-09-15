@@ -238,6 +238,8 @@ export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
     const otherModules = [ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, wahoo, weather]
     await Promise.all(otherModules.map(initModule))
 
+    process.env.SMU_APP_STARTED = "1"
+
     // Running locally? Setup the necessary cron jobs which are
     // otherwise defined as Cloud Functions in production.
     if (nodeEnv == "development" && process.env.STRAUTOMATOR_CRON) {
