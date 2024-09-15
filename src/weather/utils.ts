@@ -278,8 +278,9 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
         // Final trimmed summary should be always Capital cased.
         summary.summary = (summary.summary.charAt(0).toUpperCase() + summary.summary.slice(1)).trim()
     } catch (ex) {
-        const weatherProps = Object.keys(summary).map((key) => `${key}: ${summary[key]}`)
-        logger.error("Weather.processWeatherSummary", dDate.format("lll"), weatherProps.join(" | "), ex)
+        const filteredProps = Object.keys(summary).filter((key) => !_.isNil(summary[key]))
+        const weatherProps = filteredProps.map((key) => `${key}: ${summary[key]}`)
+        throw new Error(`Failed to process weather summary: ${ex.message} | ${weatherProps.join(" | ")}`)
     } finally {
         delete summary.extraData
     }

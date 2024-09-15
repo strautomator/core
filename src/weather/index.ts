@@ -247,7 +247,6 @@ export class Weather {
 
                 // Still has other providers to try and fetch the weather?
                 if (currentProviders.length > 0) {
-                    providerModule = currentProviders[1]
                     logger.warn("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, `${failedProviderName} failed, will try another`, ex.message)
                 } else {
                     logger.error("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, failedProviderName, ex)
@@ -284,7 +283,11 @@ export class Weather {
             }
         }
 
-        processWeatherSummary(result, options.dDate, preferences)
+        try {
+            processWeatherSummary(result, options.dDate, preferences)
+        } catch (ex) {
+            logger.error("Weather.getLocationWeather", userLog, coordinatesLog, dateLog, ex)
+        }
 
         // Save to cache and return weather results.
         cache.set(`weather`, cacheId, result)
