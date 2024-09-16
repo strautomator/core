@@ -46,6 +46,7 @@ export const translation = (id: string, preferences: UserPreferences, capitalize
     }
 
     const ref = languageStrings[language]
+    const defaultRef = languageStrings["en"]
 
     // Capitalizer helper.
     const capitalizer = (w) => w.charAt(0).toUpperCase() + w.slice(1)
@@ -58,12 +59,18 @@ export const translation = (id: string, preferences: UserPreferences, capitalize
     let result: string
     if (category && ref[category]) {
         result = ref[category][subId] || ref[category][subId.split(" ").map(capitalizer).join("")]
+        if (!result) {
+            result = defaultRef[category][subId] || defaultRef[category][subId.split(" ").map(capitalizer).join("")]
+        }
     } else {
         result = ref[id] || ref[id.split(" ").map(capitalizer).join("")]
+        if (!result) {
+            result = defaultRef[id] || defaultRef[id.split(" ").map(capitalizer).join("")]
+        }
     }
 
     if (!result) {
-        logger.debug("Translations.translation", language, `No translation found for: ${id}`)
+        logger.warn("Translations.translation", language, `No translation found for: ${id}`)
         return id
     }
 

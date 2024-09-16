@@ -60,4 +60,56 @@ export interface LanguageString {
         NW: string
         NNW: string
     }
+    SportTypes?: {
+        Ride: string
+        GravelRide: string
+        MountainBikeRide: string
+        EBikeRide: string
+        EMountainBikeRide: string
+        VirtualRide: string
+        Run: string
+        TrailRun: string
+        VirtualRun: string
+        Walk: string
+        Swim: string
+        AlpineSki: string
+        BackcountrySki: string
+        Badminton: string
+        Canoeing: string
+        Crossfit: string
+        Elliptical: string
+        Golf: string
+        Handcycle: string
+        HighIntensityIntervalTraining: string
+        Hike: string
+        IceSkate: string
+        InlineSkate: string
+        Kayaking: string
+        Kitesurf: string
+        NordicSki: string
+        Pickleball: string
+        Pilates: string
+        Racquetball: string
+        RockClimbing: string
+        RollerSki: string
+        Rowing: string
+        Sail: string
+        Skateboard: string
+        Snowboard: string
+        Snowshoe: string
+        Soccer: string
+        Squash: string
+        StairStepper: string
+        StandUpPaddling: string
+        Surfing: string
+        TableTennis: string
+        Tennis: string
+        Velomobile: string
+        VirtualRow: string
+        WeightTraining: string
+        Wheelchair: string
+        Windsurf: string
+        Workout: string
+        Yoga: string
+    }
 }
