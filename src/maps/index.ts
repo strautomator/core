@@ -1,6 +1,6 @@
 // Strautomator Core: Maps
 
-import {Client, GeocodeRequest, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
+import {AddressType, Client, GeocodeRequest, GeocodeResult, ReverseGeocodeRequest} from "@googlemaps/google-maps-services-js"
 import {emojiFlag, iso1A2Code} from "@rapideditor/country-coder"
 import {Polyline} from "./polyline"
 import {MapAddress, MapCoordinates} from "./types"
@@ -240,7 +240,7 @@ export class Maps {
             const now = dayjs()
 
             // Cache coordinates with a precision of 1km.
-            const cacheId = `reverse-${coordinates.map((c) => (Math.round(c * 100) / 100).toFixed(settings.maps.cachePrecision)).join("-")}`
+            const cacheId = `reverse-${provider}-${coordinates.map((c) => (Math.round(c * 100) / 100).toFixed(settings.maps.cachePrecision)).join("-")}`
             const logCoordinates = coordinates.join(", ")
 
             // Location cached in memory?
@@ -294,13 +294,18 @@ export class Maps {
             // Fetch geocode result from Google.
             const res = await this.googleClient.reverseGeocode(geoRequest)
             if (res?.data?.results?.length > 0) {
-                const components = res.data.results[0].address_components
+                let result: GeocodeResult
+                result = res.data.results.find((r) => r.address_components.find((c) => c.types.includes(AddressType.locality)))
+                if (!result) {
+                    result = res.data.results.find((r) => r.address_components.find((c) => c.types.includes(AddressType.administrative_area_level_2)))
+                }
+                const components = result.address_components
 
                 // Get relevant address components.
-                const neighborhood = components.find((c) => c.types.includes("neighborhood" as any) || c.types.includes("sublocality" as any))
-                const city = components.find((c) => c.types.includes("locality" as any) || c.types.includes("administrative_area_level_2" as any))
-                const state = components.find((c) => c.types.includes("administrative_area_level_1" as any))
-                const country = components.find((c) => c.types.includes("country" as any))
+                const neighborhood = components.find((c) => c.types.includes(AddressType.neighborhood || AddressType.sublocality))
+                const city = components.find((c) => c.types.includes(AddressType.locality) || c.types.includes(AddressType.administrative_area_level_2))
+                const state = components.find((c) => c.types.includes(AddressType.administrative_area_level_1))
+                const country = components.find((c) => c.types.includes(AddressType.country))
 
                 // Build the resulting MapAddress.
                 const address: MapAddress = {}
