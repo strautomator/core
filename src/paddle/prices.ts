@@ -47,7 +47,7 @@ export class PaddlePrices {
             }
 
             // Cache price details.
-            this.yearlyPrice = result.find((p) => p.status == "active" && p.billingCycle.interval == "year")
+            this.yearlyPrice = result.find((p) => p.status == "active" && p.billingCycle?.interval == "year")
             this.lifetimePrice = result.find((p) => p.status == "active" && !p.billingCycle)
 
             const logDetails = result.map((p) => `${p.name} - ${parseFloat(p.unitPrice.amount) / 100} / ${p.billingCycle ? p.billingCycle.interval : "lifetime"}`).join(", ")
