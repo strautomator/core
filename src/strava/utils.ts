@@ -41,7 +41,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         trainer: data.trainer ? true : false,
         dateStart: startDate.toDate(),
         dateEnd: data.elapsed_time ? startDate.add(data.elapsed_time, "s").toDate() : null,
-        weekday: localStartDate.format("dddd"),
+        weekday: localStartDate.locale(user.preferences?.language || "en").format("dddd"),
         weekOfYear: localStartDate.week(),
         utcStartOffset: utcOffset,
         totalTime: data.elapsed_time,
@@ -745,13 +745,13 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             } else if (_.isDate(activity[prop.value])) {
                 const aDate = dayjs.utc(activity[prop.value]).add(activity.utcStartOffset, "minutes")
                 const format = prop.value.substring(0, 4) == "date" ? "L HH:mm" : "HH:mm"
-                activity[prop.value] = aDate.format(format)
+                activity[prop.value] = aDate.locale(user.preferences?.language || "en").format(format)
             }
         }
 
         // Sport type separated by spaces.
         else if (prop.value == "sportType") {
-            activity.sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim() as any
+            activity.sportType = translation(activity.sportType, user.preferences) as any
         }
 
         // Append suffixes. If suffix has at least 3 characters, check for translations as well.
