@@ -136,7 +136,7 @@ export class Mailer {
 
             // Data was passed? Replace tags in body and subject.
             if (options.data) {
-                if (template.tags) {
+                if (template?.tags) {
                     const entries = Object.entries(template.tags)
                     let tag: string
                     let values: any
