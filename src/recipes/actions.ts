@@ -132,9 +132,9 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
                 }
                 if (hasCityMid) {
                     try {
-                        let address = await maps.getReverseGeocode(activity.locationMid, "locationiq")
+                        let address = await maps.getReverseGeocode(activity.locationMid || activity.locationEnd, "locationiq")
                         if ((!address || !address.city) && user.isPro) {
-                            address = await maps.getReverseGeocode(activity.locationMid, "google")
+                            address = await maps.getReverseGeocode(activity.locationMid || activity.locationEnd, "google")
                         }
                         if (!address || !address.city) {
                             throw new Error(`Failed to geocode: ${activity.locationMid.join(", ")}`)
