@@ -9,6 +9,14 @@ import dayjsWeekOfYear from "dayjs/plugin/weekOfYear"
 import dayjsDayOfYear from "dayjs/plugin/dayOfYear"
 import dayjsDuration from "dayjs/plugin/duration"
 import dayjsRelativeTime from "dayjs/plugin/relativeTime"
+import "dayjs/locale/de"
+import "dayjs/locale/en"
+import "dayjs/locale/es"
+import "dayjs/locale/fr"
+import "dayjs/locale/it"
+import "dayjs/locale/lt"
+import "dayjs/locale/nl"
+import "dayjs/locale/pl"
 
 // Extends dayjs with required plugins.
 dayjs.extend(dayjsAdvancedFormat)
