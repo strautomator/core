@@ -172,15 +172,14 @@ export class GitHub {
 
                 // Can't create subscription if a user with a similar username was not found.
                 if (!user) {
-                    logger.warn("GitHub.processWebhook", details.join(", "), "User not found, won't create subscription")
-                    return
+                    logger.warn("GitHub.processWebhook", details.join(", "), "User not found, won't set the subscription's user ID")
                 }
 
                 // New subscription details.
                 subscription = {
                     source: "github",
                     id: subId,
-                    userId: user.id,
+                    userId: user ? user.id : "notfound",
                     username: username,
                     price: data.sponsorship.tier.monthly_price_in_dollars,
                     status: status
