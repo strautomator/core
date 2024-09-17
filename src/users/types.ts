@@ -103,7 +103,7 @@ export interface UserPreferences {
     /** Add a #strautomator.com hashtag on name of processed activities? */
     activityHashtag?: boolean
     /** Language (code) used for automations and weather tags. */
-    language?: "en" | "de" | "es" | "fr" | "it" | "nl" | "pl" | "pt"
+    language?: "en" | "de" | "es" | "fr" | "it" | "lt" | "nl" | "pl" | "pt"
     /** Delay processing activities? */
     delayedProcessing?: boolean
     /** How many days to delay the calculations of new GearWear mileage / hours. */
