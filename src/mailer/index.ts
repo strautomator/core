@@ -180,7 +180,9 @@ export class Mailer {
                 sendingOptions.bcc = settings.mailer.bcc
             }
 
-            await this.client.sendMail(sendingOptions)
+            // Rudimentary load balancer if a fallback SMTP is set.
+            const client = options.loadbalance && this.clientFallback ? (Math.random() < 0.55 ? this.client : this.clientFallback) : this.client
+            await client.sendMail(sendingOptions)
 
             // User ID was passed on data? Use it on the log.
             if (options.data && options.data.userId) {

@@ -16,4 +16,6 @@ export interface EmailSendingOptions {
     body?: string
     /** Objects user for tags replacement. */
     data?: any
+    /** Load balance between main and fallback SMTP servers? */
+    loadbalance?: boolean
 }
