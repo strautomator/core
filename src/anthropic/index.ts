@@ -1,7 +1,6 @@
 // Strautomator Core: Anthropic (Claude)
 
 import {AiProvider} from "../ai/types"
-import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
@@ -58,13 +57,13 @@ export class Anthropic implements AiProvider {
     // --------------------------------------------------------------------------
 
     /**
-     * Generate the activity name based on its parameters.
+     * Dispatch a prompt to Anthropic.
      * @param user The user.
-     * @param activity The Strava activity.
+     * @param subject The prompt subject (for example, a Strava activity).
      * @param prompt Prompt to be used.
      * @param maxTokens Max tokens to be used.
      */
-    activityPrompt = async (user: UserData, activity: StravaActivity, prompt: string[], maxTokens: number): Promise<string> => {
+    prompt = async (user: UserData, subject: string, prompt: string[], maxTokens: number): Promise<string> => {
         try {
             const content = prompt.join(" ")
             const options: AxiosConfig = {
@@ -84,12 +83,11 @@ export class Anthropic implements AiProvider {
             options.headers["x-api-key"] = settings.anthropic.api.key
             options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
-            logger.debug("Anthropic.activityPrompt", logHelper.user(user), logHelper.activity(activity), `Prompt: ${content}`)
+            logger.debug("Anthropic.prompt", logHelper.user(user), subject, `Prompt: ${content}`)
 
             // Here we go!
             try {
-                const jobId = `${activity.id}-${prompt.length}-${maxTokens}`
-                const result = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
+                const result = await this.limiter.schedule(() => axiosRequest(options))
 
                 // Successful prompt response? Extract the generated activity name.
                 if (result?.content?.length > 0) {
@@ -97,14 +95,14 @@ export class Anthropic implements AiProvider {
                     return content.join(" ")
                 }
             } catch (innerEx) {
-                logger.error("Anthropic.activityPrompt", logHelper.user(user), logHelper.activity(activity), options.data.model, innerEx)
+                logger.error("Anthropic.prompt", logHelper.user(user), subject, options.data.model, innerEx)
             }
 
             // Failed to generate the activity name.
-            logger.warn("Anthropic.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Failed to generate")
+            logger.warn("Anthropic.prompt", logHelper.user(user), subject, "Failed to generate")
             return null
         } catch (ex) {
-            logger.error("Anthropic.activityPrompt", logHelper.user(user), logHelper.activity(activity), ex)
+            logger.error("Anthropic.prompt", logHelper.user(user), subject, ex)
             return null
         }
     }

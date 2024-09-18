@@ -46,6 +46,60 @@ export class AI {
      * Generate the activity name based on its parameters.
      * @param user The user.
      * @param options AI generation options.
+     * @param prompt Messages to be sent.
+     */
+    private prompt = async (user: UserData, options: AiGenerateOptions, prompt: string[]): Promise<AiGeneratedResponse> => {
+        const activity = options.activity
+        const subject = options.activity ? logHelper.activity(activity) : options.subject
+
+        // Prepend and append messages if needed.
+        if (options.prepend) {
+            prompt.unshift(...options.prepend)
+        }
+        if (options.append?.length > 0) {
+            prompt.push(...options.append)
+        }
+
+        // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
+        const providers = [anthropic, openai, gemini].filter(async (p) => (await p.limiter.currentReservoir()) > 0)
+        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
+        let provider: AiProvider = preferredProviders.pop() || providers.pop()
+
+        // Keep trying with different providers.
+        let response: string
+        while (!response && provider) {
+            try {
+                response = await provider.prompt(user, subject, prompt, options.maxTokens)
+                if (!response) {
+                    logger.warn("AI.activityPrompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
+                    provider = providers.length > 0 ? providers.pop() : null
+                }
+            } catch (ex) {
+                logger.warn("AI.activityPrompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
+            }
+        }
+
+        // Got a valid response?
+        if (response) {
+            const result = {
+                provider: provider.constructor.name.toLowerCase() as any,
+                prompt: prompt.join(" "),
+                response: response
+            }
+            if (user.debug) {
+                logger.warn("AI.activityPrompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `Response: ${result.response}`)
+            }
+            return result
+        }
+
+        // Everything else failed.
+        return null
+    }
+
+    /**
+     * Generate the activity name based on its parameters.
+     * @param user The user.
+     * @param options AI generation options.
      */
     private activityPrompt = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         if (!options.provider) {
@@ -56,7 +110,6 @@ export class AI {
         const sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim()
         const customPrompt = user.preferences.aiPrompt
         const arrPrompt = []
-        arrPrompt.push(...options.prepend)
 
         try {
             const verb = sportType.includes("ride") ? "rode" : sportType.includes("run") ? "ran" : "did"
@@ -171,44 +224,7 @@ export class AI {
             logger.error("AI.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Failure while building the prompt", ex)
         }
 
-        if (options.append?.length > 0) {
-            arrPrompt.push(...options.append)
-        }
-
-        // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
-        const providers = [anthropic, openai, gemini].filter(async (p) => (await p.limiter.currentReservoir()) > 0)
-        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
-        let provider: AiProvider = preferredProviders.pop() || providers.pop()
-
-        // Keep trying with different providers.
-        let response: string
-        while (!response && provider) {
-            try {
-                response = await provider.activityPrompt(user, activity, arrPrompt, options.maxTokens)
-                if (!response) {
-                    logger.warn("AI.activityPrompt", logHelper.user(user), logHelper.activity(activity), `Empty response from ${provider.constructor.name}, will try another`)
-                    provider = providers.length > 0 ? providers.pop() : null
-                }
-            } catch (ex) {
-                logger.warn("AI.activityPrompt", logHelper.user(user), logHelper.activity(activity), `${provider.constructor.name} failed, will try another`)
-            }
-        }
-
-        // Got a valid response?
-        if (response) {
-            const result = {
-                provider: provider.constructor.name.toLowerCase() as any,
-                prompt: arrPrompt.join(" "),
-                response: response
-            }
-            if (user.debug) {
-                logger.warn("AI.activityPrompt.debug", logHelper.user(user), logHelper.activity(options.activity), result.provider, `Prompt: ${result.prompt}`, `Response: ${result.response}`)
-            }
-            return result
-        }
-
-        // Everything else failed.
-        return null
+        return this.prompt(user, options, arrPrompt)
     }
 
     /**
@@ -288,27 +304,112 @@ export class AI {
     }
 
     /**
-     * Get insights about the passed activity. Insights are never cached.
+     * Get insights about the passed activity.
      * @param user The user.
      * @param options AI generation options.
      */
     generateActivityInsights = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
+            const activity = options.activity
+
+            // At the moment this is enabled only for activities with HR and power.
+            if (!activity || !activity.hasPower || !activity.hrAvg) {
+                logger.warn("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), "Activity does not have power or HR data, won't generate insights")
+                return null
+            }
+            if (activity.movingTime < 600 || activity.distance < 5) {
+                logger.warn("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), "Activity too short, won't generate insights")
+                return null
+            }
+
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            options.fullDetails = true
             options.maxTokens = settings.ai.maxTokens.long
             options.humour = "none"
-            options.prepend = [
-                `Please analyse and give me insights and suggestions about my ${sportType.toLowerCase()}.`,
-                `I want you to focus and give suggestions based on this the activity only, with no broader analysis.`,
-                `The response should be very short and made in bullet points.`,
-                `Please do not add any formatting to the response, use just plain text and dashes.`
-            ]
 
-            // Generate the insights.
-            const result = await this.activityPrompt(user, options)
+            const verb = sportType.includes("ride") ? "rode" : sportType.includes("run") ? "ran" : "did"
+            const arrPrompt = ["I need you to analyze my activity performance and give me some suggestions."]
+
+            // Only add distance if moving time was also set.
+            if (activity.distance > 0 && activity.movingTime > 0) {
+                arrPrompt.push(`I ${verb} ${activity.distance}${activity.distanceUnit} in ${activity.movingTimeString}. Is that fast, or slow? How can I get faster?`)
+            }
+
+            // Add elevation?
+            if (!_.isNil(activity.elevationGain) && options.fullDetails) {
+                const elevationUnit = activity.elevationUnit || "m"
+                arrPrompt.push(`Elevation gain was ${activity.elevationGain}${elevationUnit}.`)
+            }
+
+            // Add power data mostly if less than 140W or more than 200W.
+            if (activity.hasPower && options.fullDetails) {
+                if (options.activityStreams?.watts?.avg) {
+                    const wattsAvg = options.activityStreams?.watts?.avg
+                    arrPrompt.push(`Average power was ${wattsAvg.firstHalf} watts on the first half, and ${wattsAvg.secondHalf} watts on the second half.`)
+                } else {
+                    arrPrompt.push(`Average power was ${activity.wattsWeighted} watts.`)
+                }
+
+                // Power intervals calculated and FTP sent only when full details are requested.
+                if (options.activityStreams?.watts.data) {
+                    const activityPerformance = calculatePowerIntervals(options.activityStreams.watts.data)
+                    arrPrompt.push(`My best 5 minutes power was ${activityPerformance.power5min} watts.`)
+                }
+                if (user.profile.ftp) {
+                    arrPrompt.push(`My FTP is ${user.profile.ftp} watts.`)
+                }
+
+                arrPrompt.push(`How to improve my power output? Should I push harder or focus on endurance?`)
+            }
+
+            // Add heart rate data, if available.
+            if (options.activityStreams?.hr?.avg) {
+                const hrAvg = options.activityStreams?.hr?.avg
+                arrPrompt.push(`Average heart rate was ${hrAvg.firstHalf} BPM on the first half, and ${hrAvg.secondHalf} BPM on the second half.  Was that too high, or too low, considering the speed and power?`)
+            } else if (activity.hrAvg > 0) {
+                arrPrompt.push(`Average heart rate was ${activity.hrAvg} BPM. Was that too high, or too low, considering the speed and power?`)
+            }
+
+            // Add cadence data only if full details were requested.
+            if (options.fullDetails) {
+                if (options.activityStreams?.cadence?.avg) {
+                    const cadenceAvg = options.activityStreams?.cadence?.avg
+                    arrPrompt.push(`Average cadence was ${cadenceAvg.firstHalf} on the first half, and ${cadenceAvg.secondHalf} on the second half.`)
+                } else if (activity.cadenceAvg > 0) {
+                    arrPrompt.push(`Average cadence was ${activity.cadenceAvg}.`)
+                }
+            }
+
+            // Add weather data?
+            const weatherSummaries = options.weatherSummaries
+            if (weatherSummaries && options.fullDetails) {
+                const weatherText = weatherSummaries.mid?.summary || weatherSummaries.start?.summary || weatherSummaries.end?.summary
+                if (weatherText) {
+                    arrPrompt.push(`The weather was ${weatherText.toLowerCase()}, `)
+
+                    const weatherTemps = _.without([weatherSummaries.mid?.temperature || weatherSummaries.start?.temperature || weatherSummaries.end?.temperature], null, undefined)
+                    const tempSuffix = user.preferences?.weatherUnit == "f" ? "°F" : "°C"
+                    const minTemp = _.min(weatherTemps) || 0
+                    const maxTemp = _.max(weatherTemps) || 0
+                    arrPrompt.push(`with temperatures ranging from ${minTemp}${tempSuffix} to ${maxTemp}${tempSuffix}.`)
+
+                    const weatherAqis = _.without([weatherSummaries.mid?.aqi, weatherSummaries.start?.aqi, weatherSummaries.end?.aqi], null, undefined)
+                    const weatherAqi = _.max(weatherAqis) || 0
+                    if (weatherAqi > 4) {
+                        arrPrompt.push("The air quality was extremely bad.")
+                    } else if (weatherAqi > 3) {
+                        arrPrompt.push("The air quality was bad.")
+                    }
+
+                    arrPrompt.push("How could this weather impact my performance?")
+                }
+            }
+
+            arrPrompt.push("Please be very brief and short with your analysis, I do not need generic advice.")
+
+            // Generate and cache the result.
+            const result = await this.prompt(user, options, arrPrompt)
             if (result) {
-                logger.info("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), result.provider, `Response length: ${result.response.length}`)
+                logger.info("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), result.provider)
                 return result
             }
 

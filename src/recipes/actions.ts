@@ -594,9 +594,8 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         let rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : settings.plans.free.generatedNames.ai
         if (activity.batch) {
             rndAi -= settings.plans.free.generatedNames.ai
-        }
-        if (action.type == RecipeActionType.GenerateInsights) {
-            rndAi = 30
+        } else if (action.type == RecipeActionType.GenerateInsights) {
+            rndAi = user.isPro ? 100 : 0
         }
         if (!user.preferences.privacyMode && Math.random() * 100 <= rndAi) {
             if (action.type == RecipeActionType.GenerateName) {
@@ -616,14 +615,13 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                     return true
                 }
             } else if (action.type == RecipeActionType.GenerateInsights) {
-                const aiResponse = await ai.generateActivityInsights(user, {activity, humour, provider, weatherSummaries})
+                const aiResponse = await ai.generateActivityInsights(user, {activity, humour, provider, weatherSummaries, fullDetails: true})
                 if (aiResponse) {
                     activity.aiInsightsProvider = aiResponse.provider
                     activity.aiInsights = activity.privateNote = aiResponse.response
                     activity.updatedFields.push("privateNote")
                     return true
                 } else {
-                    logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "AI insights failed")
                     return false
                 }
             }

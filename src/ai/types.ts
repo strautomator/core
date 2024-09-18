@@ -10,7 +10,7 @@ import {ActivityWeather} from "../weather/types"
  */
 export interface AiProvider {
     /** Method to generate activity names. */
-    activityPrompt(user: UserData, activity: StravaActivity, prompt: string[], maxTokens: number): Promise<string>
+    prompt(user: UserData, subject: string, prompt: string[], maxTokens: number): Promise<string>
     /** Flag to tell if the provider is currently being rate limited. */
     limiter: Bottleneck
 }
@@ -48,4 +48,6 @@ export interface AiGenerateOptions {
     prepend?: string[]
     /** Text to be added after the activity prompt. */
     append?: string[]
+    /** The prompt subject. */
+    subject?: string
 }

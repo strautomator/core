@@ -1,7 +1,6 @@
 // Strautomator Core: Gemini (Vertex AI)
 
 import {AiProvider} from "../ai/types"
-import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {FinishReason, GenerateContentRequest, HarmBlockThreshold, HarmCategory, VertexAI} from "@google-cloud/vertexai"
 import _ from "lodash"
@@ -60,17 +59,16 @@ export class Gemini implements AiProvider {
     // --------------------------------------------------------------------------
 
     /**
-     * Generate the activity name based on its parameters.
+     * Dispatch a prompt to Gemini.
      * @param user The user.
-     * @param activity The Strava activity.
+     * @param subject The prompt subject (for example, a Strava activity).
      * @param prompt Prompt to be used.
      * @param maxTokens Max tokens to be used.
      */
-    activityPrompt = async (user: UserData, activity: StravaActivity, prompt: string[], maxTokens: number): Promise<string> => {
+    prompt = async (user: UserData, subject: string, prompt: string[], maxTokens: number): Promise<string> => {
         try {
             const model = this.client.preview.getGenerativeModel({model: "gemini-1.0-pro"})
             const parts = prompt.map((p) => ({text: p}))
-            const jobId = `${activity.id}-${prompt.length}-${maxTokens}`
 
             // Here we go!
             const reqOptions: GenerateContentRequest = {
@@ -101,31 +99,31 @@ export class Gemini implements AiProvider {
                 return candidate.content.parts[0].text
             }
 
-            let result = await this.limiter.schedule({id: jobId}, () => model.generateContent(reqOptions))
+            let result = await this.limiter.schedule(() => model.generateContent(reqOptions))
             let text = parseResponse(result ? result.response : null)
 
             // If the response was cut due to insufficient tokens and the user is PRO, try again.
             if (result?.response.candidates[0]?.finishReason === FinishReason.MAX_TOKENS) {
-                logger.warn("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Early stop due to max tokens, will retry", text)
+                logger.warn("Gemini.prompt", logHelper.user(user), subject, "Early stop due to max tokens, will retry", text)
 
                 if (user.isPro) {
                     reqOptions.generationConfig.maxOutputTokens = Math.round(maxTokens * 1.2)
-                    result = await this.limiter.schedule({id: jobId + "-retry"}, () => model.generateContent(reqOptions))
+                    result = await this.limiter.schedule(() => model.generateContent(reqOptions))
                     text = parseResponse(result ? result.response : null)
                 }
             }
 
             // Extract the generated text.
             if (text) {
-                logger.info("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), text)
+                logger.info("Gemini.prompt", logHelper.user(user), subject, text)
                 return text
             }
 
             // Failed to generate the activity name.
-            logger.warn("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Failed to generate")
+            logger.warn("Gemini.prompt", logHelper.user(user), subject, "Failed to generate")
             return null
         } catch (ex) {
-            logger.error("Gemini.activityPrompt", logHelper.user(user), logHelper.activity(activity), ex)
+            logger.error("Gemini.prompt", logHelper.user(user), subject, ex)
 
             // Force trigger a rate limit in case we get a "quota exceeded" error.
             const message = JSON.stringify(ex, null, 0)

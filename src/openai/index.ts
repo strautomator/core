@@ -1,7 +1,6 @@
 // Strautomator Core: OpenAI (ChatGPT)
 
 import {AiProvider} from "../ai/types"
-import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
@@ -58,13 +57,13 @@ export class OpenAI implements AiProvider {
     // --------------------------------------------------------------------------
 
     /**
-     * Generate the activity name based on its parameters.
+     * Dispatch a prompt to OpenAI.
      * @param user The user.
-     * @param activity The Strava activity.
+     * @param subject The prompt subject (for example, a Strava activity).
      * @param prompt Prompt to be used.
      * @param maxTokens Max tokens to be used.
      */
-    activityPrompt = async (user: UserData, activity: StravaActivity, prompt: string[], maxTokens: number): Promise<string> => {
+    prompt = async (user: UserData, subject: string, prompt: string[], maxTokens: number): Promise<string> => {
         try {
             const content = prompt.join(" ")
             const options: AxiosConfig = {
@@ -92,12 +91,11 @@ export class OpenAI implements AiProvider {
             options.headers["Authorization"] = `Bearer ${settings.openai.api.key}`
             options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
-            logger.debug("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), `Prompt: ${content}`)
+            logger.debug("OpenAI.prompt", logHelper.user(user), subject, `Prompt: ${content}`)
 
             // Here we go!
             try {
-                const jobId = `${activity.id}-${prompt.length}-${maxTokens}`
-                const result = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
+                const result = await this.limiter.schedule(() => axiosRequest(options))
 
                 // Successful prompt response? Extract the generated activity name.
                 if (result?.choices?.length > 0) {
@@ -114,14 +112,14 @@ export class OpenAI implements AiProvider {
                     return text
                 }
             } catch (innerEx) {
-                logger.error("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), options.data.model, innerEx)
+                logger.error("OpenAI.prompt", logHelper.user(user), subject, options.data.model, innerEx)
             }
 
             // Failed to generate the activity name.
-            logger.warn("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), "Failed to generate")
+            logger.warn("OpenAI.prompt", logHelper.user(user), subject, "Failed to generate")
             return null
         } catch (ex) {
-            logger.error("OpenAI.activityPrompt", logHelper.user(user), logHelper.activity(activity), ex)
+            logger.error("OpenAI.prompt", logHelper.user(user), subject, ex)
             return null
         }
     }
