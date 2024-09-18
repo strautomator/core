@@ -667,7 +667,7 @@
             /// Visual Crossing API rate limits.
             "rateLimit": {
                 "maxConcurrent": 1,
-                "perHour": 120,
+                "perHour": 100,
                 "perDay": 500
             },
             // The Visual Crossing API secret MUST be set via secret settings or
