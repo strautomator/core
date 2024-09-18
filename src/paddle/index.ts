@@ -61,9 +61,6 @@ export class PaddleWrapper {
             if (!settings.paddle.api.key) {
                 throw new Error("Missing the mandatory paddle.api.key setting")
             }
-            if (!settings.paddle.priceId) {
-                throw new Error("Missing the mandatory paddle.priceId setting")
-            }
             if (!settings.paddle.webhookId) {
                 throw new Error("Missing the mandatory paddle.webhookId setting")
             }
