@@ -192,7 +192,7 @@ export class PayPalWebhooks {
                 // Is it due to a Paddle migration? If so, do not dispatch an event, otherwise the user would be reverted back to Free.
                 if (subscription.status == "CANCELLED") {
                     const user = await users.getById(subscription.userId)
-                    if (user?.subscriptionId?.startsWith("sub_")) {
+                    if (user?.subscriptionId?.startsWith("sub_") || user?.subscriptionId?.startsWith("txn_")) {
                         logger.info("PayPal.processWebhook", logHelper.user(user), logHelper.subscription(subscription), `Migration to Paddle confirmed: ${user.subscriptionId}`)
                         return
                     }

@@ -5,6 +5,7 @@ import {FieldValue} from "@google-cloud/firestore"
 import {PaddleSubscription} from "./types"
 import {UserData} from "../users/types"
 import api from "./api"
+import paddlePrices from "./prices"
 import eventManager from "../eventmanager"
 import subscriptions from "../subscriptions"
 import users from "../users"
@@ -68,14 +69,20 @@ export class PaddleSubscriptions {
     /**
      * Create a matching subscription when it gets activated by Paddle.
      * @param entity Subscription notification.
+     * @param lifetime Is it a lifetime subscription?
      */
-    onSubscriptionCreated = async (entity: EventEntity): Promise<PaddleSubscription> => {
+    onSubscriptionCreated = async (entity: EventEntity, lifetime?: boolean): Promise<PaddleSubscription> => {
         const data = entity.data as SubscriptionNotification
 
         try {
             const customData = entity.data as any
             const userId = customData?.userId || null
-            const user = await users.getByPaddleId(data.customerId)
+
+            let user = await users.getByPaddleId(data.customerId)
+            if (!user && userId) {
+                logger.warn("Paddle.onSubscriptionCreated", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
+                user = await users.getById(userId)
+            }
             if (!user) {
                 throw new Error(`User ${data.customerId || userId} not found`)
             }
@@ -86,25 +93,19 @@ export class PaddleSubscriptions {
                 id: data.id,
                 userId: user.id,
                 customerId: data.customerId,
-                status: data.status != "active" ? "APPROVAL_PENDING" : "ACTIVE",
+                status: !lifetime && data.status != "active" ? "APPROVAL_PENDING" : "ACTIVE",
                 currency: data.currencyCode,
                 dateCreated: dayjs(data.createdAt || new Date()).toDate(),
                 dateUpdated: dayjs(data.updatedAt || new Date()).toDate()
             }
 
-            if (data.billingCycle) {
+            if (lifetime) {
+                sub.frequency = "lifetime"
+                sub.dateLastPayment = sub.dateUpdated
+            } else if (data.billingCycle) {
                 sub.frequency = data.billingCycle.interval == "month" ? "monthly" : "yearly"
+                this.setPaymentDates(sub, data)
             }
-            if (data.items?.length > 0) {
-                const item = data.items[0]
-                sub.price = parseFloat(item.price.unitPrice.amount) / 100
-                sub.currency = item.price.unitPrice.currencyCode
-                if (!sub.frequency && !item.recurring) {
-                    sub.frequency = "lifetime"
-                }
-            }
-
-            this.setPaymentDates(sub, data)
 
             // Save to the database.
             await subscriptions.create(sub)
@@ -125,7 +126,14 @@ export class PaddleSubscriptions {
         const data = entity.data as SubscriptionNotification
 
         try {
-            const user = await users.getByPaddleId(data.customerId)
+            const customData = entity.data as any
+            const userId = customData?.userId || null
+
+            let user = await users.getByPaddleId(data.customerId)
+            if (!user && userId) {
+                logger.warn("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
+                user = await users.getById(userId)
+            }
             if (!user) {
                 throw new Error(`User with Paddle ID ${data.customerId} not found`)
             }
@@ -181,13 +189,28 @@ export class PaddleSubscriptions {
         try {
             const customData = entity.data as any
             const userId = customData?.userId || null
-            const user = (await users.getByPaddleId(data.customerId)) || (await users.getById(userId))
+
+            let user = await users.getByPaddleId(data.customerId)
+            if (!user && userId) {
+                logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
+                user = await users.getById(userId)
+            }
             if (!user) {
                 throw new Error(`User ${data.customerId || userId} not found`)
             }
 
+            // Is it a single time payment for a lifetime subscription?
+            let sub: PaddleSubscription
+            if (!data.subscriptionId && paddlePrices.lifetimePrice?.id) {
+                const price = data.items.find((i) => i.price.id == paddlePrices.lifetimePrice.id)
+                if (price) {
+                    sub = await this.onSubscriptionCreated(entity, true)
+                }
+            } else {
+                sub = await subscriptions.getById(data.subscriptionId)
+            }
+
             // Make sure the subscription was previously created.
-            let sub = (await subscriptions.getById(data.subscriptionId)) as PaddleSubscription
             if (!sub) {
                 throw new Error(`Subscription ${data.subscriptionId} not found`)
             }
@@ -199,29 +222,36 @@ export class PaddleSubscriptions {
                 dateUpdated: dayjs(data.updatedAt || sub.dateUpdated).toDate()
             }
 
-            // Update discount and tax details.
+            // Update price details when needed.
             if (data.details?.totals) {
+                const price = parseFloat(data.details.totals.total) / 100
+                if (price != sub.price) {
+                    updatedSub.price = price
+                    hasChanges = true
+                }
+
                 const discount = parseFloat(data.details.totals.discount) / 100
-                const tax = parseFloat(data.details.totals.tax) / 100
                 if (discount != sub.discount) {
                     updatedSub.discount = discount > 0 ? discount : (FieldValue.delete() as any)
                     hasChanges = true
                 }
+
+                const tax = parseFloat(data.details.totals.tax) / 100
                 if (tax != sub.tax) {
                     updatedSub.tax = tax > 0 ? tax : (FieldValue.delete() as any)
                     hasChanges = true
                 }
             }
 
-            // Completed?
+            // Set last and next payment dates.
             if (data.status == "completed") {
                 const lastPayment = data.billedAt ? dayjs(data.billedAt) : null
-                if (!sub.dateLastPayment || (lastPayment && lastPayment.diff(sub.dateLastPayment, "hours") > 1)) {
+                if (lastPayment && (!sub.dateLastPayment || lastPayment.diff(sub.dateLastPayment, "hours") > 1)) {
                     updatedSub.dateLastPayment = lastPayment.toDate()
                     hasChanges = true
                 }
                 const nextPayment = data.billingPeriod?.endsAt ? dayjs(data.billingPeriod.endsAt) : null
-                if (!sub.dateNextPayment || (nextPayment && nextPayment.diff(sub.dateNextPayment, "hours") > 1)) {
+                if (nextPayment && (!sub.dateNextPayment || nextPayment.diff(sub.dateNextPayment, "hours") > 1)) {
                     updatedSub.dateLastPayment = nextPayment.toDate()
                     hasChanges = true
                 }
