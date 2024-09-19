@@ -16,6 +16,8 @@ export interface Announcement {
     dateStart: Date
     /** Date when it should expire (end). */
     dateExpiry: Date
+    /** Targeting users that registered before the specified date. */
+    dateRegisteredBefore?: Date
     /** How many times it was read (closed by the user). */
     readCount?: number
     /** Is it about a new feature? */
