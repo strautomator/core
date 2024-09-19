@@ -48,23 +48,46 @@ export class Announcements {
 
     /**
      * Get active announcements stored the database.
+     * @param user Optional user to filter the announcements for.
      */
-    getActive = async (): Promise<Announcement[]> => {
+    getActive = async (user?: UserData): Promise<Announcement[]> => {
         try {
-            const fromCache = cache.get("announcements", "active")
+            let result: Announcement[]
 
             // Cached announcements still valid?
+            const now = new Date()
+            const fromCache = cache.get("announcements", "active")
             if (fromCache && fromCache.length > 0) {
-                logger.info("Announcements.getActive.fromCache", `${fromCache.length} active announcements`)
-                return fromCache
+                result = fromCache
+            } else {
+                result = await database.search("announcements", [
+                    ["dateStart", "<=", now],
+                    ["dateExpiry", ">=", now]
+                ])
             }
 
-            // Get active announcements from database.
-            const now = new Date()
-            const all = await database.search("announcements", [["dateStart", "<=", now]])
-            const result = all.filter((a) => a.dateExpiry >= now)
             cache.set("announcements", "active", result)
-            logger.info("Announcements.getActive", `${result.length || "No"} active announcements`)
+
+            // Filter according to the user?
+            if (user) {
+                const country = user.countryCode || "US"
+                const bikes = user.profile.bikes || []
+                const shoes = user.profile.shoes || []
+                result = result.filter((a) => {
+                    if (a.isFree && user.isPro) return false
+                    if (a.isPro && !user.isPro) return false
+                    if (a.hasBikes && bikes.length == 0) return false
+                    if (a.hasBikes === false && bikes.length > 0) return false
+                    if (a.hasShoes && shoes.length == 0) return false
+                    if (a.hasShoes === false && shoes.length > 0) return false
+                    if (a.countries && !a.countries.includes(country)) return false
+                    if (a.dateRegisteredBefore && user.dateRegistered >= a.dateRegisteredBefore) return false
+                    return true
+                })
+                logger.info("Announcements.getActive", logHelper.user(user), `${result.length || "No"} active announcements`)
+            } else {
+                logger.info("Announcements.getActive", `${result.length || "No"} active announcements`)
+            }
 
             return result
         } catch (ex) {
