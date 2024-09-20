@@ -481,6 +481,12 @@ export class GearWear {
         let dateString = `${dDateFrom.format("ll")} to ${dDateTo.format("ll")}`
         let count = 0
 
+        // User suspended? Stop here.
+        if (user.suspended) {
+            logger.warn("GearWear.processUserActivities", logHelper.user(user), dateString, "User suspended, won't process")
+            return 0
+        }
+
         try {
             const activities = await strava.activities.getActivities(user, {after: dDateFrom, before: dDateTo})
 

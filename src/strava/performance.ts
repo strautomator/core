@@ -37,6 +37,12 @@ export class StravaPerformance {
         try {
             const now = dayjs().utc()
 
+            // User suspended? Stop here.
+            if (user.suspended) {
+                logger.warn("Strava.processPerformance", logHelper.user(user), "User suspended, won't process performance")
+                return
+            }
+
             // Get recent activities if none was passed. Will use the highest value (FTP or fitness level weeks).
             if (!activities || activities.length == 0) {
                 const weeks = _.max([settings.strava.ftp.weeks, settings.strava.fitnessLevel.weeks])

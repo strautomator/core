@@ -135,8 +135,11 @@ export class StravaAPI {
             return tokens
         } catch (ex) {
             this.extractTokenError(ex)
-
-            logger.error("Strava.getToken", `Code ending ${code?.substring(code.length - 3)}`, ex)
+            if (code) {
+                logger.error("Strava.getToken", `Code ending ${code.substring(code.length - 3)}`, ex)
+            } else {
+                logger.error("Strava.getToken", "Missing auth code", ex)
+            }
             throw ex
         }
     }

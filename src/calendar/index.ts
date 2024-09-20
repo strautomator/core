@@ -387,6 +387,12 @@ export class Calendar {
     generate = async (user: UserData, dbCalendar: CalendarData): Promise<string> => {
         const optionsLog = _.map(_.toPairs(dbCalendar.options), (r) => r.join("=")).join(" | ")
 
+        // User suspended? Stop here.
+        if (user.suspended) {
+            logger.warn("Calendar.generate", logHelper.user(user), optionsLog, "User suspended, won't generate")
+            return null
+        }
+
         try {
             const fileId = `${user.id}/${dbCalendar.id}`
             const cachedFile = await storage.getFile("calendar", `${fileId}.json`)
