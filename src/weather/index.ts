@@ -1,7 +1,7 @@
 // Strautomator Core: Weather
 
 import {ActivityWeather, WeatherProvider, WeatherRequestOptions, WeatherRoundTo, WeatherSummary} from "./types"
-import {apiRateLimiter, processWeatherSummary} from "./utils"
+import {apiRateLimiter, processWeatherSummary, weatherSummaryString} from "./utils"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import tomorrow from "./tomorrow"
@@ -143,6 +143,14 @@ export class Weather {
             const startSummary = weather.start ? `Start ${dateStart.format("LT")}, ${weather.start.provider}: ${weather.start.temperature} - ${weather.start.summary}` : "No weather for start location"
             const endSummary = weather.end ? `End ${dateEnd.format("LT")}, ${weather.end.provider}: ${weather.end.temperature} - ${weather.end.summary}` : "No weather for end location"
             logger.info("Weather.getActivityWeather", userLog, activityLog, startSummary, endSummary)
+
+            // Append the weather summary to the activity in case we need to reuse for AI insights.
+            if (user.preferences.aiEnabled) {
+                const anySummary = weather.mid || weather.start || weather.end
+                if (anySummary) {
+                    activity.weatherSummary = weatherSummaryString(anySummary)
+                }
+            }
 
             return weather
         } catch (ex) {
