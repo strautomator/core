@@ -118,8 +118,10 @@ export interface UserPreferences {
     windSpeedUnit?: "m/s" | "kph" | "mph"
     /** Calendar template. */
     calendarTemplate?: UserCalendarTemplate
+    /** Enable AI features? */
+    aiEnabled?: boolean
     /** Preferred AI provider. */
-    aiProvider?: "gemini" | "openai"
+    aiProvider?: "anthropic" | "gemini" | "openai"
     /** Additional AI prompt when generating activity names. */
     aiPrompt?: string
     /** Omit suffixes when replacing activity tags? */
