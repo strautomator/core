@@ -1,6 +1,6 @@
 // Strautomator Core: OpenAI (ChatGPT)
 
-import {AiProvider} from "../ai/types"
+import {AiGenerateOptions, AiProvider} from "../ai/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
@@ -39,9 +39,9 @@ export class OpenAI implements AiProvider {
 
             // Create the bottleneck rate limiter.
             this.limiter = new Bottleneck({
-                maxConcurrent: settings.anthropic.api.maxConcurrent,
-                reservoir: settings.anthropic.api.maxPerMinute,
-                reservoirRefreshAmount: settings.anthropic.api.maxPerMinute,
+                maxConcurrent: settings.openai.api.maxConcurrent,
+                reservoir: settings.openai.api.maxPerMinute,
+                reservoirRefreshAmount: settings.openai.api.maxPerMinute,
                 reservoirRefreshInterval: 1000 * 60
             })
 
@@ -53,29 +53,35 @@ export class OpenAI implements AiProvider {
         }
     }
 
-    // METHODS
+    /**
+     * Helper to extract an underlying error from OpenAI client exceptions.
+     * @param ex The error or exception object.
+     */
+    get baseHeaders() {
+        return {Authorization: `Bearer ${settings.openai.api.key}`, "User-Agent": `${settings.app.title} / ${packageVersion}`}
+    }
+
+    // GENERAL PROMPTING
     // --------------------------------------------------------------------------
 
     /**
      * Dispatch a prompt to OpenAI.
      * @param user The user.
-     * @param subject The prompt subject (for example, a Strava activity).
-     * @param prompt Prompt to be used.
-     * @param maxTokens Max tokens to be used.
+     * @param options AI generation options.
+     * @param messages The messages to be sent to the assistant.
      */
-    prompt = async (user: UserData, subject: string, prompt: string[], maxTokens: number): Promise<string> => {
+    prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
-            const content = prompt.join(" ")
-            const options: AxiosConfig = {
+            const reqOptions: AxiosConfig = {
                 url: `${settings.openai.api.baseUrl}chat/completions`,
                 method: "POST",
-                headers: {},
+                headers: this.baseHeaders,
                 data: {
                     model: user.isPro && Math.random() < 0.5 ? "gpt-4o" : "gpt-4o-mini",
-                    max_tokens: maxTokens,
+                    max_tokens: options.maxTokens,
                     messages: [
-                        {role: "system", content: "You are an assistant to create creative names and descriptions for Strava activities."},
-                        {role: "user", content: content}
+                        {role: "system", content: options.instruction},
+                        {role: "user", content: messages.join(" ")}
                     ]
                 },
                 onRetry: (opt) => {
@@ -87,17 +93,11 @@ export class OpenAI implements AiProvider {
                 }
             }
 
-            // Append headers.
-            options.headers["Authorization"] = `Bearer ${settings.openai.api.key}`
-            options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
-
-            logger.debug("OpenAI.prompt", logHelper.user(user), subject, `Prompt: ${content}`)
-
             // Here we go!
             try {
-                const result = await this.limiter.schedule(() => axiosRequest(options))
+                const result = await this.limiter.schedule(() => axiosRequest(reqOptions))
 
-                // Successful prompt response? Extract the generated activity name.
+                // Successful prompt response? Extract the generated content.
                 if (result?.choices?.length > 0) {
                     const arrName = result.choices[0].message.content.split(`"`)
                     let text = arrName.length > 1 ? arrName[1] : arrName[0]
@@ -112,14 +112,14 @@ export class OpenAI implements AiProvider {
                     return text
                 }
             } catch (innerEx) {
-                logger.error("OpenAI.prompt", logHelper.user(user), subject, options.data.model, innerEx)
+                logger.error("OpenAI.prompt", logHelper.user(user), options.subject, innerEx)
             }
 
             // Failed to generate the activity name.
-            logger.warn("OpenAI.prompt", logHelper.user(user), subject, "Failed to generate")
+            logger.warn("OpenAI.prompt", logHelper.user(user), options.subject, "Failed to generate")
             return null
         } catch (ex) {
-            logger.error("OpenAI.prompt", logHelper.user(user), subject, ex)
+            logger.error("OpenAI.prompt", logHelper.user(user), options.subject, ex)
             return null
         }
     }
@@ -134,30 +134,116 @@ export class OpenAI implements AiProvider {
             const options: AxiosConfig = {
                 url: `${settings.openai.api.baseUrl}moderations`,
                 method: "POST",
-                headers: {},
+                headers: this.baseHeaders,
                 data: {input: prompt}
             }
 
-            // Append headers.
-            options.headers["Authorization"] = `Bearer ${settings.openai.api.key}`
-            options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
-
             // Stop if no results were returned, or if nothing was flagged.
-            const res = await axiosRequest(options)
-            if (!res) {
+            const result = await this.limiter.schedule(() => axiosRequest(options))
+            if (!result) {
                 return null
             }
-            const result = res.results.find((r) => r.flagged)
-            if (!result) {
+            const flagged = result.results.find((r) => r.flagged)
+            if (!flagged) {
                 return null
             }
 
             // Return list of categories that failed the moderation.
-            const categories = Object.keys(_.pickBy(result.categories, (i) => i == true))
+            const categories = Object.keys(_.pickBy(flagged.categories, (i) => i == true))
             logger.info("OpenAI.validatePrompt", logHelper.user(user), prompt, `Failed: ${categories.join(", ")}`)
             return categories
         } catch (ex) {
             logger.error("OpenAI.validatePrompt", logHelper.user(user), prompt, ex)
+            return null
+        }
+    }
+
+    // ASSISTANT
+    // --------------------------------------------------------------------------
+
+    /**
+     * Creates a thread to starting messaging with the AI assistant.
+     * @param user The user data.
+     */
+    createThread = async (user: UserData): Promise<string> => {
+        try {
+            if (!user.isPro) {
+                throw new Error("AI assistant is only available for PRO users")
+            }
+
+            const options: AxiosConfig = {
+                url: `${settings.openai.api.baseUrl}threads`,
+                method: "POST",
+                headers: this.baseHeaders,
+                data: {metadata: {userId: user.id}}
+            }
+
+            const result = await this.limiter.schedule(() => axiosRequest(options))
+            if (!result || !result.id) {
+                logger.warn("OpenAI.createThread", logHelper.user(user), "Failed to create the thread")
+                return null
+            }
+
+            logger.info("OpenAI.createThread", logHelper.user(user), result.id)
+            return result.id
+        } catch (ex) {
+            logger.error("OpenAI.createThread", logHelper.user(user), ex)
+            return null
+        }
+    }
+
+    /**
+     * Deletes a thread with the AI assistant. Returns true if a thread was deleted.
+     * @param user The user data.
+     * @param threadId The thread to be deleted.
+     */
+    deleteThread = async (user: UserData, threadId: string): Promise<boolean> => {
+        try {
+            const options: AxiosConfig = {
+                url: `${settings.openai.api.baseUrl}threads/${threadId}`,
+                method: "DELETE",
+                headers: this.baseHeaders
+            }
+
+            const result = await this.limiter.schedule(() => axiosRequest(options))
+            if (!result || !result.deleted) {
+                logger.warn("OpenAI.deleteThread", logHelper.user(user), threadId, "Invalid or missing thread")
+                return false
+            }
+
+            logger.info("OpenAI.deleteThread", logHelper.user(user), threadId)
+            return true
+        } catch (ex) {
+            logger.error("OpenAI.deleteThread", logHelper.user(user), threadId, ex)
+            return false
+        }
+    }
+
+    /**
+     * Run the specified thread and return the run ID.
+     * @param user The user data.
+     * @param threadId The thread to run.
+     * @param messages The messages to be sent to the assistant.
+     */
+    runThread = async (user: UserData, threadId: string, messages: string[]): Promise<string> => {
+        try {
+            const options: AxiosConfig = {
+                url: `${settings.openai.api.baseUrl}threads/${threadId}/runs`,
+                method: "POST",
+                headers: this.baseHeaders,
+                data: {assistant_id: settings.openai.api.assistantId, additional_messages: messages.map((m) => ({role: "user", content: m}))}
+            }
+
+            const result = await axiosRequest(options)
+            if (!result || !result.id) {
+                logger.warn("OpenAI.runThread", logHelper.user(user), threadId, "Failed to run the thread")
+                return null
+            }
+
+            logger.info("OpenAI.runThread", logHelper.user(user), threadId, `Run: ${result.id}`)
+            return result.id
+        } catch (ex) {
+            logger.error("OpenAI.runThread", logHelper.user(user), threadId, ex)
             return null
         }
     }

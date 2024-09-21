@@ -1,6 +1,6 @@
 // Strautomator Core: Anthropic (Claude)
 
-import {AiProvider} from "../ai/types"
+import {AiGenerateOptions, AiProvider} from "../ai/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
@@ -59,35 +59,29 @@ export class Anthropic implements AiProvider {
     /**
      * Dispatch a prompt to Anthropic.
      * @param user The user.
-     * @param subject The prompt subject (for example, a Strava activity).
-     * @param prompt Prompt to be used.
-     * @param maxTokens Max tokens to be used.
+     * @param options AI generation options.
+     * @param messages The messages to be sent to the assistant.
      */
-    prompt = async (user: UserData, subject: string, prompt: string[], maxTokens: number): Promise<string> => {
+    prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
-            const content = prompt.join(" ")
-            const options: AxiosConfig = {
+            const reqOptions: AxiosConfig = {
                 url: `${settings.anthropic.api.baseUrl}messages`,
                 method: "POST",
                 headers: {},
                 data: {
                     model: "claude-3-5-sonnet-20240620",
-                    max_tokens: maxTokens,
-                    system: "You are an assistant to create creative names and descriptions for Strava activities.",
-                    messages: [{role: "user", content: content}]
+                    max_tokens: options.maxTokens,
+                    system: options.instruction,
+                    messages: [{role: "user", content: messages.join(" ")}]
                 }
             }
-
-            // Append headers.
-            options.headers["anthropic-version"] = settings.anthropic.api.version
-            options.headers["x-api-key"] = settings.anthropic.api.key
-            options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
-
-            logger.debug("Anthropic.prompt", logHelper.user(user), subject, `Prompt: ${content}`)
+            reqOptions.headers["anthropic-version"] = settings.anthropic.api.version
+            reqOptions.headers["x-api-key"] = settings.anthropic.api.key
+            reqOptions.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
             // Here we go!
             try {
-                const result = await this.limiter.schedule(() => axiosRequest(options))
+                const result = await this.limiter.schedule(() => axiosRequest(reqOptions))
 
                 // Successful prompt response? Extract the generated activity name.
                 if (result?.content?.length > 0) {
@@ -95,14 +89,14 @@ export class Anthropic implements AiProvider {
                     return content.join(" ")
                 }
             } catch (innerEx) {
-                logger.error("Anthropic.prompt", logHelper.user(user), subject, options.data.model, innerEx)
+                logger.error("Anthropic.prompt", logHelper.user(user), options.subject, innerEx)
             }
 
             // Failed to generate the activity name.
-            logger.warn("Anthropic.prompt", logHelper.user(user), subject, "Failed to generate")
+            logger.warn("Anthropic.prompt", logHelper.user(user), options.subject, "Failed to generate")
             return null
         } catch (ex) {
-            logger.error("Anthropic.prompt", logHelper.user(user), subject, ex)
+            logger.error("Anthropic.prompt", logHelper.user(user), options.subject, ex)
             return null
         }
     }

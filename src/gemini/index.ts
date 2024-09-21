@@ -1,6 +1,6 @@
 // Strautomator Core: Gemini (Vertex AI)
 
-import {AiProvider} from "../ai/types"
+import {AiGenerateOptions, AiProvider} from "../ai/types"
 import {UserData} from "../users/types"
 import {FinishReason, GenerateContentRequest, HarmBlockThreshold, HarmCategory, VertexAI} from "@google-cloud/vertexai"
 import _ from "lodash"
@@ -61,18 +61,14 @@ export class Gemini implements AiProvider {
     /**
      * Dispatch a prompt to Gemini.
      * @param user The user.
-     * @param subject The prompt subject (for example, a Strava activity).
-     * @param prompt Prompt to be used.
-     * @param maxTokens Max tokens to be used.
+     * @param options AI generation options.
+     * @param messages The messages to be sent to the assistant.
      */
-    prompt = async (user: UserData, subject: string, prompt: string[], maxTokens: number): Promise<string> => {
+    prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
-            const model = this.client.preview.getGenerativeModel({model: "gemini-1.0-pro"})
-            const parts = prompt.map((p) => ({text: p}))
-
-            // Here we go!
+            const model = this.client.preview.getGenerativeModel({model: user.isPro && Math.random() < 0.5 ? "gemini-1.5-flash" : "gemini-1.0-pro"})
             const reqOptions: GenerateContentRequest = {
-                contents: [{role: "user", parts: parts}],
+                contents: [{role: "user", parts: messages.map((p) => ({text: p}))}],
                 safetySettings: [
                     {category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
                     {category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
@@ -80,7 +76,7 @@ export class Gemini implements AiProvider {
                     {category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH}
                 ],
                 generationConfig: {
-                    maxOutputTokens: maxTokens
+                    maxOutputTokens: options.maxTokens
                 }
             }
 
@@ -99,15 +95,16 @@ export class Gemini implements AiProvider {
                 return candidate.content.parts[0].text
             }
 
+            // Here we go!
             let result = await this.limiter.schedule(() => model.generateContent(reqOptions))
             let text = parseResponse(result ? result.response : null)
 
-            // If the response was cut due to insufficient tokens and the user is PRO, try again.
+            // If the response was cut due to insufficient tokens and the user is PRO, try again with a higher limit.
             if (result?.response.candidates[0]?.finishReason === FinishReason.MAX_TOKENS) {
-                logger.warn("Gemini.prompt", logHelper.user(user), subject, "Early stop due to max tokens, will retry", text)
+                logger.warn("Gemini.prompt", logHelper.user(user), options.subject, "Early stop due to max tokens, will retry", text)
 
                 if (user.isPro) {
-                    reqOptions.generationConfig.maxOutputTokens = Math.round(maxTokens * 1.2)
+                    reqOptions.generationConfig.maxOutputTokens = Math.round(options.maxTokens * settings.ai.maxTokens.multiplier)
                     result = await this.limiter.schedule(() => model.generateContent(reqOptions))
                     text = parseResponse(result ? result.response : null)
                 }
@@ -115,15 +112,15 @@ export class Gemini implements AiProvider {
 
             // Extract the generated text.
             if (text) {
-                logger.info("Gemini.prompt", logHelper.user(user), subject, text)
+                logger.info("Gemini.prompt", logHelper.user(user), options.subject, text)
                 return text
             }
 
             // Failed to generate the activity name.
-            logger.warn("Gemini.prompt", logHelper.user(user), subject, "Failed to generate")
+            logger.warn("Gemini.prompt", logHelper.user(user), options.subject, "Failed to generate")
             return null
         } catch (ex) {
-            logger.error("Gemini.prompt", logHelper.user(user), subject, ex)
+            logger.error("Gemini.prompt", logHelper.user(user), options.subject, ex)
 
             // Force trigger a rate limit in case we get a "quota exceeded" error.
             const message = JSON.stringify(ex, null, 0)

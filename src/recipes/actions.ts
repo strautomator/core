@@ -15,6 +15,7 @@ import maps from "../maps"
 import musixmatch from "../musixmatch"
 import notifications from "../notifications"
 import spotify from "../spotify"
+import strava from "../strava"
 import weather from "../weather"
 import dayjs from "../dayjs"
 import _ from "lodash"
@@ -567,26 +568,22 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
             return true
         }
 
-        // Weather based checks for activities that happened in the last 3 days.
-        // Not necessary when generating insights.
-        let weatherSummaries: ActivityWeather
-        if (action.type != RecipeActionType.GenerateInsights) {
-            const isRecent = now.subtract(3, "days").isBefore(activity.dateEnd)
-            const rndWeather = user.isPro ? settings.plans.pro.generatedNames.weather : settings.plans.free.generatedNames.weather
+        // Weather is included only on recent activities.
+        let activityWeather: ActivityWeather
+        const isRecent = now.subtract(7, "days").isBefore(activity.dateEnd)
+        const rndWeather = user.isPro ? settings.plans.pro.generatedNames.weather : settings.plans.free.generatedNames.weather
+        if (activity.hasLocation && isRecent && Math.random() * 100 <= rndWeather) {
+            const language = user.preferences.language
 
-            if (activity.hasLocation && isRecent && Math.random() * 100 <= rndWeather) {
-                const language = user.preferences.language
-
-                // Force English language, fetch weather summaries for activity,
-                // then reset the user language back to its default.
-                user.preferences.language = "en"
-                try {
-                    weatherSummaries = await weather.getActivityWeather(user, activity, true)
-                } catch (weatherEx) {
-                    logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Failed to get the activity weather summary")
-                }
-                user.preferences.language = language
+            // Force English language, fetch weather summaries for activity,
+            // then reset the user language back to its default.
+            user.preferences.language = "en"
+            try {
+                activityWeather = await weather.getActivityWeather(user, activity, true)
+            } catch (weatherEx) {
+                logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Failed to get the activity weather summary")
             }
+            user.preferences.language = language
         }
 
         // Decide if we should use AI or fallback to template-based names.
@@ -599,7 +596,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         }
         if (!user.preferences.privacyMode && Math.random() * 100 <= rndAi) {
             if (action.type == RecipeActionType.GenerateName) {
-                const aiResponse = await ai.generateActivityName(user, {activity, humour, provider, weatherSummaries})
+                const aiResponse = await ai.generateActivityName(user, {activity, humour, provider, activityWeather, fullDetails: user.isPro})
                 if (aiResponse) {
                     activity.aiNameProvider = aiResponse.provider
                     activity.aiName = activity.name = aiResponse.response
@@ -607,15 +604,16 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                     return true
                 }
             } else if (action.type == RecipeActionType.GenerateDescription) {
-                const aiResponse = await ai.generateActivityDescription(user, {activity, humour, provider, weatherSummaries})
+                const aiResponse = await ai.generateActivityDescription(user, {activity, humour, provider, activityWeather, fullDetails: user.isPro})
                 if (aiResponse) {
                     activity.aiDescriptionProvider = aiResponse.provider
                     activity.aiDescription = activity.description = aiResponse.response
                     activity.updatedFields.push("description")
                     return true
                 }
-            } else if (action.type == RecipeActionType.GenerateInsights) {
-                const aiResponse = await ai.generateActivityInsights(user, {activity, humour, provider, weatherSummaries, fullDetails: true})
+            } else if (action.type == RecipeActionType.GenerateInsights && user.isPro) {
+                const recentActivities = await strava.activityProcessing.getProcessedActivities(user, now.subtract(300, "weeks").toDate(), activity.dateStart)
+                const aiResponse = await ai.generateActivityInsights(user, {activity, humour, provider, activityWeather, recentActivities, fullDetails: true})
                 if (aiResponse) {
                     activity.aiInsightsProvider = aiResponse.provider
                     activity.aiInsights = activity.privateNote = aiResponse.response
@@ -627,6 +625,10 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
             }
 
             logger.warn("Recipes.aiGenerateAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "AI failed, fallback to template")
+        }
+
+        if (action.type == RecipeActionType.GenerateInsights) {
+            return false
         }
 
         const imperial = user.profile.units == "imperial"
@@ -883,12 +885,12 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         }
 
         // Got the activity weather summary? Add a few
-        if (weatherSummaries) {
+        if (activityWeather) {
             const weatherUnit = user.preferences ? user.preferences.weatherUnit : null
             let wPrefixes: string[] = []
 
             // Check for weather on start and end of the activity.
-            for (let summary of [weatherSummaries.start, weatherSummaries.end]) {
+            for (let summary of [activityWeather.start, activityWeather.end]) {
                 if (!summary) continue
 
                 const temperature = parseFloat(summary.temperature.toString().replace(/[^\d.-]/g, ""))

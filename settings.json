@@ -8,11 +8,17 @@
         "cacheDuration": 60,
         // List of humours (adjectives) to be used on the AI generated content.
         "humours": ["ancient", "boring", "comical", "exquisite", "funny", "hilarious", "ironic", "sarcastic", "sexy", "silly", "technical", "wicked"],
-        // Max tokens per generation (short for activity names, long for descriptions).
+        // Max tokens per generation.
         "maxTokens": {
-            "short": 38,
-            "medium": 198,
-            "long": 1088
+            "name": 40,
+            "description": 200,
+            "insights": 4000,
+            // If max tokens were not enough, try again with a 20% higher limit.
+            "multiplier": 1.2
+        },
+        "insights": {
+            // For the AI insights, consider activities from the past 4 weeks.
+            "recentWeeks": 4
         }
     },
     "app": {
@@ -321,6 +327,8 @@
     "openai": {
         "api": {
             "baseUrl": "https://api.openai.com/v1/",
+            // Custom assistant ID.
+            "assistantId": "asst_yBraLh0JhbxWiTXudiSRFjNJ",
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.

@@ -1,7 +1,7 @@
 // Strautomator Core: AI types
 
 import Bottleneck from "bottleneck"
-import {StravaActivity, StravaActivityPerformance, StravaActivityStreams} from "../strava/types"
+import {StravaActivity, StravaActivityPerformance, StravaActivityStreams, StravaProcessedActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
 
@@ -10,8 +10,8 @@ import {ActivityWeather} from "../weather/types"
  */
 export interface AiProvider {
     /** Method to generate activity names. */
-    prompt(user: UserData, subject: string, prompt: string[], maxTokens: number): Promise<string>
-    /** Flag to tell if the provider is currently being rate limited. */
+    prompt(user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string>
+    /** Rate limiter. */
     limiter: Bottleneck
 }
 
@@ -27,27 +27,30 @@ export interface AiGeneratedResponse {
     response: string
 }
 
+/**
+ * AI generation options.
+ */
 export interface AiGenerateOptions {
     /** AI provider. */
     provider?: "anthropic" | "gemini" | "openai"
     /** Referenced activity. */
-    activity: StravaActivity
+    activity?: StravaActivity
+    /** Initial instruction to give to the AI. */
+    instruction?: string
     /** Optional activity streams for a more detailed prompt. */
     activityStreams?: StravaActivityStreams
     /** Optional activity performance (power intervals). */
     activityPerformance?: StravaActivityPerformance
-    /** Use full activity details regardless of their values. */
+    /** Optional fresh weather details for the activity. */
+    activityWeather?: ActivityWeather
+    /** List of recent activities for added context. */
+    recentActivities?: StravaProcessedActivity[]
+    /** Use full activity details regardless of their relevancy. */
     fullDetails?: boolean
     /** Max tokens to be used. */
     maxTokens?: number
     /** Humour to be used on the prompt. */
     humour?: string
-    /** Optional weather for the start and end of the activity. */
-    weatherSummaries?: ActivityWeather
-    /** Text to be added before the activity prompt. */
-    prepend?: string[]
-    /** Text to be added after the activity prompt. */
-    append?: string[]
     /** The prompt subject. */
     subject?: string
 }
