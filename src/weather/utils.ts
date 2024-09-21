@@ -287,15 +287,12 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
 }
 
 /**
- * Helper to get a single liner with the summary of a weather summary.
- * @param coordinates Coordinates.
- * @param dDate The date (as a DayJS object).
+ * Helper to get a single liner for the weather summary.
  * @param summary The parsed weather summary.
  */
-export function weatherSummaryString(coordinates: [number, number], dDate: dayjs.Dayjs, summary: WeatherSummary): string {
-    const dateFormat = dDate.format("lll")
-    const weatherProps = Object.keys(summary).map((key) => (!["provider", "icon", "summary"].includes(key) ? `${key}: ${summary[key]}` : summary[key]))
-    return `${coordinates.join(", ")} | ${dateFormat} | ${summary.icon} ${summary.summary} | ${weatherProps.join(", ")}`
+export function weatherSummaryString(summary: WeatherSummary): string {
+    const weatherProps = ["temperature", "windSpeed"].map((key) => `${key}: ${summary[key]}`)
+    return `${summary.summary} (${weatherProps.join(", ")})`
 }
 
 /**
