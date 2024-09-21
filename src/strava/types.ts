@@ -171,6 +171,8 @@ export interface StravaActivity {
     counter?: number
     /** Flag: is the activity part of a batch processing operation? */
     batch?: boolean
+    /** Weather summary. */
+    weatherSummary?: string
     /** AI generated activity name. */
     aiName?: string
     /** Flag: provider used to generate the activity name. */
@@ -227,15 +229,44 @@ export interface StravaProcessedActivity {
     utcStartOffset?: number
     /** Total elapsed time. */
     totalTime?: number
-    /** User details for this activity. */
-    user: {
-        /** User ID. */
-        id: string
-        /** User display name. */
-        displayName: string
-    }
+    /** Moving time in seconds. */
+    movingTime?: number
+    /** Total distance. */
+    distance?: number
+    /** Distance units based on the user profile. */
+    distanceUnit?: "km" | "mi"
+    /** Total elevation gain in meters. */
+    elevationGain?: number
+    /** Elevation unit. */
+    elevationUnit?: "m" | "ft"
+    /** Average speed (per hour). */
+    speedAvg?: number
+    /** Maximum speed (per hour). */
+    speedMax?: number
+    /** Average watts. */
+    wattsAvg?: number
+    /** Weighted average watts. */
+    wattsWeighted?: number
+    /** Max watts. */
+    wattsMax?: number
+    /** Watts per kilo. */
+    wattsKg?: number
+    /** Average heart rate. */
+    hrAvg?: number
+    /** Maximum heart rate. */
+    hrMax?: number
+    /** Average cadence (RPM). */
+    cadenceAvg?: number
+    /** Average cadence (SPM). */
+    cadenceSpm?: number
+    /** Training stress score. */
+    tss?: number
+    /** Weather summary. */
+    weatherSummary?: string
+    /** User owner of the activity. */
+    userId: string
     /** List of recipes applied to the activity. */
-    recipes: {
+    recipes?: {
         [id: string]: {
             /** Title of the recipe. */
             title: string
@@ -246,7 +277,7 @@ export interface StravaProcessedActivity {
         }
     }
     /** List of fields updated on the activity. */
-    updatedFields: {
+    updatedFields?: {
         [id: string]: any
     }
     /** Was a link to Strautomator added to the activity? */
@@ -386,6 +417,20 @@ export interface StravaStream {
         /** Last 10%. */
         last10pc?: number
     }
+}
+
+/**
+ * Strava activity stream percentiles.
+ */
+export interface StravaStreamPercentiles {
+    /** First 10%. */
+    first10pc?: number
+    /** First half. */
+    firstHalf?: number
+    /** Second half. */
+    secondHalf?: number
+    /** Last 10%. */
+    last10pc?: number
 }
 
 /**

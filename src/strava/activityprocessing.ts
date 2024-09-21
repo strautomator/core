@@ -5,6 +5,7 @@ import {isActivityIgnored} from "./utils"
 import {RecipeData} from "../recipes/types"
 import {getActionSummary, getConditionSummary} from "../recipes/utils"
 import {UserData} from "../users/types"
+import {weatherSummaryString} from "../weather/utils"
 import stravaActivities from "./activities"
 import stravaAthletes from "./athletes"
 import stravaPerformance from "./performance"
@@ -13,6 +14,7 @@ import eventManager from "../eventmanager"
 import notifications from "../notifications"
 import recipes from "../recipes"
 import users from "../users"
+import weather from "../weather"
 import _ from "lodash"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
@@ -68,22 +70,30 @@ export class StravaActivityProcessing {
             let logFrom = ""
             let logTo = ""
             let logLimit = ""
+            const activities = []
 
-            const where: any[] = [["user.id", "==", user.id]]
+            // TODO! Processed activities now have userId instead of a user object, so we need to fetch those as well.
+            // This will be removed once we have migrated all the userIds.
+            const baseWhere = [
+                ["userId", "==", user.id],
+                ["user.id", "==", user.id]
+            ]
+            for (let bw of baseWhere) {
+                const where: any[] = [bw]
+                if (dateFrom) {
+                    where.push(["dateProcessed", ">=", dateFrom])
+                    logFrom = ` from ${dayjs(dateFrom).format("ll")}`
+                }
+                if (dateTo) {
+                    where.push(["dateProcessed", "<=", dateTo])
+                    logTo = ` to ${dayjs(dateTo).format("ll")}`
+                }
+                if (limit) {
+                    logLimit = `, limit ${limit}`
+                }
+                activities.push(...(await database.search("activities", where, ["dateProcessed", "desc"], limit)))
+            }
 
-            if (dateFrom) {
-                where.push(["dateProcessed", ">=", dateFrom])
-                logFrom = ` from ${dayjs(dateFrom).format("ll")}`
-            }
-            if (dateTo) {
-                where.push(["dateProcessed", "<=", dateTo])
-                logTo = ` to ${dayjs(dateTo).format("ll")}`
-            }
-            if (limit) {
-                logLimit = `, limit ${limit}`
-            }
-
-            const activities = await database.search("activities", where, ["dateProcessed", "desc"], limit)
             logger.info("Strava.getProcessedActivities", logHelper.user(user), `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
 
             return activities
@@ -178,15 +188,15 @@ export class StravaActivityProcessing {
             let recipe: RecipeData
             let recipeIds = []
 
-            // If user has no recipes? Stop here.
-            if (!user.recipes || Object.keys(user.recipes).length == 0) {
-                logger.info("Strava.processActivity", logHelper.user(user), `No recipes, won't process activity ${activityId}`)
-                return null
-            }
-
             // User suspended? Stop here.
             if (user.suspended) {
                 logger.warn("Strava.processActivity", logHelper.user(user), `User suspended, won't process activity ${activityId}`)
+                return null
+            }
+
+            // If user has no recipes and hasn't logged in for a while? Stop here.
+            if ((!user.recipes || Object.keys(user.recipes).length == 0) && dayjs().diff(user.dateLogin, "days") > settings.users.idleDays.default) {
+                logger.info("Strava.processActivity", logHelper.user(user), `No recipes, or user is idle, won't process activity ${activityId}`)
                 return null
             }
 
@@ -303,14 +313,20 @@ export class StravaActivityProcessing {
                 try {
                     await users.setActivityCount(user)
                     user.activityCount++
-
                     return await this.saveProcessedActivity(user, activity, recipeIds, saveError)
                 } catch (ex) {
                     logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Not saved to database", ex)
+                    return null
                 }
-            } else {
-                logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, `No matching recipes`)
             }
+
+            // No matching recipes but user has opted for AI features? We still need to save it so we can generate prompts using its data.
+            if (user.preferences.aiEnabled) {
+                logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, pActivity.queued ? "From queue" : "Realtime", "No matching recipes, but will save data for AI insights")
+                return await this.saveProcessedActivity(user, activity)
+            }
+
+            logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, `No matching recipes, won't process`)
         } catch (ex) {
             logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, ex)
             throw ex
@@ -326,54 +342,61 @@ export class StravaActivityProcessing {
      * @param recipeIds Array of triggered recipe IDs.
      * @param error If errored, this will contain the error details.
      */
-    saveProcessedActivity = async (user: UserData, activity: StravaActivity, recipeIds: string[], error?: string): Promise<StravaProcessedActivity> => {
+    saveProcessedActivity = async (user: UserData, activity: StravaActivity, recipeIds?: string[], error?: string): Promise<StravaProcessedActivity> => {
         try {
-            let recipeDetails = {}
-            let updatedFields = {}
-
-            // Get recipe summary.
-            for (let id of recipeIds) {
-                recipeDetails[id] = {
-                    title: user.recipes[id].title,
-                    conditions: _.map(user.recipes[id].conditions, getConditionSummary),
-                    actions: _.map(user.recipes[id].actions, getActionSummary)
-                }
-            }
-
-            // Get updated fields.
-            for (let field of activity.updatedFields) {
-                if (field == "gear") {
-                    updatedFields[field] = activity.gear.id == "none" ? "None" : `${activity.gear.name} (${activity.gear.id})`
-                } else {
-                    updatedFields[field] = activity[field]
-                }
-            }
-
             // Data to be saved on the database.
             const data: StravaProcessedActivity = {
                 id: activity.id,
                 dateProcessed: dayjs.utc().toDate(),
-                user: {
-                    id: user.id,
-                    displayName: user.displayName
-                },
-                recipes: recipeDetails,
-                updatedFields: updatedFields
+                userId: user.id
+            }
+
+            // Get updated fields.
+            if (activity.updatedFields?.length > 0) {
+                let updatedFields = {}
+                for (let field of activity.updatedFields) {
+                    if (field == "gear") {
+                        updatedFields[field] = activity.gear.id == "none" ? "None" : `${activity.gear.name} (${activity.gear.id})`
+                    } else {
+                        updatedFields[field] = activity[field]
+                    }
+                }
+                data.updatedFields = updatedFields
+            }
+
+            // Get recipe summary.
+            if (recipeIds.length > 0) {
+                let recipeDetails = {}
+                recipeIds?.forEach((id) => {
+                    recipeDetails[id] = {
+                        title: user.recipes[id].title,
+                        conditions: _.map(user.recipes[id].conditions, getConditionSummary),
+                        actions: _.map(user.recipes[id].actions, getActionSummary)
+                    }
+                })
+                data.recipes = recipeDetails
             }
 
             // Extra activity details in case user has not opted for the privacy mode.
+            // Even more details if user has opted in for the AI features.
             if (!user.preferences.privacyMode) {
-                data.sportType = activity.sportType
-                data.name = activity.name
-                data.dateStart = activity.dateStart
-                data.utcStartOffset = activity.utcStartOffset
-                data.totalTime = activity.totalTime
+                const mainFields = ["sportType", "name", "dateStart", "utcStartOffset", "totalTime", "movingTime", "device", "newRecords"]
+                _.assign(data, _.pick(activity, mainFields))
 
-                if (activity.device) {
-                    data.device = activity.device
-                }
-                if (activity.newRecords) {
-                    data.newRecords = activity.newRecords
+                if (user.preferences.aiEnabled) {
+                    if (!activity.weatherSummary) {
+                        const extraFields = ["distance", "elevationGain", "elevationUnit", "speedAvg", "speedMax", "wattsAvg", "wattsWeighted", "wattsMax", "wattsKg", "hrAvg", "hrMax", "cadenceAvg", "cadenceSpm", "tss", "weatherSummary"]
+                        _.assign(data, _.pick(activity, extraFields))
+
+                        // Weather summaries are not available for batch processed activities.
+                        if (!activity.batch) {
+                            const weatherSummary = await weather.getActivityWeather(user, activity, false)
+                            const anySummary = weatherSummary?.mid || weatherSummary?.start || weatherSummary?.end
+                            if (anySummary) {
+                                activity.weatherSummary = weatherSummaryString(anySummary)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -388,8 +411,8 @@ export class StravaActivityProcessing {
                 data.error = error.toString()
             }
 
-            // Save and return result.
-            await database.set("activities", data, activity.id.toString())
+            // Save and return result. Empty processed values are removed before saving.
+            await database.set("activities", _.omitBy(data, _.isNil), activity.id.toString())
             logger.debug("Strava.saveProcessedActivity", data)
 
             return data
@@ -418,7 +441,7 @@ export class StravaActivityProcessing {
 
         try {
             if (user) {
-                where.push(["user.id", "==", user.id])
+                where.push(["userId", "==", user.id])
             }
             if (ageDays > 0) {
                 const maxDate = dayjs().subtract(ageDays, "days").toDate()
@@ -430,7 +453,15 @@ export class StravaActivityProcessing {
                 throw new Error("A user or an ageDays must be passed")
             }
 
-            const count = await database.delete("activities", where)
+            let count = await database.delete("activities", where)
+
+            // TODO! Processed activities now have userId instead of a user object, so we need to delete those as well.
+            // This will be removed once we have migrated all the userIds.
+            if (user) {
+                where[0] = ["user.id", "==", user.id]
+                count += await database.delete("activities", where)
+            }
+
             logger.info("Strava.deleteProcessedActivities", userLog, sinceLog, `Deleted ${count || "no"} activities`)
 
             return count
@@ -465,7 +496,7 @@ export class StravaActivityProcessing {
             // Set processed activity defaults.
             if (!activity) activity = {}
             activity.id = activityId
-            activity.user = {id: user.id, displayName: user.displayName}
+            activity.userId = user.id
             activity.dateQueued = activity.dateQueued || new Date()
 
             // Part of a batch processing? Flag it.
@@ -563,18 +594,18 @@ export class StravaActivityProcessing {
 
                     await database.merge("activities", {id: activity.id, processing: true})
                 } catch (innerEx) {
-                    logger.error("Strava.processQueuedActivities", `Failed to set the processing flag for activity ${activity.id} from user ${activity.user.id}`, innerEx)
+                    logger.error("Strava.processQueuedActivities", `Failed to set the processing flag for activity ${activity.id} from user ${activity.userId}`, innerEx)
                 }
             }
 
             // Now we process each of the queued activities separately.
             for (let pActivity of activities) {
                 try {
-                    if (!usersCache[pActivity.user.id]) {
-                        usersCache[pActivity.user.id] = await users.getById(pActivity.user.id)
+                    if (!usersCache[pActivity.userId]) {
+                        usersCache[pActivity.userId] = await users.getById(pActivity.userId)
                     }
 
-                    const processed = await this.processActivity(usersCache[pActivity.user.id], pActivity)
+                    const processed = await this.processActivity(usersCache[pActivity.userId], pActivity)
 
                     // Queued activity is invalid or had no matching recipes? Delete it.
                     if (!processed) {
@@ -584,10 +615,10 @@ export class StravaActivityProcessing {
                     }
                 } catch (activityEx) {
                     if (pActivity.retryCount >= settings.strava.processingQueue.retry) {
-                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${pActivity.id} from user ${pActivity.user.id} too many times`)
+                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${pActivity.id} from user ${pActivity.userId} too many times`)
                         await this.deleteQueuedActivity(pActivity)
                     } else {
-                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${pActivity.id} from user ${pActivity.user.id}, will retry`)
+                        logger.warn("Strava.processQueuedActivities", `Failed to process queued activity ${pActivity.id} from user ${pActivity.userId}, will retry`)
                         await database.merge("activities", {id: pActivity.id, processing: false, retryCount: pActivity.retryCount + 1})
                     }
                 }
@@ -612,12 +643,12 @@ export class StravaActivityProcessing {
             const count = await database.delete("activities", activity.id.toString())
 
             if (count > 0) {
-                logger.info("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `${logHelper.activity(activity)} deleted`)
+                logger.info("Strava.deleteQueuedActivity", `User ${activity.userId}`, `${logHelper.activity(activity)} deleted`)
             } else {
-                logger.warn("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, `${logHelper.activity(activity)} not previously saved`)
+                logger.warn("Strava.deleteQueuedActivity", `User ${activity.userId}`, `${logHelper.activity(activity)} not previously saved`)
             }
         } catch (ex) {
-            logger.error("Strava.deleteQueuedActivity", `User ${activity.user.id} ${activity.user.displayName}`, logHelper.activity(activity), ex)
+            logger.error("Strava.deleteQueuedActivity", `User ${activity.userId}`, logHelper.activity(activity), ex)
             throw ex
         }
     }
