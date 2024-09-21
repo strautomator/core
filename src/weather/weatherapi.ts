@@ -38,7 +38,7 @@ export class WeatherAPI implements WeatherProvider {
      * @param roundTo Round to the previous or next hour?
      */
     getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<WeatherSummary> => {
-        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
+        const unit = user.preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -51,7 +51,7 @@ export class WeatherAPI implements WeatherProvider {
 
             const baseUrl = settings.weather.weatherapi.baseUrl
             const secret = settings.weather.weatherapi.secret
-            const lang = user.preferences?.language || "en"
+            const lang = user.preferences.language || "en"
             const basePath = isFuture ? "forecast" : "current"
             const unixdt = isFuture ? `&unixdt=${utcDate.unix()}` : ""
             const weatherUrl = `${baseUrl}${basePath}.json?key=${secret}&lang=${lang}&aqi=yes&q=${coordinates.join(",")}${unixdt}`

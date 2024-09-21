@@ -37,7 +37,7 @@ export class OpenMeteo implements WeatherProvider {
      * @param roundTo Round to the previous or next hour?
      */
     getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<WeatherSummary> => {
-        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
+        const unit = user.preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -76,7 +76,7 @@ export class OpenMeteo implements WeatherProvider {
      * @param roundTo Round to the previous or next hour?
      */
     getAirQuality = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<number> => {
-        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
+        const unit = user.preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()

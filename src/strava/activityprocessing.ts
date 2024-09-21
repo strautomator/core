@@ -63,37 +63,27 @@ export class StravaActivityProcessing {
      * @param dateFrom Activities processed since date.
      * @param dateTo Activities processed up to date.
      * @param limit Optional, limit how many results should be returned?
-     *
      */
     getProcessedActivities = async (user: UserData, dateFrom?: Date, dateTo?: Date, limit?: number): Promise<StravaProcessedActivity[]> => {
         try {
             let logFrom = ""
             let logTo = ""
             let logLimit = ""
-            const activities = []
 
-            // TODO! Processed activities now have userId instead of a user object, so we need to fetch those as well.
-            // This will be removed once we have migrated all the userIds.
-            const baseWhere = [
-                ["userId", "==", user.id],
-                ["user.id", "==", user.id]
-            ]
-            for (let bw of baseWhere) {
-                const where: any[] = [bw]
-                if (dateFrom) {
-                    where.push(["dateProcessed", ">=", dateFrom])
-                    logFrom = ` from ${dayjs(dateFrom).format("ll")}`
-                }
-                if (dateTo) {
-                    where.push(["dateProcessed", "<=", dateTo])
-                    logTo = ` to ${dayjs(dateTo).format("ll")}`
-                }
-                if (limit) {
-                    logLimit = `, limit ${limit}`
-                }
-                activities.push(...(await database.search("activities", where, ["dateProcessed", "desc"], limit)))
+            const where: any[] = [["userId", "==", user.id]]
+            if (dateFrom) {
+                where.push(["dateProcessed", ">=", dateFrom])
+                logFrom = ` from ${dayjs(dateFrom).format("ll")}`
+            }
+            if (dateTo) {
+                where.push(["dateProcessed", "<=", dateTo])
+                logTo = ` to ${dayjs(dateTo).format("ll")}`
+            }
+            if (limit) {
+                logLimit = `, limit ${limit}`
             }
 
+            const activities = await database.search("activities", where, ["dateStart", "desc"], limit)
             logger.info("Strava.getProcessedActivities", logHelper.user(user), `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
 
             return activities
@@ -229,7 +219,7 @@ export class StravaActivityProcessing {
 
             // Check for FTP updates in case user has opted-in and the activity happened in the last few days.
             try {
-                const shouldUpdateFtp = user.isPro && user.profile.ftp && user.preferences?.ftpAutoUpdate
+                const shouldUpdateFtp = user.isPro && user.profile.ftp && user.preferences.ftpAutoUpdate
                 const powerIncreased = activity.hasPower && activity.wattsWeighted >= user.profile.ftp
                 const isRecent = dayjs().utc().subtract(2, "days").isBefore(activity.dateStart)
                 if (shouldUpdateFtp && powerIncreased && isRecent) {
@@ -453,15 +443,7 @@ export class StravaActivityProcessing {
                 throw new Error("A user or an ageDays must be passed")
             }
 
-            let count = await database.delete("activities", where)
-
-            // TODO! Processed activities now have userId instead of a user object, so we need to delete those as well.
-            // This will be removed once we have migrated all the userIds.
-            if (user) {
-                where[0] = ["user.id", "==", user.id]
-                count += await database.delete("activities", where)
-            }
-
+            const count = await database.delete("activities", where)
             logger.info("Strava.deleteProcessedActivities", userLog, sinceLog, `Deleted ${count || "no"} activities`)
 
             return count

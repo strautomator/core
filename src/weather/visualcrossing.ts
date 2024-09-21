@@ -38,7 +38,7 @@ export class VisualCrossing implements WeatherProvider {
      * @param dDate Date for the weather request (as a DayJS object).
      */
     getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs): Promise<WeatherSummary> => {
-        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
+        const unit = user.preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -59,7 +59,7 @@ export class VisualCrossing implements WeatherProvider {
             // Visual Crossing expects the date in their local timezone.
             const qDate = dDate.format("YYYY-MM-DDTHH:mm:ss")
             const latlon = coordinates.join(",")
-            const lang = user.preferences?.language && user.preferences.language != "pt" ? user.preferences.language : "en"
+            const lang = user.preferences.language && user.preferences.language != "pt" ? user.preferences.language : "en"
             const include = diffHours > 1 ? "current,days,hours,fcst,obs" : "current"
             const basePath = diffHours > 1 ? `timeline/${latlon}/${qDate}` : `timeline/${latlon}`
             let weatherUrl = `${baseUrl}${basePath}?key=${secret}&include=${include}&lang=${lang}&unitGroup=metric`

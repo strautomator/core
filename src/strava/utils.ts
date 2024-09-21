@@ -41,7 +41,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         trainer: data.trainer ? true : false,
         dateStart: startDate.toDate(),
         dateEnd: data.elapsed_time ? startDate.add(data.elapsed_time, "s").toDate() : null,
-        weekday: localStartDate.locale(user.preferences?.language || "en").format("dddd"),
+        weekday: localStartDate.locale(user.preferences.language || "en").format("dddd"),
         weekOfYear: localStartDate.week(),
         utcStartOffset: utcOffset,
         totalTime: data.elapsed_time,
@@ -56,8 +56,8 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         hrAvg: data.average_heartrate ? Math.round(data.average_heartrate) : null,
         hrMax: data.max_heartrate ? Math.round(data.max_heartrate) : null,
         hasCadence: data.average_cadence > 0,
-        cadenceAvg: data.average_cadence || null,
-        cadenceSpm: data.average_cadence ? data.average_cadence * 2 : null,
+        cadenceAvg: Math.round(data.average_cadence) || null,
+        cadenceSpm: data.average_cadence ? Math.round(data.average_cadence * 2) : null,
         calories: data.calories || null,
         relativeEffort: data.suffer_score || null,
         perceivedExertion: data.perceived_exertion || null,
@@ -719,7 +719,7 @@ export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
  * @param noSuffixes Do not append suffixes to the processed values.
  */
 export const transformActivityFields = (user: UserData, activity: StravaActivity, noSuffixes?: boolean): void => {
-    noSuffixes = noSuffixes || user.preferences?.noSuffixes || false
+    noSuffixes = noSuffixes || user.preferences.noSuffixes || false
 
     for (let prop of recipePropertyList) {
         let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
@@ -745,7 +745,7 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             } else if (_.isDate(activity[prop.value])) {
                 const aDate = dayjs.utc(activity[prop.value]).add(activity.utcStartOffset, "minutes")
                 const format = prop.value.substring(0, 4) == "date" ? "L HH:mm" : "HH:mm"
-                activity[prop.value] = aDate.locale(user.preferences?.language || "en").format(format)
+                activity[prop.value] = aDate.locale(user.preferences.language || "en").format(format)
             }
         }
 

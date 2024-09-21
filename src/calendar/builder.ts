@@ -103,7 +103,7 @@ export class CalendarBuilder {
             // Remove recent events from the cached config output, as they are more likely to be edited by the user
             // and hence have their details updated. If user is using a custom template with specific tags,
             // use a lower value for the minimum age for caching, as activities will be fetched one by one.
-            const calendarTemplate = user.isPro ? user.preferences?.calendarTemplate || {} : {}
+            const calendarTemplate = user.isPro ? user.preferences.calendarTemplate || {} : {}
             const customEventDetails = calendarTemplate.eventDetails || ""
             const needsFullData = customEventDetails.includes("${description}") || customEventDetails.includes("${calories}")
             const cacheDays = needsFullData ? Math.round(settings.calendar.minAgeForCachingDays / 2) : settings.calendar.minAgeForCachingDays

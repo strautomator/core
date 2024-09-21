@@ -690,7 +690,7 @@ export class Users {
             const docSnapshot = await doc.get()
             const exists = docSnapshot.exists
 
-            // Set registration date, if user does not exist yet.
+            // Set base data, if user does not exist yet.
             if (!exists) {
                 logger.debug("Users.upsert", profile.id, "Will create new user")
 
@@ -702,12 +702,13 @@ export class Users {
                 userData.activityCount = 0
                 userData.urlToken = crypto.randomBytes(12).toString("hex")
             }
-            // If user exists, update recipe count and gear details.
+            // If user exists, update the relevant data.
             else {
                 const docData = docSnapshot.data()
                 const existingData = docData as UserData
 
                 userData.dateLastActivity = existingData.dateLastActivity
+                userData.preferences = existingData.preferences || {}
 
                 // Remove the auth flags.
                 if (existingData.dateAuthFailed) {
@@ -736,8 +737,13 @@ export class Users {
                     if (existingShoes) _.defaults(shoes, existingShoes)
                 }
 
+                // Preferences are mandatory now.
+                if (!existingData.preferences) {
+                    existingData.preferences = {}
+                }
+
                 // User has opted for the privacy mode?
-                if (existingData.preferences.privacyMode) {
+                if (userData.preferences.privacyMode) {
                     userData.profile.username = FieldValue.delete() as any
                     userData.profile.firstName = FieldValue.delete() as any
                     userData.profile.lastName = FieldValue.delete() as any

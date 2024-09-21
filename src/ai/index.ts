@@ -203,10 +203,10 @@ export class AI {
             const now = dayjs.utc()
             const messages = ["Please analyze my last activity performance. First I will give you some details about my recent activities."]
 
-            // Recent activities were passed? Use them for context.
+            // Recent activities were passed? Use them for context. At the moment we only use activities that have at least power or HR data.
             if (options.recentActivities?.length > 0 && options.fullDetails) {
                 for (let a of options.recentActivities) {
-                    if (!a.movingTime && !a.wattsAvg && !a.hrAvg) {
+                    if (a.id == options.activity.id || (!a.movingTime && !a.wattsAvg && !a.hrAvg)) {
                         continue
                     }
                     const subPrompt = []

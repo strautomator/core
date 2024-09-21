@@ -612,7 +612,9 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                     return true
                 }
             } else if (action.type == RecipeActionType.GenerateInsights && user.isPro) {
-                const recentActivities = await strava.activityProcessing.getProcessedActivities(user, now.subtract(300, "weeks").toDate(), activity.dateStart)
+                const fromDate = now.subtract(settings.ai.insights.recentWeeks, "weeks").toDate()
+                const toDate = dayjs(activity.dateStart).subtract(1, "minute").toDate()
+                const recentActivities = await strava.activityProcessing.getProcessedActivities(user, fromDate, toDate)
                 const aiResponse = await ai.generateActivityInsights(user, {activity, humour, provider, activityWeather, recentActivities, fullDetails: true})
                 if (aiResponse) {
                     activity.aiInsightsProvider = aiResponse.provider

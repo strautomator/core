@@ -38,7 +38,7 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param roundTo Round to the previous or next hour?
      */
     getWeather = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<WeatherSummary> => {
-        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
+        const unit = user.preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()
@@ -51,7 +51,7 @@ export class OpenWeatherMap implements WeatherProvider {
 
             const baseUrl = settings.weather.openweathermap.baseUrl
             const secret = settings.weather.openweathermap.secret
-            const lang = user.preferences?.language || "en"
+            const lang = user.preferences.language || "en"
             const basePath = isFuture ? "?" : `/timemachine?dt=${utcDate.unix()}&`
             const weatherUrl = `${baseUrl}${basePath}appid=${secret}&lang=${lang}&lat=${coordinates[0]}&lon=${coordinates[1]}&units=metric&exclude=minutely,alerts`
 
@@ -77,7 +77,7 @@ export class OpenWeatherMap implements WeatherProvider {
      * @param roundTo Round to the previous or next hour?
      */
     getAirQuality = async (user: UserData, coordinates: [number, number], dDate: dayjs.Dayjs, roundTo?: WeatherRoundTo): Promise<number> => {
-        const unit = user.preferences?.weatherUnit == "f" ? "imperial" : "metric"
+        const unit = user.preferences.weatherUnit == "f" ? "imperial" : "metric"
         const isoDate = dDate.toISOString()
         const utcDate = dDate.utc()
         const utcNow = dayjs.utc()

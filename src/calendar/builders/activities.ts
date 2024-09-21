@@ -32,7 +32,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
     const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
     const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
     const fieldSettings = settings.calendar.activityFields
-    const calendarTemplate: UserCalendarTemplate = user.isPro ? user.preferences?.calendarTemplate || {} : {}
+    const calendarTemplate: UserCalendarTemplate = user.isPro ? user.preferences.calendarTemplate || {} : {}
     const customEventDetails = calendarTemplate.eventDetails || ""
     const needsFullData = !partialFirstBuild && (customEventDetails.includes("${description}") || customEventDetails.includes("${calories}"))
 
