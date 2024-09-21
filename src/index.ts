@@ -176,6 +176,9 @@ export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
         // Debugging enabled?
         if (settings.app.debug) {
             logger.options.levels.push("debug")
+            if (!process.env.DEBUG) {
+                process.env.DEBUG = "true"
+            }
         }
 
         // Storage client must be initiated before everything else.
