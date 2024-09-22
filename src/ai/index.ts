@@ -201,7 +201,7 @@ export class AI {
             }
 
             const now = dayjs.utc()
-            const messages = ["Please analyze my last activity performance. First I will give you some details about my recent activities."]
+            const messages = ["Please give me some important metrics about my activity performance. First I will give you some details about my previous activities."]
 
             // Recent activities were passed? Use them for context. At the moment we only use activities that have at least power or HR data.
             if (options.recentActivities?.length > 0 && options.fullDetails) {
@@ -225,8 +225,9 @@ export class AI {
 
             messages.push(`So, now my most recent activity.`)
             messages.push(...this.getActivityPrompt(user, options))
-            messages.push("I need you to give me 6 bullet points with a very short summary and advice about the following metrics: speed, power, heart rate, cadence, and a correlation of these metrics with weather and amount of recent activities.")
-            messages.push("Do not add any Markdown formatting to the answer.")
+            messages.push("I need you to give me 5 bullet points with a very short summary and advice about the following metrics: distance, speed, power, heart rate and cadence.")
+            messages.push("Please consider my previous activities when analyzing the last one. If you think the weather played a major factor, please tell me how it affected my performance, otherwise just ignore it.")
+            messages.push("Do not add any text formatting to the answer. Do not add a title, I just need the bullet points.")
 
             // Generate and cache the result.
             const result = await this.prompt(user, options, messages)
