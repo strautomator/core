@@ -384,17 +384,15 @@ export class StravaActivityProcessing {
                 _.assign(data, _.pick(activity, mainFields))
 
                 if (user.preferences.aiEnabled) {
-                    if (!activity.weatherSummary) {
-                        const extraFields = ["distance", "elevationGain", "elevationUnit", "speedAvg", "speedMax", "wattsAvg", "wattsWeighted", "wattsMax", "wattsKg", "hrAvg", "hrMax", "cadenceAvg", "cadenceSpm", "tss", "weatherSummary"]
-                        _.assign(data, _.pick(activity, extraFields))
+                    const extraFields = ["distance", "distanceUnit", "elevationGain", "elevationUnit", "speedAvg", "speedMax", "wattsAvg", "wattsWeighted", "wattsMax", "wattsKg", "hrAvg", "hrMax", "cadenceAvg", "tss", "weatherSummary"]
+                    _.assign(data, _.pick(activity, extraFields))
 
-                        // Weather summaries are not available for batch processed activities.
-                        if (!activity.batch) {
-                            const weatherSummary = await weather.getActivityWeather(user, activity, false)
-                            const anySummary = weatherSummary?.mid || weatherSummary?.start || weatherSummary?.end
-                            if (anySummary) {
-                                activity.weatherSummary = weatherSummaryString(anySummary)
-                            }
+                    // Weather summaries are not available for batch processed activities.
+                    if (!activity.weatherSummary && !activity.batch) {
+                        const weatherSummary = await weather.getActivityWeather(user, activity, false)
+                        const anySummary = weatherSummary?.mid || weatherSummary?.start || weatherSummary?.end
+                        if (anySummary) {
+                            activity.weatherSummary = weatherSummaryString(anySummary)
                         }
                     }
                 }
