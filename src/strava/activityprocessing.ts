@@ -70,22 +70,32 @@ export class StravaActivityProcessing {
             let logTo = ""
             let logLimit = ""
 
-            const where: any[] = [["userId", "==", user.id]]
-            if (dateFrom) {
-                where.push(["dateProcessed", ">=", dateFrom])
-                logFrom = ` from ${dayjs(dateFrom).format("ll")}`
-            }
-            if (dateTo) {
-                where.push(["dateProcessed", "<=", dateTo])
-                logTo = ` to ${dayjs(dateTo).format("ll")}`
-            }
-            if (limit) {
-                logLimit = `, limit ${limit}`
+            const activities: StravaProcessedActivity[] = []
+
+            // TODO! Temporary code to get activities for the old schema (having user.id instead of userId).
+            const baseWhere = [
+                ["userId", "==", user.id],
+                ["user.id", "==", user.id]
+            ]
+            for (let w of baseWhere) {
+                const where: any[] = [w]
+                if (dateFrom) {
+                    where.push(["dateProcessed", ">=", dateFrom])
+                    logFrom = ` from ${dayjs(dateFrom).format("ll")}`
+                }
+                if (dateTo) {
+                    where.push(["dateProcessed", "<=", dateTo])
+                    logTo = ` to ${dayjs(dateTo).format("ll")}`
+                }
+                if (limit) {
+                    logLimit = `, limit ${limit}`
+                }
+
+                const result = await database.search("activities", where, ["dateProcessed", "desc"], limit)
+                activities.push(...result)
             }
 
-            const activities = await database.search("activities", where, ["dateStart", "desc"], limit)
             logger.info("Strava.getProcessedActivities", logHelper.user(user), `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
-
             return activities
         } catch (ex) {
             logger.error("Strava.getProcessedActivities", logHelper.user(user), dateFrom, dateTo, ex)
@@ -443,7 +453,14 @@ export class StravaActivityProcessing {
                 throw new Error("A user or an ageDays must be passed")
             }
 
-            const count = await database.delete("activities", where)
+            let count = await database.delete("activities", where)
+
+            // TODO! Delete activities with the old schema (having user.id instead of userId).
+            if (user) {
+                where[0] = ["user.id", "==", user.id]
+                count += await database.delete("activities", where)
+            }
+
             logger.info("Strava.deleteProcessedActivities", userLog, sinceLog, `Deleted ${count || "no"} activities`)
 
             return count
