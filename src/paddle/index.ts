@@ -120,6 +120,7 @@ export class PaddleWrapper {
             // Set webhook and cached prices.
             this.webhookSecret = fromCache.webhookSecret
             this.prices.yearlyPrice = fromCache.yearlyPrice
+            this.prices.lifetimePrice = fromCache.lifetimePrice
 
             logger.info("Paddle.loadFromCache", "Loaded from the database")
         } catch (ex) {
@@ -136,7 +137,9 @@ export class PaddleWrapper {
             this.webhookSecret = webhookSettings.endpointSecretKey
             await this.prices.getPrices()
 
-            await database.appState.set("paddle", {yearlyPrice: JSON.parse(JSON.stringify(this.prices.yearlyPrice)), webhookSecret: webhookSettings.endpointSecretKey})
+            const yearly = JSON.parse(JSON.stringify(this.prices.yearlyPrice))
+            const lifetime = JSON.parse(JSON.stringify(this.prices.lifetimePrice))
+            await database.appState.set("paddle", {yearlyPrice: yearly, lifetimePrice: lifetime, webhookSecret: webhookSettings.endpointSecretKey})
 
             logger.info("Paddle.loadLive", `Yearly price: ${parseFloat(this.prices.yearlyPrice.unitPrice.amount) / 100}`)
         } catch (ex) {
