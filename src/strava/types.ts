@@ -257,8 +257,6 @@ export interface StravaProcessedActivity {
     hrMax?: number
     /** Average cadence (RPM). */
     cadenceAvg?: number
-    /** Average cadence (SPM). */
-    cadenceSpm?: number
     /** Training stress score. */
     tss?: number
     /** Weather summary. */
