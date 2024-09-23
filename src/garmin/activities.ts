@@ -51,6 +51,11 @@ export class GarminActivities {
                     try {
                         await fitparser.parse(user, garminActivity, rawData)
 
+                        // Log if FIT file is probably missing required information.
+                        if (garminActivity.distance <= 1 && garminActivity.totalTime <= 1) {
+                            logger.warn("Garmin.processActivity", logHelper.user(user), logHelper.fitFileActivity(garminActivity), "FIT file probably missing required information")
+                        }
+
                         // Reset the Garmin failures counter, if there's one.
                         if (user.garminFailures && user.garminFailures > 0) {
                             delete user.garminFailures
