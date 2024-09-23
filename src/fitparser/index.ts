@@ -257,7 +257,7 @@ export class FitParser {
 
         // Add workout details.
         if (fitObj.workout?.wkt_name) {
-            fitFileActivity.workoutName = fitObj.workout?.wkt_name
+            fitFileActivity.workoutName = fitObj.workout.wkt_name
         }
 
         // Found devices in the FIT file? Generate device IDs.

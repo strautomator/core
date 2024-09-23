@@ -361,7 +361,7 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
         return processedValue
     }
     if (!user.garmin) {
-        logger.debug("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Garmin profile linked, will skip")
+        logger.debug("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Garmin profile linked, will skip")
         return processedValue
     }
 
