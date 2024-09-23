@@ -201,10 +201,12 @@ export class AI {
             }
 
             const now = dayjs.utc()
-            const messages = ["Please give me some important metrics about my activity performance. First I will give you some details about my previous activities."]
+            const messages = ["Please give me some important metrics about my activity performance."]
 
             // Recent activities were passed? Use them for context. At the moment we only use activities that have at least power or HR data.
             if (options.recentActivities?.length > 0 && options.fullDetails) {
+                messages.push("First I will give you some details about my previous activities.")
+
                 for (let a of options.recentActivities) {
                     if (a.id == options.activity.id || (!a.movingTime && !a.wattsAvg && !a.hrAvg)) {
                         continue
@@ -221,9 +223,11 @@ export class AI {
                     if (a.weatherSummary) subPrompt.push(`Weather was ${a.weatherSummary.toLowerCase()}.`)
                     messages.push(subPrompt.join(" "))
                 }
+
+                messages.push(`So, now my most recent activity.`)
             }
 
-            messages.push(`So, now my most recent activity.`)
+            // Get the activity prompt and add final instructions.
             messages.push(...this.getActivityPrompt(user, options))
             messages.push("I need you to give me 5 bullet points with a very short summary and advice about the following metrics: distance, speed, power, heart rate and cadence.")
             messages.push("Please consider my previous activities when analyzing the last one. If you think the weather played a major factor, please tell me how it affected my performance, otherwise just ignore it.")
