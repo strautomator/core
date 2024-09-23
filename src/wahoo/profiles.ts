@@ -78,6 +78,7 @@ export class WahooProfiles {
                 data.wahooAuthState = FieldValue.delete() as any
             }
 
+            logger.info("Wahoo.saveProfile", logHelper.user(user), `ID ${profile.id}`)
             await users.update(data)
         } catch (ex) {
             logger.error("Wahoo.saveProfile", logHelper.user(user), `ID ${profile.id}`, ex)

@@ -66,6 +66,7 @@ export class GarminProfiles {
                 data.garminAuthState = FieldValue.delete() as any
             }
 
+            logger.info("Garmin.saveProfile", logHelper.user(user), `ID ${profile.id}`)
             await users.update(data)
         } catch (ex) {
             logger.error("Garmin.saveProfile", logHelper.user(user), `ID ${profile.id}`, ex)

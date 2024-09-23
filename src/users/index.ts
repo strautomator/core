@@ -843,6 +843,12 @@ export class Users {
                         delete user.preferences
                     }
                 }
+                if (user.garmin) {
+                    logs.push(`Garmin: ${logValue(user.garmin.id || user.garmin)}`)
+                }
+                if (user.wahoo) {
+                    logs.push(`Wahoo: ${logValue(user.wahoo.id || user.wahoo)}`)
+                }
                 if (user.spotify) {
                     logs.push(`Spotify: ${logValue("auth")}`)
                 }
