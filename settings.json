@@ -261,8 +261,8 @@
         // be enabled if you have defined a user and password.
         "smtpFallback": {
             "secure": true,
-            "host": "smtp.sendgrid.net",
-            "port": 465,
+            "host": "in-v3.mailjet.com",
+            "port": 587,
             "auth": {
                 "user": null,
                 "pass": null
