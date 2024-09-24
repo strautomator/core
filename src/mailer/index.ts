@@ -25,7 +25,7 @@ export class Mailer {
     /**
      * The fallback SMTP client.
      */
-    private clientFallback = null
+    private clientFallback: nodemailer.Transporter = null
 
     // INIT
     // --------------------------------------------------------------------------
@@ -104,6 +104,11 @@ export class Mailer {
         let body: string = options.body
         let subject: string = options.subject
         let sendingOptions: nodemailer.SendMailOptions
+        let client: nodemailer.Transporter
+        let clients = [this.client]
+        if (this.clientFallback) {
+            clients.push(this.clientFallback)
+        }
 
         try {
             const template = options.template ? EmailTemplates[options.template] : null
@@ -181,29 +186,29 @@ export class Mailer {
             }
 
             // Rudimentary load balancer if a fallback SMTP is set.
-            const client = options.loadbalance && this.clientFallback ? (Math.random() < 0.55 ? this.client : this.clientFallback) : this.client
+            client = options.loadbalance && this.clientFallback ? (Math.random() < 0.99999 ? clients.pop() : clients.shift()) : clients.shift()
             await client.sendMail(sendingOptions)
 
             // User ID was passed on data? Use it on the log.
-            if (options.data && options.data.userId) {
+            if (options.data?.userId) {
                 logger.info("Mailer.send", `User ${options.data.userId}`, options.to, subject)
             } else {
                 logger.info("Mailer.send", options.to, subject)
             }
         } catch (ex) {
-            if (this.clientFallback && sendingOptions?.html) {
-                logger.error("Mailer.send", options.to, subject, ex, "Will try the fallback SMTP")
+            if (clients.length > 0 && sendingOptions?.html) {
+                logger.error("Mailer.send", client.options["host"], options.to, subject, ex, "Will try the fallback SMTP")
 
                 // Try again using the fallback SMTP client.
                 try {
-                    await this.clientFallback.sendMail(sendingOptions)
+                    await clients.pop().sendMail(sendingOptions)
                     logger.info("Mailer.send.fallback", options.to, subject)
                 } catch (fallbackEx) {
-                    logger.error("Mailer.send.fallback", options.to, subject, fallbackEx)
+                    logger.error("Mailer.send.fallback", client.options["host"], options.to, subject, fallbackEx)
                     logger.warn("Mailer.send", options.to, subject, body)
                 }
             } else {
-                logger.error("Mailer.send", options.to, subject, ex)
+                logger.error("Mailer.send", client.options["host"], options.to, subject, ex)
             }
         }
     }

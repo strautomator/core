@@ -262,7 +262,7 @@
         "smtpFallback": {
             "secure": true,
             "host": "in-v3.mailjet.com",
-            "port": 587,
+            "port": 465,
             "auth": {
                 "user": null,
                 "pass": null
