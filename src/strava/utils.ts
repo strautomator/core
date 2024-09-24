@@ -751,7 +751,7 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
 
         // Sport type separated by spaces.
         else if (prop.value == "sportType") {
-            activity.sportType = translation(activity.sportType, user.preferences) as any
+            activity.sportType = translation(`SportTypes.${activity.sportType}`, user.preferences) as any
         }
 
         // Append suffixes. If suffix has at least 3 characters, check for translations as well.
