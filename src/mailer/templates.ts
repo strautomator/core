@@ -145,24 +145,24 @@ export const EmailTemplates = {
 
     // User must confirm the email address.
     PaddleMigration: {
-        subject: "We have a new payment provider",
+        subject: "Migration of your PRO subscription",
         body:
             "<p>" +
             "Hi ${userName}!<br><br>" +
-            "Strautomator has a new payment provider, Paddle.com! It supports not only PayPal, but also all major credit cards, Google Pay, Apple Pay, and other per-country local payment methods." +
+            "Strautomator has a new payment provider, Paddle.com! It supports not only PayPal, but also all major credit cards, Google Pay, Apple Pay, iDEAL and Bancontact." +
             "</p>" +
             "<p>" +
-            "If you wish to keep your Strautomator PRO account in the future, you'll need to resubscribe via Paddle. If you do not want to do it right now, no worries, your PRO account will stay active at least until December 2025." +
+            "Your Strautomator PRO subscription is scheduled to be billed via PayPal in a few days. I kindly ask that you migrate your subscription to Paddle, if possible.<br><br>As a 'thank you' gesture, you'll get a discount code, bringing the initial subscription price down from ${currentPrice} ${currency} to ${discountPrice} ${currency}.<br>Please note that we have a limited amount of discount codes. <i>First come, first serve.</i>" +
             "</p>" +
             "<p>" +
-            "As an early adopter, you can get a discount code, bringing the initial subscription price down from ${currentPrice} ${currency} to ${discountPrice} ${currency}. The discount codes are limited to the first 1000 subscriptions via Paddle, and should be automatically applied at checkout until Tuesday, December 31st, 2024." +
-            "</p>" +
-            "<p>" +
-            "To get the full details and proceed with the migration, please go to " +
+            "To get more details and proceed with the migration, please go to " +
             '<a href="${appUrl}billing/paddlemigration" title="Click to get more details about the Migration to Paddle">${appUrl}billing/paddlemigration</a>.' +
             "</p>" +
             "<p>" +
-            "If you need any more information, simply reply to this email and I'll get back to you." +
+            "If you don't want to do it now, no worries, existing PayPal subscriptions will be valid at least until December 2025." +
+            "</p>" +
+            "<p>" +
+            "Need any more information? Simply reply to this email and I'll get back to you." +
             "</p>" +
             "<p>" +
             "Kind regards,<br><br>" +
