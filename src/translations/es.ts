@@ -35,6 +35,7 @@ const esLang: LanguageString = {
     PartlyCloudy: "mayormente claro",
     Cloudy: "mublado",
     MostlyCloudy: "mayormente nublado",
+    Overcast: "mublado",
     Thunderstorm: "tormenta",
     Hurricane: "huracán",
     Tornado: "tornado",

@@ -35,6 +35,7 @@ const deLang: LanguageString = {
     PartlyCloudy: "meist klarer",
     Cloudy: "bewölkt",
     MostlyCloudy: "meist bewölkt",
+    Overcast: "bewölkt",
     Thunderstorm: "gewitter",
     Hurricane: "hurrikan",
     Tornado: "tornado",

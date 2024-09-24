@@ -35,6 +35,7 @@ const frLang: LanguageString = {
     PartlyCloudy: "ciel généralement dégagé",
     Cloudy: "nuageux",
     MostlyCloudy: "plutôt nuageux",
+    Overcast: "nuageux",
     Thunderstorm: "orage",
     Hurricane: "ouragan",
     Tornado: "tornade",

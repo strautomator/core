@@ -70,7 +70,7 @@ export const translation = (id: string, preferences: UserPreferences, capitalize
     }
 
     if (!result) {
-        logger.warn("Translations.translation", language, `No translation found for: ${id}`)
+        logger.debug("Translations.translation", language, `No translation found for: ${id}`)
         return id
     }
 

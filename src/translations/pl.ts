@@ -35,6 +35,7 @@ const plLang: LanguageString = {
     PartlyCloudy: "częściowo pochmurnie",
     Cloudy: "pochmurnie",
     MostlyCloudy: "głównie pochmurnie",
+    Overcast: "pochmurnie",
     Thunderstorm: "burza",
     Hurricane: "huragan",
     Tornado: "tornado",

@@ -35,6 +35,7 @@ const enLang: LanguageString = {
     PartlyCloudy: "gedeeltelijk bewolkt",
     Cloudy: "bewolkt",
     MostlyCloudy: "meestal bewolkt",
+    Overcast: "bewolkt",
     Thunderstorm: "onweersbui",
     Hurricane: "orkaan",
     Tornado: "tornado",

@@ -35,6 +35,7 @@ const enLang: LanguageString = {
     PartlyCloudy: "partly cloudy",
     Cloudy: "cloudy",
     MostlyCloudy: "mostly cloudy",
+    Overcast: "overcast",
     Thunderstorm: "thunderstorm",
     Hurricane: "hurricane",
     Tornado: "tornado",

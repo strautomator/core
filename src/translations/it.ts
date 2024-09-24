@@ -35,6 +35,7 @@ const itLang: LanguageString = {
     PartlyCloudy: "parzialmente nuvoloso",
     Cloudy: "nuvoloso",
     MostlyCloudy: "prevalentemente nuvoloso",
+    Overcast: "nuvoloso",
     Thunderstorm: "temporale",
     Hurricane: "uragano",
     Tornado: "tornado",

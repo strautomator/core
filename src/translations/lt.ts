@@ -35,6 +35,7 @@ const ltLang: LanguageString = {
     PartlyCloudy: "nepastoviai debesuota",
     Cloudy: "debesuota",
     MostlyCloudy: "daugiausia debesuota",
+    Overcast: "debesuota",
     Thunderstorm: "perkūnija",
     Hurricane: "uraganas",
     Tornado: "tornadas",

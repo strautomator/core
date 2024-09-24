@@ -36,6 +36,7 @@ export interface LanguageString {
     PartlyCloudy: string
     Cloudy: string
     MostlyCloudy: string
+    Overcast: string
     Thunderstorm: string
     Tornado: string
     Hurricane: string

@@ -35,6 +35,7 @@ const ptLang: LanguageString = {
     PartlyCloudy: "parcialmente nublado",
     Cloudy: "nublado",
     MostlyCloudy: "parcialmente nublado",
+    Overcast: "nublado",
     Thunderstorm: "tempestade",
     Hurricane: "furacão",
     Tornado: "tornado",
