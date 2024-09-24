@@ -82,10 +82,14 @@ export class Subscriptions {
 
     /**
      * Get active subscriptions.
+     * @param source Optional, return only subscriptions from the specified source.
      */
-    getActive = async (): Promise<(BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[]> => {
+    getActive = async (source?: string): Promise<(BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[]> => {
         try {
             const where = [["status", "==", "ACTIVE"]]
+            if (source) {
+                where.push(["source", "==", source])
+            }
             const subscriptions: (BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions", where)
             logger.info("Subscriptions.getActive", `Got ${subscriptions.length} active subscriptions`)
 
