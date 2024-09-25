@@ -52,16 +52,16 @@ export const buildGearWear = async (user: UserData, dbCalendar: CalendarData, ca
                 const compId = `-${comp.name}-`.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
                 const gearCompTitle = `${gearDetails.name} ${gearIcon} ${comp.name}`
 
-                // If an alert was sent to replace the component, create an event next day.
+                // If an alert was sent to replace the component, create an event 2 days later.
                 if (comp.dateAlertSent) {
-                    const eventDate = dayjs(comp.dateAlertSent).add(1, "day").hour(20).minute(0).second(0)
+                    const eventDate = dayjs(comp.dateAlertSent).add(2, "days").hour(20).minute(0).second(0)
                     const eventId = `gear-${gear.id}-${compId}-${Math.round(comp.dateAlertSent.valueOf() / 10000)}`
                     const hours = ((comp.currentTime || 0) / 3600).toFixed(1).replace(".0", "")
                     const arrDescription = [gearTitle, `Friendly reminder to replace the ${comp.name}.`, `Current usage: ${comp.currentDistance} ${distanceUnits}, ${hours} hours.`]
                     events.push({
                         id: eventId,
-                        start: eventDate,
-                        end: eventDate.add(settings.calendar.eventDurationMinutes, "minutes"),
+                        start: eventDate.toDate(),
+                        end: eventDate.add(settings.calendar.eventDurationMinutes, "minutes").toDate(),
                         summary: `${gearCompTitle} ℹ️`,
                         description: arrDescription.join("\n"),
                         url: `${settings.app.url}gear/edit?id=${gear.id}`
@@ -76,8 +76,8 @@ export const buildGearWear = async (user: UserData, dbCalendar: CalendarData, ca
                     const arrDescription = [gearTitle, `Component replaced after ${history.distance} ${distanceUnits}, ${hours} hours.`]
                     events.push({
                         id: eventId,
-                        start: eventDate,
-                        end: eventDate.add(settings.calendar.eventDurationMinutes, "minutes"),
+                        start: eventDate.toDate(),
+                        end: eventDate.add(settings.calendar.eventDurationMinutes, "minutes").toDate(),
                         summary: `${gearCompTitle} 🔄`,
                         description: arrDescription.join("\n"),
                         url: `${settings.app.url}gear/edit?id=${gear.id}`
@@ -87,6 +87,38 @@ export const buildGearWear = async (user: UserData, dbCalendar: CalendarData, ca
                 // Append all created events to the calendar.
                 events.forEach((e) => cal.createEvent(e))
                 dbCalendar.gearEventCount += events.length
+            }
+
+            // Process device battery tracker.
+            const batteryTracker = await gearwear.getBatteryTracker(user)
+            if (batteryTracker) {
+                batteryTracker.devices.forEach((device) => {
+                    if (["low", "critical"].includes(device.status)) {
+                        const eventDate = dayjs(device.dateUpdated)
+                        const reminderDate = eventDate.add(2, "days").hour(20).minute(0).second(0)
+
+                        cal.createEvent({
+                            id: `battery-${device.id}`,
+                            start: eventDate.toDate(),
+                            end: eventDate.add(settings.calendar.eventDurationMinutes, "minutes").toDate(),
+                            summary: `Battery ${device.status}: ${device.id} 🪫`,
+                            description: `Device ${device.id} battery status was reported as ${device.status.toUpperCase()}.`,
+                            url: `${settings.app.url}gear`
+                        })
+
+                        // Create a reminder event to recharge the battery.
+                        if (reminderDate.isAfter(new Date())) {
+                            cal.createEvent({
+                                id: `battery-${device.id}-reminder`,
+                                start: eventDate.toDate(),
+                                end: eventDate.add(settings.calendar.eventDurationMinutes, "minutes").toDate(),
+                                summary: `Reminder to recharge the battery: ${device.id} 🔋`,
+                                description: `Friendly reminder to recharge (or replace) the batteries for the device ${device.id}.`,
+                                url: `${settings.app.url}gear`
+                            })
+                        }
+                    }
+                })
             }
         }
     } catch (ex) {
