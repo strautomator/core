@@ -82,3 +82,22 @@ export interface GearWearReset {
     /** The time (seconds) of use the component had at the time of the reset. */
     time: number
 }
+
+/**
+ * List of tracked device / sensor battery levels.
+ */
+export interface GearWearBatteryTracker {
+    /** ID is battery-userID. */
+    id: string
+    /** The user ID. */
+    userId: string
+    /** List of tracked devices, by ID. */
+    devices: {
+        /** Device ID. */
+        id: string
+        /** Device battery state. */
+        status: "new" | "good" | "ok" | "low" | "critical"
+        /** Date last updated. */
+        dateUpdated: Date
+    }[]
+}

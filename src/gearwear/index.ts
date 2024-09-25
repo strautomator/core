@@ -1,11 +1,12 @@
 // Strautomator Core: GearWear
 
-import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
+import {GearWearDbState, GearWearConfig, GearWearComponent, GearWearBatteryTracker} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {isActivityIgnored} from "../strava/utils"
 import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
+import fitparser from "../fitparser"
 import mailer from "../mailer"
 import notifications from "../notifications"
 import strava from "../strava"
@@ -75,7 +76,7 @@ export class GearWear {
             const counter = await database.delete("gearwear", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("GearWear.onUserDelete", logHelper.user(user), `Deleted ${counter} GearWear configs`)
+                logger.info("GearWear.onUserDelete", logHelper.user(user), `Deleted ${counter} GearWear`)
             }
         } catch (ex) {
             logger.error("GearWear.onUserDelete", logHelper.user(user), ex)
@@ -372,7 +373,7 @@ export class GearWear {
         }
     }
 
-    // PROCESSING
+    // ACTIVITY PROCESSING
     // --------------------------------------------------------------------------
 
     /**
@@ -488,7 +489,8 @@ export class GearWear {
         }
 
         try {
-            const activities = await strava.activities.getActivities(user, {after: dDateFrom, before: dDateTo})
+            const inputActivities = await strava.activities.getActivities(user, {after: dDateFrom, before: dDateTo})
+            const activities = _.sortBy(inputActivities, "dateStart")
 
             // No recent activities found? Stop here.
             if (activities.length == 0) {
@@ -516,6 +518,11 @@ export class GearWear {
                 await this.updateTracking(user, config, gearActivities)
                 count += gearActivities.length
             }
+
+            // If user is PRO, also track battery levels.
+            if (user.isPro) {
+                await this.updateBatteryTracking(user, activities)
+            }
         } catch (ex) {
             logger.error("GearWear.processUserActivities", logHelper.user(user), dateString, ex)
         }
@@ -535,11 +542,14 @@ export class GearWear {
         return count
     }
 
+    // GEAR TRACKING
+    // --------------------------------------------------------------------------
+
     /**
      * Update gear component distance / time (hours) with the provided Strava activities.
      * @param user The user owner of the gear and component.
      * @param config The GearWear configuration.
-     * @param activity Strava activity that should be used to update distances.
+     * @param activities Strava activities to be processed.
      */
     updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
         try {
@@ -757,6 +767,88 @@ export class GearWear {
             logger.error("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, ex)
         }
     }
+
+    // BATTERY TRACKING
+    // --------------------------------------------------------------------------
+
+    /**
+     * Keep track of sensor battery levels, available to PRO only.
+     * @param user The user.
+     * @param activities Strava activities to be processed.
+     */
+    updateBatteryTracking = async (user: UserData, activities: StravaActivity[]): Promise<void> => {
+        const activitiesLog = `${activities.length || "no"} activities`
+        const now = dayjs.utc().toDate()
+        try {
+            if (!user.isPro) {
+                logger.warn("GearWear.updateBatteryTracking", logHelper.user(user), "User is not PRO, will not track batteries")
+                return
+            }
+            if (!activities || activities.length == 0) {
+                logger.debug("GearWear.updateBatteryTracking", logHelper.user(user), `No activities to process`)
+                return
+            }
+
+            // Get (or create) the battery tracker object.
+            const trackerId = `battery-${user.id}`
+            let isNew = false
+            let tracker: GearWearBatteryTracker = await database.get("gearwear", trackerId)
+
+            if (!tracker) {
+                tracker = {
+                    id: trackerId,
+                    userId: user.id,
+                    devices: []
+                }
+                isNew = true
+            }
+
+            // Iterate user activities to update the device battery levels.
+            for (let activity of activities) {
+                try {
+                    const matching = await fitparser.getMatchingActivity(user, activity)
+                    if (!matching) {
+                        logger.info("GearWear.updateBatteryTracking", logHelper.user(user), `Activity ${activity.id} has no matching FIT file`)
+                        continue
+                    }
+
+                    const dateUpdated = activity.dateEnd || now
+
+                    // Iterate and update device battery status.
+                    for (let deviceBattery of matching.deviceBattery) {
+                        const existing = tracker.devices.find((d) => d.id == deviceBattery.id)
+                        if (existing) {
+                            if (existing.status != deviceBattery.status) {
+                                logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New status: ${deviceBattery.id} - ${deviceBattery.status}`)
+                            }
+                            existing.status = deviceBattery.status
+                            existing.dateUpdated = dateUpdated
+                        } else {
+                            tracker.devices.push({id: deviceBattery.id, status: deviceBattery.status, dateUpdated: dateUpdated})
+                            logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New device tracked: ${deviceBattery.id} - ${deviceBattery.status}`)
+                        }
+                    }
+                } catch (innerEx) {
+                    logger.error("GearWear.updateBatteryTracking", logHelper.user(user), logHelper.activity(activity), innerEx)
+                }
+            }
+
+            // No need to save a new tracker if no device battery were found.
+            if (isNew && tracker.devices.length == 0) {
+                logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, "No battery statuses found, won't create a tracker")
+                return
+            }
+
+            // Save tracker to the database.
+            await database.set("gearwear", tracker, trackerId)
+            logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `Tracking ${tracker.devices.length} devices`)
+        } catch (ex) {
+            logger.error("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, ex)
+        }
+    }
+
+    // NOTIFICATIONS
+    // --------------------------------------------------------------------------
 
     /**
      * Sends an email to the user when a specific component has reached its distance / time alert threshold.
