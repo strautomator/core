@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "24.393.11807",
+    "version": "24.393.12106",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -40,7 +40,7 @@
     "devDependencies": {
         "@types/express": "^4.17.21",
         "@types/lodash": "^4.17.9",
-        "@types/node": "^22.7.0",
+        "@types/node": "^22.7.1",
         "@types/nodemailer": "^6.4.16",
         "chai": "^4.5.0",
         "chalk": "^4.1.2",
