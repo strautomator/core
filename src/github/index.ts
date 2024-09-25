@@ -184,11 +184,6 @@ export class GitHub {
                     price: data.sponsorship.tier.monthly_price_in_dollars,
                     status: status
                 }
-
-                // One time payment? Set the expiration date.
-                if (data.sponsorship.tier.is_one_time) {
-                    subscription.dateExpiry = defaultExpiryDate
-                }
             } else {
                 subscription.status = status
                 subscription.dateUpdated = now.toDate()
@@ -207,6 +202,7 @@ export class GitHub {
                 details.push("Monthly")
             } else {
                 delete subscription.frequency
+                subscription.dateExpiry = defaultExpiryDate
                 details.push("One time payment")
             }
 
