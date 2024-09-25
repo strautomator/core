@@ -538,7 +538,7 @@ export class GearWear {
             }
 
             // If user is PRO, also track battery levels.
-            if (user.isPro) {
+            if (user.isPro && !user.preferences.privacyMode) {
                 await this.updateBatteryTracking(user, activities)
             }
         } catch (ex) {
@@ -798,14 +798,6 @@ export class GearWear {
         const activitiesLog = `${activities.length || "no"} activities`
         const now = dayjs.utc().toDate()
         try {
-            if (!user.isPro) {
-                logger.warn("GearWear.updateBatteryTracking", logHelper.user(user), "User is not PRO, will not track")
-                return
-            }
-            if (!user.preferences.privacyMode) {
-                logger.warn("GearWear.updateBatteryTracking", logHelper.user(user), "User has privacy mode enabled, will not track")
-                return
-            }
             if (!activities || activities.length == 0) {
                 logger.debug("GearWear.updateBatteryTracking", logHelper.user(user), `No activities to process`)
                 return
