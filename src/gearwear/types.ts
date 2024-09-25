@@ -84,20 +84,25 @@ export interface GearWearReset {
 }
 
 /**
- * List of tracked device / sensor battery levels.
+ * List of tracked devices / sensor battery levels.
  */
 export interface GearWearBatteryTracker {
-    /** ID is battery-userID. */
+    /** ID is the same as the User ID. */
     id: string
-    /** The user ID. */
-    userId: string
     /** List of tracked devices, by ID. */
-    devices: {
-        /** Device ID. */
-        id: string
-        /** Device battery state. */
-        status: "new" | "good" | "ok" | "low" | "critical"
-        /** Date last updated. */
-        dateUpdated: Date
-    }[]
+    devices: GearWearDeviceBattery[]
+    /** Date when the tracker was last updated. */
+    dateUpdated: Date
+}
+
+/**
+ * Device tracked battery state.
+ */
+export interface GearWearDeviceBattery {
+    /** Device ID. */
+    id: string
+    /** Device battery state. */
+    status: "new" | "good" | "ok" | "low" | "critical"
+    /** Last update date will match the date of the activity in most cases. */
+    dateUpdated: Date
 }
