@@ -862,6 +862,9 @@ export class GearWear {
                 return
             }
 
+            // Sort the devices by ID.
+            tracker.devices = _.sortBy(tracker.devices, "id")
+
             // Save tracker to the database.
             await database.set("gearwear-battery", tracker, user.id)
             logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `Tracking ${tracker.devices.length} devices`)
