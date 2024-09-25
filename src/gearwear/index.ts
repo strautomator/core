@@ -249,6 +249,20 @@ export class GearWear {
         }
     }
 
+    /**
+     * Get the devices battery tracker for the specified user.
+     * @param user The user.
+     */
+    getBatteryTracker = async (user: UserData): Promise<GearWearBatteryTracker> => {
+        try {
+            const result: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
+            return result
+        } catch (ex) {
+            logger.error("GearWear.getBatteryTracker", logHelper.user(user), ex)
+            throw ex
+        }
+    }
+
     // UPDATE AND DELETE
     // --------------------------------------------------------------------------
 
@@ -772,7 +786,7 @@ export class GearWear {
     // --------------------------------------------------------------------------
 
     /**
-     * Keep track of sensor battery levels, available to PRO only.
+     * Keep track of sensor battery levels, available to PRO only, disabled if privacyMode is set.
      * @param user The user.
      * @param activities Strava activities to be processed.
      */
@@ -781,7 +795,11 @@ export class GearWear {
         const now = dayjs.utc().toDate()
         try {
             if (!user.isPro) {
-                logger.warn("GearWear.updateBatteryTracking", logHelper.user(user), "User is not PRO, will not track batteries")
+                logger.warn("GearWear.updateBatteryTracking", logHelper.user(user), "User is not PRO, will not track")
+                return
+            }
+            if (!user.preferences.privacyMode) {
+                logger.warn("GearWear.updateBatteryTracking", logHelper.user(user), "User has privacy mode enabled, will not track")
                 return
             }
             if (!activities || activities.length == 0) {
@@ -790,17 +808,18 @@ export class GearWear {
             }
 
             // Get (or create) the battery tracker object.
-            const trackerId = `battery-${user.id}`
             let isNew = false
-            let tracker: GearWearBatteryTracker = await database.get("gearwear", trackerId)
+            let tracker: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
 
             if (!tracker) {
                 tracker = {
-                    id: trackerId,
-                    userId: user.id,
-                    devices: []
+                    id: user.id,
+                    devices: [],
+                    dateUpdated: now
                 }
                 isNew = true
+            } else {
+                tracker.dateUpdated = now
             }
 
             // Iterate user activities to update the device battery levels.
@@ -840,7 +859,7 @@ export class GearWear {
             }
 
             // Save tracker to the database.
-            await database.set("gearwear", tracker, trackerId)
+            await database.set("gearwear-battery", tracker, user.id)
             logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `Tracking ${tracker.devices.length} devices`)
         } catch (ex) {
             logger.error("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, ex)
