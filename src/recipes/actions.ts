@@ -366,7 +366,7 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
     }
 
     try {
-        let garminActivity = await fitparser.getMatchingActivity(user, "garmin", activity)
+        let garminActivity = await fitparser.getMatchingActivity(user, activity, "garmin")
         if (!garminActivity) {
             logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Garmin activity")
             return processedValue
@@ -398,7 +398,7 @@ export const addWahooTags = async (user: UserData, activity: StravaActivity, rec
     }
 
     try {
-        let wahooActivity = await fitparser.getMatchingActivity(user, "wahoo", activity)
+        let wahooActivity = await fitparser.getMatchingActivity(user, activity, "wahoo")
         if (!wahooActivity) {
             logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Wahoo activity")
             return processedValue

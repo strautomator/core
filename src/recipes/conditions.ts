@@ -488,7 +488,7 @@ export const checkGarminWahoo = async (user: UserData, activity: StravaActivity,
     // Try finding the matching Garmin or Wahoo activity for the Strava activity.
     // If failed, retry in a few seconds if the device used to record the activity
     // matches the target FIT file source.
-    const fitActivity = await fitparser.getMatchingActivity(user, source, activity)
+    const fitActivity = await fitparser.getMatchingActivity(user, activity, source)
     if (!fitActivity) {
         return op == RecipeOperator.NotLike
     }
