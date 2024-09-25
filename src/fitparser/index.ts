@@ -263,8 +263,19 @@ export class FitParser {
         // Found devices in the FIT file? Generate device IDs.
         if (fitObj.devices?.length > 0) {
             const getDeviceString = (d) => `${d.manufacturer}.${d.product_name || d.device_type || d.source_type || d.device_index}.${d.serial_number}`.replace(/\_/g, "").replace(/\s/g, "")
-            const filterDevices = fitObj.devices.filter((d) => d.manufacturer && d.serial_number)
-            fitFileActivity.devices = _.uniq(filterDevices.map((d) => getDeviceString(d)))
+            const validDevices = fitObj.devices.filter((d) => d.manufacturer && d.serial_number)
+            fitFileActivity.devices = _.uniq(validDevices.map((d) => getDeviceString(d)))
+
+            // Identify devices battery statuses.
+            const batteryDevices = validDevices.filter((d) => d.battery_status)
+            if (batteryDevices.length > 0) {
+                fitFileActivity.deviceBattery = batteryDevices.map((d) => {
+                    return {
+                        id: getDeviceString(d),
+                        status: d.battery_status
+                    }
+                })
+            }
         }
 
         // Decode primary benefit to a friendly string.
@@ -328,11 +339,13 @@ export class FitParser {
     /**
      * Find a matching FIT file activity in the database.
      * @param user The user.
-     * @param source The source of the FIT file (garmin or wahoo).
      * @param activity The Strava activity to be matched.
+     * @param source Optional specific source, garmin or wahoo.
      */
-    getMatchingActivity = async (user: UserData, source: "garmin" | "wahoo", activity: StravaActivity | StravaProcessedActivity): Promise<FitFileActivity> => {
+    getMatchingActivity = async (user: UserData, activity: StravaActivity | StravaProcessedActivity, source?: "any" | "garmin" | "wahoo"): Promise<FitFileActivity> => {
         try {
+            if (!source) source == "any"
+
             const activityDate = dayjs(activity.dateStart)
             const dateFrom = activityDate.subtract(1, "minute").toDate()
             const dateTo = activityDate.add(1, "minute").toDate()
@@ -344,10 +357,17 @@ export class FitParser {
 
             // Find activities based on the start date.
             // No activities found? Try again once if the activity device matches the passed FIT file source.
-            let activities: FitFileActivity[] = await database.search(source, where)
-            if (activities.length == 0 && activity.device?.toLowerCase().includes(source)) {
-                await jaul.io.sleep(settings.axios.retryInterval * 2)
+            let activities: FitFileActivity[]
+            if (source == "any") {
+                const fromGarmin = await database.search("garmin", where)
+                const fromWahoo = await database.search("garmin", where)
+                activities = _.concat(fromGarmin, fromWahoo)
+            } else {
                 activities = await database.search(source, where)
+                if (activities.length == 0 && activity.device?.toLowerCase().includes(source)) {
+                    await jaul.io.sleep(settings.axios.retryInterval * 2)
+                    activities = await database.search(source, where)
+                }
             }
 
             if (activities.length == 0) {
@@ -383,12 +403,12 @@ export class FitParser {
                 activity.dateExpiry = dayjs().add(settings[source].maxCacheDuration, "seconds").toDate()
             }
 
-            await database.set("garmin", activity, `activity-${activity.id}`)
+            await database.set(source, activity, `activity-${activity.id}`)
 
             const logDevices = activity.devices ? activity.devices.length : "no"
-            logger.info("FitParser.saveActivity", logHelper.user(user), source, logHelper.fitFileActivity(activity), `${logDevices} devices`)
+            logger.info("FitParser.saveProcessedActivity", logHelper.user(user), source, logHelper.fitFileActivity(activity), `${logDevices} devices`)
         } catch (ex) {
-            logger.error("FitParser.saveActivity", logHelper.user(user), source, logHelper.fitFileActivity(activity), ex)
+            logger.error("FitParser.saveProcessedActivity", logHelper.user(user), source, logHelper.fitFileActivity(activity), ex)
         }
     }
 }
