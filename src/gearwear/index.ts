@@ -537,8 +537,8 @@ export class GearWear {
                 count += gearActivities.length
             }
 
-            // If user is PRO, also track battery levels.
-            if (user.isPro && !user.preferences.privacyMode) {
+            // If user is PRO and has a Garmin or Wahoo profile linked, track battery levels.
+            if (user.isPro && !user.preferences.privacyMode && (user.garmin?.id || user.wahoo?.id)) {
                 await this.updateBatteryTracking(user, activities)
             }
         } catch (ex) {
