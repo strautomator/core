@@ -70,7 +70,7 @@ export class Subscriptions {
     getAll = async (source?: string): Promise<(BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[]> => {
         try {
             const where = source ? [["source", "==", source]] : null
-            const subscriptions: (BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions", where)
+            const subscriptions = await database.search("subscriptions", where)
             logger.info("Subscriptions.getAll", `Got ${subscriptions.length} ${source ? source + " subscriptions" : "subscriptions"}`)
 
             return subscriptions
@@ -90,7 +90,7 @@ export class Subscriptions {
             if (source) {
                 where.push(["source", "==", source])
             }
-            const subscriptions: (BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions", where)
+            const subscriptions = await database.search("subscriptions", where)
             logger.info("Subscriptions.getActive", `Got ${subscriptions.length} active subscriptions`)
 
             return subscriptions
@@ -106,7 +106,7 @@ export class Subscriptions {
     getNonActive = async (): Promise<(BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[]> => {
         try {
             const where = [["status", "in", ["SUSPENDED", "CANCELLED", "EXPIRED"]]]
-            const subscriptions: (BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[] = await database.search("subscriptions", where)
+            const subscriptions = await database.search("subscriptions", where)
             logger.info("Subscriptions.getNonActive", `Got ${subscriptions.length} non-active subscriptions`)
 
             return subscriptions
@@ -127,12 +127,37 @@ export class Subscriptions {
                 ["status", "==", "APPROVAL_PENDING"]
             ]
 
-            const subscriptions: PayPalSubscription[] = await database.search("subscriptions", queries)
+            const subscriptions = await database.search("subscriptions", queries)
             logger.info("Subscriptions.getDangling", `Got ${subscriptions.length} dangling subscriptions`)
 
             return subscriptions
         } catch (ex) {
             logger.error("Subscriptions.getDangling", ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get all subscriptions that expire around the specified date.
+     * @param date The date to get the expiring subscriptions for.
+     */
+    getExpiringOn = async (date: Date): Promise<(BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[]> => {
+        const day = dayjs.utc(date)
+
+        try {
+            const minDate = day.startOf("day").toDate()
+            const maxDate = day.endOf("day").toDate()
+            const queries = [
+                ["dateExpiry", ">=", minDate],
+                ["dateExpiry", "<=", maxDate]
+            ]
+
+            const subscriptions = await database.search("subscriptions", queries)
+            logger.info("Subscriptions.getExpiringOn", day.format("YYYY-MM-DD"), `Got ${subscriptions.length} expiring subscriptions`)
+
+            return subscriptions
+        } catch (ex) {
+            logger.error("Subscriptions.getExpiringOn", day.format("YYYY-MM-DD"), ex)
             throw ex
         }
     }
