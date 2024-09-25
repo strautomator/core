@@ -74,9 +74,13 @@ export class GearWear {
     private onUserDelete = async (user: UserData): Promise<void> => {
         try {
             const counter = await database.delete("gearwear", ["userId", "==", user.id])
+            const battery = await database.delete("gearwear-battery", ["userId", "==", user.id])
 
             if (counter > 0) {
-                logger.info("GearWear.onUserDelete", logHelper.user(user), `Deleted ${counter} GearWear`)
+                logger.info("GearWear.onUserDelete", logHelper.user(user), `Deleted ${counter} GearWear configurations`)
+            }
+            if (battery > 0) {
+                logger.info("GearWear.onUserDelete", logHelper.user(user), `Deleted the battery tracker`)
             }
         } catch (ex) {
             logger.error("GearWear.onUserDelete", logHelper.user(user), ex)
