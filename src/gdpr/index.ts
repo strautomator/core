@@ -90,39 +90,44 @@ export class GDPR {
             // Get all relevant user data from the database.
             const where = [["userId", "==", user.id]]
             const jsonData: any = {}
-            jsonData["user"] = await database.get("users", user.id, true)
-            jsonData["calendars"] = await database.search("calendars", where)
-            jsonData["activities"] = await database.search("activities", where)
-            jsonData["athlete-records"] = await database.get("athlete-records", user.id, true)
-            jsonData["garmin"] = await database.search("garmin", where)
-            jsonData["gearwear"] = await database.search("gearwear", where)
-            jsonData["notifications"] = await database.search("notifications", where)
-            jsonData["recipe-stats"] = await database.search("recipe-stats", where)
-            jsonData["shared-recipes"] = await database.search("shared-recipes", where)
-            jsonData["subscriptions"] = await database.search("subscriptions", where)
+            jsonData["Activities"] = await database.search("activities", where)
+            jsonData["FitActivities"] = {Garmin: await database.search("garmin", where), Wahoo: await database.search("wahoo", where)}
+            jsonData["Automations"] = {Stats: await database.search("recipe-stats", where), Shared: await database.search("shared-recipes", where)}
+            jsonData["AthleteRecords"] = await database.get("athlete-records", user.id, true)
+            jsonData["Calendars"] = await database.search("calendars", where)
+            jsonData["GearWear"] = {Config: await database.search("gearwear", where), BatteryTracker: await database.get("gearwear-battery", user.id)}
+            jsonData["Notifications"] = await database.search("notifications", where)
+            jsonData["Subscription"] = await database.search("subscriptions", where)
+            jsonData["User"] = await database.get("users", user.id, true)
 
             // Remove sensitive data.
-            delete jsonData.user.stravaTokens
-            delete jsonData.user.urlToken
-            if (jsonData.user.garmin) {
-                delete jsonData.user.garmin.tokens
+            delete jsonData.User.stravaTokens
+            delete jsonData.User.urlToken
+            if (jsonData.User.garmin) {
+                delete jsonData.User.garmin.tokens
             }
-            if (jsonData.user.spotify) {
-                delete jsonData.user.spotify.tokens
+            if (jsonData.User.wahoo) {
+                delete jsonData.User.wahoo.tokens
+            }
+            if (jsonData.User.spotify) {
+                delete jsonData.User.spotify.tokens
             }
 
-            // Iterate and zip database contents for the specified user.
+            // Cleanup data before saving.
             let key: string
             let data: any
             for ([key, data] of Object.entries(jsonData)) {
                 if (!data) continue
 
-                if ((_.isArray(data) && data.length > 0) || Object.values(data).length > 0) {
-                    const dataStr = JSON.stringify(data)
-                    await zip.file(`${key}.json`, dataStr)
-                    size += dataStr.length
+                if ((_.isArray(data) && data.length == 0) || Object.values(data).length == 0) {
+                    delete jsonData[key]
                 }
             }
+
+            // ZIP the exported data.
+            const dataStr = JSON.stringify(jsonData, null, 2)
+            await zip.file("data.json", dataStr)
+            size += dataStr.length
 
             // Get cached calendars.
             const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
