@@ -835,14 +835,6 @@ export class Users {
                         logs.push(`Shoes: ${user.profile.shoes.length}`)
                     }
                 }
-                if (user.preferences) {
-                    const prefs = Object.keys(user.preferences).map((k) => `${k}=${logValue(user.preferences[k])}`)
-                    if (prefs.length > 0) {
-                        logs.push(prefs.join(" | "))
-                    } else if (!replace) {
-                        delete user.preferences
-                    }
-                }
                 if (user.garmin) {
                     logs.push(`Garmin: ${logValue(user.garmin.id || user.garmin)}`)
                 }
@@ -857,6 +849,14 @@ export class Users {
                 }
                 if (user.subscriptionId) {
                     logs.push(`Subscription: ${logValue(user.subscriptionId)}`)
+                }
+                if (user.preferences) {
+                    const prefs = Object.keys(user.preferences).map((k) => `${k}=${logValue(user.preferences[k])}`)
+                    if (prefs.length > 0) {
+                        logs.push(prefs.join(" | "))
+                    } else if (!replace) {
+                        delete user.preferences
+                    }
                 }
 
                 // Update user on the database.
