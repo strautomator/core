@@ -1,6 +1,6 @@
 // Strautomator Core: GearWear
 
-import {GearWearDbState, GearWearConfig, GearWearComponent, GearWearBatteryTracker} from "./types"
+import {GearWearDbState, GearWearConfig, GearWearComponent, GearWearBatteryTracker, GearWearDeviceBattery} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {isActivityIgnored} from "../strava/utils"
 import {UserData} from "../users/types"
@@ -797,6 +797,7 @@ export class GearWear {
     updateBatteryTracking = async (user: UserData, activities: StravaActivity[]): Promise<void> => {
         const activitiesLog = `${activities.length || "no"} activities`
         const now = dayjs.utc().toDate()
+
         try {
             if (!activities || activities.length == 0) {
                 logger.debug("GearWear.updateBatteryTracking", logHelper.user(user), `No activities to process`)
@@ -806,6 +807,7 @@ export class GearWear {
             // Get (or create) the battery tracker object.
             let isNew = false
             let tracker: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
+            const lowBatteryDevices: Partial<GearWearDeviceBattery>[] = []
 
             if (!tracker) {
                 tracker = {
@@ -832,15 +834,23 @@ export class GearWear {
                     // Iterate and update device battery status.
                     for (let deviceBattery of matching.deviceBattery) {
                         const existing = tracker.devices.find((d) => d.id == deviceBattery.id)
+                        let changedToLow = false
                         if (existing) {
                             if (existing.status != deviceBattery.status) {
                                 logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New status: ${deviceBattery.id} - ${deviceBattery.status}`)
+                                changedToLow = true
                             }
                             existing.status = deviceBattery.status
                             existing.dateUpdated = dateUpdated
                         } else {
                             tracker.devices.push({id: deviceBattery.id, status: deviceBattery.status, dateUpdated: dateUpdated})
                             logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New device tracked: ${deviceBattery.id} - ${deviceBattery.status}`)
+                            changedToLow = true
+                        }
+
+                        // If device battery status changed to low or critical, add it to the the low battery list.
+                        if (["low", "critical"].includes(deviceBattery.status) && changedToLow) {
+                            lowBatteryDevices.push(deviceBattery)
                         }
                     }
                 } catch (innerEx) {
@@ -860,6 +870,20 @@ export class GearWear {
             // Save tracker to the database.
             await database.set("gearwear-battery", tracker, user.id)
             logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `Tracking ${tracker.devices.length} devices`)
+
+            // Check if user wants to be notified about low battery devices.
+            if (!user.preferences.gearwearBatteryAlert || !user.email || lowBatteryDevices.length == 0) {
+                return
+            }
+
+            // Send low battery alert via email.
+            await mailer.send({
+                template: "GearWearLowBattery",
+                data: {devices: lowBatteryDevices.map((d) => `- ${d.id}: ${d.status.toUpperCase()}`).join("<br />")},
+                to: user.email
+            })
+
+            logger.info("GearWear.updateBatteryTracking.email", logHelper.user(user), `Devices: ${lowBatteryDevices.map((d) => d.id).join(", ")}`, "Email sent")
         } catch (ex) {
             logger.error("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, ex)
         }

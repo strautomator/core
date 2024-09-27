@@ -43,7 +43,7 @@ export const EmailTemplates = {
             "This is a good time to double check if everything is in order with the component. ${tips}" +
             "</p>" +
             "<p>" +
-            'If you wish to buy replacement parts early, check the <a href="${affiliateLink}">best deals on our affiliate stores</a>.' +
+            'If you wish to buy replacement parts early, check the <a href="${affiliateLink}">best deals in our affiliate stores</a>.' +
             "</p>",
         tags: {
             tips: {
@@ -68,7 +68,7 @@ export const EmailTemplates = {
             'To reset the current tracking, please <a href="${resetLink}">click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component. You can also edit the component and increase the alert threshold, if needed.' +
             "</p>" +
             "<p>" +
-            'To buy replacement parts, check the <a href="${affiliateLink}">best deals on our affiliate stores</a>.' +
+            'To buy replacement parts, check the <a href="${affiliateLink}">best deals in our affiliate stores</a>.' +
             "</p>"
     },
 
@@ -86,7 +86,21 @@ export const EmailTemplates = {
             'To reset the current tracking, please <a href="${resetLink}">click here</a> to go to the GearWear details on Strautomator. You should do this once you have replaced the component.' +
             "</p>" +
             "<p>" +
-            'To buy replacement parts, check the <a href="${affiliateLink}">best deals on our affiliate stores</a>.' +
+            'To buy replacement parts, check the <a href="${affiliateLink}">best deals in our affiliate stores</a>.' +
+            "</p>"
+    },
+
+    // Alert sent to user when devices are reported to have low battery.
+    GearWearBattery: {
+        subject: "Devices with low battery",
+        body:
+            "<p>" +
+            "You have devices or sensors reported with low battery:" +
+            "<br><br>" +
+            "${devices}" +
+            "</p>" +
+            "<p>" +
+            'If you need to buy replacement batteries or parts, check the <a href="${affiliateLink}">best deals in our affiliate stores</a>.' +
             "</p>"
     },
 
