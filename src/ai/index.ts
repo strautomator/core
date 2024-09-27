@@ -220,7 +220,7 @@ export class AI {
                     if (a.wattsAvg > 0) subPrompt.push(`Had an average power of ${a.wattsAvg} watts, maximum ${a.wattsMax} watts.`)
                     if (a.hrAvg > 0) subPrompt.push(`Average heart rate of ${a.hrAvg} BPM, maximum ${a.hrMax} BPM.`)
                     if (a.cadenceAvg) subPrompt.push(`Cadence was ${a.cadenceAvg} RPM.`)
-                    if (a.weatherSummary) subPrompt.push(`Weather was ${a.weatherSummary.toLowerCase()}.`)
+                    if (a.weatherSummary && !a.sportType.includes("Virtual")) subPrompt.push(`Weather was ${a.weatherSummary.toLowerCase()}.`)
                     messages.push(subPrompt.join(" "))
                 }
 
@@ -346,28 +346,30 @@ export class AI {
                 }
             }
 
-            // Add weather data?
-            const activityWeather = options.activityWeather
-            if (activityWeather && (activityWeather.mid?.summary || activityWeather.start?.summary || activityWeather.end?.summary)) {
-                const weatherText = activityWeather.mid?.summary || activityWeather.start?.summary || activityWeather.end?.summary
-                messages.push(`The weather was ${weatherText.toLowerCase()}, `)
+            // Add weather data? Skip if the activity was virtual.
+            if (!activity.trainer && !activity.sportType.includes("Virtual")) {
+                const activityWeather = options.activityWeather
+                if (activityWeather && (activityWeather.mid?.summary || activityWeather.start?.summary || activityWeather.end?.summary)) {
+                    const weatherText = activityWeather.mid?.summary || activityWeather.start?.summary || activityWeather.end?.summary
+                    messages.push(`The weather was ${weatherText.toLowerCase()}, `)
 
-                const weatherTemps = _.without([activityWeather.mid?.temperature || activityWeather.start?.temperature || activityWeather.end?.temperature], null, undefined)
-                const tempUnit = user.preferences.weatherUnit == "f" ? "°F" : "°C"
-                const minTemp = _.min(weatherTemps) || 0
-                const maxTemp = _.max(weatherTemps) || 0
-                const windSpeeds = _.compact([activityWeather.mid?.windSpeed, activityWeather.start?.windSpeed, activityWeather.end?.windSpeed])
-                const avgWind = Math.round(_.mean(windSpeeds)) || 0
-                const windUnit = user.preferences.windSpeedUnit ? user.preferences.windSpeedUnit : user.preferences.weatherUnit == "f" ? "mph" : "kph"
-                messages.push(`with temperatures from ${minTemp}${tempUnit} to ${maxTemp}${tempUnit}, and wind of ${avgWind} ${windUnit}.`)
+                    const weatherTemps = _.without([activityWeather.mid?.temperature || activityWeather.start?.temperature || activityWeather.end?.temperature], null, undefined)
+                    const tempUnit = user.preferences.weatherUnit == "f" ? "°F" : "°C"
+                    const minTemp = _.min(weatherTemps) || 0
+                    const maxTemp = _.max(weatherTemps) || 0
+                    const windSpeeds = _.compact([activityWeather.mid?.windSpeed, activityWeather.start?.windSpeed, activityWeather.end?.windSpeed])
+                    const avgWind = Math.round(_.mean(windSpeeds)) || 0
+                    const windUnit = user.preferences.windSpeedUnit ? user.preferences.windSpeedUnit : user.preferences.weatherUnit == "f" ? "mph" : "kph"
+                    messages.push(`with temperatures from ${minTemp}${tempUnit} to ${maxTemp}${tempUnit}, and wind of ${avgWind} ${windUnit}.`)
 
-                if (options.fullDetails) {
-                    const weatherAqis = _.compact([activityWeather.mid?.aqi, activityWeather.start?.aqi, activityWeather.end?.aqi])
-                    const weatherAqi = _.max(weatherAqis) || 0
-                    if (weatherAqi > 4) {
-                        messages.push("The air quality was extremely bad.")
-                    } else if (weatherAqi > 3) {
-                        messages.push("The air quality was bad.")
+                    if (options.fullDetails) {
+                        const weatherAqis = _.compact([activityWeather.mid?.aqi, activityWeather.start?.aqi, activityWeather.end?.aqi])
+                        const weatherAqi = _.max(weatherAqis) || 0
+                        if (weatherAqi > 4) {
+                            messages.push("The air quality was extremely bad.")
+                        } else if (weatherAqi > 3) {
+                            messages.push("The air quality was bad.")
+                        }
                     }
                 }
             }
