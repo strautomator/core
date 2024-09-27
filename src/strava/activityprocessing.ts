@@ -334,7 +334,6 @@ export class StravaActivityProcessing {
      */
     saveProcessedActivity = async (user: UserData, activity: StravaActivity, recipeIds?: string[], error?: string): Promise<StravaProcessedActivity> => {
         try {
-            // Data to be saved on the database.
             const data: StravaProcessedActivity = {
                 id: activity.id,
                 dateProcessed: dayjs.utc().toDate(),
@@ -355,7 +354,7 @@ export class StravaActivityProcessing {
             }
 
             // Get recipe summary.
-            if (recipeIds.length > 0) {
+            if (recipeIds?.length > 0) {
                 let recipeDetails = {}
                 recipeIds?.forEach((id) => {
                     recipeDetails[id] = {
