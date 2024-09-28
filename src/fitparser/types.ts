@@ -38,6 +38,8 @@ export interface FitFileActivity {
     sportProfile?: string
     /** The workout name. */
     workoutName?: string
+    /** The workout notes. */
+    workoutNotes?: string
     /** Devices used in the activity. */
     devices?: string[]
     /** Devices battery status. */
