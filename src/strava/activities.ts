@@ -244,13 +244,9 @@ export class StravaActivities {
                 activity.linkback = true
 
                 // By default, link will be added to the description.
+                // TODO! Strava seems to be blocking links, so add just the title instead.
                 if (!useHashtag) {
-                    let appUrl = settings.app.url
-
-                    // Make sure app URL does not end with / (better optics).
-                    if (appUrl.substring(appUrl.length - 1) == "/") {
-                        appUrl = appUrl.substring(0, appUrl.length - 1)
-                    }
+                    let appUrl = settings.app.title
 
                     // Only proceed if a linkback was not previously added.
                     const alreadyLinked = activity.description ? activity.description.includes(appUrl) : false
