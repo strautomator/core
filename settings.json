@@ -18,7 +18,7 @@
         },
         "insights": {
             // Exported CSV datasets should have activities for the past 2 years.
-            "datasetWeeks": 55,
+            "datasetWeeks": 105,
             // For the AI insights, consider activities from the past 4 weeks.
             "recentWeeks": 4
         }
