@@ -17,6 +17,8 @@
             "multiplier": 1.2
         },
         "insights": {
+            // Exported CSV datasets should have activities for the past 2 years.
+            "datasetWeeks": 55,
             // For the AI insights, consider activities from the past 4 weeks.
             "recentWeeks": 4
         }
@@ -487,10 +489,11 @@
         // Maximum number of tracks returned.
         "trackLimit": 50
     },
-    // Cloud Storage buckets, with optional TTLs (in seconds). If you wish to specify the bucket location,
+    // Cloud Storage buckets, with optional TTLs (in days). If you wish to specify the bucket location,
     // please add a "location" parameter. Otherwise the default will be taken from "gcp.location".
     "storage": {
         "buckets": {
+            "ai": {"name": "strautomator-ai", "ttlDays": 90},
             "calendar": {"name": "bucket-calendar.strautomator.com", "ttlDays": 7},
             "gdpr": {"name": "bucket-gdpr.strautomator.com", "ttlDays": 2}
         },
