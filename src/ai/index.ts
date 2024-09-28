@@ -1,12 +1,15 @@
 // Strautomator Core: AI / LLM
 
 import {AiGenerateOptions, AiGeneratedResponse, AiProvider} from "./types"
+import {StravaActivity} from "../strava/types"
 import {calculatePowerIntervals} from "../strava/utils"
 import {UserData} from "../users/types"
 import {translation} from "../translations"
 import anthropic from "../anthropic"
 import gemini from "../gemini"
 import openai from "../openai"
+import storage from "../storage"
+import strava from "../strava"
 import _ from "lodash"
 import cache from "bitecache"
 import logger from "anyhow"
@@ -246,6 +249,73 @@ export class AI {
         } catch (ex) {
             logger.error("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), ex)
             return null
+        }
+    }
+
+    /**
+     * Generate a CSV dataset with the user's activity history (around 2 years) and save to the AI storage bucket.
+     * @param user The user.
+     * @param sport Sport type (ride or run).
+     */
+    generateDatasetCsv = async (user: UserData, sport: "ride" | "run"): Promise<void> => {
+        try {
+            const now = dayjs()
+            const after = now.subtract(settings.ai.insights.datasetWeeks, "weeks")
+            const allActivities = await strava.activities.getActivities(user, {after: after, before: now})
+            const minDistance = sport == "ride" ? 5 : 1
+            const activities = allActivities.filter((a) => a.movingTime && a.distance > minDistance && a.sportType?.toLowerCase().includes(sport))
+            const csv: string[] = [
+                '"User ID","Sport","Date","Time","Distance","Moving Time","Total Time","Speed Avg","Speed Max","Cadence Avg","Elevation Gain","Elevation Max","HR Avg","HR Max","Power Avg","Power Mean","Power Max","Power/weight","Calories","TSS","Effort","Temperature","Gear","Indoor"'
+            ]
+
+            // Helper to extract the activity metadata to a CSV row.
+            const processActivity = async (a: StravaActivity) => {
+                try {
+                    const row: any[] = []
+                    const activity = await strava.activities.getActivity(user, a.id)
+                    row.push(user.id)
+                    row.push(activity.sportType)
+                    row.push(dayjs(activity.dateStart).format("YYYY-MM-DD"))
+                    row.push(dayjs(activity.dateStart).format("HH:mm"))
+                    row.push(activity.distance)
+                    row.push(activity.movingTime)
+                    row.push(activity.totalTime)
+                    row.push(activity.speedAvg || "")
+                    row.push(activity.speedMax || "")
+                    row.push(activity.cadenceAvg || "")
+                    row.push(activity.elevationGain || "")
+                    row.push(activity.elevationMax || "")
+                    row.push(activity.hrAvg || "")
+                    row.push(activity.hrMax || "")
+                    row.push(activity.wattsAvg || "")
+                    row.push(activity.wattsWeighted || "")
+                    row.push(activity.wattsMax || "")
+                    row.push(activity.wattsKg || "")
+                    row.push(activity.calories || "")
+                    row.push(activity.tss || "")
+                    row.push(activity.relativeEffort || "")
+                    row.push(activity.temperature || "")
+                    row.push(activity.gear?.id || "")
+                    row.push(activity.trainer)
+
+                    csv.push(row.map((r) => `"${r.replace(/\"/g, "'")}"`).join(","))
+                } catch (innerEx) {
+                    logger.error("AI.getActivityDatasetCsv", logHelper.user(user), logHelper.activity(a), innerEx)
+                }
+            }
+
+            // Fetch full activity details in batches.
+            while (activities.length) {
+                await Promise.allSettled(activities.splice(0, settings.plans.free.apiConcurrency).map(processActivity))
+            }
+
+            // Save dataset to the storage bucket.
+            const result = csv.join("\n")
+            await storage.setFile("ai", `${user.id}-${sport}.csv`, result)
+
+            logger.info("AI.getActivityDatasetCsv", logHelper.user(user), `Exported ${csv.length} activities, size ${(result.length / 1000).toFixed(1)} KB`)
+        } catch (ex) {
+            logger.error("AI.getActivityDatasetCsv", logHelper.user(user), ex)
         }
     }
 
