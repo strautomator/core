@@ -461,7 +461,8 @@ export const FIT = {
             4: {field: "sport", type: "sport", scale: null, offset: "", units: ""},
             5: {field: "capabilities", type: "workout_capabilities", scale: null, offset: "", units: ""},
             6: {field: "num_valid_steps", type: "uint16", scale: null, offset: "", units: ""},
-            8: {field: "wkt_name", type: "string", scale: null, offset: "", units: ""}
+            8: {field: "wkt_name", type: "string", scale: null, offset: "", units: ""},
+            17: {field: "notes", type: "string", scale: null, offset: "", units: ""}
         },
         27: {
             name: "workout_step",

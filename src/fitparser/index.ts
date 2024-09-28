@@ -260,6 +260,11 @@ export class FitParser {
             fitFileActivity.workoutName = fitObj.workout.wkt_name
         }
 
+        // Add workout notes.
+        if (fitObj.workout?.notes) {
+            fitFileActivity.workoutNotes = fitObj.workout.notes
+        }
+
         // Found devices in the FIT file? Generate device IDs.
         if (fitObj.devices?.length > 0) {
             const getDeviceString = (d) => `${d.manufacturer}.${d.product_name || d.device_type || d.source_type || d.device_index}.${d.serial_number}`.replace(/\_/g, "").replace(/\s/g, "")
