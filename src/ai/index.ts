@@ -211,9 +211,16 @@ export class AI {
                 messages.push("First I will give you some details about my previous activities.")
 
                 for (let a of options.recentActivities) {
-                    if (a.id == options.activity.id || (!a.movingTime && !a.wattsAvg && !a.hrAvg)) {
+                    const isRide = a.sportType.includes("Ride")
+                    const isRun = a.sportType.includes("Run")
+                    const sameType = isRide ? activity.sportType.includes("Ride") : isRun ? activity.sportType.includes("Run") : false
+
+                    // Make sure we only use activities of the same type and the recent activity
+                    // has the minimum necessary data for the prompt.
+                    if (a.id == options.activity.id || !sameType || (!a.movingTime && !a.wattsAvg && !a.hrAvg)) {
                         continue
                     }
+
                     const subPrompt = []
                     const days = now.diff(a.dateStart, "days")
                     const duration = dayjs.duration(activity.movingTime, "seconds").format("HH:mm:ss")
@@ -222,7 +229,7 @@ export class AI {
                     if (a.tss > 0) subPrompt.push(`The activity had a TSS of ${a.tss}.`)
                     if (a.wattsAvg > 0) subPrompt.push(`Had an average power of ${a.wattsAvg} watts, maximum ${a.wattsMax} watts.`)
                     if (a.hrAvg > 0) subPrompt.push(`Average heart rate of ${a.hrAvg} BPM, maximum ${a.hrMax} BPM.`)
-                    if (a.cadenceAvg) subPrompt.push(`Cadence was ${a.cadenceAvg} RPM.`)
+                    if (a.cadenceAvg > 0) subPrompt.push(`Cadence was ${isRide ? a.cadenceAvg + "RPM" : a.cadenceAvg * 2 + " SPM"}`)
                     if (a.weatherSummary && !a.sportType.includes("Virtual")) subPrompt.push(`Weather was ${a.weatherSummary.toLowerCase()}.`)
                     messages.push(subPrompt.join(" "))
                 }
@@ -253,26 +260,57 @@ export class AI {
     }
 
     /**
-     * Generate a CSV dataset with the user's activity history (around 2 years) and save to the AI storage bucket.
+     * Generate or update a CSV dataset with the user's activity history and save to the AI storage bucket.
+     * Accept an optional fromDate to set the minimum date and if the dataset should be created or updated.
      * @param user The user.
      * @param sport Sport type (ride or run).
+     * @param forceNew Generate from scratch even if an existing dataset was already found.
+     * @
      */
-    generateDatasetCsv = async (user: UserData, sport: "ride" | "run"): Promise<void> => {
+    generateDatasetCsv = async (user: UserData, sport: "ride" | "run", forceNew?: boolean): Promise<void> => {
+        const now = dayjs()
+        const minDistance = sport == "ride" ? 5 : 1
+        const filename = `${user.id}-${sport}.csv`
+        let after: dayjs.Dayjs = now.subtract(settings.ai.insights.datasetWeeks, "weeks")
+        let logDetails: string = "Processing dataset"
+
         try {
-            const now = dayjs()
-            const after = now.subtract(settings.ai.insights.datasetWeeks, "weeks")
+            const csv: string[] = []
+            const file = await storage.getFile("ai", `${user.id}-${sport}.csv`)
+
+            // Update existing or create new?
+            if (file) {
+                if (forceNew) {
+                    logDetails = "Regenerated dataset"
+                } else {
+                    const meta = await file.getMetadata()
+                    const updateTime = meta.metadata?.timestamp || meta.updated
+                    const contents = await file.download()
+                    csv.push(contents.toString())
+                    after = (isNaN(updateTime) ? dayjs(updateTime) : dayjs.unix(updateTime)).startOf("day")
+                    logDetails = "Updated dataset"
+                }
+            } else {
+                logDetails = "New dataset"
+            }
+
+            // Make sure the header is set.
+            if (csv.length == 0) {
+                csv.push(
+                    '"Activity ID","User ID","Sport","Date","Time","Distance","Moving Time","Total Time","Speed Avg","Speed Max","Cadence Avg","Elevation Gain","Elevation Max","HR Avg","HR Max","Power Avg","Power Mean","Power Max","Power/weight","Calories","TSS","Effort","Temperature","Country","Gear","Indoor"'
+                )
+            }
+
+            // Fetch relevant activities.
             const allActivities = await strava.activities.getActivities(user, {after: after, before: now})
-            const minDistance = sport == "ride" ? 5 : 1
             const activities = allActivities.filter((a) => a.movingTime && a.distance > minDistance && a.sportType?.toLowerCase().includes(sport))
-            const csv: string[] = [
-                '"User ID","Sport","Date","Time","Distance","Moving Time","Total Time","Speed Avg","Speed Max","Cadence Avg","Elevation Gain","Elevation Max","HR Avg","HR Max","Power Avg","Power Mean","Power Max","Power/weight","Calories","TSS","Effort","Temperature","Gear","Indoor"'
-            ]
 
             // Helper to extract the activity metadata to a CSV row.
             const processActivity = async (a: StravaActivity) => {
                 try {
                     const row: any[] = []
                     const activity = await strava.activities.getActivity(user, a.id)
+                    row.push(a.id)
                     row.push(user.id)
                     row.push(activity.sportType)
                     row.push(dayjs(activity.dateStart).format("YYYY-MM-DD"))
@@ -295,6 +333,7 @@ export class AI {
                     row.push(activity.tss || "")
                     row.push(activity.relativeEffort || "")
                     row.push(activity.temperature || "")
+                    row.push(activity.countryStart || "")
                     row.push(activity.gear?.id || "")
                     row.push(activity.trainer)
 
@@ -310,12 +349,12 @@ export class AI {
             }
 
             // Save dataset to the storage bucket.
-            const result = csv.join("\n")
-            await storage.setFile("ai", `${user.id}-${sport}.csv`, result)
+            const result = csv.join("\n") + "\n"
+            await storage.setFile("ai", filename, result, "text/csv", {timestamp: now.unix()})
 
-            logger.info("AI.getActivityDatasetCsv", logHelper.user(user), `Exported ${csv.length} activities, size ${(result.length / 1000).toFixed(1)} KB`)
+            logger.info("AI.getActivityDatasetCsv", logHelper.user(user), `From ${after.format("YYYY-MM-DD")}`, logDetails, `Exported ${csv.length} activities, size ${(result.length / 1000).toFixed(1)} KB`)
         } catch (ex) {
-            logger.error("AI.getActivityDatasetCsv", logHelper.user(user), ex)
+            logger.error("AI.getActivityDatasetCsv", logHelper.user(user), `From ${after.format("YYYY-MM-DD")}`, logDetails, ex)
         }
     }
 
