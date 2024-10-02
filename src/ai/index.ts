@@ -283,11 +283,11 @@ export class AI {
                 if (forceNew) {
                     logDetails = "Regenerated dataset"
                 } else {
-                    const meta = await file.getMetadata()
-                    const updateTime = meta.metadata?.timestamp || meta.updated
+                    const [meta] = await file.getMetadata()
+                    const timestamp = meta.metadata?.timestamp as number
                     const contents = await file.download()
                     csv.push(contents.toString())
-                    after = (isNaN(updateTime) ? dayjs(updateTime) : dayjs.unix(updateTime)).startOf("day")
+                    after = (timestamp ? dayjs.unix(timestamp) : dayjs(meta.updated)).startOf("day")
                     logDetails = "Updated dataset"
                 }
             } else {
