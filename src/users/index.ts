@@ -665,6 +665,22 @@ export class Users {
         }
     }
 
+    /**
+     * Get users with AI enabled.
+     */
+    getWithAiEnabled = async (): Promise<UserData[]> => {
+        try {
+            const where = [["preferences.aiEnabled", "==", true]]
+            const users = await database.search("users", where)
+
+            logger.info("Users.getWithAiEnabled", `Got ${users.length || "no"} users with AI enabled`)
+            return users
+        } catch (ex) {
+            logger.error("Users.getWithAiEnabled", ex)
+            throw ex
+        }
+    }
+
     // UPDATE USERS
     // --------------------------------------------------------------------------
 
