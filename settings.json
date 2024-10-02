@@ -12,13 +12,13 @@
         "maxTokens": {
             "name": 40,
             "description": 200,
-            "insights": 4000,
+            "insights": 6000,
             // If max tokens were not enough, try again with a 20% higher limit.
             "multiplier": 1.2
         },
         "insights": {
-            // Exported CSV datasets should have activities for the past 2 years.
-            "datasetWeeks": 105,
+            // Exported CSV datasets should have activities for the past 3 years.
+            "datasetWeeks": 156,
             // For the AI insights, consider activities from the past 4 weeks.
             "recentWeeks": 4
         }
