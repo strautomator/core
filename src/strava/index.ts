@@ -68,7 +68,7 @@ export class Strava {
     get incident(): string {
         const thresholds = settings.strava.api.timeoutThresholds
         const gatewayTimeouts = api.gatewayTimeouts
-        if (gatewayTimeouts.count >= thresholds.count && dayjs().subtract(thresholds.seconds, "seconds").isBefore(gatewayTimeouts.last)) {
+        if (gatewayTimeouts.count >= thresholds.count && dayjs().subtract(thresholds.seconds, "seconds").isAfter(gatewayTimeouts.last)) {
             const since = dayjs(gatewayTimeouts.first).format("lll")
             return `API connections are timing out since ${since}`
         }
