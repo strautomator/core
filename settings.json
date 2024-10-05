@@ -460,9 +460,9 @@
             "conditionValue": 800,
             "actionValue": 1000
         },
-        // Webhook timeout is set to 4 seconds by default. Value in milliseconds.
+        // Webhook timeout is set to 3 seconds by default. Value in milliseconds.
         "webhook": {
-            "timeout": 4000
+            "timeout": 3000
         }
     },
     // Navigation routes options (GPS routing, not URLs).
@@ -523,7 +523,7 @@
             // Default verification token to be sent by Strava on subcriptions, MUST be set
             // via secret settings or the SMU_strava_api_verifyToken environment variable.
             "verifyToken": null,
-            // Strava will be considered has having an incident going on if more than 20
+            // Strava will be considered as having an incident going on if more than 20
             // timeouts have happened in less than 10 minutes.
             "timeoutThresholds": {
                 "count": 20,
