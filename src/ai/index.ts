@@ -303,7 +303,8 @@ export class AI {
 
             // Fetch relevant activities.
             const allActivities = await strava.activities.getActivities(user, {after: after, before: now})
-            const activities = allActivities.filter((a) => a.movingTime && a.distance > minDistance && a.sportType?.toLowerCase().includes(sport))
+            const aFilter = (a: StravaActivity) => a.movingTime && a.distance > minDistance && a.sportType?.toLowerCase().includes(sport)
+            const activities = _.sortBy(allActivities.filter(aFilter), "dateStart")
 
             // Helper to extract the activity metadata to a CSV row.
             const processActivity = async (a: StravaActivity) => {
@@ -337,7 +338,7 @@ export class AI {
                     row.push(activity.gear?.id || "")
                     row.push(activity.trainer)
 
-                    csv.push(row.map((r) => `"${r.replace(/\"/g, "'")}"`).join(","))
+                    csv.push(row.map((r) => `"${!_.isString(r) ? r : r.replace(/\"/g, "'")}"`).join(","))
                 } catch (innerEx) {
                     logger.error("AI.getActivityDatasetCsv", logHelper.user(user), logHelper.activity(a), innerEx)
                 }
@@ -352,7 +353,7 @@ export class AI {
             const result = csv.join("\n") + "\n"
             await storage.setFile("ai", filename, result, "text/csv", {timestamp: now.unix()})
 
-            logger.info("AI.getActivityDatasetCsv", logHelper.user(user), `From ${after.format("YYYY-MM-DD")}`, logDetails, `Exported ${csv.length} activities, size ${(result.length / 1000).toFixed(1)} KB`)
+            logger.info("AI.getActivityDatasetCsv", logHelper.user(user), `From ${after.format("YYYY-MM-DD")}`, logDetails, `Size ${(result.length / 1000).toFixed(1)} KB`)
         } catch (ex) {
             logger.error("AI.getActivityDatasetCsv", logHelper.user(user), `From ${after.format("YYYY-MM-DD")}`, logDetails, ex)
         }
