@@ -7,11 +7,7 @@
         // Cache generated AI content for 1 minute.
         "cacheDuration": 60,
         // List of humours (adjectives) to be used on the AI generated content.
-        "humours": [
-            "absurd", "ancient", "boring", "clever",  "comical", "dry", "exquisite",
-            "funny", "goofy", "hilarious", "ironic", "playful", "sarcastic", "satirical",
-            "sexy", "silly", "technical", "wicked", "witty"
-        ],
+        "humours": ["absurd", "ancient", "boring", "clever", "comical", "dry", "exquisite", "funny", "goofy", "hilarious", "ironic", "playful", "sarcastic", "satirical", "sexy", "silly", "technical", "wicked", "witty"],
         // Max tokens per generation.
         "maxTokens": {
             "name": 40,
