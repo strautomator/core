@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "24.406.12046",
+    "version": "24.411.12115",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -14,6 +14,7 @@
         "prepare": "tsc"
     },
     "dependencies": {
+        "@google-cloud/aiplatform": "^3.29.0",
         "@google-cloud/firestore": "^7.10.0",
         "@google-cloud/storage": "^7.13.0",
         "@google-cloud/vertexai": "^1.8.1",
