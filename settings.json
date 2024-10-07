@@ -447,7 +447,7 @@
     },
     "recipes": {
         // Linkback text (will have the app title appended to it).
-        "linksTexts": {
+        "linkTexts": {
             "default": "Automated with",
             "aiContent": "Powered by",
             "aiInsights": "AI insights by"
