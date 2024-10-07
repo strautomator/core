@@ -21,6 +21,14 @@
             "datasetWeeks": 156,
             // For the AI insights, consider activities from the past 4 weeks.
             "recentWeeks": 4
+        },
+        "images": {
+            // Maximum amount of images generated per day (per user and total).
+            // Currently very limited while costs and prompt are being worked out.
+            "maxPerDay": {
+                "user": 2,
+                "total": 10
+            }
         }
     },
     "app": {

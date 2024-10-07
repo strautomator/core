@@ -8,6 +8,7 @@ import {translation} from "../translations"
 import anthropic from "../anthropic"
 import gemini from "../gemini"
 import openai from "../openai"
+import database from "../database"
 import storage from "../storage"
 import strava from "../strava"
 import _ from "lodash"
@@ -327,29 +328,50 @@ export class AI {
                 return fromCache
             }
 
+            // Check if we've hit the image generation limits.
+            const maxPerDay = settings.ai.images.maxPerDay
+            const totalCount = await database.count("ai")
+            if (totalCount >= maxPerDay.total) {
+                logger.warn("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), `Daily total limit reached: ${maxPerDay.total}`)
+                return {rateLimited: true}
+            }
+            const userCount = await database.count("ai", ["userId", "==", user.id])
+            if (userCount >= maxPerDay.user) {
+                logger.warn("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), `Daily user limit reached: ${maxPerDay.user}`)
+                return {rateLimited: true}
+            }
+
             let aDate = dayjs(options.activity.dateStart)
             if (options.activity.utcStartOffset) {
                 aDate = aDate.add(options.activity.utcStartOffset, "minutes")
             }
-            const humour = options.humour || _.sample(settings.ai.humours)
+
+            const people = options.activity.athleteCount > 1 ? `${options.activity.athleteCount} people` : Math.random() < 0.5 ? "People" : "A person"
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
+            const doing = sportType.replace("Ride", "Bike Ride").replace("Bike Bike", "Bike")
             const coordinates = options.activity.locationStart || options.activity.locationEnd
             const location = coordinates ? `near coordinates ${coordinates[0].toFixed(5)}, ${coordinates[1].toFixed(5)}` : options.activity.countryMid || options.activity.countryStart || options.activity.countryEnd
-            const where = location ? location : options.activity.trainer ? "done indoors" : "on a random location"
+            const where = location ? location : options.activity.trainer ? "indoors" : "a dream world"
 
             // Base message consists of the sport type and location.
-            const messages = [`A ${sportType} ${where}. Time of the day is ${aDate.format("HH:MM")}.`]
+            const messages = [`${people} doing the following sport: '${doing}'. Location: ${where}. Time of the day is ${aDate.format("HH:MM")}.`]
 
             // Append weather details.
             if (options.activityWeather || options.activity.weatherSummary) {
                 const weatherSummary = options.activityWeather.mid || options.activityWeather.start || options.activityWeather.end
                 const weatherText = weatherSummary?.summary || options.activity.weatherSummary
                 messages.push(`The weather is ${weatherText.toLowerCase()}.`)
+
+                if (weatherSummary?.temperature) {
+                    messages.push(`Temperature is ${weatherSummary.temperature}.`)
+                }
                 if (weatherSummary?.aqi >= 4) {
                     messages.push("The air quality is very poor.")
                 }
             }
 
+            // Custom styles are available only for PRO users.
+            const humour = user.isPro ? options.humour || _.sample(["realistic", "realistic", "realistic", "fantasy", "like a drawing", "like a painting"]) : "like a drawing"
             messages.push(`The style should be ${humour}.`)
 
             // Get image URL and cache the result.
@@ -357,6 +379,8 @@ export class AI {
             if (result) {
                 cache.set("ai", cacheId, result)
                 logger.info("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), result.provider, result.response)
+                result.dateExpiry = dayjs().add(1, "day").toDate()
+                await database.set("ai", result, cacheId)
                 return result
             }
 
@@ -573,13 +597,11 @@ export class AI {
                     messages.push(`The weather was ${weatherText.toLowerCase()}, `)
 
                     const weatherTemps = _.without([activityWeather.mid?.temperature || activityWeather.start?.temperature || activityWeather.end?.temperature], null, undefined)
-                    const tempUnit = user.preferences.weatherUnit == "f" ? "°F" : "°C"
                     const minTemp = _.min(weatherTemps) || 0
                     const maxTemp = _.max(weatherTemps) || 0
                     const windSpeeds = _.compact([activityWeather.mid?.windSpeed, activityWeather.start?.windSpeed, activityWeather.end?.windSpeed])
                     const avgWind = Math.round(_.mean(windSpeeds)) || 0
-                    const windUnit = user.preferences.windSpeedUnit ? user.preferences.windSpeedUnit : user.preferences.weatherUnit == "f" ? "mph" : "kph"
-                    messages.push(`with temperatures from ${minTemp}${tempUnit} to ${maxTemp}${tempUnit}, and wind of ${avgWind} ${windUnit}.`)
+                    messages.push(`with temperatures from ${minTemp} to ${maxTemp}, and wind of ${avgWind}.`)
 
                     if (options.fullDetails) {
                         const weatherAqis = _.compact([activityWeather.mid?.aqi, activityWeather.start?.aqi, activityWeather.end?.aqi])
@@ -591,6 +613,11 @@ export class AI {
                         }
                     }
                 }
+            }
+
+            // Include additional people.
+            if (activity.athleteCount > 1) {
+                messages.push(`There were at least another ${activity.athleteCount - 1} people with me.`)
             }
         } catch (ex) {
             logger.error("AI.getActivityPrompt", logHelper.user(user), logHelper.activity(activity), "Failure while building the prompt", ex)

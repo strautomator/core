@@ -22,11 +22,15 @@ export interface AiProvider {
  */
 export interface AiGeneratedResponse {
     /** Which AI provider was used. */
-    provider: "anthropic" | "gemini" | "openai"
+    provider?: "anthropic" | "gemini" | "openai"
     /** Prompt sent to the LLM. */
-    prompt: string
+    prompt?: string
     /** Response from LLM. */
-    response: string
+    response?: string
+    /** Rate limiting flag (true if generation was not done due to rate limits). */
+    rateLimited?: boolean
+    /** Expiry date (used for TTL). */
+    dateExpiry?: Date
 }
 
 /**
