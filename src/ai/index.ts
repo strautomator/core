@@ -56,7 +56,7 @@ export class AI {
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
         // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
-        const providers = [anthropic, openai, gemini].filter(async (p: AiProvider) => !p.limiter || (await p.limiter.currentReservoir()) > 0)
+        const providers = [anthropic, openai, gemini].filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
         const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
         let provider: AiProvider = preferredProviders.pop() || providers.pop()
 
@@ -71,6 +71,7 @@ export class AI {
                 }
             } catch (ex) {
                 logger.warn("AI.prompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
+                provider = providers.length > 0 ? providers.pop() : null
             }
         }
 
@@ -83,6 +84,53 @@ export class AI {
             }
             if (user.debug) {
                 logger.warn("AI.prompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `Response: ${result.response}`)
+            }
+            return result
+        }
+
+        // Everything else failed.
+        return null
+    }
+
+    /**
+     * Generate an image based on the parameters.
+     * @param user The user.
+     * @param options AI generation options.
+     * @param messages Messages to be sent.
+     */
+    private imagePrompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<AiGeneratedResponse> => {
+        const activity = options.activity
+        const subject = options.activity ? logHelper.activity(activity) : options.subject
+
+        // Filter out providers not compatible or that are being rate limited at the moment.
+        const providers = [anthropic, gemini, openai].filter(async (p: AiProvider) => p.imagePrompt && (await p.limiter.currentReservoir()) > 0)
+        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
+        let provider: AiProvider = preferredProviders.pop() || providers.pop()
+
+        // Keep trying with different providers.
+        let url: string
+        while (!url && provider) {
+            try {
+                url = await provider.imagePrompt(user, options, messages)
+                if (!url) {
+                    logger.warn("AI.imagePrompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
+                    provider = providers.length > 0 ? providers.pop() : null
+                }
+            } catch (ex) {
+                logger.warn("AI.imagePrompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
+                provider = providers.length > 0 ? providers.pop() : null
+            }
+        }
+
+        // Got a valid response?
+        if (url) {
+            const result = {
+                provider: provider.constructor.name.toLowerCase() as any,
+                prompt: messages.join(" "),
+                response: url
+            }
+            if (user.debug) {
+                logger.warn("AI.imagePrompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `URL: ${result.response}`)
             }
             return result
         }
@@ -185,8 +233,14 @@ export class AI {
      */
     generateActivityInsights = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
+            const athleteLevel = !user.fitnessLevel || user.fitnessLevel <= 2 ? "a beginner" : user.fitnessLevel <= 4 ? "an average" : "a pro"
+
             options.maxTokens = settings.ai.maxTokens.insights
-            options.instruction = "You are an sports coach that analyzes cycling and running workouts, and give direct, to-the-point suggestions to improve performance."
+            options.instruction = [
+                "You are an sports coach that analyzes cycling and running workouts, and give short, to-the-point suggestions to improve performance.",
+                `The user has a fitness level of ${athleteLevel} athlete.`,
+                "If weather data is provided, consider that temperature and wind can affect the speed and power output."
+            ].join("")
 
             // At the moment this is enabled for moving activities with at least HR or power data.
             const activity = options.activity
@@ -255,6 +309,61 @@ export class AI {
             return null
         } catch (ex) {
             logger.error("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), ex)
+            return null
+        }
+    }
+
+    /**
+     * Generate an image for the specified activity. Returns the URL to the generated image.
+     * @param user The user.
+     * @param options AI generation options.
+     */
+    generateActivityImage = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
+        try {
+            const cacheId = `image-${this.getCacheId(options)}`
+            const fromCache = cache.get("ai", cacheId)
+            if (fromCache) {
+                logger.info("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), fromCache.provider, "Cached response", fromCache.response)
+                return fromCache
+            }
+
+            let aDate = dayjs(options.activity.dateStart)
+            if (options.activity.utcStartOffset) {
+                aDate = aDate.add(options.activity.utcStartOffset, "minutes")
+            }
+            const humour = options.humour || _.sample(settings.ai.humours)
+            const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
+            const coordinates = options.activity.locationStart || options.activity.locationEnd
+            const location = coordinates ? `near coordinates ${coordinates[0].toFixed(5)}, ${coordinates[1].toFixed(5)}` : options.activity.countryMid || options.activity.countryStart || options.activity.countryEnd
+            const where = location ? location : options.activity.trainer ? "done indoors" : "on a random location"
+
+            // Base message consists of the sport type and location.
+            const messages = [`A ${sportType} ${where}. Time of the day is ${aDate.format("HH:MM")}.`]
+
+            // Append weather details.
+            if (options.activityWeather || options.activity.weatherSummary) {
+                const weatherSummary = options.activityWeather.mid || options.activityWeather.start || options.activityWeather.end
+                const weatherText = weatherSummary?.summary || options.activity.weatherSummary
+                messages.push(`The weather is ${weatherText.toLowerCase()}.`)
+                if (weatherSummary?.aqi >= 4) {
+                    messages.push("The air quality is very poor.")
+                }
+            }
+
+            messages.push(`The style should be ${humour}.`)
+
+            // Get image URL and cache the result.
+            const result = await this.imagePrompt(user, options, messages)
+            if (result) {
+                cache.set("ai", cacheId, result)
+                logger.info("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), result.provider, result.response)
+                return result
+            }
+
+            logger.warn("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
+            return null
+        } catch (ex) {
+            logger.error("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), ex)
             return null
         }
     }

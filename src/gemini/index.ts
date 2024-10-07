@@ -3,6 +3,7 @@
 import {AiGenerateOptions, AiProvider} from "../ai/types"
 import {UserData} from "../users/types"
 import {FinishReason, GenerateContentRequest, HarmBlockThreshold, HarmCategory, VertexAI} from "@google-cloud/vertexai"
+import {PredictionServiceClient} from "@google-cloud/aiplatform"
 import _ from "lodash"
 import Bottleneck from "bottleneck"
 import logger from "anyhow"
@@ -29,6 +30,11 @@ export class Gemini implements AiProvider {
      */
     client: VertexAI
 
+    /**
+     * Image generation client.
+     */
+    predictionClient: PredictionServiceClient
+
     // INIT
     // --------------------------------------------------------------------------
 
@@ -38,6 +44,7 @@ export class Gemini implements AiProvider {
     init = async (): Promise<void> => {
         try {
             this.client = new VertexAI({project: settings.gcp.projectId, location: "us-east4"})
+            this.predictionClient = new PredictionServiceClient({projectId: settings.gcp.projectId, apiEndpoint: "us-east4-aiplatform.googleapis.com"})
 
             // Create the bottleneck rate limiter.
             this.limiter = new Bottleneck({

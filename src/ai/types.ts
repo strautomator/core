@@ -9,8 +9,10 @@ import {ActivityWeather} from "../weather/types"
  * AI provider interface.
  */
 export interface AiProvider {
-    /** Method to generate activity names. */
+    /** Method to generate text. */
     prompt(user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string>
+    /** Method to generate an image. */
+    imagePrompt?(user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string>
     /** Rate limiter. */
     limiter: Bottleneck
 }
