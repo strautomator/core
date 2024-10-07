@@ -138,8 +138,8 @@ export class OpenAI implements AiProvider {
                 method: "POST",
                 headers: this.baseHeaders,
                 data: {
-                    model: "dall-e-3",
-                    size: "1024x1024",
+                    model: user.isPro ? "dall-e-3" : "dall-e-2",
+                    size: user.isPro ? "1024x1024" : "512x512",
                     n: 1,
                     prompt: messages.join(" "),
                     user: user.id
