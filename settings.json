@@ -10,9 +10,9 @@
         "humours": ["absurd", "ancient", "boring", "clever", "comical", "dry", "exquisite", "funny", "goofy", "hilarious", "ironic", "playful", "sarcastic", "satirical", "sexy", "silly", "technical", "wicked", "witty"],
         // Max tokens per generation.
         "maxTokens": {
-            "name": 40,
-            "description": 200,
-            "insights": 6000,
+            "name": 50,
+            "description": 220,
+            "insights": 7000,
             // If max tokens were not enough, try again with a 20% higher limit.
             "multiplier": 1.2
         },
@@ -446,10 +446,12 @@
         }
     },
     "recipes": {
-        // Text of links to be added on the percentage above. The app.url will be
-        // appended at the end of the text. String is added on a new line on the
-        // activity description.
-        "linksTexts": ["Powered by", "Automated with"],
+        // Linkback text (will have the app title appended to it).
+        "linksTexts": {
+            "default": "Automated with",
+            "aiContent": "Powered by",
+            "aiInsights": "AI insights by"
+        },
         // How many times a recipe can fail before getting disabled automatically.
         "maxFailures": 10,
         // Max number of activity IDs kept on the recipe stats.
