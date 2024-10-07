@@ -246,13 +246,19 @@ export class StravaActivities {
                 // By default, link will be added to the description.
                 // TODO! Strava seems to be blocking links, so add just the title instead.
                 if (!useHashtag) {
-                    let appUrl = settings.app.title
+                    let appReference = settings.app.title
 
                     // Only proceed if a linkback was not previously added.
-                    const alreadyLinked = activity.description ? activity.description.includes(appUrl) : false
+                    const alreadyLinked = activity.description ? activity.description.includes(appReference) : false
                     if (!alreadyLinked) {
-                        const linkTexts = settings.recipes.linksTexts
-                        let text = _.sample(linkTexts)
+                        let text = settings.recipes.linkTexts.default
+
+                        // Custom text if AI was used.
+                        if (activity.aiName || activity.aiDescription) {
+                            text = settings.recipes.linkTexts.aiContent
+                        } else if (activity.aiInsights) {
+                            text = settings.recipes.linkTexts.aiInsights
+                        }
 
                         // If activity has a description, add link on a new line.
                         if (activity.description && activity.description.length > 0) {
@@ -262,7 +268,7 @@ export class StravaActivities {
                         }
 
                         // Update description with link-back and add to list of updated fields.
-                        activity.description += `${text} ${appUrl}`
+                        activity.description += `${text} ${appReference}`
 
                         if (!activity.updatedFields.includes("description")) {
                             activity.updatedFields.push("description")
