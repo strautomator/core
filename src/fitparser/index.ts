@@ -268,8 +268,9 @@ export class FitParser {
         // Found devices in the FIT file? Generate device IDs.
         if (fitObj.devices?.length > 0) {
             const getDeviceString = (d) => `${d.manufacturer}.${d.product_name || d.device_type || d.source_type || d.device_index}.${d.serial_number}`.replace(/\_/g, "").replace(/\s/g, "")
-            const validDevices = fitObj.devices.filter((d) => d.manufacturer && d.serial_number)
-            fitFileActivity.devices = _.uniq(validDevices.map((d) => getDeviceString(d)))
+            const filter = (d) => d.manufacturer && d.serial_number
+            const validDevices = _.uniqBy(fitObj.devices.filter(filter), (d: any) => getDeviceString(d))
+            fitFileActivity.devices = validDevices.map((d) => getDeviceString(d))
 
             // Identify devices battery statuses.
             const batteryDevices = validDevices.filter((d) => d.battery_status)
@@ -349,7 +350,7 @@ export class FitParser {
      */
     getMatchingActivity = async (user: UserData, activity: StravaActivity | StravaProcessedActivity, source?: "any" | "garmin" | "wahoo"): Promise<FitFileActivity> => {
         try {
-            if (!source) source == "any"
+            if (!source) source = "any"
 
             const activityDate = dayjs(activity.dateStart)
             const dateFrom = activityDate.subtract(1, "minute").toDate()
@@ -365,7 +366,7 @@ export class FitParser {
             let activities: FitFileActivity[]
             if (source == "any") {
                 const fromGarmin = await database.search("garmin", where)
-                const fromWahoo = await database.search("garmin", where)
+                const fromWahoo = await database.search("wahoo", where)
                 activities = _.concat(fromGarmin, fromWahoo)
             } else {
                 activities = await database.search(source, where)
