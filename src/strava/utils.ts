@@ -63,6 +63,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         perceivedExertion: data.perceived_exertion || null,
         device: data.device_name || null,
         manual: data.manual,
+        athleteCount: data.athlete_count || 1,
         hasPhotos: data.photos && data.photos.count > 0 ? true : false,
         privateNote: data.private_note || null,
         updatedFields: []

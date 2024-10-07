@@ -153,6 +153,8 @@ export interface StravaActivity {
     mapStyle?: StravaMapStyle
     /** Activity icon (emoticon). */
     icon?: string
+    /** Athlete count. */
+    athleteCount?: number
     /** Lap count. */
     lapCount?: number
     /** Lap distance (most common or average). */
