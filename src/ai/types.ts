@@ -12,7 +12,7 @@ export interface AiProvider {
     /** Method to generate text. */
     prompt(user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string>
     /** Method to generate an image. */
-    imagePrompt?(user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string>
+    imagePrompt?(user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string | Buffer>
     /** Rate limiter. */
     limiter: Bottleneck
 }
@@ -25,8 +25,8 @@ export interface AiGeneratedResponse {
     provider?: "anthropic" | "gemini" | "openai"
     /** Prompt sent to the LLM. */
     prompt?: string
-    /** Response from LLM. */
-    response?: string
+    /** Response from LLM, can be a string or raw buffer. */
+    response?: string | Buffer
     /** Rate limiting flag (true if generation was not done due to rate limits). */
     rateLimited?: boolean
     /** Expiry date (used for TTL). */

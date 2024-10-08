@@ -9,6 +9,7 @@ import anthropic from "../anthropic"
 import gemini from "../gemini"
 import openai from "../openai"
 import database from "../database"
+import maps from "../maps"
 import storage from "../storage"
 import strava from "../strava"
 import _ from "lodash"
@@ -109,11 +110,11 @@ export class AI {
         let provider: AiProvider = preferredProviders.pop() || providers.pop()
 
         // Keep trying with different providers.
-        let url: string
-        while (!url && provider) {
+        let data: string | Buffer
+        while (!data && provider) {
             try {
-                url = await provider.imagePrompt(user, options, messages)
-                if (!url) {
+                data = await provider.imagePrompt(user, options, messages)
+                if (!data) {
                     logger.warn("AI.imagePrompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
                     provider = providers.length > 0 ? providers.pop() : null
                 }
@@ -124,11 +125,11 @@ export class AI {
         }
 
         // Got a valid response?
-        if (url) {
+        if (data) {
             const result = {
                 provider: provider.constructor.name.toLowerCase() as any,
                 prompt: messages.join(" "),
-                response: url
+                response: data
             }
             if (user.debug) {
                 logger.warn("AI.imagePrompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `URL: ${result.response}`)
@@ -279,7 +280,7 @@ export class AI {
                     const subPrompt = []
                     const days = now.diff(a.dateStart, "days")
                     const duration = dayjs.duration(activity.movingTime, "seconds").format("HH:mm:ss")
-                    subPrompt.push(`I ${this.getSportVerb(a.sportType)} ${a.distance} ${a.distanceUnit} ${days} days ago in ${duration}, with an elevation gain of ${a.elevationGain || 0}${a.elevationUnit}.`)
+                    subPrompt.push(`I ${this.getSportVerb(a.sportType, "past")} ${a.distance} ${a.distanceUnit} ${days} days ago in ${duration}, with an elevation gain of ${a.elevationGain || 0}${a.elevationUnit}.`)
 
                     if (a.tss > 0) subPrompt.push(`The activity had a TSS of ${a.tss}.`)
                     if (a.wattsAvg > 0) subPrompt.push(`Had an average power of ${a.wattsAvg} watts, maximum ${a.wattsMax} watts.`)
@@ -328,33 +329,68 @@ export class AI {
                 return fromCache
             }
 
-            // Check if we've hit the image generation limits.
-            const maxPerDay = settings.ai.images.maxPerDay
-            const totalCount = await database.count("ai")
-            if (totalCount >= maxPerDay.total) {
-                logger.warn("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), `Daily total limit reached: ${maxPerDay.total}`)
-                return {rateLimited: true}
-            }
-            const userCount = await database.count("ai", ["userId", "==", user.id])
-            if (userCount >= maxPerDay.user) {
-                logger.warn("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), `Daily user limit reached: ${maxPerDay.user}`)
+            // Check if the user still has quota for generating images.
+            const max = user.isPro ? settings.plans.pro.generatedImages : settings.plans.free.generatedImages
+            const count = await database.count("ai", ["userId", "==", user.id])
+            if (count >= max.perWeek) {
+                logger.warn("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), `Over the weekly limit: ${count}`)
                 return {rateLimited: true}
             }
 
-            let aDate = dayjs(options.activity.dateStart)
-            if (options.activity.utcStartOffset) {
-                aDate = aDate.add(options.activity.utcStartOffset, "minutes")
+            const activity = options.activity
+
+            // Processing of activity date and sport type.
+            let aDate = dayjs(activity.dateStart)
+            if (activity.utcStartOffset) {
+                aDate = aDate.add(activity.utcStartOffset, "minutes")
             }
 
-            const people = options.activity.athleteCount > 1 ? `${options.activity.athleteCount} people` : Math.random() < 0.5 ? "People" : "A person"
-            const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            const doing = sportType.replace("Ride", "Bike Ride").replace("Bike Bike", "Bike")
-            const coordinates = options.activity.locationStart || options.activity.locationEnd
-            const location = coordinates ? `near coordinates ${coordinates[0].toFixed(5)}, ${coordinates[1].toFixed(5)}` : options.activity.countryMid || options.activity.countryStart || options.activity.countryEnd
-            const where = location ? location : options.activity.trainer ? "indoors" : "a dream world"
+            let sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim()
+            if (sportType == "Ride") sportType = "Road Bike Ride"
+            if (sportType == "Run") sportType = "Running"
 
-            // Base message consists of the sport type and location.
-            const messages = [`${people} doing the following sport: '${doing}'. Location: ${where}. Time of the day is ${aDate.format("HH:MM")}.`]
+            // Base message.
+            const people = activity.athleteCount > 1 ? `${activity.athleteCount} people` : Math.random() < 0.5 ? "People" : "A person"
+            const messages = [`${people} doing the following sport: '${sportType}'. Time of the day is ${aDate.format("HH:MM")}.`]
+
+            // Add bike details.
+            if (sportType.includes("Ride") && activity.gear?.brand) {
+                messages.push(`The main rider has a ${activity.gear.brand} ${activity.gear.model} bike.`)
+            }
+
+            // Accurate locations are restricted to PRO users.
+            let where = activity.trainer ? "indoors" : activity.countryMid || activity.countryStart || activity.countryEnd
+            if (user.isPro) {
+                const location = activity.locationMid || activity.locationStart || activity.locationEnd
+                if (location) {
+                    const address = await maps.getReverseGeocode(location)
+                    if (address) {
+                        where = `${address.city}, ${address.country}`
+                    } else {
+                        where = `coordinates ${location[0].toFixed(4)}, ${location[1].toFixed(4)}`
+                    }
+                }
+            }
+            if (where) {
+                messages.push(`Location: ${where}.`)
+            }
+
+            // Add speed data, if relevant.
+            let fastSpeed
+            if (sportType.includes("Mountain Bike")) {
+                fastSpeed = user.profile.units == "imperial" ? 13 : 21
+            } else if (sportType.includes("Ride")) {
+                fastSpeed = user.profile.units == "imperial" ? 19 : 30
+            } else if (sportType.includes("Run")) {
+                fastSpeed = user.profile.units == "imperial" ? 9 : 14
+            }
+            if (fastSpeed) {
+                if (activity.speedMax > fastSpeed * 2) {
+                    messages.push("They are going extremely fast.")
+                } else if (activity.speedAvg > fastSpeed) {
+                    messages.push("They are going quite fast.")
+                }
+            }
 
             // Append weather details.
             if (options.activityWeather || options.activity.weatherSummary) {
@@ -370,17 +406,27 @@ export class AI {
                 }
             }
 
+            // Append activity title.
+            messages.push(`The activity was named "${activity.name.replace(/\"/g, "")}".`)
+
             // Custom styles are available only for PRO users.
-            const humour = user.isPro ? options.humour || _.sample(["realistic", "realistic", "realistic", "fantasy", "like a drawing", "like a painting"]) : "like a drawing"
+            const humour = user.isPro ? options.humour || _.sample(["fantasy", "like a drawing", "like a painting", "sci-fi"]) : "like a drawing"
             messages.push(`The style should be ${humour}.`)
 
-            // Get image URL and cache the result.
+            // Here we go!
             const result = await this.imagePrompt(user, options, messages)
             if (result) {
-                cache.set("ai", cacheId, result)
-                logger.info("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), result.provider, result.response)
-                result.dateExpiry = dayjs().add(1, "day").toDate()
-                await database.set("ai", result, cacheId)
+                const toSave: AiGeneratedResponse = _.pick(result, ["provider", "prompt"])
+
+                // We only cache the result if the response is a URL. Buffered responses are not cached.
+                if (_.isString(result.response)) {
+                    toSave.response = result.response
+                    cache.set("ai", cacheId, result)
+                }
+
+                logger.info("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), result.provider, toSave.response ? toSave.response : "Buffered response")
+                toSave.dateExpiry = dayjs().add(7, "days").toDate()
+                await database.set("ai", toSave, cacheId)
                 return result
             }
 
@@ -506,10 +552,15 @@ export class AI {
     /**
      * Get the right sport type verb.
      * @param sportType The activity sport.
+     * @param time Present or past.
      */
-    private getSportVerb = (sportType: string): string => {
+    private getSportVerb = (sportType: string, time: "present" | "past"): string => {
         const value = sportType.replace(/([A-Z])/g, " $1").trim()
-        return value.includes("ride") ? "cycled" : value.includes("run") ? "ran" : "did"
+        if (time == "present") {
+            return value.includes("ride") ? "cycling" : value.includes("run") ? "running" : "exercising"
+        } else {
+            return value.includes("ride") ? "cycled" : value.includes("run") ? "ran" : "did"
+        }
     }
 
     /**
@@ -536,7 +587,7 @@ export class AI {
 
             // Add distance if moving time was also set.
             if (activity.distance > 0 && activity.movingTime > 0) {
-                messages.push(`I ${this.getSportVerb(activity.sportType)} ${activity.distance}${activity.distanceUnit} in ${activity.movingTimeString}.`)
+                messages.push(`I ${this.getSportVerb(activity.sportType, "past")} ${activity.distance}${activity.distanceUnit} in ${activity.movingTimeString}.`)
             }
 
             // Add elevation gain if available.
@@ -616,8 +667,10 @@ export class AI {
             }
 
             // Include additional people.
-            if (activity.athleteCount > 1) {
-                messages.push(`There were at least another ${activity.athleteCount - 1} people with me.`)
+            if (activity.athleteCount > 2) {
+                messages.push(`There were ${activity.athleteCount - 1} people ${this.getSportVerb(activity.sportType, "present")} with me.`)
+            } else if (activity.athleteCount == 2) {
+                messages.push(`There was another person ${this.getSportVerb(activity.sportType, "present")} with me.`)
             }
         } catch (ex) {
             logger.error("AI.getActivityPrompt", logHelper.user(user), logHelper.activity(activity), "Failure while building the prompt", ex)
