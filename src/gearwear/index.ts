@@ -832,25 +832,28 @@ export class GearWear {
                     const dateUpdated = activity.dateEnd || now
 
                     // Iterate and update device battery status.
-                    for (let deviceBattery of matching.deviceBattery) {
-                        const existing = tracker.devices.find((d) => d.id == deviceBattery.id)
-                        let changedToLow = false
-                        if (existing) {
-                            if (existing.status != deviceBattery.status) {
-                                logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New status: ${deviceBattery.id} - ${deviceBattery.status}`)
+                    if (matching.deviceBattery) {
+                        const arrDeviceBattery = Array.from(matching.deviceBattery)
+                        for (let deviceBattery of arrDeviceBattery) {
+                            const existing = tracker.devices.find((d) => d.id == deviceBattery.id)
+                            let changedToLow = false
+                            if (existing) {
+                                if (existing.status != deviceBattery.status) {
+                                    logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New status: ${deviceBattery.id} - ${deviceBattery.status}`)
+                                    changedToLow = true
+                                }
+                                existing.status = deviceBattery.status
+                                existing.dateUpdated = dateUpdated
+                            } else {
+                                tracker.devices.push({id: deviceBattery.id, status: deviceBattery.status, dateUpdated: dateUpdated})
+                                logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New device tracked: ${deviceBattery.id} - ${deviceBattery.status}`)
                                 changedToLow = true
                             }
-                            existing.status = deviceBattery.status
-                            existing.dateUpdated = dateUpdated
-                        } else {
-                            tracker.devices.push({id: deviceBattery.id, status: deviceBattery.status, dateUpdated: dateUpdated})
-                            logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New device tracked: ${deviceBattery.id} - ${deviceBattery.status}`)
-                            changedToLow = true
-                        }
 
-                        // If device battery status changed to low or critical, add it to the the low battery list.
-                        if (["low", "critical"].includes(deviceBattery.status) && changedToLow) {
-                            lowBatteryDevices.push(deviceBattery)
+                            // If device battery status changed to low or critical, add it to the the low battery list.
+                            if (["low", "critical"].includes(deviceBattery.status) && changedToLow) {
+                                lowBatteryDevices.push(deviceBattery)
+                            }
                         }
                     }
                 } catch (innerEx) {
