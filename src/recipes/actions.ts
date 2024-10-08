@@ -599,7 +599,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                 const aiResponse = await ai.generateActivityName(user, {activity, humour, provider, activityWeather, fullDetails: user.isPro})
                 if (aiResponse) {
                     activity.aiNameProvider = aiResponse.provider
-                    activity.aiName = activity.name = aiResponse.response
+                    activity.aiName = activity.name = aiResponse.response as string
                     activity.updatedFields.push("name")
                     return true
                 }
@@ -607,7 +607,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                 const aiResponse = await ai.generateActivityDescription(user, {activity, humour, provider, activityWeather, fullDetails: user.isPro})
                 if (aiResponse) {
                     activity.aiDescriptionProvider = aiResponse.provider
-                    activity.aiDescription = activity.description = aiResponse.response
+                    activity.aiDescription = activity.description = aiResponse.response as string
                     activity.updatedFields.push("description")
                     return true
                 }
@@ -618,7 +618,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                 const aiResponse = await ai.generateActivityInsights(user, {activity, humour, provider, activityWeather, recentActivities, fullDetails: true})
                 if (aiResponse) {
                     activity.aiInsightsProvider = aiResponse.provider
-                    activity.aiInsights = activity.privateNote = aiResponse.response
+                    activity.aiInsights = activity.privateNote = aiResponse.response as string
                     activity.updatedFields.push("privateNote")
                     return true
                 } else {
