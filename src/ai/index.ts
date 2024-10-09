@@ -384,12 +384,8 @@ export class AI {
             } else if (sportType.includes("Run")) {
                 fastSpeed = user.profile.units == "imperial" ? 9 : 14
             }
-            if (fastSpeed) {
-                if (activity.speedMax > fastSpeed * 2) {
-                    messages.push("They are going extremely fast.")
-                } else if (activity.speedAvg > fastSpeed) {
-                    messages.push("They are going quite fast.")
-                }
+            if (fastSpeed && (activity.speedMax > fastSpeed * 2 || activity.speedAvg > fastSpeed)) {
+                messages.push("They are going quite fast.")
             }
 
             // Append weather details.
@@ -413,7 +409,7 @@ export class AI {
             // Here we go!
             const result = await this.imagePrompt(user, options, messages)
             if (result) {
-                const toSave: AiGeneratedResponse = _.pick(result, ["provider", "prompt"])
+                const toSave: AiGeneratedResponse = {provider: result.provider, prompt: result.prompt}
 
                 // We only cache the result if the response is a URL. Buffered responses are not cached.
                 if (_.isString(result.response)) {
