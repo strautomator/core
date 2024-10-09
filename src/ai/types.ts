@@ -21,6 +21,8 @@ export interface AiProvider {
  * AI LLM prompt and response data.
  */
 export interface AiGeneratedResponse {
+    /** User ID. */
+    userId: string
     /** Which AI provider was used. */
     provider?: "anthropic" | "gemini" | "openai"
     /** Prompt sent to the LLM. */

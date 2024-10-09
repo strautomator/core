@@ -80,6 +80,7 @@ export class AI {
         // Got a valid response?
         if (response) {
             const result = {
+                userId: user.id,
                 provider: provider.constructor.name.toLowerCase() as any,
                 prompt: messages.join(" "),
                 response: response
@@ -127,6 +128,7 @@ export class AI {
         // Got a valid response?
         if (data) {
             const result = {
+                userId: user.id,
                 provider: provider.constructor.name.toLowerCase() as any,
                 prompt: messages.join(" "),
                 response: data
@@ -334,7 +336,7 @@ export class AI {
             const count = await database.count("ai", ["userId", "==", user.id])
             if (count >= max.perWeek) {
                 logger.warn("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), `Over the weekly limit: ${count}`)
-                return {rateLimited: true}
+                return {userId: user.id, rateLimited: true}
             }
 
             const activity = options.activity
@@ -409,7 +411,7 @@ export class AI {
             // Here we go!
             const result = await this.imagePrompt(user, options, messages)
             if (result) {
-                const toSave: AiGeneratedResponse = {provider: result.provider, prompt: result.prompt}
+                const toSave: AiGeneratedResponse = {userId: user.id, provider: result.provider, prompt: result.prompt}
 
                 // We only cache the result if the response is a URL. Buffered responses are not cached.
                 if (_.isString(result.response)) {
