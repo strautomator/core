@@ -57,6 +57,8 @@ export interface AiGenerateOptions {
     maxTokens?: number
     /** Humour to be used on the prompt. */
     humour?: string
+    /** Style of the generated content. */
+    style?: string
     /** The prompt subject. */
     subject?: string
 }

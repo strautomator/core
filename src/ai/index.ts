@@ -350,12 +350,12 @@ export class AI {
             if (sportType == "Run") sportType = "Running"
 
             // Base message.
-            const people = activity.athleteCount > 1 ? `${activity.athleteCount} people` : Math.random() < 0.5 ? "People" : "A person"
-            const messages = [`${people} doing the following sport: '${sportType}'. Time of the day is ${aDate.format("HH:MM")}.`]
+            const people = activity.athleteCount > 1 ? `${activity.athleteCount} people` : Math.random() < 0.3 ? "People" : "A person"
+            const messages = [`${people} doing the following sport: ${sportType}. Time of the day is ${aDate.format("HH:MM")}.`]
 
             // Add bike details.
             if (sportType.includes("Ride") && activity.gear?.brand) {
-                messages.push(`The main rider has a ${activity.gear.brand} ${activity.gear.model} bike.`)
+                messages.push(`One of the cyclists has a ${activity.gear.brand} ${activity.gear.model} bike.`)
             }
 
             // Accurate locations are restricted to PRO users.
@@ -406,12 +406,9 @@ export class AI {
                 }
             }
 
-            // Append activity title.
-            messages.push(`The activity was named "${activity.name.replace(/\"/g, "")}".`)
-
             // Custom styles are available only for PRO users.
-            const humour = user.isPro ? options.humour || _.sample(["fantasy", "like a drawing", "like a painting", "sci-fi"]) : "like a drawing"
-            messages.push(`The style should be ${humour}.`)
+            const style = options.style || _.sample(["anime", "cartoonish", "pixelated", "sci-fi drawing", "vibrant fantasy", "vintage"])
+            messages.push(`The image should have a ${style} style.`)
 
             // Here we go!
             const result = await this.imagePrompt(user, options, messages)
@@ -421,7 +418,7 @@ export class AI {
                 // We only cache the result if the response is a URL. Buffered responses are not cached.
                 if (_.isString(result.response)) {
                     toSave.response = result.response
-                    cache.set("ai", cacheId, result)
+                    cache.set("ai", cacheId, toSave)
                 }
 
                 logger.info("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), result.provider, toSave.response ? toSave.response : "Buffered response")

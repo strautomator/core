@@ -68,7 +68,7 @@ export class OpenAI implements AiProvider {
      * Dispatch a prompt to OpenAI.
      * @param user The user.
      * @param options AI generation options.
-     * @param messages The messages to be sent to the assistant.
+     * @param messages The messages to be sent.
      */
     prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
@@ -129,7 +129,7 @@ export class OpenAI implements AiProvider {
      * Dispatch a prompt to OpenAI to generate an image. Returns the URL to the generated image.
      * @param user The user.
      * @param options AI generation options.
-     * @param messages The messages to be sent to the assistant.
+     * @param messages The messages to be sent.
      */
     imagePrompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
@@ -159,7 +159,7 @@ export class OpenAI implements AiProvider {
             }
 
             // Failed to generate the activity name.
-            logger.warn("OpenAI.imagePrompt", logHelper.user(user), options.subject, "Failed to generate")
+            logger.warn("OpenAI.imagePrompt", logHelper.user(user), options.subject, "Failed to generate image")
             return null
         } catch (ex) {
             logger.error("OpenAI.imagePrompt", logHelper.user(user), options.subject, ex)
