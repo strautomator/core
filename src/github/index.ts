@@ -180,6 +180,7 @@ export class GitHub {
                     source: "github",
                     id: subId,
                     userId: user ? user.id : "notfound",
+                    currency: "USD",
                     username: username,
                     price: data.sponsorship.tier.monthly_price_in_dollars,
                     status: status
