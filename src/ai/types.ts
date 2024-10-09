@@ -29,6 +29,8 @@ export interface AiGeneratedResponse {
     prompt?: string
     /** Response from LLM, can be a string or raw buffer. */
     response?: string | Buffer
+    /** Type of response. */
+    responseType?: "image" | "text"
     /** Rate limiting flag (true if generation was not done due to rate limits). */
     rateLimited?: boolean
     /** Expiry date (used for TTL). */
