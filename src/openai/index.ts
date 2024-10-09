@@ -146,13 +146,21 @@ export class OpenAI implements AiProvider {
                 }
             }
 
+            if (user.isPro) {
+                reqOptions.data.style = "vivid"
+            }
+
             // Here we go!
             try {
                 const result = await this.limiter.schedule(() => axiosRequest(reqOptions))
 
                 // Successful prompt response? Return the image URL.
                 if (result?.data?.length > 0) {
-                    return result.data[0].url
+                    const img = result.data[0]
+                    if (img.revised_prompt) {
+                        logger.info("OpenAI.imagePrompt", logHelper.user(user), options.subject, `Revised prompt: ${img.revised_prompt}`)
+                    }
+                    return img.url
                 }
             } catch (innerEx) {
                 logger.error("OpenAI.imagePrompt", logHelper.user(user), options.subject, innerEx)
