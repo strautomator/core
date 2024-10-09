@@ -48,99 +48,25 @@ export class AI {
     // --------------------------------------------------------------------------
 
     /**
-     * Generate the activity name or description based on its parameters.
+     * Gets all AI responses cached in the database for the specified user.
      * @param user The user.
-     * @param options AI generation options.
-     * @param messages Messages to be sent.
+     * @param responseType Filter by response type.
+     * @param count If true, will return the count of cached responses instead.
      */
-    private prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<AiGeneratedResponse> => {
-        const activity = options.activity
-        const subject = options.activity ? logHelper.activity(activity) : options.subject
-
-        // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
-        const providers = [anthropic, openai, gemini].filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
-        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
-        let provider: AiProvider = preferredProviders.pop() || providers.pop()
-
-        // Keep trying with different providers.
-        let response: string
-        while (!response && provider) {
-            try {
-                response = await provider.prompt(user, options, messages)
-                if (!response) {
-                    logger.warn("AI.prompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
-                    provider = providers.length > 0 ? providers.pop() : null
-                }
-            } catch (ex) {
-                logger.warn("AI.prompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
-                provider = providers.length > 0 ? providers.pop() : null
+    getCachedResponses = async (user: UserData, responseType?: string, count?: boolean): Promise<AiGeneratedResponse[] | number> => {
+        try {
+            const where = [["userId", "==", user.id]]
+            if (responseType) {
+                where.push(["responseType", "==", responseType])
             }
-        }
+            const result: any = count ? await database.count("ai", where) : await database.search("ai", where)
 
-        // Got a valid response?
-        if (response) {
-            const result = {
-                userId: user.id,
-                provider: provider.constructor.name.toLowerCase() as any,
-                prompt: messages.join(" "),
-                response: response
-            }
-            if (user.debug) {
-                logger.warn("AI.prompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `Response: ${result.response}`)
-            }
+            logger.info("AI.getCachedResponses", logHelper.user(user), count ? `Count ${result}` : `Got ${result.length} cached responnses`)
             return result
+        } catch (ex) {
+            logger.error("AI.generateActivityImage", logHelper.user(user), ex)
+            throw ex
         }
-
-        // Everything else failed.
-        return null
-    }
-
-    /**
-     * Generate an image based on the parameters.
-     * @param user The user.
-     * @param options AI generation options.
-     * @param messages Messages to be sent.
-     */
-    private imagePrompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<AiGeneratedResponse> => {
-        const activity = options.activity
-        const subject = options.activity ? logHelper.activity(activity) : options.subject
-
-        // Filter out providers not compatible or that are being rate limited at the moment.
-        const providers = [anthropic, gemini, openai].filter(async (p: AiProvider) => p.imagePrompt && (await p.limiter.currentReservoir()) > 0)
-        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
-        let provider: AiProvider = preferredProviders.pop() || providers.pop()
-
-        // Keep trying with different providers.
-        let data: string | Buffer
-        while (!data && provider) {
-            try {
-                data = await provider.imagePrompt(user, options, messages)
-                if (!data) {
-                    logger.warn("AI.imagePrompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
-                    provider = providers.length > 0 ? providers.pop() : null
-                }
-            } catch (ex) {
-                logger.warn("AI.imagePrompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
-                provider = providers.length > 0 ? providers.pop() : null
-            }
-        }
-
-        // Got a valid response?
-        if (data) {
-            const result = {
-                userId: user.id,
-                provider: provider.constructor.name.toLowerCase() as any,
-                prompt: messages.join(" "),
-                response: data
-            }
-            if (user.debug) {
-                logger.warn("AI.imagePrompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `URL: ${result.response}`)
-            }
-            return result
-        }
-
-        // Everything else failed.
-        return null
     }
 
     /**
@@ -332,9 +258,9 @@ export class AI {
             }
 
             // Check if the user still has quota for generating images.
-            const max = user.isPro ? settings.plans.pro.generatedImages : settings.plans.free.generatedImages
-            const count = await database.count("ai", ["userId", "==", user.id])
-            if (count >= max.perWeek) {
+            const max = user.isPro ? settings.plans.pro.generatedImages.perWeek : settings.plans.free.generatedImages.perWeek
+            const count = await this.getCachedResponses(user, "image", true)
+            if (count >= max) {
                 logger.warn("AI.generateActivityImage", logHelper.user(user), logHelper.activity(options.activity), `Over the weekly limit: ${count}`)
                 return {userId: user.id, rateLimited: true}
             }
@@ -533,29 +459,104 @@ export class AI {
         }
     }
 
-    // HELPERS
+    // PROMPTS
     // --------------------------------------------------------------------------
 
     /**
-     * Helper to get the cache ID for the specified AI generation options.
-     * @param options Provider, humour and activity details.
+     * Generate the activity name or description based on its parameters.
+     * @param user The user.
+     * @param options AI generation options.
+     * @param messages Messages to be sent.
      */
-    private getCacheId = (options: AiGenerateOptions): string => {
-        return `${options.provider || "default"}-${options.humour || "random"}-${options.activity.id}`
+    private prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<AiGeneratedResponse> => {
+        const activity = options.activity
+        const subject = options.activity ? logHelper.activity(activity) : options.subject
+
+        // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
+        const providers = [anthropic, openai, gemini].filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
+        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
+        let provider: AiProvider = preferredProviders.pop() || providers.pop()
+
+        // Keep trying with different providers.
+        let response: string
+        while (!response && provider) {
+            try {
+                response = await provider.prompt(user, options, messages)
+                if (!response) {
+                    logger.warn("AI.prompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
+                    provider = providers.length > 0 ? providers.pop() : null
+                }
+            } catch (ex) {
+                logger.warn("AI.prompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
+                provider = providers.length > 0 ? providers.pop() : null
+            }
+        }
+
+        // Got a valid response?
+        if (response) {
+            const result = {
+                userId: user.id,
+                provider: provider.constructor.name.toLowerCase() as any,
+                prompt: messages.join(" "),
+                response: response
+            }
+            if (user.debug) {
+                logger.warn("AI.prompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `Response: ${result.response}`)
+            }
+            return result
+        }
+
+        // Everything else failed.
+        return null
     }
 
     /**
-     * Get the right sport type verb.
-     * @param sportType The activity sport.
-     * @param time Present or past.
+     * Generate an image based on the parameters.
+     * @param user The user.
+     * @param options AI generation options.
+     * @param messages Messages to be sent.
      */
-    private getSportVerb = (sportType: string, time: "present" | "past"): string => {
-        const value = sportType.replace(/([A-Z])/g, " $1").trim()
-        if (time == "present") {
-            return value.includes("ride") ? "cycling" : value.includes("run") ? "running" : "exercising"
-        } else {
-            return value.includes("ride") ? "cycled" : value.includes("run") ? "ran" : "did"
+    private imagePrompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<AiGeneratedResponse> => {
+        const activity = options.activity
+        const subject = options.activity ? logHelper.activity(activity) : options.subject
+
+        // Filter out providers not compatible or that are being rate limited at the moment.
+        const providers = [anthropic, gemini, openai].filter(async (p: AiProvider) => p.imagePrompt && (await p.limiter.currentReservoir()) > 0)
+        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
+        let provider: AiProvider = preferredProviders.pop() || providers.pop()
+
+        // Keep trying with different providers.
+        let data: string | Buffer
+        while (!data && provider) {
+            try {
+                data = await provider.imagePrompt(user, options, messages)
+                if (!data) {
+                    logger.warn("AI.imagePrompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
+                    provider = providers.length > 0 ? providers.pop() : null
+                }
+            } catch (ex) {
+                logger.warn("AI.imagePrompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
+                provider = providers.length > 0 ? providers.pop() : null
+            }
         }
+
+        // Got a valid response?
+        if (data) {
+            const result: AiGeneratedResponse = {
+                userId: user.id,
+                provider: provider.constructor.name.toLowerCase() as any,
+                prompt: messages.join(" "),
+                response: data,
+                responseType: "image"
+            }
+            if (user.debug) {
+                logger.warn("AI.imagePrompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `URL: ${result.response}`)
+            }
+            return result
+        }
+
+        // Everything else failed.
+        return null
     }
 
     /**
@@ -672,6 +673,31 @@ export class AI {
         }
 
         return messages
+    }
+
+    // HELPERS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Helper to get the cache ID for the specified AI generation options.
+     * @param options Provider, humour and activity details.
+     */
+    private getCacheId = (options: AiGenerateOptions): string => {
+        return `${options.provider || "default"}-${options.humour || "random"}-${options.activity.id}`
+    }
+
+    /**
+     * Get the right sport type verb.
+     * @param sportType The activity sport.
+     * @param time Present or past.
+     */
+    private getSportVerb = (sportType: string, time: "present" | "past"): string => {
+        const value = sportType.replace(/([A-Z])/g, " $1").trim()
+        if (time == "present") {
+            return value.includes("ride") ? "cycling" : value.includes("run") ? "running" : "exercising"
+        } else {
+            return value.includes("ride") ? "cycled" : value.includes("run") ? "ran" : "did"
+        }
     }
 
     /**
