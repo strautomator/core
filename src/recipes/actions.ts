@@ -999,7 +999,7 @@ export const toggleGearComponents = async (user: UserData, activity: StravaActiv
 
                 // Make sure the component exists.
                 const componentName = arrGear.join(":").trim()
-                const component = gear.components?.find((c) => c.name.trim().toLowerCase() == componentName.toLowerCase())
+                const component = gear.components?.find((c) => c.name.trim().toLowerCase() == componentName.trim().toLowerCase())
                 if (!component) {
                     throw new Error(`Gear ${gearId}, component "${componentName}" not found`)
                 }
