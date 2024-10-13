@@ -163,13 +163,11 @@ export class AI {
      */
     generateActivityInsights = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
-            const athleteLevel = !user.fitnessLevel || user.fitnessLevel <= 2 ? "a beginner" : user.fitnessLevel <= 4 ? "an average" : "a pro"
-
             options.maxTokens = settings.ai.maxTokens.insights
             options.instruction = [
-                "You are an sports coach that analyzes cycling and running workouts, and give short, to-the-point suggestions to improve performance.",
-                `The user has a fitness level of ${athleteLevel} athlete.`,
-                "If weather data is provided, consider that temperature and wind can affect the speed and power output."
+                "You are a sports coach that analyzes cycling and running workouts, and give short, to-the-point suggestions to improve performance.",
+                "If weather data is provided, consider that temperature and wind can affect the speed and power output.",
+                `You can give very technical answers.`
             ].join("")
 
             // At the moment this is enabled for moving activities with at least HR or power data.
@@ -208,24 +206,26 @@ export class AI {
                     const subPrompt = []
                     const days = now.diff(a.dateStart, "days")
                     const duration = dayjs.duration(activity.movingTime, "seconds").format("HH:mm:ss")
-                    subPrompt.push(`I ${this.getSportVerb(a.sportType, "past")} ${a.distance} ${a.distanceUnit} ${days} days ago in ${duration}, with an elevation gain of ${a.elevationGain || 0}${a.elevationUnit}.`)
+                    subPrompt.push(`I ${this.getSportVerb(a.sportType, "past")} ${a.distance} ${a.distanceUnit || "km"} ${days} days ago in ${duration}, with an elevation gain of ${a.elevationGain || 0}${a.elevationUnit}`)
 
-                    if (a.tss > 0) subPrompt.push(`The activity had a TSS of ${a.tss}.`)
-                    if (a.wattsAvg > 0) subPrompt.push(`Had an average power of ${a.wattsAvg} watts, maximum ${a.wattsMax} watts.`)
-                    if (a.hrAvg > 0) subPrompt.push(`Average heart rate of ${a.hrAvg} BPM, maximum ${a.hrMax} BPM.`)
-                    if (a.cadenceAvg > 0) subPrompt.push(`Cadence was ${isRide ? a.cadenceAvg + "RPM" : a.cadenceAvg * 2 + " SPM"}`)
-                    if (a.weatherSummary && !a.sportType.includes("Virtual")) subPrompt.push(`Weather was ${a.weatherSummary.toLowerCase()}.`)
-                    messages.push(subPrompt.join(" "))
+                    if (a.tss > 0) subPrompt.push(`, a TSS of ${a.tss}`)
+                    if (a.wattsAvg > 0) subPrompt.push(`, average power of ${a.wattsAvg} watts and maximum ${a.wattsMax} watts`)
+                    if (a.hrAvg > 0) subPrompt.push(`, average heart rate of ${a.hrAvg} BPM and maximum ${a.hrMax} BPM`)
+                    if (a.cadenceAvg > 0) subPrompt.push(`, average cadence of ${isRide ? a.cadenceAvg + "RPM" : a.cadenceAvg * 2 + " SPM"}`)
+                    if (a.weatherSummary && !a.sportType.includes("Virtual")) subPrompt.push(`, and weather was ${a.weatherSummary.toLowerCase()}`)
+                    messages.push(subPrompt.join("") + ".")
                 }
 
-                messages.push(`So, now my most recent activity.`)
+                messages.push("Now I will tell about my most recent activity.")
             }
 
             // Get the activity prompt and add final instructions.
             messages.push(...this.getActivityPrompt(user, options))
-            messages.push("I need you to give me 5 bullet points with a very short summary and advice about the following metrics: distance, speed, power, heart rate and cadence.")
-            messages.push("Please consider my previous activities when analyzing the last one. If you think the weather played a major factor, please tell me how it affected my performance, otherwise just ignore it.")
-            messages.push("Do not add any text formatting to the answer. Do not add a title, I just need the bullet points.")
+            messages.push("Your analysis should be two sentences, the first one explaining why my performance was good or bad compared to previous performances, and a second suggesting what I could do to improve, and when I should train again.")
+            messages.push("If weather could have played a major factor, please tell me how it affected my performance (for example, heart rate might be too elevated in hot conditions, or speed might decrease a bit when it's too cold).")
+
+            const athleteLevel = !user.fitnessLevel || user.fitnessLevel <= 2 ? "a beginner" : user.fitnessLevel <= 4 ? "an average" : "a pro"
+            messages.push(`If my performance has been consistently getting worse, please verify if it could be due to sickness or overtraining at the current season, also considering that I'm ${athleteLevel} athlete.`)
 
             // Generate and cache the result.
             const result = await this.prompt(user, options, messages)
