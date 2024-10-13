@@ -825,7 +825,7 @@ export class GearWear {
                 try {
                     const matching = await fitparser.getMatchingActivity(user, activity)
                     if (!matching) {
-                        logger.info("GearWear.updateBatteryTracking", logHelper.user(user), `Activity ${activity.id} has no matching FIT file`)
+                        logger.debug("GearWear.updateBatteryTracking", logHelper.user(user), `Activity ${activity.id} has no matching FIT file`)
                         continue
                     }
 
