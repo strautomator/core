@@ -1329,7 +1329,8 @@ export const FIT = {
             0: "active",
             1: "rest",
             2: "warmup",
-            3: "cooldown"
+            3: "cooldown",
+            5: "interval",
         },
         session_trigger: {
             0: "activity_end",
