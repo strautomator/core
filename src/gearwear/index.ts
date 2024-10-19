@@ -832,9 +832,10 @@ export class GearWear {
                     const dateUpdated = activity.dateEnd || now
 
                     // Iterate and update device battery status.
-                    if (matching.deviceBattery) {
-                        const arrDeviceBattery = Array.from(matching.deviceBattery)
-                        for (let deviceBattery of arrDeviceBattery) {
+                    if (matching.deviceBattery?.length > 0) {
+                        logger.info("GearWear.updateBatteryTracking", logHelper.user(user), `Processing ${matching.deviceBattery.length} devices for activity ${activity.id}`)
+
+                        for (let deviceBattery of matching.deviceBattery) {
                             const existing = tracker.devices.find((d) => d.id == deviceBattery.id)
                             let changedToLow = false
                             if (existing) {
