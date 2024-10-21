@@ -532,7 +532,7 @@ export class GearWear {
                 }
 
                 // Get recent activities and update tracking.
-                const gearActivities = _.remove(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
+                const gearActivities = _.filter(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
                 await this.updateTracking(user, config, gearActivities)
                 count += gearActivities.length
             }
