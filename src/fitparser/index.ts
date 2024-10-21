@@ -255,6 +255,13 @@ export class FitParser {
             }
         }
 
+        // Round relevant fields.
+        for (let field of ["trainingLoad", "pedalSmoothness", "pedalTorqueEffect"]) {
+            if (fitFileActivity[field]) {
+                fitFileActivity[field] = Math.round(fitFileActivity[field])
+            }
+        }
+
         // Add workout details.
         if (fitObj.workout?.wkt_name) {
             fitFileActivity.workoutName = fitObj.workout.wkt_name

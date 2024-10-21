@@ -307,7 +307,7 @@ export const FIT = {
             134: {field: "avg_step_length", type: "uint16", scale: 10, offset: 0, units: "mm"},
             137: {field: "total_anaerobic_effect", type: "uint8", scale: 10, offset: 0, units: ""},
             139: {field: "avg_vam", type: "uint16", scale: 1000, offset: 0, units: "m/s"},
-            168: {field: "training_load", type: "sint32", scale: 65536, offset: 0, units: ""},
+            168: {field: "training_load", type: "uint32", scale: 65536, offset: 0, units: ""},
             188: {field: "primary_benefit", type: "uint8", scale: null, offset: 0, units: ""}
         },
         19: {

@@ -93,7 +93,7 @@ function readData(blob, fDef, startIndex) {
 function dataRounder(data, scale, offset) {
     if (data === null) return 0
     const calculated = scale ? data / parseFloat(scale) + (parseFloat(offset) || 0) : data
-    return Math.round(calculated)
+    return parseFloat(calculated.toFixed(1))
 }
 
 function formatByType(data, type, scale, offset) {
