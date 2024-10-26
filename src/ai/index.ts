@@ -172,7 +172,7 @@ export class AI {
 
             // At the moment this is enabled for moving activities with at least HR or power data.
             const activity = options.activity
-            if (!activity || !activity.distance || !activity.movingTime || (!activity.wattsAvg && !activity.hrAvg)) {
+            if (!activity || !activity.sportType || !activity.distance || !activity.movingTime || (!activity.wattsAvg && !activity.hrAvg)) {
                 logger.warn("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), "Activity does not have power or HR data, won't generate insights")
                 return null
             }
@@ -193,6 +193,8 @@ export class AI {
                 messages.push("First I will give you some details about my previous activities.")
 
                 for (let a of options.recentActivities) {
+                    if (!a.sportType) continue
+
                     const isRide = a.sportType.includes("Ride")
                     const isRun = a.sportType.includes("Run")
                     const sameType = isRide ? activity.sportType.includes("Ride") : isRun ? activity.sportType.includes("Run") : false
