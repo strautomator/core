@@ -155,7 +155,7 @@ export class Garmin {
 
             // Validate state.
             const state = arrStateToken.shift()
-            if (!user.garminAuthState.includes(state)) {
+            if (!user.garminAuthState || !user.garminAuthState.includes(state)) {
                 throw new Error(`Invalid auth state: ${state}`)
             }
 
