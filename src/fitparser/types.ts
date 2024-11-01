@@ -43,7 +43,7 @@ export interface FitFileActivity {
     /** Devices used in the activity. */
     devices?: string[]
     /** Devices battery status. */
-    deviceBattery?: DeviceBattery[]
+    deviceBattery?: FitDeviceBattery[]
     /** Activity UTC start date. */
     dateStart?: Date
     /** Date when it should expire (used for the Firestore TTL). */
@@ -53,9 +53,16 @@ export interface FitFileActivity {
 /**
  * Device battery status.
  */
-export interface DeviceBattery {
+export interface FitDeviceBattery {
     /** The device ID. */
     id: string
     /** Battery status. */
     status: "new" | "good" | "ok" | "low" | "critical"
+}
+
+/**
+ * Custom device names given by the user.
+ */
+export interface FitDeviceNames {
+    [deviceId: string]: string
 }

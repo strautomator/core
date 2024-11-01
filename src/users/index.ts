@@ -9,6 +9,7 @@ import {PayPalSubscription} from "../paypal/types"
 import {GitHubSubscription} from "../github/types"
 import {StravaProfile, StravaTokens} from "../strava/types"
 import {EmailSendingOptions} from "../mailer/types"
+import {FitDeviceNames} from "../fitparser/types"
 import {encryptData} from "../database/crypto"
 import {FieldValue} from "@google-cloud/firestore"
 import database from "../database"
@@ -1162,6 +1163,41 @@ export class Users {
         } catch (ex) {
             logger.error("Users.setUrlToken", logHelper.user(user), ex)
             throw ex
+        }
+    }
+
+    /**
+     * Helper to set custom FIT device names for the specified user. A maximum of 30 devices
+     * are allowed, each having a name with a max of 50 characters.
+     * @param user The user.
+     * @param deviceNames The device names to be set, or null to delete.
+     */
+    setFitDeviceNames = async (user: UserData, deviceNames: FitDeviceNames): Promise<void> => {
+        try {
+            if (deviceNames) {
+                const keys = Object.keys(deviceNames)
+                if (keys.length > 30) {
+                    throw new Error("Too many devices, maximum allowed is 30")
+                }
+                keys.forEach((key) => {
+                    if (!deviceNames[key]) {
+                        delete deviceNames[key]
+                    } else if (deviceNames[key].length > 50) {
+                        deviceNames[key] = deviceNames[key].substring(0, 50)
+                    }
+                })
+            }
+
+            const data: Partial<UserData> = {
+                id: user.id,
+                displayName: user.displayName,
+                fitDeviceNames: deviceNames ? deviceNames : (FieldValue.delete() as any)
+            }
+
+            await database.merge("users", data)
+            logger.info("Users.setFitDeviceNames", logHelper.user(user), deviceNames ? Object.values(deviceNames) : "Cleared all device names")
+        } catch (ex) {
+            logger.error("Users.setFitDeviceNames", logHelper.user(user), deviceNames ? Object.keys(deviceNames) : "Failed to clear device names", ex)
         }
     }
 

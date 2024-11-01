@@ -1,5 +1,6 @@
 // Strautomator Core: User types
 
+import {FitDeviceNames} from "../fitparser/types"
 import {GarminProfile} from "../garmin/types"
 import {RecipeData} from "../recipes/types"
 import {SpotifyProfile} from "../spotify/types"
@@ -56,6 +57,8 @@ export interface UserData {
     wahoo?: WahooProfile
     /** Wahoo authentication state. */
     wahooAuthState?: string
+    /** Names given to device IDs by the user. */
+    fitDeviceNames?: FitDeviceNames
     /** Custom URL token used to get the calendar. */
     urlToken?: string
     /** User's customer ID at Paddle. */
