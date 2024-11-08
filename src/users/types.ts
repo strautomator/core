@@ -126,7 +126,7 @@ export interface UserPreferences {
     /** Enable AI features? */
     aiEnabled?: boolean
     /** Preferred AI provider. */
-    aiProvider?: "anthropic" | "gemini" | "openai"
+    aiProvider?: "anthropic" | "gemini" | "openai" | "xai"
     /** Additional AI prompt when generating activity names. */
     aiPrompt?: string
     /** Omit suffixes when replacing activity tags? */

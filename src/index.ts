@@ -81,6 +81,8 @@ import {Gemini} from "./gemini"
 export const gemini: Gemini = Gemini.Instance
 import {Anthropic} from "./anthropic"
 export const anthropic: Anthropic = Anthropic.Instance
+import {xAI} from "./xai"
+export const xai: xAI = xAI.Instance
 import {FitParser} from "./fitparser"
 export const fitparser: FitParser = FitParser.Instance
 import {Garmin} from "./garmin"
@@ -238,7 +240,7 @@ export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
     // Init individual modules now. Start with the most important modules, than the rest.
     const coreModules = [github, paypal, paddle, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
-    const otherModules = [ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, wahoo, weather]
+    const otherModules = [ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, xai, wahoo, weather]
     await Promise.all(otherModules.map(initModule))
 
     process.env.SMU_APP_STARTED = "1"

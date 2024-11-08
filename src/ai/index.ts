@@ -8,6 +8,7 @@ import {translation} from "../translations"
 import anthropic from "../anthropic"
 import gemini from "../gemini"
 import openai from "../openai"
+import xai from "../xai"
 import database from "../database"
 import maps from "../maps"
 import storage from "../storage"
@@ -18,6 +19,7 @@ import logger from "anyhow"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
+const allProviders = [anthropic, gemini, openai, xai]
 
 /**
  * AI / LLM wrapper.
@@ -475,7 +477,7 @@ export class AI {
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
         // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
-        const providers = [anthropic, openai, gemini].filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
+        const providers = allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
         const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
         let provider: AiProvider = preferredProviders.pop() || providers.pop()
 
@@ -523,7 +525,7 @@ export class AI {
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
         // Filter out providers not compatible or that are being rate limited at the moment.
-        const providers = [anthropic, gemini, openai].filter(async (p: AiProvider) => p.imagePrompt && (await p.limiter.currentReservoir()) > 0)
+        const providers = allProviders.filter(async (p: AiProvider) => p.imagePrompt && (await p.limiter.currentReservoir()) > 0)
         const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
         let provider: AiProvider = preferredProviders.pop() || providers.pop()
 

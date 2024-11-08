@@ -178,15 +178,15 @@ export interface StravaActivity {
     /** AI generated activity name. */
     aiName?: string
     /** Flag: provider used to generate the activity name. */
-    aiNameProvider?: "anthropic" | "gemini" | "openai"
+    aiNameProvider?: "anthropic" | "gemini" | "openai" | "xai"
     /** AI generated activity description. */
     aiDescription?: string
     /** Flag: provider used to generate the activity description. */
-    aiDescriptionProvider?: "anthropic" | "gemini" | "openai"
+    aiDescriptionProvider?: "anthropic" | "gemini" | "openai" | "xai"
     /** AI generated activity insights. */
     aiInsights?: string
     /** Flag: provider used to generate the activity insights. */
-    aiInsightsProvider?: "anthropic" | "gemini" | "openai"
+    aiInsightsProvider?: "anthropic" | "gemini" | "openai" | "xai"
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
 }

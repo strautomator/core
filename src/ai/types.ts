@@ -24,7 +24,7 @@ export interface AiGeneratedResponse {
     /** User ID. */
     userId: string
     /** Which AI provider was used. */
-    provider?: "anthropic" | "gemini" | "openai"
+    provider?: "anthropic" | "gemini" | "openai" | "xai"
     /** Prompt sent to the LLM. */
     prompt?: string
     /** Response from LLM, can be a string or raw buffer. */
@@ -42,7 +42,7 @@ export interface AiGeneratedResponse {
  */
 export interface AiGenerateOptions {
     /** AI provider. */
-    provider?: "anthropic" | "gemini" | "openai"
+    provider?: "anthropic" | "gemini" | "openai" | "xai"
     /** Referenced activity. */
     activity?: StravaActivity
     /** Initial instruction to give to the AI. */

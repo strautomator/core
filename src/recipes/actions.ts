@@ -553,7 +553,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
     try {
         const now = dayjs.utc()
         const actionValue = action?.value || null
-        const provider = user.isPro && ["anthropic", "gemini", "openai"].includes(actionValue) ? actionValue : null
+        const provider = ["anthropic", "gemini", "openai", "xai"].includes(actionValue) ? actionValue : null
         const humour = !provider && actionValue ? actionValue : _.sample(settings.ai.humours)
 
         // Stop here if the activity already has an AI generated name or description.

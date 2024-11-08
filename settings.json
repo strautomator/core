@@ -605,6 +605,16 @@
             "subscriptions": 5
         }
     },
+    // xAI API options.
+    "xai": {
+        "api": {
+            "baseUrl": "https://api.x.ai/v1/",
+            // Maximum concurrent requests per instance.
+            "maxConcurrent": 2,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 20
+        }
+    },
     "wahoo": {
         "api": {
             "baseUrl": "https://api.wahooligan.com/",
