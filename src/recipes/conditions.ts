@@ -47,6 +47,8 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition, 
         valid = true
     } else if (op == RecipeOperator.NotLike && !aText.includes(value)) {
         valid = true
+    } else if (op == RecipeOperator.Any && aText.trim().length > 0) {
+        valid = true
     }
 
     if (valid) {

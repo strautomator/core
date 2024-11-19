@@ -163,6 +163,7 @@ export enum RecipeActionType {
  * Types of recipe operators.
  */
 export enum RecipeOperator {
+    Any = "any",
     Equal = "=",
     NotEqual = "!=",
     Like = "like",

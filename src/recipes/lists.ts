@@ -6,6 +6,7 @@
 export const recipeOperatorList = {
     // Free text.
     text: [
+        {value: "any", text: "has any value", description: "Field has any value set"},
         {value: "like", text: "contains", description: "Text contains the value set below"},
         {value: "notlike", text: "does not contain", description: "Text does not contain the value set below"},
         {value: "=", text: "is exactly", description: "Text matches exactly the value set below"}
