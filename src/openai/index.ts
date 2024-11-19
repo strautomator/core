@@ -82,8 +82,7 @@ export class OpenAI implements AiProvider {
                     messages: [
                         {role: "system", content: options.instruction},
                         {role: "user", content: messages.join(" ")}
-                    ],
-                    user: user.id
+                    ]
                 },
                 onRetry: (opt) => {
                     if (user.isPro) {
@@ -121,56 +120,6 @@ export class OpenAI implements AiProvider {
             return null
         } catch (ex) {
             logger.error("OpenAI.prompt", logHelper.user(user), options.subject, ex)
-            return null
-        }
-    }
-
-    /**
-     * Dispatch a prompt to OpenAI to generate an image. Returns the URL to the generated image.
-     * @param user The user.
-     * @param options AI generation options.
-     * @param messages The messages to be sent.
-     */
-    imagePrompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
-        try {
-            const reqOptions: AxiosConfig = {
-                url: `${settings.openai.api.baseUrl}images/generations`,
-                method: "POST",
-                headers: this.baseHeaders,
-                data: {
-                    model: user.isPro ? "dall-e-3" : "dall-e-2",
-                    size: user.isPro ? "1024x1024" : "512x512",
-                    n: 1,
-                    prompt: messages.join(" "),
-                    user: user.id
-                }
-            }
-
-            if (user.isPro) {
-                reqOptions.data.style = "vivid"
-            }
-
-            // Here we go!
-            try {
-                const result = await this.limiter.schedule(() => axiosRequest(reqOptions))
-
-                // Successful prompt response? Return the image URL.
-                if (result?.data?.length > 0) {
-                    const img = result.data[0]
-                    if (img.revised_prompt) {
-                        logger.info("OpenAI.imagePrompt", logHelper.user(user), options.subject, `Revised prompt: ${img.revised_prompt}`)
-                    }
-                    return img.url
-                }
-            } catch (innerEx) {
-                logger.error("OpenAI.imagePrompt", logHelper.user(user), options.subject, innerEx)
-            }
-
-            // Failed to generate the activity name.
-            logger.warn("OpenAI.imagePrompt", logHelper.user(user), options.subject, "Failed to generate image")
-            return null
-        } catch (ex) {
-            logger.error("OpenAI.imagePrompt", logHelper.user(user), options.subject, ex)
             return null
         }
     }

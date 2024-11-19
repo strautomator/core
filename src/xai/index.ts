@@ -74,8 +74,7 @@ export class xAI implements AiProvider {
                     messages: [
                         {role: "system", content: options.instruction},
                         {role: "user", content: messages.join(" ")}
-                    ],
-                    user: user.id
+                    ]
                 }
             }
             reqOptions.headers["Authorization"] = `Bearer ${settings.xai.api.key}`

@@ -3,7 +3,7 @@
 import {AiGenerateOptions, AiProvider} from "../ai/types"
 import {UserData} from "../users/types"
 import {FinishReason, GenerateContentRequest, HarmBlockThreshold, HarmCategory, VertexAI} from "@google-cloud/vertexai"
-import {helpers, PredictionServiceClient} from "@google-cloud/aiplatform"
+import {PredictionServiceClient} from "@google-cloud/aiplatform"
 import _ from "lodash"
 import Bottleneck from "bottleneck"
 import logger from "anyhow"
@@ -127,47 +127,6 @@ export class Gemini implements AiProvider {
             return null
         } catch (ex) {
             logger.error("Gemini.prompt", logHelper.user(user), options.subject, ex)
-
-            // Force trigger a rate limit in case we get a "quota exceeded" error.
-            const message = JSON.stringify(ex, null, 0)
-            if (message.includes("429") && message.includes("quota")) {
-                const remaining = await this.limiter.currentReservoir()
-                this.limiter.incrementReservoir(-remaining)
-            }
-
-            return null
-        }
-    }
-
-    /**
-     * Dispatch an Imagen prompt to Gemini.
-     * @param user The user.
-     * @param options AI generation options.
-     * @param messages The messages to be sent.
-     */
-    imagePrompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<Buffer> => {
-        try {
-            const reqOptions = {
-                endpoint: `projects/${settings.gcp.projectId}/locations/us-east4/publishers/google/models/imagen-3.0-fast-generate-001`,
-                instances: [helpers.toValue({prompt: messages.join("")})],
-                parameters: helpers.toValue({sampleCount: 1, safetySetting: "block_few"})
-            }
-
-            const result = await this.limiter.schedule(() => this.predictionClient.predict(reqOptions))
-            if (result) {
-                const predictions = result[0].predictions
-                if (predictions.length > 0) {
-                    const prediction = predictions[0]
-                    const buffer = Buffer.from(prediction.structValue.fields.bytesBase64Encoded.stringValue, "base64")
-                    return buffer
-                }
-            }
-
-            // Failed to generate the activity name.
-            logger.warn("Gemini.imagePrompt", logHelper.user(user), options.subject, "Failed to generate image")
-            return null
-        } catch (ex) {
-            logger.error("Gemini.imagePrompt", logHelper.user(user), options.subject, ex)
 
             // Force trigger a rate limit in case we get a "quota exceeded" error.
             const message = JSON.stringify(ex, null, 0)
