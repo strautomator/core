@@ -272,6 +272,11 @@ export class FitParser {
             fitFileActivity.workoutNotes = fitObj.workout.notes
         }
 
+        // Add workout steps.
+        if (fitObj.workout_steps) {
+            fitFileActivity.workoutSteps = this.formatWorkoutSteps(fitObj.workout_steps)
+        }
+
         // Found devices in the FIT file? Generate device IDs.
         if (fitObj.devices?.length > 0) {
             const getDeviceString = (d) => `${d.manufacturer}.${d.product_name || d.device_type || d.source_type || d.device_index}.${d.serial_number}`.replace(/\_/g, "").replace(/\s/g, "")
@@ -313,6 +318,88 @@ export class FitParser {
         }
 
         logger.info("FitParser.parse", logHelper.user(user), logHelper.fitFileActivity(fitFileActivity), `Data: ${logFields.join(", ")}`)
+    }
+
+    private intensity_prefixes = {
+        "warmup": "🟢 Warmup: ",
+        "cooldown": "🟡 Cooldown: ",
+        "interval": "🚀 Interval: ",
+        "rest": "🌿 Rest: ",
+    }
+
+    private formatWorkoutSteps(workout_steps: any): string {
+        let formatted_step_lines = []
+
+        for (let step of workout_steps) {
+            let line = this.intensity_prefixes[step.intensity] || ""
+
+            switch (step.duration_type) {
+                case "time":
+                    line += this.formatMsTime(step.duration_value)
+                    break
+                case "repeat_until_steps_cmplt":
+                    let rep_start_index = step.duration_value
+                    let rep_count = step.target_value
+
+                    let rep_line = `🔄 Repeat ${rep_count}x:`
+
+                    for (var i = rep_start_index; i < formatted_step_lines.length; i++) {
+                        formatted_step_lines[i] = "   - " + formatted_step_lines[i]
+                    }
+
+                    formatted_step_lines.splice(rep_start_index, 0, rep_line)
+                    continue
+            }
+            
+            switch (step.target_type) {
+                case "speed":
+                    if (step.target_value) {
+                        line += ` @ ${this.formatSpeedAsPace(step.target_value)}`
+                    } else if (step.custom_target_value_low && step.custom_target_value_high) {
+                        let max_pace = this.formatSpeedAsPace(step.custom_target_value_high)
+                        let min_pace = this.formatSpeedAsPace(step.custom_target_value_low)
+                        line += ` @ ${max_pace}-${min_pace}`
+                    }
+                    break
+            }
+
+            formatted_step_lines.push(line)
+        }
+
+        return formatted_step_lines.join("\n")
+    }
+
+    private formatMsTime(timeMs: number) {
+        if (timeMs < 1000) {
+            return "0s"
+        }
+
+        let duration_h = (timeMs / 1000 / 60 / 60 ) >> 0;
+        let remainder_ms = timeMs % (1000 * 60 * 60)
+        let duration_m = (remainder_ms / 1000 / 60) >> 0;
+        remainder_ms = remainder_ms % (1000 * 60)
+        let duration_s = (remainder_ms / 1000) >> 0;
+
+        let formatted_time = ""
+        if (duration_h > 0) {
+            formatted_time +=  `${duration_h}h`
+        }
+        if (duration_m > 0) {
+            formatted_time += `${duration_m}min`
+        }
+        if (duration_s > 0) {
+            formatted_time += `${duration_s}s`
+        }
+        
+        return formatted_time
+    }
+
+    private formatSpeedAsPace(milliseconds_per_meter) {
+        let s_per_km = 1000*1000 / milliseconds_per_meter
+        let pace_m_part = (s_per_km / 60) >> 0
+        let pace_s_part = (s_per_km % 60) >> 0
+
+        return `${pace_m_part}:${pace_s_part.toString().padStart(2, "0")}/km`
     }
 
     // DATABASE DATA
