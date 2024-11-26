@@ -41,7 +41,7 @@ const deLang: LanguageString = {
     Tornado: "tornado",
     Watts: "Watt",
     Kph: "km/h",
-    Mph: "mph",
+    Mph: "mi/h",
     Directions: {
         N: "N",
         NNE: "NNO",

@@ -40,8 +40,8 @@ const enLang: LanguageString = {
     Hurricane: "hurricane",
     Tornado: "tornado",
     Watts: "watts",
-    Kph: "kph",
-    Mph: "mph",
+    Kph: "km/h",
+    Mph: "mi/h",
     Directions: {
         N: "N",
         NNE: "NNE",

@@ -41,7 +41,7 @@ const plLang: LanguageString = {
     Tornado: "tornado",
     Watts: "watów",
     Kph: "km/h",
-    Mph: "mph",
+    Mph: "mi/h",
     Directions: {
         N: "N",
         NNE: "NNE",
