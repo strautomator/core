@@ -17,8 +17,6 @@
             "multiplier": 1.2
         },
         "insights": {
-            // Exported CSV datasets should have activities for the past 3 years.
-            "datasetWeeks": 156,
             // For the AI insights, consider activities from the past 4 weeks.
             "recentWeeks": 4
         }
@@ -62,7 +60,7 @@
         "requireCloudflare": true
     },
     "affiliates": {
-        "baseUrl": "https://links.devv.com/"
+        "baseUrl": "https://links.strautomator.com/"
     },
     "announcements": {
         // Active announcements should be cached for up to 30 minutes.
@@ -121,6 +119,26 @@
         // This secret should be updated via the settings.secret.json file or
         // via the $SMU_cookie_secret environment variable.
         "secret": "Strautocookie-Super-Secret"
+    },
+    "countryLinkify": {
+        "country": {
+            "cacheDuration": 900,
+            "default": "us",
+            "es": ["mt", "pt"],
+            "de": ["at", "be", "ch", "cz", "dk", "ee", "gi", "fi", "fr", "hu", "ie", "it", "nl", "no", "pl", "se", "sk"],
+            "uk": ["gb"]
+        },
+        "links": {
+            "aliases": {
+                "bike": ["bicycle"],
+                "e-bike": ["ebike", "electric-bike"],
+                "inner-tube": ["tpu-inner-tube", "latex-inner-tube"],
+                "gravel-bike": ["cx-bike", "cyclocross-bike"],
+                "mtb": ["mountainbike", "mountain-bike"],
+                "road-bike": ["race-bike", "racing-bike"],
+                "tire": ["tyre", "front-tire", "rear-tire", "front-tyre", "rear-tyre"]
+            }
+        }
     },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,
