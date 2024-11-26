@@ -39,7 +39,8 @@ export const garminPing = (lPing: GarminPingActivityFile): string => {
  */
 export const fitFileActivity = (lActivity: FitFileActivity): string => {
     if (!lActivity) return "Activity unknown"
-    return `FIT ${lActivity.id} - ${lActivity.name}`
+    const details = [lActivity.name, lActivity.sportProfile, lActivity.workoutName]
+    return `FIT ${lActivity.id} - ${details.join(", ")}`
 }
 
 /**
