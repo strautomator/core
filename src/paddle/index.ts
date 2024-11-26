@@ -172,7 +172,7 @@ export class PaddleWrapper {
             }
 
             // Decode the event data.
-            const ev = this.api.client.webhooks.unmarshal(rawRequestBody, this.webhookSecret, signature)
+            const ev = await this.api.client.webhooks.unmarshal(rawRequestBody, this.webhookSecret, signature)
             if (!ev) {
                 throw new Error("Invalid event signature")
             }
