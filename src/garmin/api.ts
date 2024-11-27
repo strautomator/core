@@ -92,7 +92,7 @@ export class GarminAPI {
 
         // Dispatch request.
         try {
-            const jobId = `${options.method}-${targetUrl}-${tokens.accessToken.substring(0, 6)}`
+            const jobId = `${targetUrl}-${new Date().valueOf()}`
             const res: AxiosResponse = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
             return res ? res.data : null
         } catch (ex) {
