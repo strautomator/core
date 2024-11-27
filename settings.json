@@ -59,9 +59,6 @@
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
     },
-    "affiliates": {
-        "baseUrl": "https://links.strautomator.com/"
-    },
     "announcements": {
         // Active announcements should be cached for up to 30 minutes.
         "cacheDuration": 1800
@@ -138,6 +135,10 @@
                 "road-bike": ["race-bike", "racing-bike"],
                 "tire": ["tyre", "front-tire", "rear-tire", "front-tyre", "rear-tyre"]
             }
+        },
+        "server": {
+            "basePath": "/affiliates/",
+            "url": "https://affiliates.strautomator.com/"
         }
     },
     "database": {

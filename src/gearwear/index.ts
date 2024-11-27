@@ -952,7 +952,7 @@ export class GearWear {
                     usage: Math.round(usage),
                     alertDetails: alertDetails.join(", "),
                     resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(compName)}`,
-                    affiliateLink: `${settings.affiliates.baseUrl}s/${compName}?rn=1&from=${encodeURIComponent(settings.app.title)}`,
+                    affiliateLink: `${settings.countryLinkify.server.url}s/${compName}?rn=1&from=${encodeURIComponent(settings.app.title)}`,
                     tips: component.name.toLowerCase().replace(/ /g, "")
                 }
 
