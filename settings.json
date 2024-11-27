@@ -118,12 +118,19 @@
         "secret": "Strautocookie-Super-Secret"
     },
     "countryLinkify": {
+        "app": {
+            "homeUrl": "https://strautomator.com/billing/affiliates",
+            "title": "Strautomator"
+        },
         "country": {
             "cacheDuration": 900,
             "default": "us",
             "es": ["mt", "pt"],
             "de": ["at", "be", "ch", "cz", "dk", "ee", "gi", "fi", "fr", "hu", "ie", "it", "nl", "no", "pl", "se", "sk"],
             "uk": ["gb"]
+        },
+        "images": {
+            "path": "./static/images/affiliates/"
         },
         "links": {
             "aliases": {
@@ -138,6 +145,7 @@
         },
         "server": {
             "basePath": "/affiliates/",
+            "imagesPath": "/affiliates/images/",
             "url": "https://affiliates.strautomator.com/"
         }
     },
