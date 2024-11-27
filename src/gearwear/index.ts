@@ -587,7 +587,6 @@ export class GearWear {
             }
 
             // GearWear processing data.
-
             let id: string
             let component: GearWearComponent
             let activityIds: number[] = []
@@ -627,7 +626,7 @@ export class GearWear {
                     // Iterate and update distance on gear components.
                     for ([id, component] of Object.entries(config.components)) {
                         if (component.disabled) {
-                            logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, logHelper.activity(activity), "Not updated, component is disabled")
+                            logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, logHelper.activity(activity), `Not updated - ${id}, component is disabled`)
                             continue
                         }
 
