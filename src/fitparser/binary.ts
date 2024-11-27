@@ -5,6 +5,11 @@ import {FIT, getFitMessage} from "./fit"
 import {Buffer} from "buffer"
 import logger from "anyhow"
 
+const CompressedTimeMask = 31
+const CompressedLocalMesgNumMask = 0x60
+const CompressedHeaderMask = 0x80
+const GarminTimeOffset = 631065600000
+
 export function addEndian(littleEndian, bytes) {
     let result = 0
     if (!littleEndian) bytes.reverse()
@@ -14,14 +19,6 @@ export function addEndian(littleEndian, bytes) {
 
     return result
 }
-
-let timestamp = 0
-let lastTimeOffset = 0
-const CompressedTimeMask = 31
-const CompressedLocalMesgNumMask = 0x60
-const CompressedHeaderMask = 0x80
-const GarminTimeOffset = 631065600000
-let monitoring_timestamp = 0
 
 function readData(blob, fDef, startIndex) {
     if (fDef.endianAbility === true) {
@@ -233,6 +230,10 @@ function applyOptions(data, field, options) {
 
 export function readRecord(blob, messageTypes, developerFields, startIndex, options, startDate, pausedTime) {
     const recordHeader = blob[startIndex]
+
+    let monitoring_timestamp = 0
+    let timestamp = 0
+    let lastTimeOffset = 0
     let localMessageType = recordHeader & 15
 
     if ((recordHeader & CompressedHeaderMask) === CompressedHeaderMask) {

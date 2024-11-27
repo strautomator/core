@@ -106,8 +106,8 @@ export class FitParser {
         const messageTypes = []
         const developerFields = []
 
-        let startDate
-        let lastStopTimestamp
+        let startDate = void 0
+        let lastStopTimestamp = void 0
         let pausedTime = 0
 
         while (loopIndex < crcStart) {
@@ -250,7 +250,7 @@ export class FitParser {
             // Get Sport profile.
             for (let sp of fitObj.sports) {
                 if (sp.name) {
-                    fitFileActivity.sportProfile = sp.name
+                    fitFileActivity.sportProfile = sp.name.replace(/[\u{0080}-\u{FFFF}]/gu, "")
                 }
             }
         }
@@ -393,7 +393,9 @@ export class FitParser {
             const maxTime = activity.totalTime + 60
             const result = activities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
             if (!result) {
-                logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), `Activities: ${activities.map((a) => a.id).join(", ")}`, "Around same start date, but different total time")
+                const logActivityIds = `Activities: ${activities.map((a) => a.id).join(", ")}`
+                const logTotalTime = `Similar start date but different total time (Strava ${activity.totalTime}, FIT ${result.totalTime})`
+                logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), logActivityIds, logTotalTime)
                 return null
             }
 
