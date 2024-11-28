@@ -249,8 +249,10 @@ export class FitParser {
 
             // Get Sport profile.
             for (let sp of fitObj.sports) {
-                if (sp.name) {
-                    fitFileActivity.sportProfile = sp.name.replace(/[\u{0080}-\u{FFFF}]/gu, "")
+                if (!fitFileActivity.sportProfile && sp.name) {
+                    fitFileActivity.sportProfile = sp.name.replace(/\\u[\dA-F]{4}/gi, (unicode) => {
+                        return String.fromCharCode(parseInt(unicode.replace(/\\u/g, ""), 16))
+                    })
                 }
             }
         }

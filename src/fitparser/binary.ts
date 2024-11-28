@@ -73,7 +73,7 @@ function readData(blob, fDef, startIndex) {
                 temp.push(blob[startIndex + i])
             }
         }
-        return Buffer.from(temp).toString("utf-8")
+        return Buffer.from(temp).toString("utf8")
     }
 
     if (fDef.type === "byte_array") {
@@ -108,7 +108,6 @@ function formatByType(data, type, scale, offset) {
         case "uint32_array":
         case "uint16_array":
             return data.map((dataItem) => dataRounder(dataItem, scale, offset))
-        case "string":
         default:
             if (!FIT.types[type]) {
                 return data
@@ -268,7 +267,8 @@ export function readRecord(blob, messageTypes, developerFields, startIndex, opti
                 endianAbility: (baseType & 128) === 128,
                 littleEndian: lEnd,
                 baseTypeNo: baseType & 15,
-                name: field
+                name: field,
+                dataType: baseType & 15
             }
 
             mTypeDef.fieldDefs.push(fDef)
@@ -294,6 +294,7 @@ export function readRecord(blob, messageTypes, developerFields, startIndex, opti
                     littleEndian: lEnd,
                     baseTypeNo: baseType & 15,
                     name: devDef.field_name,
+                    dataType: baseType & 15,
                     scale: devDef.scale || 1,
                     offset: devDef.offset || 0,
                     developerDataIndex: devDataIndex,

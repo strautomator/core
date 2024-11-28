@@ -11,6 +11,7 @@ import {StravaActivity, StravaProcessedActivity} from "./strava/types"
 import {BaseSubscription} from "./subscriptions/types"
 import {UserData} from "./users/types"
 import {WahooWebhookData} from "./wahoo/types"
+import _ from "lodash"
 
 /**
  * Helper to get activity details for logging.
@@ -39,7 +40,7 @@ export const garminPing = (lPing: GarminPingActivityFile): string => {
  */
 export const fitFileActivity = (lActivity: FitFileActivity): string => {
     if (!lActivity) return "Activity unknown"
-    const details = [lActivity.name, lActivity.sportProfile, lActivity.workoutName]
+    const details = _.compact([lActivity.name, lActivity.sportProfile, lActivity.workoutName])
     return `FIT ${lActivity.id} - ${details.join(", ")}`
 }
 
