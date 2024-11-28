@@ -145,7 +145,6 @@
         },
         "server": {
             "basePath": "/affiliates/",
-            "imagesPath": "/affiliates/images/",
             "url": "https://affiliates.strautomator.com/"
         }
     },
