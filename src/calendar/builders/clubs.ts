@@ -171,9 +171,10 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
         const clubFilter = (c: StravaClub) => dbCalendar.options.clubIds.includes(c.id.toString()) || (c.url && dbCalendar.options.clubIds.includes(c.url))
         let clubs = dbCalendar.options.clubIds?.length > 0 ? allClubs.filter(clubFilter) : allClubs
 
-        // Free accounts have a limit on how many clubs can be processed.
-        if (clubs.length > settings.plans.free.maxClubs) {
-            clubs = clubs.splice(0, settings.plans.free.maxClubs)
+        // Free accounts have a limit on how many clubs can be processed at any given time,
+        // so we randomly select a few clubs to process.
+        if (!user.isPro && clubs.length > settings.plans.free.maxClubs) {
+            clubs = _.sampleSize(clubs, settings.plans.free.maxClubs)
         }
 
         // Iterate user's clubs to get their events and push to the calendar.
