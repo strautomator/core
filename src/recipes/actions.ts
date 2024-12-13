@@ -2,6 +2,7 @@
 
 import {RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStatsData} from "./types"
 import {recipeActionList} from "./lists"
+import {GearWearComponent, GearWearConfig} from "../gearwear/types"
 import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaGear, StravaSport} from "../strava/types"
 import {UserData} from "../users/types"
@@ -982,24 +983,24 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
  */
 export const toggleGearComponents = async (user: UserData, activity: StravaActivity, recipe: RecipeData, actions: RecipeAction[]): Promise<boolean> => {
     try {
-        const updatedGear = {}
+        const updatedGear: {[id: string]: {config: GearWearConfig; toggledComponents: GearWearComponent[]}} = {}
 
         // Iterate over each GearWear based action, and keep the updated stuff in the updatedGear object
         // so we can updated everything at once later on (to avoid possible repeated updates to the same GearWear).
         for (let action of actions) {
             try {
                 const arrGear: string[] = action.value.split(":")
-                const gearId = arrGear.shift()
+                const gearId = arrGear.shift().trim()
 
                 // Make sure the specified gear is still valid.
-                const gear = updatedGear[gearId] || (await gearwear.getById(gearId))
+                const gear: GearWearConfig = updatedGear[gearId]?.config || (await gearwear.getById(gearId))
                 if (!gear) {
                     throw new Error(`Gear ${gearId} not found`)
                 }
 
                 // Make sure the component exists.
                 const componentName = arrGear.join(":").trim()
-                const component = gear.components?.find((c) => c.name.trim().toLowerCase() == componentName.trim().toLowerCase())
+                const component = gear.components?.find((c) => componentName.toLowerCase() == c.name.trim().toLowerCase())
                 if (!component) {
                     throw new Error(`Gear ${gearId}, component "${componentName}" not found`)
                 }
