@@ -32,6 +32,8 @@ export interface Announcement {
     hasBikes?: boolean
     /** Only to users who have shoes in Strava. */
     hasShoes?: boolean
+    /** Only to users with a Garmin or Wahoo account. */
+    hasGarminWahoo?: boolean
     /** Restrict to uses from specific countries? */
     countries?: string[]
 }

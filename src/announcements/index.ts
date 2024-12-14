@@ -80,6 +80,7 @@ export class Announcements {
                     if (a.hasBikes === false && bikes.length > 0) return false
                     if (a.hasShoes && shoes.length == 0) return false
                     if (a.hasShoes === false && shoes.length > 0) return false
+                    if (a.hasGarminWahoo && !user.garmin?.id && !user.wahoo?.id) return false
                     if (a.countries && !a.countries.includes(country)) return false
                     if (a.dateRegisteredBefore && user.dateRegistered >= a.dateRegisteredBefore) return false
                     return true
