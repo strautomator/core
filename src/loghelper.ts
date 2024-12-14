@@ -12,15 +12,33 @@ import {BaseSubscription} from "./subscriptions/types"
 import {UserData} from "./users/types"
 import {WahooWebhookData} from "./wahoo/types"
 import _ from "lodash"
+import dayjs from "./dayjs"
 
 /**
  * Helper to get activity details for logging.
  * @param lActivity Activity data.
- * @param fullDetails Optional, if true will return details about the activity.
+ * @param detailed Optional, if true will return extra details about the activity.
  */
-export const activity = (lActivity: StravaActivity | StravaProcessedActivity, fullDetails?: boolean): string => {
+export const activity = (lActivity: StravaActivity | StravaProcessedActivity, detailed?: boolean): string => {
     if (!lActivity) return "Activity unknown"
-    if (!fullDetails) return `Activity ${lActivity.id}`
+    if (!detailed) return `Activity ${lActivity.id}`
+    const details = _.compact([lActivity.name, lActivity.sportType, dayjs(lActivity.dateStart).format("lll")])
+    return `Activity ${lActivity.id} - ${details.join(", ")}`
+}
+
+/**
+ * Helper to get FIT file activity details for logging.
+ * @param lActivity FIT file activity data.
+ * @param detailed Optional, if true will return extra details about the activity.
+ */
+export const fitFileActivity = (lActivity: FitFileActivity, detailed?: boolean): string => {
+    if (!lActivity) return "Activity unknown"
+    if (!detailed) return `FIT ${lActivity.id}`
+    const details = _.compact([lActivity.name, lActivity.sportProfile, lActivity.workoutName, dayjs(lActivity.dateStart).format("lll")])
+    if (lActivity.devices?.length > 0) {
+        details.push(`${lActivity.devices.length} devices`)
+    }
+    return `FIT ${lActivity.id} - ${details.join(", ")}`
 }
 
 /**
@@ -32,16 +50,6 @@ export const garminPing = (lPing: GarminPingActivityFile): string => {
     const id = lPing.activityId.toString().replace("activity", "")
     const name = lPing.activityName
     return `Garmin activity ${id} - ${name}`
-}
-
-/**
- * Helper to get FIT file activity details for logging.
- * @param lActivity FIT file activity data.
- */
-export const fitFileActivity = (lActivity: FitFileActivity): string => {
-    if (!lActivity) return "Activity unknown"
-    const details = _.compact([lActivity.name, lActivity.sportProfile, lActivity.workoutName])
-    return `FIT ${lActivity.id} - ${details.join(", ")}`
 }
 
 /**
