@@ -69,6 +69,43 @@ export const fortuneCookies: string[] = [
 ]
 
 /**
+ * Dad jokes.
+ */
+export const dadJokes: string[] = [
+    "I went to the aquarium this weekend, but I didn’t stay long. There’s something fishy about that place.",
+    "What do you call a sheep who can sing and dance? Lady Ba Ba.",
+    "Why can't dinosaurs clap their hands? Because they're extinct.",
+    "Who won the neck decorating contest? It was a tie.",
+    "Dogs can't operate MRI machines. But catscan.",
+    "What did the skillet eat on its birthday? Pan-cakes.",
+    "What do you call a dog who meditates? Aware wolf.",
+    "What kind of fish do penguins catch at night? Star fish.",
+    "Which vegetable has the best kung fu? Broc-lee.",
+    "Why don't skeletons fight each other? They don't have the guts.",
+    "What do you call fake spaghetti? An impasta.",
+    "Why did the bicycle fall over? Because it was two-tired.",
+    "What do you call cheese that isn't yours? Nacho cheese.",
+    "Why can't you give Elsa a balloon? Because she will let it go.",
+    "Why did the golfer bring two pairs of pants? In case he got a hole in one.",
+    "Why don't some couples go to the gym? Because some relationships don't work out.",
+    "Why was the stadium so cool? It was filled with fans.",
+    "Why did the tomato turn red? Because it saw the salad dressing.",
+    "Why don't scientists trust atoms? Because they make up everything.",
+    "Why did the coffee file a police report? It got mugged.",
+    "Why did the cookie go to the hospital? Because it felt crummy.",
+    "Why don't programmers like nature? It has too many bugs.",
+    "Why did the computer go to the doctor? Because it had a virus.",
+    "Why did the belt go to jail? Because it held up a pair of pants.",
+    "Why did the picture go to jail? Because it was framed.",
+    "Why did the bicycle stand up by itself? It was two-tired.",
+    "Why did the computer go to the doctor? Because it had a virus.",
+    "Why did the chicken join a band? Because it had the drumsticks.",
+    "Why did the picture go to jail? Because it was framed.",
+    "Why did the scarecrow win an award? Because he was outstanding in his field.",
+    "Why did the math book look sad? Because it had too many problems."
+]
+
+/**
  * Helper to log and alert users about failed actions.
  */
 const failedAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction, error: any): Promise<void> => {
@@ -957,7 +994,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
             result = `${_.sample(prefixes)} ${_.sample(names)}`.trim()
         }
 
-        result = result ? result.charAt(0).toUpperCase() + result.slice(1) : _.sample(fortuneCookies)
+        result = result ? result.charAt(0).toUpperCase() + result.slice(1) : _.sample(_.concat(fortuneCookies, dadJokes))
 
         if (action.type == RecipeActionType.GenerateName) {
             activity.name = result
