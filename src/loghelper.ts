@@ -3,11 +3,12 @@
 import {EventEntity} from "@paddle/paddle-node-sdk"
 import {FitFileActivity} from "./fitparser/types"
 import {GarminPingActivityFile} from "./garmin/types"
+import {GearWearConfig} from "./gearwear/types"
 import {GitHubSubscription} from "./github/types"
 import {PaddleSubscription} from "./paddle/types"
 import {PayPalSubscription} from "./paypal/types"
 import {RecipeData} from "./recipes/types"
-import {StravaActivity, StravaProcessedActivity} from "./strava/types"
+import {StravaActivity, StravaGear, StravaProcessedActivity} from "./strava/types"
 import {BaseSubscription} from "./subscriptions/types"
 import {UserData} from "./users/types"
 import {WahooWebhookData} from "./wahoo/types"
@@ -50,6 +51,18 @@ export const garminPing = (lPing: GarminPingActivityFile): string => {
     const id = lPing.activityId.toString().replace("activity", "")
     const name = lPing.activityName
     return `Garmin activity ${id} - ${name}`
+}
+
+/**
+ * Helper to get GearWear config details.
+ * @param lUser Owner of the config.
+ * @param lConfig The GearWear config.
+ */
+export const gearwearConfig = (lUser: UserData, lConfig: GearWearConfig): string => {
+    const bike = _.find(lUser.profile.bikes, {id: lConfig.id})
+    const shoe = _.find(lUser.profile.shoes, {id: lConfig.id})
+    const gear: StravaGear = bike || shoe
+    return gear ? `GearWear ${lConfig.id} - ${gear.name}` : `Invalid GearWear ${lConfig.id} (not found)}`
 }
 
 /**
