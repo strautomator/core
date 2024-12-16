@@ -221,6 +221,8 @@
         // By default, when update distance for gear components, get activities that happened
         // 2 days ago (so users will have some time to set the correct activity gear).
         "delayDays": 2,
+        // Notify users if components haven't been updated for more than 9 months.
+        "idleReminderDays": 270,
         // Wait at least 10 days before sending another GearWear reminder.
         "reminderDays": 10,
         // Remind user if tracking was not reset and current usage has passed 15% of the target alert value.

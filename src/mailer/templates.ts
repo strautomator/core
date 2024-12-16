@@ -90,6 +90,20 @@ export const EmailTemplates = {
             "</p>"
     },
 
+    // Reminder sent if GearWear components haven't been used or updated for a while.
+    GearWearIdle: {
+        subject: "${gearName} has idle components (GearWear)",
+        body:
+            "<p>" +
+            "Your gear has some components that haven't been updated for a while. Perhaps a good time to double check if you still have and need them registered on Strautomator?<br>-<br>" +
+            "<strong>${gearName} - idle components:</strong><br>" +
+            "${components}" +
+            "</p>" +
+            "<p>" +
+            'To edit the components, please <a href="${editLink}">click here</a> to go to the GearWear details on Strautomator.' +
+            "</p>"
+    },
+
     // Alert sent to user when devices are reported to have low battery.
     GearWearBattery: {
         subject: "Devices with low battery",

@@ -1,14 +1,13 @@
 // Strautomator Core: GearWear
 
-import {GearWearDbState, GearWearConfig, GearWearComponent, GearWearBatteryTracker, GearWearDeviceBattery} from "./types"
+import {GearWearDbState, GearWearConfig, GearWearComponent, GearWearBatteryTracker} from "./types"
+import {updateBatteryTracking} from "./battery"
+import {notifyIdle} from "./notifications"
+import {resetTracking, updateTracking} from "./tracking"
 import {StravaActivity, StravaGear} from "../strava/types"
-import {isActivityIgnored} from "../strava/utils"
 import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
-import fitparser from "../fitparser"
-import mailer from "../mailer"
-import notifications from "../notifications"
 import strava from "../strava"
 import users from "../users"
 import _ from "lodash"
@@ -26,6 +25,11 @@ export class GearWear {
     static get Instance() {
         return this._instance || (this._instance = new this())
     }
+
+    // Exported helper methods.
+    notifyIdle = notifyIdle
+    resetTracking = resetTracking
+    updateTracking = updateTracking
 
     // INIT
     // --------------------------------------------------------------------------
@@ -149,7 +153,7 @@ export class GearWear {
             }
 
             // Valid component fields.
-            const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "preAlertPercent", "datePreAlertSent", "dateAlertSent", "activityCount", "history", "disabled"]
+            const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "preAlertPercent", "datePreAlertSent", "dateAlertSent", "dateLastUpdate", "activityCount", "history", "disabled"]
 
             // Validate individual components.
             for (let comp of gearwear.components) {
@@ -173,6 +177,12 @@ export class GearWear {
                     comp.history = []
                 } else if (!_.isArray(comp.history)) {
                     throw new Error("Component history must be an array")
+                }
+
+                // Date validation.
+                if (!_.isDate(comp.dateLastUpdate)) {
+                    const lastUpdate = dayjs(comp.dateLastUpdate || new Date())
+                    comp.dateLastUpdate = lastUpdate.isValid() ? lastUpdate.toDate() : new Date()
                 }
 
                 // Remove non-relevant fields.
@@ -204,6 +214,23 @@ export class GearWear {
 
     // GET
     // --------------------------------------------------------------------------
+
+    /**
+     * Get all GearWear configurations that were updated since the specified date.
+     * @param date Updated since date.
+     */
+    getUpdatedSince = async (date: dayjs.Dayjs): Promise<GearWearConfig[]> => {
+        const logDate = `Since ${date.format("lll")}`
+
+        try {
+            const result: GearWearConfig[] = await database.search("gearwear", ["lastUpdate.date", ">", date])
+            logger.info("GearWear.getUpdatedSince", logDate, `Got ${result.length} configurations`)
+            return result
+        } catch (ex) {
+            logger.error("GearWear.getUpdatedSince", logDate, ex)
+            throw ex
+        }
+    }
 
     /**
      * Get the GearWear by its ID.
@@ -327,7 +354,7 @@ export class GearWear {
      * Create or update a GearWear config.
      * @param user The user owner of the gear.
      * @param gearwear The GearWear configuration.
-     * @param toggledComponents Optional in case of toggling components, which components were toggled? User for logging only.
+     * @param toggledComponents Optional in case of toggling components, which components were toggled? Used for logging only.
      */
     upsert = async (user: UserData, gearwear: GearWearConfig, toggledComponents?: GearWearComponent[]): Promise<GearWearConfig> => {
         const doc = database.doc("gearwear", gearwear.id)
@@ -533,13 +560,13 @@ export class GearWear {
 
                 // Get recent activities and update tracking.
                 const gearActivities = _.filter(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
-                await this.updateTracking(user, config, gearActivities)
+                await updateTracking(user, config, gearActivities)
                 count += gearActivities.length
             }
 
             // If user is PRO and has a Garmin or Wahoo profile linked, track battery levels.
             if (user.isPro && !user.preferences.privacyMode && (user.garmin?.id || user.wahoo?.id)) {
-                await this.updateBatteryTracking(user, activities)
+                await updateBatteryTracking(user, activities)
             }
         } catch (ex) {
             logger.error("GearWear.processUserActivities", logHelper.user(user), dateString, ex)
@@ -558,427 +585,6 @@ export class GearWear {
         }
 
         return count
-    }
-
-    // GEAR TRACKING
-    // --------------------------------------------------------------------------
-
-    /**
-     * Update gear component distance / time (hours) with the provided Strava activities.
-     * @param user The user owner of the gear and component.
-     * @param config The GearWear configuration.
-     * @param activities Strava activities to be processed.
-     */
-    updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
-        try {
-            const now = dayjs.utc()
-
-            // Stop here if no activities were passed.
-            if (!activities || activities.length == 0) {
-                logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `No activities to process`)
-                return
-            }
-
-            // Stop here if all components are disabled.
-            const disabledCount = config.components.filter((c) => c.disabled).length
-            if (config.components.length == disabledCount) {
-                logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, "All components are disabled, will not proceed")
-                return
-            }
-
-            // GearWear processing data.
-            let id: string
-            let component: GearWearComponent
-            let activityIds: number[] = []
-            let totalDistance = 0
-            let totalTime = 0
-
-            // Set the updating flag to avoid edits by the user while distance is updated.
-            config.updating = true
-
-            // Iterate user activities to update the gear components distance.
-            for (let activity of activities) {
-                if (isActivityIgnored(user, activity, "gear")) {
-                    continue
-                }
-
-                try {
-                    const distance = activity.distance
-
-                    // Stop here if activity has no valid distance and time.
-                    if (!distance && !activity.movingTime) {
-                        logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} nas no distance or time`)
-                        continue
-                    }
-
-                    // Make sure we don't process the same activity again in case the user has changed the delay preference.
-                    if (config.lastUpdate && config.lastUpdate.activities.includes(activity.id)) {
-                        logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} was already processed`)
-                        continue
-                    }
-
-                    activityIds.push(activity.id)
-
-                    // Append totals.
-                    if (distance > 0) totalDistance += distance
-                    if (activity.movingTime > 0) totalTime += activity.movingTime
-
-                    // Iterate and update distance on gear components.
-                    for ([id, component] of Object.entries(config.components)) {
-                        if (component.disabled) {
-                            logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, logHelper.activity(activity), `Not updated - ${id}, component is disabled`)
-                            continue
-                        }
-
-                        const historyLength = component.history?.length || 0
-                        const minReminderDate = now.subtract(settings.gearwear.reminderDays, "days")
-                        const isReminder = dayjs.utc(component.dateAlertSent).isBefore(minReminderDate)
-
-                        // If component was recently reset, then do not update the tracking
-                        // as the activity was still for the previous component.
-                        const historyDates = historyLength > 0 ? component.history.map((h) => dayjs(h.date).utc().valueOf()) : []
-                        const mostRecentTimestamp = _.max(historyDates) || 0
-                        if (mostRecentTimestamp >= activity.dateStart.valueOf()) {
-                            logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, `Replaced recently so won't update the tracking for activity ${activity.id}`)
-                            continue
-                        }
-
-                        // Increase activity count.
-                        if (!component.activityCount) component.activityCount = 0
-                        component.activityCount++
-
-                        // Make sure current values are at least 0.
-                        if (!component.currentDistance) component.currentDistance = 0
-                        if (!component.currentTime) component.currentTime = 0
-
-                        // Increase distance (distance) and time (hours).
-                        if (distance > 0) component.currentDistance += distance
-                        if (activity.movingTime > 0) component.currentTime += activity.movingTime
-
-                        // Round to 1 decimal case.
-                        component.currentDistance = Math.round(component.currentDistance * 10) / 10
-                        component.currentTime = Math.round(component.currentTime * 10) / 10
-
-                        // Check if component has reached the pre alert threshold, alert, or if it needs to
-                        // send a reminder based on the mileage.
-                        if (component.alertDistance > 0) {
-                            const reminderDistance = component.alertDistance * settings.gearwear.reminderThreshold
-                            const usagePercent = (component.currentDistance / component.alertDistance) * 100
-
-                            if (!component.datePreAlertSent && component.preAlertPercent && usagePercent >= component.preAlertPercent) {
-                                await this.notify(user, component, activity, "PreAlert")
-                            } else if (component.currentDistance >= component.alertDistance) {
-                                if (!component.dateAlertSent) {
-                                    await this.notify(user, component, activity, "Alert")
-                                } else if (component.currentDistance >= reminderDistance && isReminder) {
-                                    await this.notify(user, component, activity, "Reminder")
-                                }
-                            }
-                        }
-
-                        // Do the same, but for time based (hours) tracking.
-                        if (component.alertTime > 0) {
-                            const reminderTime = component.alertTime * settings.gearwear.reminderThreshold
-                            const usagePercent = component.currentTime / component.alertTime
-
-                            if (!component.datePreAlertSent && component.preAlertPercent && usagePercent >= component.preAlertPercent) {
-                                await this.notify(user, component, activity, "PreAlert")
-                            } else if (component.currentTime >= component.alertTime) {
-                                if (!component.dateAlertSent) {
-                                    await this.notify(user, component, activity, "Alert")
-                                } else if (component.currentTime >= reminderTime && isReminder) {
-                                    await this.notify(user, component, activity, "Reminder")
-                                }
-                            }
-                        }
-                    }
-                } catch (innerEx) {
-                    logger.error("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, logHelper.activity(activity), innerEx)
-                }
-            }
-
-            // Set update details on the GearWear config.
-            config.updating = false
-            config.lastUpdate = {
-                date: now.toDate(),
-                activities: activityIds,
-                distance: parseFloat(totalDistance.toFixed(1)),
-                time: totalTime
-            }
-
-            // Save config to the database.
-            await database.set("gearwear", config, config.id)
-
-            const updatedCount = config.components.length - disabledCount
-            const units = user.profile.units == "imperial" ? "mi" : "km"
-            logger.info("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${updatedCount} components`, `Added ${totalDistance.toFixed(1)} ${units}, ${(totalTime / 3600).toFixed(1)} hours`)
-        } catch (ex) {
-            logger.error("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, ex)
-        }
-    }
-
-    /**
-     * Reset the current distance / time tracking for the specified gear component.
-     * @param user The GearWear owner.
-     * @param config The GearWear configuration.
-     * @param component The component to have its distance set to 0.
-     */
-    resetTracking = async (user: UserData, config: GearWearConfig, componentName: string): Promise<void> => {
-        try {
-            const component: GearWearComponent = _.find(config.components, {name: componentName}) || _.find(config.components, {name: decodeURIComponent(componentName)})
-
-            if (!component) {
-                throw new Error(`Component not found in: ${config.components.map((c) => c.name).join(", ")}`)
-            }
-
-            const now = dayjs.utc()
-            const dateFormat = "YYYY-MM-DD"
-            const currentDistance = component.currentDistance
-            const currentTime = component.currentTime
-            const hours = Math.round(currentTime / 3600)
-
-            // If current distance and time are 0, then do nothing.
-            if (currentDistance < 1 && currentTime < 1) {
-                logger.warn("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, "Distance and time are 0, will not reset")
-                return
-            }
-
-            // Make sure history array is initialized, and do not proceed if there was already
-            // a reset triggered today.
-            if (!component.history) {
-                component.history = []
-            } else if (component.history.find((h) => dayjs(h.date).format(dateFormat) == now.format(dateFormat))) {
-                logger.warn("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, "Already reset today, will not reset again")
-                return
-            }
-
-            // Reset the actual distance / time / activity count.
-            component.datePreAlertSent = null
-            component.dateAlertSent = null
-            component.currentDistance = 0
-            component.currentTime = 0
-            component.activityCount = 0
-
-            // Only update the history if privacy mode is not enabled.
-            if (!user.preferences.privacyMode) {
-                component.history.push({date: now.toDate(), distance: currentDistance, time: currentTime})
-            }
-
-            // Save to the database and log.
-            await database.set("gearwear", config, config.id)
-            logger.info("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, `Resetting distance ${currentDistance} and ${hours} hours`)
-
-            // Clear pending gear notifications (mark them as read) if user has no email set.
-            if (!user.email) {
-                const gearNotifications = await notifications.getByGear(user, config.id)
-
-                if (gearNotifications.length > 0) {
-                    for (let n of gearNotifications) {
-                        await notifications.markAsRead(user, n.id)
-                    }
-
-                    logger.info("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id}`, "Marked pending notifications as read")
-                }
-            }
-        } catch (ex) {
-            logger.error("GearWear.resetTracking", logHelper.user(user), `Gear ${config.id} - ${componentName}`, ex)
-        }
-    }
-
-    // BATTERY TRACKING
-    // --------------------------------------------------------------------------
-
-    /**
-     * Keep track of sensor battery levels, available to PRO only, disabled if privacyMode is set.
-     * @param user The user.
-     * @param activities Strava activities to be processed.
-     */
-    updateBatteryTracking = async (user: UserData, activities: StravaActivity[]): Promise<void> => {
-        const activitiesLog = `${activities.length || "no"} activities`
-        const now = dayjs.utc().toDate()
-
-        try {
-            if (!activities || activities.length == 0) {
-                logger.debug("GearWear.updateBatteryTracking", logHelper.user(user), `No activities to process`)
-                return
-            }
-
-            // Get (or create) the battery tracker object.
-            let isNew = false
-            let tracker: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
-            const lowBatteryDevices: Partial<GearWearDeviceBattery>[] = []
-
-            if (!tracker) {
-                tracker = {
-                    id: user.id,
-                    devices: [],
-                    dateUpdated: now
-                }
-                isNew = true
-            } else {
-                tracker.dateUpdated = now
-            }
-
-            // Iterate user activities to update the device battery levels.
-            for (let activity of activities) {
-                try {
-                    const matching = await fitparser.getMatchingActivity(user, activity)
-                    if (!matching) {
-                        logger.debug("GearWear.updateBatteryTracking", logHelper.user(user), `Activity ${activity.id} has no matching FIT file`)
-                        continue
-                    }
-
-                    const dateUpdated = activity.dateEnd || now
-
-                    // Iterate and update device battery status.
-                    if (matching.deviceBattery?.length > 0) {
-                        logger.info("GearWear.updateBatteryTracking", logHelper.user(user), `Processing ${matching.deviceBattery.length} devices for activity ${activity.id}`)
-
-                        for (let deviceBattery of matching.deviceBattery) {
-                            const existing = tracker.devices.find((d) => d.id == deviceBattery.id)
-                            let changedToLow = false
-                            if (existing) {
-                                if (existing.status != deviceBattery.status) {
-                                    logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New status: ${deviceBattery.id} - ${deviceBattery.status}`)
-                                    changedToLow = true
-                                }
-                                existing.status = deviceBattery.status
-                                existing.dateUpdated = dateUpdated
-                            } else {
-                                tracker.devices.push({id: deviceBattery.id, status: deviceBattery.status, dateUpdated: dateUpdated})
-                                logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New device tracked: ${deviceBattery.id} - ${deviceBattery.status}`)
-                                changedToLow = true
-                            }
-
-                            // If device battery status changed to low or critical, add it to the the low battery list.
-                            if (["low", "critical"].includes(deviceBattery.status) && changedToLow) {
-                                lowBatteryDevices.push(deviceBattery)
-                            }
-                        }
-                    }
-                } catch (innerEx) {
-                    logger.error("GearWear.updateBatteryTracking", logHelper.user(user), logHelper.activity(activity), innerEx)
-                }
-            }
-
-            // No need to save a new tracker if no device battery were found.
-            if (isNew && tracker.devices.length == 0) {
-                logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, "No battery statuses found, won't create a tracker")
-                return
-            }
-
-            // Sort the devices by ID.
-            tracker.devices = _.sortBy(tracker.devices, "id")
-
-            // Save tracker to the database.
-            await database.set("gearwear-battery", tracker, user.id)
-            logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `Tracking ${tracker.devices.length} devices`)
-
-            // Check if user wants to be notified about low battery devices.
-            if (!user.preferences.gearwearBatteryAlert || !user.email || lowBatteryDevices.length == 0) {
-                return
-            }
-
-            // Send low battery alert via email.
-            await mailer.send({
-                template: "GearWearLowBattery",
-                data: {devices: lowBatteryDevices.map((d) => `- ${d.id}: ${d.status.toUpperCase()}`).join("<br />")},
-                to: user.email
-            })
-
-            logger.info("GearWear.updateBatteryTracking.email", logHelper.user(user), `Devices: ${lowBatteryDevices.map((d) => d.id).join(", ")}`, "Email sent")
-        } catch (ex) {
-            logger.error("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, ex)
-        }
-    }
-
-    // NOTIFICATIONS
-    // --------------------------------------------------------------------------
-
-    /**
-     * Sends an email to the user when a specific component has reached its distance / time alert threshold.
-     * @param user The user owner of the component.
-     * @param component The component that has reached the alert distance.
-     * @param activity The Strava activity that triggered the distance alert.
-     */
-    notify = async (user: UserData, component: GearWearComponent, activity: StravaActivity, alertType: "PreAlert" | "Alert" | "Reminder"): Promise<void> => {
-        const units = user.profile.units == "imperial" ? "mi" : "km"
-        const logDistance = `Distance ${component.currentDistance} / ${component.alertDistance} ${units}`
-        const logGear = `Gear ${activity.gear.id} - ${component.name}`
-        const now = dayjs.utc()
-
-        // Check if an alert was recently sent, and if so, stop here.
-        const minReminderDate = now.subtract(settings.gearwear.reminderDays, "days")
-        const datePreAlertSent = component.datePreAlertSent ? dayjs.utc(component.datePreAlertSent) : null
-        const dateAlertSent = component.dateAlertSent ? dayjs.utc(component.dateAlertSent) : null
-        if (datePreAlertSent?.isAfter(minReminderDate) || dateAlertSent?.isAfter(minReminderDate)) {
-            logger.warn("GearWear.notify", logHelper.user(user), logGear, "User was already notified recently")
-            return
-        }
-
-        try {
-            if (alertType == "PreAlert") {
-                component.datePreAlertSent = now.toDate()
-            } else {
-                component.dateAlertSent = now.toDate()
-            }
-
-            // Get bike or shoe details.
-            const hours = component.currentTime / 3600
-            const bike = _.find(user.profile.bikes, {id: activity.gear.id})
-            const shoe = _.find(user.profile.shoes, {id: activity.gear.id})
-            const gear: StravaGear = bike || shoe
-
-            // Calculate usage from 0 to 100% (or more, if surpassed the alert threshold).
-            const usage = (component.alertDistance ? component.currentDistance / component.alertDistance : component.currentTime / component.alertTime) * 100
-
-            // Get alert details (distance and time).
-            const alertDetails = []
-            if (component.alertDistance > 0) alertDetails.push(`${component.alertDistance} ${units}`)
-            if (component.alertTime > 0) alertDetails.push(`${Math.round(component.alertTime / 3600)} hours`)
-
-            // User has email set? Send via email, otherwise create a notification.
-            if (user.email) {
-                const template = `GearWear${alertType}`
-                const compName = encodeURIComponent(component.name)
-                const data = {
-                    units: units,
-                    userId: user.id,
-                    gearId: gear.id,
-                    gearName: gear.name,
-                    component: component.name,
-                    currentDistance: component.currentDistance,
-                    currentTime: Math.round(hours * 10) / 10,
-                    usage: Math.round(usage),
-                    alertDetails: alertDetails.join(", "),
-                    resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(compName)}`,
-                    affiliateLink: `${settings.countryLinkify.server.url}s/${compName}?rn=1&from=${encodeURIComponent(settings.app.title)}`,
-                    tips: component.name.toLowerCase().replace(/ /g, "")
-                }
-
-                // Dispatch email to user.
-                await mailer.send({
-                    template: template,
-                    data: data,
-                    to: user.email
-                })
-
-                logger.info("GearWear.notify.email", logHelper.user(user), logGear, logHelper.activity(activity), logDistance, `${alertType} sent`)
-            } else if (alertType == "Alert") {
-                const nOptions = {
-                    title: `Gear alert: ${gear.name} - ${component.name}`,
-                    body: `This component has now passed its target usage: ${alertDetails.join(", ")}`,
-                    href: `/gear/edit?id=${gear.id}`,
-                    gearId: gear.id,
-                    component: component.name
-                }
-                await notifications.createNotification(user, nOptions)
-
-                logger.info("GearWear.notify.notification", logHelper.user(user), logGear, logHelper.activity(activity), logDistance, "Notification created")
-            }
-        } catch (ex) {
-            logger.error("GearWear.notify", logHelper.user(user), logGear, logHelper.activity(activity), ex)
-        }
     }
 }
 

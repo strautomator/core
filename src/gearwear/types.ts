@@ -65,6 +65,8 @@ export interface GearWearComponent {
     datePreAlertSent?: Date
     /** Date when an alert was last sent to user. */
     dateAlertSent?: Date
+    /** Date when the component was last updated (metadata or tracking). */
+    dateLastUpdate: Date
     /** Dates and distances when user has triggered the distance reset. */
     history: GearWearReset[]
     /** Is the component currently disabled? */
