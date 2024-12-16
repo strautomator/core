@@ -3,7 +3,6 @@
 import {GearWearComponent, GearWearConfig} from "./types"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
-import database from "../database"
 import mailer from "../mailer"
 import notifications from "../notifications"
 import _ from "lodash"
