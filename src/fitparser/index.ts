@@ -186,6 +186,11 @@ export class FitParser {
      */
     getMatchingActivity = async (user: UserData, activity: StravaActivity | StravaProcessedActivity, source?: "any" | "garmin" | "wahoo"): Promise<FitFileActivity> => {
         try {
+            if (!activity) {
+                logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, "Empty or invalid activity provided")
+                return
+            }
+
             if (!source) source = "any"
 
             const activityDate = dayjs(activity.dateStart)
@@ -223,7 +228,7 @@ export class FitParser {
             const result = activities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
             if (!result) {
                 const logActivityIds = `Activities: ${activities.map((a) => a.id).join(", ")}`
-                const logTotalTime = `Similar start date but different total time (Strava ${activity.totalTime}, FIT ${result.totalTime})`
+                const logTotalTime = `Similar start date but different total time (${activity.totalTime})`
                 logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), logActivityIds, logTotalTime)
                 return null
             }
