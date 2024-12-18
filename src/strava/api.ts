@@ -327,6 +327,9 @@ export class StravaAPI {
                 if (!this.gatewayTimeouts.first) {
                     this.gatewayTimeouts.first = now
                 }
+                if (this.gatewayTimeouts.count == settings.strava.api.timeoutThresholds.count) {
+                    logger.error("Strava.makeRequest", `Strava incident going on, ${this.gatewayTimeouts.count} consecutive timeouts, started ${dayjs().diff(this.gatewayTimeouts.first, "seconds")} seconds ago`)
+                }
             }
 
             // Has a error response data? Add it to the exception message.
