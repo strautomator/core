@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "24.512.12008",
+    "version": "24.516.12240",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -14,7 +14,6 @@
         "prepare": "tsc"
     },
     "dependencies": {
-        "@garmin/fitsdk": "^21.141.0",
         "@google-cloud/aiplatform": "^3.34.0",
         "@google-cloud/firestore": "^7.11.0",
         "@google-cloud/storage": "^7.14.0",

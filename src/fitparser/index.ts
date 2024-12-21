@@ -97,7 +97,7 @@ export class FitParser {
         // Add workout details.
         if (messages.workoutMesgs?.length > 0) {
             fitFileActivity.workoutName = messages.workoutMesgs.map((wk) => (Array.isArray(wk.wktName) ? wk.wktName[0] : wk.wktName)).join(", ")
-            fitFileActivity.workoutNotes = messages.workoutMesgs.map((wk) => (Array.isArray(wk.wktNotes) ? wk.wktNotes[0] : wk.wktNotes)).join(", ")
+            fitFileActivity.workoutNotes = messages.workoutMesgs.map((wk) => (Array.isArray(wk.wktDescription) ? wk.wktDescription[0] : wk.wktDescription)).join(", ")
         }
 
         // Found devices in the FIT file? Generate device IDs.
