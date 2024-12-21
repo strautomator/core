@@ -333,7 +333,7 @@ export class PaddleSubscriptions {
      */
     cancelSubscription = async (user: UserData): Promise<void> => {
         try {
-            await api.client.subscriptions.cancel(user.subscriptionId, {effectiveFrom: "immediately"})
+            await api.client.subscriptions.cancel(user.subscriptionId, {effectiveFrom: "next_billing_period"})
             logger.info("Paddle.cancelSubscription", logHelper.user(user), `Cancelled: ${user.subscriptionId}`)
         } catch (ex) {
             if (ex.code == "subscription_update_when_canceled") {
