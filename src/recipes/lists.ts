@@ -130,7 +130,7 @@ export const recipePropertyList = [
     {value: "spotify.track", text: "Listened Spotify track name", type: "text", operators: recipeOperatorList.text},
     {value: "firstOfDay.anySport", text: "Is today's first activity (any sport)", type: "boolean", operators: recipeOperatorList.is},
     {value: "firstOfDay.sameSport", text: "Is today's first activity (same sport)", type: "boolean", operators: recipeOperatorList.is},
-    {value: "firstOfDay.recipe", text: "Automation is executing for the first time today", type: "boolean"}
+    {value: "firstOfDay.recipe", text: "Automation is executing for the first time today", type: "boolean", operators: recipeOperatorList.is}
 ]
 
 /**
