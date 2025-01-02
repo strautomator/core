@@ -295,11 +295,11 @@ export class Maps {
             const res = await this.googleClient.reverseGeocode(geoRequest)
             if (res?.data?.results?.length > 0) {
                 let result: GeocodeResult
-                result = res.data.results.find((r) => r.address_components?.find((c) => c.types.includes(AddressType.locality)))
+                result = res.data.results.find((r) => r?.address_components?.find((c) => c.types.includes(AddressType.locality)))
                 if (!result) {
-                    result = res.data.results.find((r) => r.address_components?.find((c) => c.types.includes(AddressType.administrative_area_level_2)))
+                    result = res.data.results.find((r) => r?.address_components?.find((c) => c.types.includes(AddressType.administrative_area_level_2)))
                 }
-                const components = result.address_components
+                const components = result ? result.address_components : null
                 if (!components) {
                     logger.warn("Maps.getReverseGeocode_Google", coordinates.join(", "), "Address not found")
                     return null
