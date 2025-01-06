@@ -1,6 +1,6 @@
 // Strautomator Core: Recipe types
 
-import { StravaSport } from "../strava/types"
+import {StravaSport} from "../strava/types"
 
 /**
  * User's recipe definition.
