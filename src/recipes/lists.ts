@@ -152,6 +152,7 @@ export const recipeActionList = [
     {value: "privateNote", text: "Set private notes"},
     {value: "prependPrivateNote", text: "Prepend to private notes"},
     {value: "appendPrivateNote", text: "Append to private notes"},
+    {value: "togglePrivate", text: "Toggle private status"},
     {value: "generateInsights", text: "Analysis on private notes with AI"},
     {value: "mapStyle", text: "Set map style"},
     {value: "hideHome", text: "Mute (activity hidden on home feeds)"},

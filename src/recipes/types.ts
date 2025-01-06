@@ -1,6 +1,6 @@
 // Strautomator Core: Recipe types
 
-import {StravaSport} from "../strava/types"
+import { StravaSport } from "../strava/types"
 
 /**
  * User's recipe definition.
@@ -153,6 +153,7 @@ export enum RecipeActionType {
     PrivateNote = "privateNote",
     PrependPrivateNote = "prependPrivateNote",
     AppendPrivateNote = "appendPrivateNote",
+    TogglePrivate = "togglePrivate",
     EnableGearComponent = "enableGearComponent",
     DisableGearComponent = "disableGearComponent",
     MapStyle = "mapStyle",

@@ -1,28 +1,28 @@
 // Strautomator Core: Recipe Action methods
 
-import {RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStatsData} from "./types"
-import {recipeActionList} from "./lists"
-import {GearWearComponent, GearWearConfig} from "../gearwear/types"
-import {transformActivityFields} from "../strava/utils"
-import {StravaActivity, StravaGear, StravaSport} from "../strava/types"
-import {UserData} from "../users/types"
-import {ActivityWeather} from "../weather/types"
-import {AxiosConfig, axiosRequest} from "../axios"
-import recipeStats from "./stats"
+import logger from "anyhow"
+import jaul from "jaul"
+import _ from "lodash"
 import ai from "../ai"
+import { AxiosConfig, axiosRequest } from "../axios"
+import dayjs from "../dayjs"
 import fitparser from "../fitparser"
 import gearwear from "../gearwear"
+import { GearWearComponent, GearWearConfig } from "../gearwear/types"
+import * as logHelper from "../loghelper"
 import maps from "../maps"
 import musixmatch from "../musixmatch"
 import notifications from "../notifications"
 import spotify from "../spotify"
 import strava from "../strava"
+import { StravaActivity, StravaGear, StravaSport } from "../strava/types"
+import { transformActivityFields } from "../strava/utils"
+import { UserData } from "../users/types"
 import weather from "../weather"
-import dayjs from "../dayjs"
-import _ from "lodash"
-import jaul from "jaul"
-import logger from "anyhow"
-import * as logHelper from "../loghelper"
+import { ActivityWeather } from "../weather/types"
+import { recipeActionList } from "./lists"
+import recipeStats from "./stats"
+import { RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStatsData } from "./types"
 const settings = require("setmeup").settings
 
 /**
@@ -290,6 +290,9 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             if (!activity.privateNote) activity.privateNote = processedValue
             else activity.privateNote = `${activity.privateNote} ${processedValue}`
             activity.updatedFields.push("privateNote")
+        }
+        else if (action.type === RecipeActionType.TogglePrivate) {
+            activity.private = !activity.private
         }
 
         return true
