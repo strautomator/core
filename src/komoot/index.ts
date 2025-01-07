@@ -278,10 +278,17 @@ export class Komoot {
 
     /**
      * Try extracting a Komoot route URL from the passed string. Returns null if nothing found.
+     * This will account for common URL tricks since Strava has blocked links to external sites.
      * @param data String where a Komoot tour URL should be extracted from.
      */
     extractRouteUrl = (data: string): string => {
         try {
+            data = data
+                .replace(/\(\.\)/gi, ".")
+                .replace(/\[\./gi, ".")
+                .replace(/\.\+/gi, ".")
+                .replace(/\/\+/gi, ".")
+
             const index = data.indexOf("www.komoot.")
             if (index < 0) return null
 
