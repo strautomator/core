@@ -110,6 +110,7 @@ export class Calendar {
      * @param activityId The Strava activity ID.
      */
     private onDeleteActivity = async (user: UserData, activityId: string): Promise<void> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
         const activityLog = `Activity ${activityId}`
         const eventId = `activity-${activityId}`
 
@@ -121,7 +122,7 @@ export class Calendar {
                 try {
                     const buffer = await file.download()
                     if (!buffer) {
-                        logger.debug("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `No data for ${file.name}`)
+                        debugLogger("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `No data for ${file.name}`)
                         continue
                     }
 
@@ -385,6 +386,7 @@ export class Calendar {
      * @param dbCalendar The calendar data, including options.
      */
     generate = async (user: UserData, dbCalendar: CalendarData): Promise<string> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
         const optionsLog = _.map(_.toPairs(dbCalendar.options), (r) => r.join("=")).join(" | ")
 
         // User suspended? Stop here.
@@ -423,7 +425,7 @@ export class Calendar {
             // Build the calendar.
             const result = await calendarGenerator.build(user, dbCalendar, cachedEvents)
             if (result?.ics) {
-                logger.debug("Calendar.generate", logHelper.user(user), optionsLog, "Ready to save")
+                debugLogger("Calendar.generate", logHelper.user(user), optionsLog, "Ready to save")
 
                 // First we save the cache files.
                 try {

@@ -20,12 +20,13 @@ import dayjs from "../dayjs"
  * @param activities Strava activities to be processed.
  */
 export const updateBatteryTracking = async (user: UserData, activities: StravaActivity[]): Promise<void> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
     const activitiesLog = `${activities.length || "no"} activities`
     const now = dayjs.utc().toDate()
 
     try {
         if (!activities || activities.length == 0) {
-            logger.debug("GearWear.updateBatteryTracking", logHelper.user(user), `No activities to process`)
+            debugLogger("GearWear.updateBatteryTracking", logHelper.user(user), "No activities to process")
             return
         }
 
@@ -50,7 +51,7 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
             try {
                 const matching = await fitparser.getMatchingActivity(user, activity)
                 if (!matching) {
-                    logger.debug("GearWear.updateBatteryTracking", logHelper.user(user), `Activity ${activity.id} has no matching FIT file`)
+                    debugLogger("GearWear.updateBatteryTracking", logHelper.user(user), `Activity ${activity.id} has no matching FIT file`)
                     continue
                 }
 

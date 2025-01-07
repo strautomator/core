@@ -170,6 +170,7 @@ export class StravaActivityProcessing {
      * @param pActivity Processed activity metadata.
      */
     processActivity = async (user: UserData, pActivity: Partial<StravaProcessedActivity>): Promise<StravaProcessedActivity> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
         const activityId = pActivity.id
         let saveError
         let activity: StravaActivity
@@ -247,7 +248,7 @@ export class StravaActivityProcessing {
                         recipeIds.push(recipe.id)
 
                         if (recipe.killSwitch) {
-                            logger.debug("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, `Recipe ${recipe.id} kill switch`)
+                            debugLogger("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, `Recipe ${recipe.id} kill switch`)
                             break
                         }
                     }

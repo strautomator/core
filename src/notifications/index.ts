@@ -104,7 +104,7 @@ export class Notifications {
             if (result.length > 0) {
                 logger.info("Notifications.getByUser", logHelper.user(user), whichLog, `Got ${result.length} notification(s)`)
             } else {
-                logger.debug("Notifications.getByUser", logHelper.user(user), whichLog, `Got no notification(s)`)
+                logger.debug("Notifications.getByUser", logHelper.user(user), whichLog, "Got no notification(s)")
             }
 
             return result
@@ -142,7 +142,7 @@ export class Notifications {
             if (result.length > 0) {
                 logger.info("Notifications.getByGear", logHelper.user(user), `Gear ${gearId}`, whichLog, `Got ${result.length} notification(s)`)
             } else {
-                logger.debug("Notifications.getByGear", logHelper.user(user), `Gear ${gearId}`, whichLog, `Got no notification(s)`)
+                logger.debug("Notifications.getByGear", logHelper.user(user), `Gear ${gearId}`, whichLog, "Got no notification(s)")
             }
 
             return result

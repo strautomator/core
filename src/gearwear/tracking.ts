@@ -23,12 +23,12 @@ const settings = require("setmeup").settings
  * @param activities Strava activities to be processed.
  */
 export const updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
-    try {
-        const now = dayjs.utc()
+    const debugLogger = user.debug ? logger.warn : logger.debug
+    const now = dayjs.utc()
 
-        // Stop here if no activities were passed.
+    try {
         if (!activities || activities.length == 0) {
-            logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `No activities to process`)
+            debugLogger("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `No activities to process`)
             return
         }
 
@@ -79,7 +79,7 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
                 // Iterate and update distance on gear components.
                 for ([id, component] of Object.entries(config.components)) {
                     if (component.disabled) {
-                        logger.debug("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, logHelper.activity(activity), `Not updated - ${id}, component is disabled`)
+                        debugLogger("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, logHelper.activity(activity), `Not updated - ${id}, component is disabled`)
                         continue
                     }
 

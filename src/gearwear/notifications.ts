@@ -107,6 +107,7 @@ export const notifyUsage = async (user: UserData, component: GearWearComponent, 
  * @param components The components that haven't been updated for a while.
  */
 export const notifyIdle = async (user: UserData, config: GearWearConfig, components: GearWearComponent[]): Promise<void> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
     const units = user.profile.units == "imperial" ? "mi" : "km"
 
     // Stop here if user is suspended.
@@ -117,7 +118,7 @@ export const notifyIdle = async (user: UserData, config: GearWearConfig, compone
 
     // Validate components.
     if (!components || components.length == 0) {
-        logger.debug("GearWear.notifyIdle", logHelper.user(user), logHelper.gearwearConfig(user, config), "No idle components found, no notification needed")
+        debugLogger("GearWear.notifyIdle", logHelper.user(user), logHelper.gearwearConfig(user, config), "No idle components found, no notification needed")
         return
     }
 

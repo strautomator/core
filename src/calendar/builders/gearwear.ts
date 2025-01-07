@@ -18,6 +18,7 @@ const settings = require("setmeup").settings
  * @param cal The ical instance.
  */
 export const buildGearWear = async (user: UserData, dbCalendar: CalendarData, cal: ICalCalendar): Promise<void> => {
+    const debugLog = user.debug ? logger.warn : logger.debug
     const today = dayjs.utc().startOf("day")
     const daysFrom = dbCalendar.options.daysFrom
     const daysTo = dbCalendar.options.daysTo
@@ -27,7 +28,7 @@ export const buildGearWear = async (user: UserData, dbCalendar: CalendarData, ca
     const distanceUnits = user.profile.units == "imperial" ? "mi" : "km"
 
     try {
-        logger.debug("Calendar.buildGearWear", logHelper.user(user), optionsLog, "Preparing to build")
+        debugLog("Calendar.buildGearWear", logHelper.user(user), optionsLog, "Preparing to build")
 
         // Process all GearWear configurations.
         let gearwearConfigs = await gearwear.getByUser(user)

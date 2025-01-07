@@ -96,6 +96,8 @@ export class StravaPerformance {
      * @param activities Optional activities to consider, if not passed will get latest for the last few weeks.
      */
     estimateFitnessLevel = async (user: UserData, activities?: StravaActivity[]): Promise<StravaFitnessLevel> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         const levels = {
             speed: StravaFitnessLevel.Untrained,
             wattsPerKg: StravaFitnessLevel.Untrained,
@@ -159,7 +161,7 @@ export class StravaPerformance {
 
                 // Avoid processing manual or very short activities as they might give overly optimistic results.
                 if (activity.manual || ((isRide || isRun) && activity.movingTime < minMovingTime)) {
-                    logger.debug("Strava.estimateFitnessLevel", logHelper.user(user), `Activity ${activity.id} too short: ${activity.movingTimeString}`)
+                    debugLogger("Strava.estimateFitnessLevel", logHelper.user(user), `Activity ${activity.id} too short: ${activity.movingTimeString}`)
                     continue
                 }
 

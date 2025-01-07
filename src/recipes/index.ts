@@ -235,6 +235,7 @@ export class Recipes {
      * @param activity Strava activity to be evaluated.
      */
     evaluate = async (user: UserData, id: string, activity: StravaActivity): Promise<boolean> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
         const recipe: RecipeData = user.recipes[id]
 
         if (!recipe) {
@@ -272,7 +273,7 @@ export class Recipes {
 
             // Evaluate conditions, grouping them by same type.
             for ([gProperty, conditions] of groupedConditions) {
-                logger.debug("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Processing conditions: ${gProperty}`)
+                debugLogger("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Processing conditions: ${gProperty}`)
 
                 let sameValid = recipe.samePropertyOp == "OR" ? false : true
 
@@ -341,6 +342,8 @@ export class Recipes {
      * @param condition The recipe condition.
      */
     checkCondition = async (user: UserData, activity: StravaActivity, recipe: RecipeData, condition: RecipeCondition): Promise<boolean> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         try {
             const prop = condition.property
             const propDetails = recipePropertyList.find((p) => p.value == prop)
@@ -429,7 +432,7 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            logger.debug("Recipes.checkCondition", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `${condition.property} ${condition.operator} ${condition.value}`)
+            debugLogger("Recipes.checkCondition", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `${condition.property} ${condition.operator} ${condition.value}`)
             return true
         } catch (ex) {
             logger.error("Recipes.checkCondition", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `${condition.property} ${condition.operator} ${condition.value}`, ex)
@@ -445,7 +448,8 @@ export class Recipes {
      * @param action Recipe action to be executed.
      */
     processAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
-        logger.debug("Recipes.processAction", user, activity, action)
+        const debugLogger = user.debug ? logger.warn : logger.debug
+        debugLogger("Recipes.processAction", user, activity, action)
 
         if (!activity.updatedFields) {
             activity.updatedFields = []

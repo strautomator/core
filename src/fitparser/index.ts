@@ -185,6 +185,8 @@ export class FitParser {
      * @param source Optional specific source, garmin or wahoo.
      */
     getMatchingActivity = async (user: UserData, activity: StravaActivity | StravaProcessedActivity, source?: "any" | "garmin" | "wahoo"): Promise<FitFileActivity> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         try {
             if (!activity) {
                 logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, "Empty or invalid activity provided")
@@ -218,7 +220,7 @@ export class FitParser {
             }
 
             if (activities.length == 0) {
-                logger.debug("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), "Not found")
+                debugLogger("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), "Not found")
                 return null
             }
 

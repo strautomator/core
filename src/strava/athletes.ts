@@ -110,6 +110,8 @@ export class StravaAthletes {
      * @param activities List of activities to be checked against.
      */
     checkActivityRecords = async (user: UserData, activities: StravaActivity[]): Promise<StravaAthleteRecords> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         if (user.suspended) {
             logger.warn("Strava.checkActivityRecords", logHelper.user(user), `User suspended, won't check`)
             return null
@@ -119,14 +121,14 @@ export class StravaAthletes {
             return null
         }
         if (!activities || activities.length == 0) {
-            logger.debug("Strava.checkActivityRecords", logHelper.user(user), "No activities to be checked")
+            debugLogger("Strava.checkActivityRecords", logHelper.user(user), "No activities to be checked")
             return null
         }
 
         // Only proceed if athlete has the records document initialized.
         const allRecords = await this.getAthleteRecords(user)
         if (!allRecords) {
-            logger.debug("Strava.checkActivityRecords", logHelper.user(user), "No previous records found, will not proceed")
+            debugLogger("Strava.checkActivityRecords", logHelper.user(user), "No previous records found, will not proceed")
             return null
         }
 
@@ -138,7 +140,7 @@ export class StravaAthletes {
         for (let activity of activities) {
             try {
                 if (!user.isPro && !settings.plans.free.recordSports.includes(activity.sportType)) {
-                    logger.debug("Strava.checkActivityRecords", logHelper.user(user), `${logHelper.activity(activity)} ${activity.sportType} not tracked on free accounts`)
+                    debugLogger("Strava.checkActivityRecords", logHelper.user(user), `${logHelper.activity(activity)} ${activity.sportType} not tracked on free accounts`)
                     continue
                 }
 
@@ -158,7 +160,7 @@ export class StravaAthletes {
                     // activity longer than the minMovingTimeAvg setting?
                     if (activity[prop] && activity[prop] > currentValue) {
                         if (prop.includes("Avg") && activity.movingTime < minMovingTime) {
-                            logger.debug("Strava.checkActivityRecords", logHelper.user(user), prop, `${logHelper.activity(activity)} has less than ${minMovingTime}`)
+                            debugLogger("Strava.checkActivityRecords", logHelper.user(user), prop, `${logHelper.activity(activity)} has less than ${minMovingTime}`)
                             continue
                         }
 
@@ -190,7 +192,7 @@ export class StravaAthletes {
             await this.setAthleteRecords(user, result)
             return result
         } else {
-            logger.debug("Strava.checkActivityRecords", logHelper.user(user), `${activities.length} activities`, `No new records`)
+            debugLogger("Strava.checkActivityRecords", logHelper.user(user), `${activities.length} activities`, `No new records`)
             return null
         }
     }

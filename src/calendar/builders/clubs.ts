@@ -23,6 +23,7 @@ const settings = require("setmeup").settings
  * @param cachedEvents Cached events.
  */
 export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: ICalCalendar, cachedEvents: CalendarCachedEvents): Promise<void> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
     const today = dayjs.utc().startOf("day")
     const daysFrom = dbCalendar.options.daysFrom
     const daysTo = dbCalendar.options.daysTo
@@ -33,14 +34,14 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
     const tOrganizer = translation("Organizer", user.preferences, true)
 
     try {
-        logger.debug("Calendar.buildClubs", logHelper.user(user), optionsLog, "Preparing to build")
+        debugLogger("Calendar.buildClubs", logHelper.user(user), optionsLog, "Preparing to build")
 
         // Helper to process club events.
         const getEvents = async (club: StravaClub) => {
             if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) return
 
             if ((!dbCalendar.options.includeAllCountries || partialFirstBuild) && club.country != user.profile.country) {
-                logger.debug("Calendar.buildClubs", logHelper.user(user), `Club ${club.id} from another country (${club.country}), skip it`)
+                debugLogger("Calendar.buildClubs", logHelper.user(user), `User country ${user.profile.country} != club ${club.id} country ${club.country}, skip it`)
                 return
             }
 
@@ -154,7 +155,13 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
             // Filter club events based on calendar options.
             const sourceClubEvents = await strava.clubs.getClubEvents(user, club.id)
             const clubEvents = sourceClubEvents.filter((e) => {
-                if (dbCalendar.options.sportTypes?.length > 0 && !dbCalendar.options.sportTypes.includes(e.type)) return false
+                if (dbCalendar.options.sportTypes?.length > 0) {
+                    const sportTypes = dbCalendar.options.sportTypes.map((t) => t.toLowerCase())
+                    if (!sportTypes.includes(e.type.toLowerCase())) {
+                        debugLogger("Calendar.buildClubs", logHelper.user(user), `Event ${e.id} type ${e.type} not in the list ${dbCalendar.options.sportTypes.join(",")}, skip it`)
+                        return false
+                    }
+                }
                 if (dbCalendar.options.excludeNotJoined && !e.joined) return false
                 return true
             })

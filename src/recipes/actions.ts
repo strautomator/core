@@ -348,8 +348,10 @@ export const addWeatherTags = async (user: UserData, activity: StravaActivity, r
  * @param processedValue The action's processed value.
  */
 export const addSpotifyTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
+
     if (!user.spotify) {
-        logger.debug("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Spotify profile linked, will skip")
+        debugLogger("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Spotify profile linked, will skip")
         return processedValue
     }
 
@@ -394,12 +396,14 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
  * @param processedValue The action's processed value.
  */
 export const addGarminTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
+
     if (!user.isPro) {
-        logger.debug("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
+        debugLogger("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
         return processedValue
     }
     if (!user.garmin) {
-        logger.debug("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Garmin profile linked, will skip")
+        debugLogger("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Garmin profile linked, will skip")
         return processedValue
     }
 
@@ -426,12 +430,14 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
  * @param processedValue The action's processed value.
  */
 export const addWahooTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
+
     if (!user.isPro) {
-        logger.debug("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
+        debugLogger("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
         return processedValue
     }
     if (!user.wahoo) {
-        logger.debug("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Wahoo profile linked, will skip")
+        debugLogger("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Wahoo profile linked, will skip")
         return processedValue
     }
 

@@ -25,6 +25,8 @@ export class RecipeStats {
      * @param recipe Optional recipe to be fetched.
      */
     getStats = async (user: UserData, recipe?: RecipeData): Promise<RecipeStatsData | RecipeStatsData[]> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         try {
             if (recipe) {
                 const id = `${user.id}-${recipe.id}`
@@ -45,7 +47,7 @@ export class RecipeStats {
                 }
 
                 const lastTrigger = dayjs(stats.dateLastTrigger).format("lll")
-                logger.debug("RecipeStats.getStats", logHelper.user(user), logHelper.recipe(recipe), `${stats.activityCount} activities`, `Last triggered: ${lastTrigger}`)
+                debugLogger("RecipeStats.getStats", logHelper.user(user), logHelper.recipe(recipe), `${stats.activityCount} activities`, `Last triggered: ${lastTrigger}`)
                 return stats
             } else {
                 const arrStats: RecipeStatsData[] = await database.search("recipe-stats", ["userId", "==", user.id])

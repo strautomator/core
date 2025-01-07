@@ -24,6 +24,7 @@ const settings = require("setmeup").settings
  * @param cachedEvents Cached events.
  */
 export const buildActivities = async (user: UserData, dbCalendar: CalendarData, cal: ICalCalendar, cachedEvents: CalendarCachedEvents): Promise<void> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
     const today = dayjs.utc().startOf("day")
     const daysFrom = dbCalendar.options.daysFrom
     const daysTo = dbCalendar.options.daysTo
@@ -38,7 +39,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
 
     let after = dateFrom
     try {
-        logger.debug("Calendar.buildActivities", logHelper.user(user), optionsLog, "Preparing to build")
+        debugLogger("Calendar.buildActivities", logHelper.user(user), optionsLog, "Preparing to build")
 
         if (cachedEvents) {
             let lastCachedDate = dateFrom
