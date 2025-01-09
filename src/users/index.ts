@@ -1176,8 +1176,8 @@ export class Users {
         try {
             if (deviceNames) {
                 const keys = Object.keys(deviceNames)
-                if (keys.length > 30) {
-                    throw new Error("Too many devices, maximum allowed is 30")
+                if (keys.length > 50) {
+                    throw new Error("Too many devices, maximum allowed is 50")
                 }
                 keys.forEach((key) => {
                     if (!deviceNames[key]) {
