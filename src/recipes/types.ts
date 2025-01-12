@@ -131,6 +131,7 @@ export interface RecipeMusicTags {
  */
 export enum RecipeActionType {
     Commute = "commute",
+    Trainer = "trainer",
     Name = "name",
     PrependName = "prependName",
     AppendName = "appendName",

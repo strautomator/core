@@ -138,6 +138,7 @@ export const recipePropertyList = [
  */
 export const recipeActionList = [
     {value: "commute", text: "Tag activity as commute"},
+    {value: "trainer", text: "Tag activity as virtual (trainer)"},
     {value: "gear", text: "Set activity gear"},
     {value: "name", text: "Set activity name"},
     {value: "prependName", text: "Prepend to activity name"},

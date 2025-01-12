@@ -456,7 +456,7 @@ export class Recipes {
         }
 
         // Boolean based actions?
-        if (action.type == RecipeActionType.Commute || action.type == RecipeActionType.HideHome || action.type.toString().substring(0, 8) == "hideStat") {
+        if (action.type == RecipeActionType.Commute || action.type == RecipeActionType.Trainer || action.type == RecipeActionType.HideHome || action.type.toString().substring(0, 8) == "hideStat") {
             return actions.booleanAction(user, activity, recipe, action)
         }
 
