@@ -15,7 +15,7 @@ const hasValue = (user: Partial<UserData>, field: string): boolean => {
 /**
  * List of PRO-only user preferences.
  */
-export const proPreferences = ["linksOn=0", "calendarTemplate", "aiProvider", "aiPrompt", "ftpAutoUpdate", "weatherProvider"]
+export const proPreferences = ["linksOn=0", "calendarTemplate", "aiProvider", "ftpAutoUpdate", "weatherProvider"]
 
 /**
  * Helper to disable PRO only preferences for the specified user, returns the list of fields that were reset.
