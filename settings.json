@@ -640,7 +640,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 20
+            "maxPerMinute": 10
         }
     },
     "wahoo": {
