@@ -415,10 +415,10 @@ export class AI {
 
     /**
      * Helper to get the cache ID for the specified AI generation options.
-     * @param options Provider, humour and activity details.
+     * @param options Provider, humourPrompt and activity details.
      */
     private getCacheId = (options: AiGenerateOptions): string => {
-        return `${options.provider || "default"}-${options.humour || "random"}-${options.activity.id}`
+        return `${options.provider || "default"}-${options.humourPrompt || "random"}-${options.activity.id}`
     }
 
     /**
@@ -436,21 +436,22 @@ export class AI {
     }
 
     /**
-     * Get final messages to set the humour and translation for the prompt.
+     * Get final messages to set the humour / custom prompt and translation.
      * @param user The user.
      * @param options AI generation options.
      */
     private getHumourAndTranslation = (user: UserData, options: AiGenerateOptions): string[] => {
         const messages = []
 
-        // If user has a custom prompt, use it, otherwise fallback to the selected humour.
-        if (user.preferences.aiPrompt) {
-            messages.push(user.preferences.aiPrompt)
-        } else if (options.humour) {
-            const humour = options.humour || _.sample(settings.ai.humours)
-            if (humour != "none") {
-                messages.push(`Please be very ${humour} with the choice of words.`)
-            }
+        // If a custom prompt was set, do not use predefined humours or translations.
+        if (options.humourPrompt.startsWith("custom:")) {
+            messages.push(options.humourPrompt.substring(7))
+            return messages
+        }
+
+        const humourPrompt = options.humourPrompt || _.sample(settings.ai.humours)
+        if (humourPrompt != "none") {
+            messages.push(`Please be very ${humourPrompt} with the choice of words.`)
         }
 
         // Translate to the user's language (if other than English).
