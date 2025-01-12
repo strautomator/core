@@ -69,7 +69,7 @@ export class xAI implements AiProvider {
                 method: "POST",
                 headers: {},
                 data: {
-                    model: "grok-beta",
+                    model: "grok-2",
                     max_tokens: options.maxTokens,
                     messages: [
                         {role: "system", content: options.instruction},
