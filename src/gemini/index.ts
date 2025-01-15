@@ -73,7 +73,7 @@ export class Gemini implements AiProvider {
      */
     prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
-            const model = this.client.preview.getGenerativeModel({model: user.isPro && Math.random() < 0.5 ? "gemini-1.5-flash" : "gemini-1.0-pro"})
+            const model = this.client.preview.getGenerativeModel({model: user.isPro && Math.random() < 0.5 ? "gemini-2.0-flash-exp" : "gemini-1.5-flash"})
             const reqOptions: GenerateContentRequest = {
                 contents: [{role: "user", parts: messages.map((p) => ({text: p}))}],
                 safetySettings: [
