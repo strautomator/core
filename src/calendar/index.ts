@@ -1,6 +1,7 @@
 // Strautomator Core: Calendar
 
 import {CalendarData, CalendarOptions} from "./types"
+import {StorageBucket} from "../storage/types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import calendarGenerator from "./builder"
@@ -135,7 +136,7 @@ export class Calendar {
                         // Found a matching activity on the cache? Delete and save the file back.
                         if (cachedEvents[eventId]) {
                             delete cachedEvents[eventId]
-                            await storage.setFile("calendar", file.name, JSON.stringify(cachedEvents, null, 2), "application/json")
+                            await storage.setFile(StorageBucket.Calendar, file.name, JSON.stringify(cachedEvents, null, 2), "application/json")
                             logger.info("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
                         }
                     } else if (file.name.endsWith(".ics")) {
@@ -143,7 +144,7 @@ export class Calendar {
 
                         // Found a matching activity on the ICS output? Delete and save the file back.
                         if (updatedIcs) {
-                            await storage.setFile("calendar", file.name, updatedIcs, "text/calendar")
+                            await storage.setFile(StorageBucket.Calendar, file.name, updatedIcs, "text/calendar")
                             logger.info("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
                         }
                     }
@@ -198,7 +199,7 @@ export class Calendar {
 
             // Fetch cached calendar from storage (if it exists).
             cacheFileId = `${user.id}/${calendarId}.ics`
-            const cachedFile = await storage.getFile("calendar", cacheFileId)
+            const cachedFile = await storage.getFile(StorageBucket.Calendar, cacheFileId)
 
             // If the calendar is being requested for the first time, do a faster, partial generation first.
             if (!cachedFile) {
@@ -236,7 +237,7 @@ export class Calendar {
             await database.merge("calendars", dbCalendar)
 
             // Return the calendar file URL.
-            return storage.getUrl("calendar", cacheFileId)
+            return storage.getUrl(StorageBucket.Calendar, cacheFileId)
         } catch (ex) {
             logger.error("Calendar.get", logHelper.user(user), `${optionsLog}`, ex)
             throw ex
@@ -286,7 +287,7 @@ export class Calendar {
      */
     getCachedFilesForUser = async (user: UserData): Promise<File[]> => {
         try {
-            const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
+            const calendarFiles = await storage.listFiles(StorageBucket.Calendar, `${user.id}/`)
             logger.info("Calendar.getCachedFilesForUser", logHelper.user(user), `Got ${calendarFiles.length || "no"} files from storage`)
             return calendarFiles
         } catch (ex) {
@@ -397,7 +398,7 @@ export class Calendar {
 
         try {
             const fileId = `${user.id}/${dbCalendar.id}`
-            const cachedFile = await storage.getFile("calendar", `${fileId}.json`)
+            const cachedFile = await storage.getFile(StorageBucket.Calendar, `${fileId}.json`)
 
             // Check if the calendar is already being built. If that's the case,
             // wait till it finishes (or times out) and return the URL directly.
@@ -410,7 +411,7 @@ export class Calendar {
                     await jaul.io.sleep(settings.axios.backoffInterval)
                 }
 
-                return storage.getUrl("calendar", `${fileId}.ics`)
+                return storage.getUrl(StorageBucket.Calendar, `${fileId}.ics`)
             }
 
             this.building[dbCalendar.id] = new Date()
@@ -429,9 +430,9 @@ export class Calendar {
 
                 // First we save the cache files.
                 try {
-                    await storage.setFile("calendar", `${fileId}.ics`, result.ics, "text/calendar")
+                    await storage.setFile(StorageBucket.Calendar, `${fileId}.ics`, result.ics, "text/calendar")
                     if (result.events) {
-                        await storage.setFile("calendar", `${fileId}.json`, result.events, "application/json")
+                        await storage.setFile(StorageBucket.Calendar, `${fileId}.json`, result.events, "application/json")
                     }
                 } catch (cacheEx) {
                     logger.error("Calendar.generate", logHelper.user(user), optionsLog, "Failed to save cache files", cacheEx)
@@ -442,7 +443,7 @@ export class Calendar {
                 await database.merge("calendars", dbCalendar)
 
                 logger.info("Calendar.generate", logHelper.user(user), optionsLog, `Saved: ${dbCalendar.id}.ics`)
-                return storage.getUrl("calendar", `${fileId}.ics`)
+                return storage.getUrl(StorageBucket.Calendar, `${fileId}.ics`)
             }
 
             // Something failed, stop here.

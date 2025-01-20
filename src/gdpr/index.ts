@@ -1,5 +1,6 @@
 // Strautomator Core: GDPR
 
+import {StorageBucket} from "../storage/types"
 import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
@@ -9,7 +10,7 @@ import dayjs from "../dayjs"
 import path from "path"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
-import JSZip = require("jszip")
+import JSZip from "jszip"
 import _ from "lodash"
 const settings = require("setmeup").settings
 
@@ -41,7 +42,7 @@ export class GDPR {
     private onUserDelete = async (user: UserData): Promise<void> => {
         try {
             const filename = `${user.id}-${user.urlToken}.zip`
-            const file = await storage.getFile("gdpr", filename)
+            const file = await storage.getFile(StorageBucket.GDPR, filename)
 
             if (file) {
                 await file.delete()
@@ -77,7 +78,7 @@ export class GDPR {
 
             // Only one archive download every few days.
             if (diffDays < minDays) {
-                const signedUrl = await storage.getUrl("gdpr", filename, saveAs)
+                const signedUrl = await storage.getUrl(StorageBucket.GDPR, filename, saveAs)
                 if (signedUrl) {
                     logger.info("GDPR.generateArchive.fromCache", logHelper.user(user), "From cache")
                     return signedUrl
@@ -130,7 +131,7 @@ export class GDPR {
             size += dataStr.length
 
             // Get cached calendars.
-            const calendarFiles = await storage.listFiles("calendar", `${user.id}/`)
+            const calendarFiles = await storage.listFiles(StorageBucket.Calendar, `${user.id}/`)
             for (let file of calendarFiles) {
                 const icsName = path.basename(file.name).replace(`-${user.urlToken}`, "")
                 await zip.file(`calendar-${icsName}`, file.createReadStream())
@@ -141,12 +142,12 @@ export class GDPR {
 
             // Generate ZIP and push to the storage bucket.
             const result = await zip.generateAsync({type: "nodebuffer", streamFiles: true})
-            await storage.setFile("gdpr", filename, result, "application/zip")
+            await storage.setFile(StorageBucket.GDPR, filename, result, "application/zip")
             await users.update({id: user.id, displayName: user.displayName, dateLastArchiveGenerated: now.toDate()})
 
             logger.info("GDPR.generateArchive", logHelper.user(user), `Size: ${size} KB`)
 
-            return await storage.getUrl("gdpr", filename, saveAs)
+            return await storage.getUrl(StorageBucket.GDPR, filename, saveAs)
         } catch (ex) {
             logger.error("GDPR.generateArchive", logHelper.user(user), ex)
             throw ex
@@ -159,7 +160,7 @@ export class GDPR {
      */
     clearArchives = async (all?: boolean): Promise<void> => {
         try {
-            const files = await storage.listFiles("gdpr")
+            const files = await storage.listFiles(StorageBucket.GDPR)
             let count = 0
 
             // Iterate and delete expired (or all) archives.

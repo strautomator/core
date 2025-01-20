@@ -1,5 +1,6 @@
 // Strautomator Core: Storage
 
+import {StorageBucket} from "./types"
 import * as cloudStorage from "@google-cloud/storage"
 import logger from "anyhow"
 import dayjs = require("dayjs")
@@ -116,7 +117,7 @@ export class Storage {
      * @param bucketKey Key or name of the storage bucket.
      * @param prefix Optional prefix, to limit files from a certain folder.
      */
-    listFiles = async (bucketKey: "ai" | "calendar" | "gdpr", prefix?: string): Promise<cloudStorage.File[]> => {
+    listFiles = async (bucketKey: StorageBucket, prefix?: string): Promise<cloudStorage.File[]> => {
         try {
             const bucket: string = this.buckets[bucketKey] || bucketKey
             const options = prefix ? {prefix: prefix} : null
@@ -136,7 +137,7 @@ export class Storage {
      * @param filename The full filename.
      * @param silent Avoid logging.
      */
-    getFile = async (bucketKey: "ai" | "calendar" | "gdpr", filename: string): Promise<cloudStorage.File> => {
+    getFile = async (bucketKey: StorageBucket, filename: string): Promise<cloudStorage.File> => {
         try {
             const bucket: string = this.buckets[bucketKey] || bucketKey
             const file = this.client.bucket(bucket).file(filename)
@@ -160,7 +161,7 @@ export class Storage {
      * @param filename The full filename.
      * @param targetPath The target file path.
      */
-    downloadFile = async (bucketKey: "ai" | "calendar" | "gdpr", filename: string, targetPath: string): Promise<boolean> => {
+    downloadFile = async (bucketKey: StorageBucket, filename: string, targetPath: string): Promise<boolean> => {
         try {
             const file = await this.getFile(bucketKey, filename)
             if (!file) {
@@ -185,7 +186,7 @@ export class Storage {
      * @param contentType MIME type.
      * @param metadata Optional expiration time in seconds.
      */
-    setFile = async (bucketKey: "ai" | "calendar" | "gdpr", filename: string, data: string | Buffer, contentType?: string, metadata?: any): Promise<void> => {
+    setFile = async (bucketKey: StorageBucket, filename: string, data: string | Buffer, contentType?: string, metadata?: any): Promise<void> => {
         try {
             const bucket: string = this.buckets[bucketKey] || bucketKey
             const file = this.client.bucket(bucket).file(filename)
@@ -208,7 +209,7 @@ export class Storage {
      * @param bucketKey Key or name of the storage bucket.
      * @param filename The full filename.
      */
-    deleteFile = async (bucketKey: "ai" | "calendar" | "gdpr", filename: string): Promise<void> => {
+    deleteFile = async (bucketKey: StorageBucket, filename: string): Promise<void> => {
         try {
             const file = await this.getFile(bucketKey, filename)
             if (!file) {
@@ -231,7 +232,7 @@ export class Storage {
      * @param save Optional "save as" target filename.
      * @param contentType Optional, override the target content type.
      */
-    getUrl = async (bucketKey: "ai" | "calendar" | "gdpr", filename: string, saveAs?: string, contentType?: string): Promise<string> => {
+    getUrl = async (bucketKey: StorageBucket, filename: string, saveAs?: string, contentType?: string): Promise<string> => {
         const file = await this.getFile(bucketKey, filename)
         if (!file) return null
 
