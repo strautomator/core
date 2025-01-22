@@ -105,6 +105,8 @@ import {Notifications} from "./notifications"
 export const notifications: Notifications = Notifications.Instance
 import {Announcements} from "./announcements"
 export const announcements: Announcements = Announcements.Instance
+import {Affiliates} from "./affiliates"
+export const affiliates: Affiliates = Affiliates.Instance
 import {Calendar} from "./calendar"
 export const calendar: Calendar = Calendar.Instance
 import {FAQ} from "./faq"
@@ -129,6 +131,7 @@ export * from "./subscriptions/types"
 export * from "./calendar/types"
 export * from "./notifications/types"
 export * from "./announcements/types"
+export * from "./affiliates/types"
 export * from "./github/types"
 export * from "./paypal/types"
 export * from "./paddle/types"
@@ -240,7 +243,7 @@ export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
     // Init individual modules now. Start with the most important modules, than the rest.
     const coreModules = [github, paypal, paddle, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
-    const otherModules = [ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, xai, wahoo, weather]
+    const otherModules = [affiliates, ai, announcements, anthropic, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, musixmatch, notifications, openai, recipes, spotify, xai, wahoo, weather]
     await Promise.all(otherModules.map(initModule))
 
     process.env.SMU_APP_STARTED = "1"
