@@ -530,6 +530,7 @@
     "storage": {
         "buckets": {
             "ai": {"name": "strautomator-ai", "ttlDays": 90},
+            "cache": {"name": "strautomator-cache", "ttlDays": 30},
             "calendar": {"name": "bucket-calendar.strautomator.com", "ttlDays": 7},
             "gdpr": {"name": "bucket-gdpr.strautomator.com", "ttlDays": 2}
         },
