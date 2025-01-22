@@ -62,7 +62,7 @@ export class AI {
             logger.info("AI.getCachedResponses", logHelper.user(user), count ? `Count ${result}` : `Got ${result.length} cached responnses`)
             return result
         } catch (ex) {
-            logger.error("AI.generateActivityImage", logHelper.user(user), ex)
+            logger.error("AI.getCachedResponses", logHelper.user(user), ex)
             throw ex
         }
     }
@@ -226,6 +226,7 @@ export class AI {
 
             const athleteLevel = !user.fitnessLevel || user.fitnessLevel <= 2 ? "a beginner" : user.fitnessLevel <= 4 ? "an average" : "a pro"
             messages.push(`If my performance has been consistently getting worse, please verify if it could be due to sickness or overtraining at the current season, also considering that I'm ${athleteLevel} athlete.`)
+            messages.push(...this.getHumourAndTranslation(user, options))
 
             // Generate and cache the result.
             const result = await this.prompt(user, options, messages)
@@ -449,8 +450,9 @@ export class AI {
             return messages
         }
 
+        // If we have recent activities, it means it's Insights do no need for humour.
         const humourPrompt = options.humourPrompt || _.sample(settings.ai.humours)
-        if (humourPrompt != "none") {
+        if (!options.recentActivities && humourPrompt != "none") {
             messages.push(`Please be very ${humourPrompt} with the choice of words.`)
         }
 
