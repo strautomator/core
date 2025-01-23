@@ -146,6 +146,11 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         // Pre-process activity data and append suffixes to values before processing.
         transformActivityFields(user, activityWithSuffix)
 
+        // Replace main tags.
+        if (processedValue) {
+            processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
+        }
+
         // City tag(s) set? Trigger a reverse geocode for the specified coordinates.
         const hasCityStart = processedValue.includes("${cityStart}")
         const hasCityMid = processedValue.includes("${cityMid}")
@@ -231,7 +236,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             processedValue = await addWahooTags(user, activity, recipe, processedValue)
         }
 
-        // Replace tags.
+        // Replace remaining tags with an empty string.
         if (processedValue) {
             processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix, null, true)
         }
