@@ -439,7 +439,7 @@
             "futureCalendarDays": 5,
             // Free calendars are cached for around 12 hours.
             "calendarCacheDuration": 43200,
-            // Links on 1 out of 5 processed activities on free accounts by default.
+            // Links on 1 out of 5 (20%) processed activities on free accounts by default.
             "linksOn": 5,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
@@ -465,7 +465,7 @@
             "futureCalendarDays": 365,
             // PRO calendars are cached for around 3 hours.
             "calendarCacheDuration": 10800,
-            // No links on PRO accounts processed activities.
+            // No links (0%) on PRO accounts processed activities by default.
             "linksOn": 0,
             // Allow personal records for all sports.
             "recordSports": true,
