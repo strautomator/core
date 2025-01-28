@@ -445,7 +445,7 @@ export class AI {
         const messages = []
 
         // If a custom prompt was set, do not use predefined humours or translations.
-        if (options.humourPrompt?.startsWith("custom:")) {
+        if (options.humourPrompt?.toString().startsWith("custom:")) {
             messages.push(options.humourPrompt.substring(7))
             return messages
         }
