@@ -43,8 +43,8 @@ export class Gemini implements AiProvider {
      */
     init = async (): Promise<void> => {
         try {
-            this.client = new VertexAI({project: settings.gcp.projectId, location: "us-east4"})
-            this.predictionClient = new PredictionServiceClient({projectId: settings.gcp.projectId, apiEndpoint: "us-east4-aiplatform.googleapis.com"})
+            this.client = new VertexAI({project: settings.gcp.projectId, location: "europe-west4"})
+            this.predictionClient = new PredictionServiceClient({projectId: settings.gcp.projectId, apiEndpoint: "europe-west4-aiplatform.googleapis.com"})
 
             // Create the bottleneck rate limiter.
             this.limiter = new Bottleneck({

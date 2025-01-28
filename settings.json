@@ -233,7 +233,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 40
+            "maxPerMinute": 20
         }
     },
     "github": {
