@@ -171,8 +171,6 @@ export interface StravaActivity {
     linkback?: boolean
     /** Activity counter (extra field used exclusively when replacing activity tags). */
     counter?: number
-    /** Activity data counter (extra field used exclusively when replacing activity tags). */
-    dataCounter?: number
     /** Flag: is the activity part of a batch processing operation? */
     batch?: boolean
     /** Weather summary. */

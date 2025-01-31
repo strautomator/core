@@ -123,11 +123,12 @@ export class RecipeStats {
                 if (!stats.activities.includes(activity.id)) {
                     stats.activities.push(activity.id)
                     stats.activityCount++
-                    stats.counter++
 
-                    // Increase the data counter, if present.
-                    if (recipe.dataCounterProp) {
-                        stats.dataCounter = (stats.dataCounter || 0) + activity[recipe.dataCounterProp]
+                    // Increase the data counter based on the selected counter prop.
+                    if (recipe.counterProp && activity[recipe.counterProp]) {
+                        stats.counter = (stats.counter || 0) + activity[recipe.counterProp]
+                    } else {
+                        stats.counter++
                     }
                 }
 
@@ -226,9 +227,9 @@ export class RecipeStats {
      * Manually set the recipe stats counter and/or dataCounter.
      * @param user The user to have activity count incremented.
      * @param recipe The recipe to be updated.
-     * @param value The desired numeric counter and/or dataCounter.
+     * @param counter The desired numeric counter value.
      */
-    setCounter = async (user: UserData, recipe: RecipeData, value: {counter: number; dataCounter: number}): Promise<void> => {
+    setCounter = async (user: UserData, recipe: RecipeData, counter: number): Promise<void> => {
         const id = `${user.id}-${recipe.id}`
 
         try {
@@ -243,30 +244,22 @@ export class RecipeStats {
                     id: id,
                     userId: user.id,
                     activities: [],
-                    dateLastTrigger: null
+                    dateLastTrigger: null,
+                    counter: counter
                 }
 
                 logger.info("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Created new recipe stats`)
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
+                stats.counter = counter
             }
 
-            // Update counters.
-            const arrLog = []
-            if (!_.isNil(value.counter) && value.counter >= 0) {
-                stats.counter = value.counter
-                arrLog.push(`Set counter ${value.counter}`)
-            }
-            if (!_.isNil(value.dataCounter) && value.dataCounter >= 0 && recipe.dataCounterProp) {
-                stats.dataCounter = value.dataCounter
-                arrLog.push(`Set dataCounter ${value.dataCounter}`)
-            }
-            logger.info("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), arrLog.join(" | "))
+            logger.info("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Counter: ${counter}`)
 
             // Update the counter on the database.
             await database.merge("recipe-stats", stats, doc)
         } catch (ex) {
-            logger.error("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Data: counter ${value.counter}, dataCounter ${value.dataCounter}`, ex)
+            logger.error("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Counter: ${counter}`, ex)
         }
     }
 }
