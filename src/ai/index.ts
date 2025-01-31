@@ -161,6 +161,7 @@ export class AI {
      */
     generateActivityInsights = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
+            options.useReason = true
             options.maxTokens = settings.ai.maxTokens.insights
             options.instruction = [
                 "You are a sports coach that analyzes cycling and running workouts, and give short, to-the-point suggestions to improve performance.",

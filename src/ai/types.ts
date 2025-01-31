@@ -57,6 +57,8 @@ export interface AiGenerateOptions {
     recentActivities?: StravaProcessedActivity[]
     /** Use full activity details regardless of their relevancy. */
     fullDetails?: boolean
+    /** Prefer a model that uses reason. */
+    useReason?: boolean
     /** Max tokens to be used. */
     maxTokens?: number
     /** Humour (or custom prompt) to be used. */
