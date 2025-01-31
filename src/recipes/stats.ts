@@ -5,6 +5,7 @@ import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
 import logger from "anyhow"
+import _ from "lodash"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
@@ -222,12 +223,12 @@ export class RecipeStats {
     }
 
     /**
-     * Manually set the recipe stats counter.
+     * Manually set the recipe stats counter and/or dataCounter.
      * @param user The user to have activity count incremented.
      * @param recipe The recipe to be updated.
-     * @param counter The desired numeric counter.
+     * @param value The desired numeric counter and/or dataCounter.
      */
-    setCounter = async (user: UserData, recipe: RecipeData, counter: number): Promise<void> => {
+    setCounter = async (user: UserData, recipe: RecipeData, value: {counter: number; dataCounter: number}): Promise<void> => {
         const id = `${user.id}-${recipe.id}`
 
         try {
@@ -242,22 +243,30 @@ export class RecipeStats {
                     id: id,
                     userId: user.id,
                     activities: [],
-                    dateLastTrigger: null,
-                    counter: counter
+                    dateLastTrigger: null
                 }
 
                 logger.info("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Created new recipe stats`)
             } else {
                 stats = docSnapshot.data() as RecipeStatsData
-                stats.counter = counter
-
-                logger.info("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Counter ${counter ? counter : "reset to 0"}`)
             }
+
+            // Update counters.
+            const arrLog = []
+            if (!_.isNil(value.counter) && value.counter >= 0) {
+                stats.counter = value.counter
+                arrLog.push(`Set counter ${value.counter}`)
+            }
+            if (!_.isNil(value.dataCounter) && value.dataCounter >= 0 && recipe.dataCounterProp) {
+                stats.dataCounter = value.dataCounter
+                arrLog.push(`Set dataCounter ${value.dataCounter}`)
+            }
+            logger.info("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), arrLog.join(" | "))
 
             // Update the counter on the database.
             await database.merge("recipe-stats", stats, doc)
         } catch (ex) {
-            logger.error("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Counter ${counter}`, ex)
+            logger.error("RecipeStats.setCounter", logHelper.user(user), logHelper.recipe(recipe), `Data: counter ${value.counter}, dataCounter ${value.dataCounter}`, ex)
         }
     }
 }
