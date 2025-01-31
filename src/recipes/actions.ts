@@ -207,13 +207,22 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, hasCityMid: cityObj.cityMid, cityEnd: cityObj.cityEnd})
         }
 
-        // Value has a counter tag? Get recipe stats to increment the counter.
-        // Do not increment if it identifies that the automation has already ran previously.
-        if (processedValue.includes("${counter}")) {
+        // Value has a counter or data counter tag? Get recipe stats to increment the counters.
+        // Do not increment if it identifies that the automation has executed before.
+        const hasCounter = processedValue.includes("${counter}")
+        const hasDataCounter = processedValue.includes("${dataCounter}") && recipe.dataCounterProp
+        if (hasCounter || hasDataCounter) {
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
-            const currentCounter = stats?.counter || 0
-            const addCounter = !stats || !stats.activities.includes(activity.id) ? 1 : 0
-            activityWithSuffix.counter = currentCounter + addCounter
+            if (hasCounter) {
+                const currentCounter = stats?.counter || 0
+                const addCounter = stats?.activities.includes(activity.id) ? 0 : 1
+                activity.counter = activityWithSuffix.counter = currentCounter + addCounter
+            }
+            if (hasDataCounter) {
+                const currentCounter = stats?.dataCounter || 0
+                const addCounter = stats?.activities.includes(activity.id) ? 0 : activity[recipe.dataCounterProp]
+                activity.dataCounter = activityWithSuffix.dataCounter = currentCounter + addCounter
+            }
         }
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.

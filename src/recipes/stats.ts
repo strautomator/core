@@ -123,6 +123,11 @@ export class RecipeStats {
                     stats.activities.push(activity.id)
                     stats.activityCount++
                     stats.counter++
+
+                    // Increase the data counter, if present.
+                    if (recipe.dataCounterProp) {
+                        stats.dataCounter = (stats.dataCounter || 0) + activity[recipe.dataCounterProp]
+                    }
                 }
 
                 // Remove activity IDs from the stats if it has hit the array limit.

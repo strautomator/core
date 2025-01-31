@@ -24,6 +24,8 @@ export interface RecipeData {
     samePropertyOp?: "OR" | "AND"
     /** Default recipe for a specific sport (applies to all incoming activities). */
     defaultFor?: StravaSport
+    /** Which activity property to use when increasing the (optional) recipe data counter. */
+    dataCounterProp?: string
     /** Stop executing other automations if this one executes. */
     killSwitch?: boolean
     /** Is the recipe disabled? */
@@ -98,8 +100,10 @@ export interface RecipeStatsData {
     activities: number[]
     /** Total number of activities processed by the recipe. */
     activityCount?: number
-    /** Custom counter that can be used on activity name and description. */
+    /** Execution counter that can be used on activity data. */
     counter?: number
+    /** Custom counter that can be incremented with distance, altitude and some other activity data. */
+    dataCounter?: number
     /** Failed execution counter (gets reset if recipe executes successfully). */
     recentFailures?: number
     /** When was it last triggered. */
