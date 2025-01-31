@@ -544,7 +544,9 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
     // Set as valid if user has tracks and either no specific track name was set,
     // or a track name was set and it matches one of the played tracks.
     if (tracks.length > 0) {
-        if (op == RecipeOperator.Equal) {
+        if (op == RecipeOperator.Any) {
+            valid = true
+        } else if (op == RecipeOperator.Equal) {
             valid = trackTitles.filter((t) => t == value).length > 0
         } else if (op == RecipeOperator.Like) {
             valid = trackTitles.filter((t) => t.includes(value)).length > 0
