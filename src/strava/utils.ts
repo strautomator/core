@@ -69,6 +69,11 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         updatedFields: []
     }
 
+    // Week of year should consider the firstDayOfWeek preference.
+    if (user.preferences.firstDayOfWeek == "monday" && activity.weekOfYear > 0 && localStartDate.day() === 0) {
+        activity.weekOfYear -= 1
+    }
+
     // Has a description?
     if (data.description) {
         activity.description = data.description
@@ -190,6 +195,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         activity.elevationUnit = user.profile.units == "imperial" ? "ft" : "m"
     }
     if (data.distance) {
+        activity.distanceMeters = parseInt(data.distance)
         activity.distance = parseFloat(distance.toFixed(1))
         activity.distanceUnit = user.profile.units == "imperial" ? "mi" : "km"
         activity.co2Saved = parseFloat((data.distance * 0.00021743).toFixed(2))
@@ -750,11 +756,6 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             }
         }
 
-        // Sport type separated by spaces.
-        else if (prop.value == "sportType") {
-            activity.sportType = translation(`SportTypes.${activity.sportType}`, user.preferences) as any
-        }
-
         // Append suffixes. If suffix has at least 3 characters, check for translations as well.
         if (suffix && !noSuffixes && !_.isNil(activity[prop.value]) && !_.isDate(activity[prop.value])) {
             if (suffix.length >= 3) {
@@ -762,6 +763,11 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             }
             activity[prop.value] = `${activity[prop.value]} ${suffix}`
         }
+    }
+
+    // Sport type separated by spaces.
+    if (activity.sportType) {
+        activity.sportType = translation(`SportTypes.${activity.sportType}`, user.preferences) as any
     }
 
     // Replace gear object with the gear name.

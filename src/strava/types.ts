@@ -57,6 +57,8 @@ export interface StravaActivity {
     utcStartOffset?: number
     /** Total distance in kilometers. */
     distance?: number
+    /** Total distance (raw value, always in meters). */
+    distanceMeters?: number
     /** Distance units based on the user profile. */
     distanceUnit?: "km" | "mi"
     /** Total elevation gain in meters. */
