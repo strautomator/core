@@ -121,6 +121,8 @@ export interface UserPreferences {
     weatherUnit?: "c" | "f"
     /** Wind speed unit. */
     windSpeedUnit?: "m/s" | "kph" | "mph"
+    /** First day of week, defaults to sunday. */
+    firstDayOfWeek?: "sunday" | "monday"
     /** Calendar template. */
     calendarTemplate?: UserCalendarTemplate
     /** Enable AI features? */
