@@ -745,13 +745,15 @@ export class Users {
 
                 // Do not overwrite all gear details, as they won't have brand and model (coming from the athlete endpoint).
                 // Merge the bikes and shoes instead.
-                for (let bike of userData.profile.bikes) {
-                    const existingBike = _.find(existingData.profile.bikes, {id: bike.id})
-                    if (existingBike) _.defaults(bike, existingBike)
-                }
-                for (let shoes of userData.profile.shoes) {
-                    const existingShoes = _.find(existingData.profile.shoes, {id: shoes.id})
-                    if (existingShoes) _.defaults(shoes, existingShoes)
+                if (userData.profile) {
+                    for (let bike of userData.profile.bikes) {
+                        const existingBike = _.find(existingData.profile.bikes, {id: bike.id})
+                        if (existingBike) _.defaults(bike, existingBike)
+                    }
+                    for (let shoes of userData.profile.shoes) {
+                        const existingShoes = _.find(existingData.profile.shoes, {id: shoes.id})
+                        if (existingShoes) _.defaults(shoes, existingShoes)
+                    }
                 }
 
                 // Preferences are mandatory now.
