@@ -125,8 +125,8 @@ export class RecipeStats {
                     stats.activityCount++
 
                     // Increase the data counter based on the selected counter prop.
-                    if (recipe.counterProp && activity[recipe.counterProp]) {
-                        stats.counter = (stats.counter || 0) + activity[recipe.counterProp]
+                    if (recipe.counterProp) {
+                        stats.counter = (stats.counter || 0) + (activity[recipe.counterProp] || 0)
                     } else {
                         stats.counter++
                     }

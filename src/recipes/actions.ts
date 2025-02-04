@@ -213,7 +213,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
         if (hasCounter) {
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
             const currentCounter = stats?.counter || 0
-            const addCounter = stats?.activities.includes(activity.id) ? 0 : recipe.counterProp && activity[recipe.counterProp] ? activity[recipe.counterProp] : 1
+            const addCounter = stats?.activities.includes(activity.id) ? 0 : recipe.counterProp ? activity[recipe.counterProp] || 0 : 1
             activity.counter = activityWithSuffix.counter = currentCounter + addCounter
         }
 
