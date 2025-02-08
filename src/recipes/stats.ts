@@ -47,7 +47,7 @@ export class RecipeStats {
                     stats.counter = 0
                 }
 
-                const lastTrigger = dayjs(stats.dateLastTrigger).format("lll")
+                const lastTrigger = stats.dateLastTrigger ? dayjs(stats.dateLastTrigger).format("lll") : "never"
                 debugLogger("RecipeStats.getStats", logHelper.user(user), logHelper.recipe(recipe), `${stats.activityCount} activities`, `Last triggered: ${lastTrigger}`)
                 return stats
             } else {
