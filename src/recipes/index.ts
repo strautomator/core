@@ -120,7 +120,7 @@ export class Recipes {
             const recipeFields = Object.keys(recipe)
             const unknownFields = []
             for (let key of recipeFields) {
-                if (!["id", "sharedRecipeId", "title", "conditions", "actions", "order", "op", "samePropertyOp", "defaultFor", "counterProp", "killSwitch", "disabled"].includes(key)) {
+                if (!["id", "sharedRecipeId", "title", "conditions", "actions", "order", "op", "samePropertyOp", "defaultFor", "counterProp", "counterNoReset", "killSwitch", "disabled"].includes(key)) {
                     unknownFields.push(key)
                     delete recipe[key]
                 }
