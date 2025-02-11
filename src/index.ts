@@ -142,7 +142,6 @@ export * as logHelper from "./loghelper"
 
 // Import the custom dayjs implementation.
 import dayjs from "./dayjs"
-import {AiGenerateOptions} from "./ai/types"
 
 // Flag if the server is shutting down.
 let terminating = false

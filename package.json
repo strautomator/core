@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "25.66.12034",
+    "version": "25.72.12203",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -16,7 +16,7 @@
     "dependencies": {
         "@google-cloud/aiplatform": "^3.34.0",
         "@google-cloud/firestore": "^7.11.0",
-        "@google-cloud/storage": "^7.15.0",
+        "@google-cloud/storage": "^7.15.1",
         "@google-cloud/vertexai": "^1.9.3",
         "@googlemaps/google-maps-services-js": "^3.4.0",
         "@mapbox/polyline": "^1.2.1",
