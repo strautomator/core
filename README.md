@@ -23,11 +23,11 @@ Additional integrations:
 -   GitHub API
 -   LocationIQ API
 -   musixmatch API
--   OpenAI API
 -   Paddle API
 -   PayPal API
 -   Spotify API
 -   Wahoo Cloud API
+-   AI providers: Anthropic, Gemini, Mistral, OpenAI, xAI
 -   Weather providers: Open-Meteo, OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
 
 Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid plans.
@@ -92,8 +92,9 @@ Some indexes are needed in Firestore. At the moment there's no automated creatio
 
 Strautomator will store some files on Google Cloud Storage buckets:
 
--   **calendar** cached calendar outputs, default name is `bucket-calendar.strautomator.com`
--   **gdpr** ZIP archives requested by users, default name is `bucket-gdpr.strautomator.com`
+-   **cache**: generic cache bucket, at the moment used only for affiliate feed caching
+-   **calendar**: cached calendar outputs, default name is `bucket-calendar.strautomator.com`
+-   **gdpr**: ZIP archives requested by users, default name is `bucket-gdpr.strautomator.com`
 
 Buckets can have an optional TTL (days) policy, also defined on the settings as "ttlDays". If a bucket does not exist, it will be created during startup. If no "location" is set directly on the bucket settings, then the default is taken from the setting `gcp.location`.
 
