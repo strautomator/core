@@ -6,6 +6,7 @@ import {UserData} from "../users/types"
 import {translation} from "../translations"
 import anthropic from "../anthropic"
 import gemini from "../gemini"
+import mistral from "../mistral"
 import openai from "../openai"
 import xai from "../xai"
 import database from "../database"
@@ -15,7 +16,7 @@ import logger from "anyhow"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const allProviders = [anthropic, xai, openai, gemini]
+const allProviders = [anthropic, xai, openai, gemini, mistral]
 
 /**
  * AI / LLM wrapper.

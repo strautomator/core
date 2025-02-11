@@ -1,5 +1,6 @@
 // Strautomator Core: Strava types
 
+import {AiProviderName} from "../ai/types"
 import {Route} from "../routes/types"
 import {KomootRoute} from "../komoot/types"
 import {FitFileActivity} from "../fitparser/types"
@@ -180,15 +181,15 @@ export interface StravaActivity {
     /** AI generated activity name. */
     aiName?: string
     /** Flag: provider used to generate the activity name. */
-    aiNameProvider?: "anthropic" | "gemini" | "openai" | "xai"
+    aiNameProvider?: AiProviderName
     /** AI generated activity description. */
     aiDescription?: string
     /** Flag: provider used to generate the activity description. */
-    aiDescriptionProvider?: "anthropic" | "gemini" | "openai" | "xai"
+    aiDescriptionProvider?: AiProviderName
     /** AI generated activity insights. */
     aiInsights?: string
     /** Flag: provider used to generate the activity insights. */
-    aiInsightsProvider?: "anthropic" | "gemini" | "openai" | "xai"
+    aiInsightsProvider?: AiProviderName
     /** Fields that were updated by Strautomator (internal use only). */
     updatedFields?: string[]
 }

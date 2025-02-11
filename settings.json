@@ -10,9 +10,9 @@
         "humours": ["absurd", "ancient", "boring", "clever", "comical", "dry", "exquisite", "funny", "goofy", "hilarious", "ironic", "playful", "sarcastic", "satirical", "sexy", "silly", "technical", "wicked", "witty"],
         // Max tokens per generation.
         "maxTokens": {
-            "name": 50,
-            "description": 220,
-            "insights": 7000,
+            "name": 55,
+            "description": 230,
+            "insights": 10000,
             // If max tokens were not enough, try again with a 20% higher limit.
             "multiplier": 1.2
         },
@@ -320,6 +320,16 @@
             "key": null,
             // Static maps base URL.
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
+        }
+    },
+    // Mistral AI.
+    "mistral": {
+        "api": {
+            "baseUrl": "https://api.mistral.ai/v1/",
+            // Maximum concurrent requests per instance.
+            "maxConcurrent": 2,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 20
         }
     },
     // musixmatch integration. The API key must be set via secret settings or

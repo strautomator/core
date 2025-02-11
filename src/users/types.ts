@@ -1,5 +1,6 @@
 // Strautomator Core: User types
 
+import {AiProviderName} from "../ai/types"
 import {FitDeviceNames} from "../fitparser/types"
 import {GarminProfile} from "../garmin/types"
 import {RecipeData} from "../recipes/types"
@@ -128,7 +129,7 @@ export interface UserPreferences {
     /** Enable AI features? */
     aiEnabled?: boolean
     /** Preferred AI provider. */
-    aiProvider?: "anthropic" | "gemini" | "openai" | "xai"
+    aiProvider?: AiProviderName
     /** Omit suffixes when replacing activity tags? */
     noSuffixes?: boolean
     /** Privacy mode: do not save processed activities and records. */

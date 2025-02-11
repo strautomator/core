@@ -2,6 +2,7 @@
 
 import {RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStatsData} from "./types"
 import {recipeActionList} from "./lists"
+import {AiProviderName} from "../ai/types"
 import {GearWearComponent, GearWearConfig} from "../gearwear/types"
 import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaGear, StravaSport} from "../strava/types"
@@ -603,7 +604,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
     try {
         const now = dayjs.utc()
         const actionValue = action?.value || null
-        const provider = ["anthropic", "gemini", "openai", "xai"].includes(actionValue) ? actionValue : null
+        const provider = Object.values(AiProviderName).includes(actionValue) ? actionValue : null
         const humourPrompt = !provider && actionValue ? actionValue : _.sample(settings.ai.humours)
 
         // Stop here if the activity already has an AI generated name or description.

@@ -6,6 +6,17 @@ import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
 
 /**
+ * Valid AI provider names.
+ */
+export enum AiProviderName {
+    Anthropic = "anthropic",
+    Gemini = "gemini",
+    Mistral = "mistral",
+    OpenAI = "openai",
+    xAI = "xai"
+}
+
+/**
  * AI provider interface.
  */
 export interface AiProvider {
@@ -24,7 +35,7 @@ export interface AiGeneratedResponse {
     /** User ID. */
     userId: string
     /** Which AI provider was used. */
-    provider?: "anthropic" | "gemini" | "openai" | "xai"
+    provider?: AiProviderName
     /** Prompt sent to the LLM. */
     prompt?: string
     /** Response from LLM, can be a string or raw buffer. */
@@ -42,7 +53,7 @@ export interface AiGeneratedResponse {
  */
 export interface AiGenerateOptions {
     /** AI provider. */
-    provider?: "anthropic" | "gemini" | "openai" | "xai"
+    provider?: AiProviderName
     /** Referenced activity. */
     activity?: StravaActivity
     /** Initial instruction to give to the AI. */
