@@ -592,6 +592,19 @@ export function toStravaRoute(user: UserData, data: any): StravaRoute {
 }
 
 /**
+ * Helper to get the formatted cadence depending on the sport type (credits: @izackwu).
+ * @param cadence The cadence value.
+ * @param sportType The sport type.
+ */
+export const getCadenceString = (cadence: number, sportType: StravaSport): string => {
+    if (!cadence || !sportType) return "not available"
+    const isRide = sportType?.includes("Ride")
+    const isRun = sportType?.includes("Run")
+    if (!isRide && !isRun) return "not available"
+    return isRide ? `${cadence} RPM` : `${cadence * 2} SPM`
+}
+
+/**
  * Calculates the best 5, 20 and 60min power splits.
  * @param watts Watts data points.
  */

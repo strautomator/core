@@ -1,7 +1,7 @@
 // Strautomator Core: AI / LLM
 
 import {AiGenerateOptions, AiGeneratedResponse, AiProvider} from "./types"
-import {calculatePowerIntervals} from "../strava/utils"
+import {calculatePowerIntervals, getCadenceString} from "../strava/utils"
 import {UserData} from "../users/types"
 import {translation} from "../translations"
 import anthropic from "../anthropic"
@@ -213,7 +213,7 @@ export class AI {
                     if (a.tss > 0) subPrompt.push(`, a TSS of ${a.tss}`)
                     if (a.wattsAvg > 0) subPrompt.push(`, average power of ${a.wattsAvg} watts and maximum ${a.wattsMax} watts`)
                     if (a.hrAvg > 0) subPrompt.push(`, average heart rate of ${a.hrAvg} BPM and maximum ${a.hrMax} BPM`)
-                    if (a.cadenceAvg > 0) subPrompt.push(`, average cadence of ${isRide ? a.cadenceAvg + "RPM" : a.cadenceAvg * 2 + " SPM"}`)
+                    if (a.cadenceAvg > 0) subPrompt.push(`, average cadence of ${getCadenceString(a.cadenceAvg, a.sportType)}`)
                     if (a.weatherSummary && !a.sportType.includes("Virtual")) subPrompt.push(`, and weather was ${a.weatherSummary.toLowerCase()}`)
                     messages.push(subPrompt.join("") + ".")
                 }
@@ -307,6 +307,7 @@ export class AI {
         const messages = []
 
         try {
+            const isRide
             if (options.fullDetails) {
                 if (activity.relativeEffort && activity.relativeEffort > 5) {
                     if (activity.relativeEffort > 500) {
@@ -368,9 +369,9 @@ export class AI {
             if (options.fullDetails) {
                 if (options.activityStreams?.cadence?.avg) {
                     const cadenceAvg = options.activityStreams?.cadence?.avg
-                    messages.push(`Average cadence was ${cadenceAvg.firstHalf} on the first half, and ${cadenceAvg.secondHalf} on the second half.`)
+                    messages.push(`Average cadence was ${getCadenceString(cadenceAvg.firstHalf, activity.sportType)} on the first half, and ${getCadenceString(cadenceAvg.secondHalf, activity.sportType)} on the second half.`)
                 } else if (activity.cadenceAvg > 0) {
-                    messages.push(`Average cadence was ${activity.cadenceAvg}.`)
+                    messages.push(`Average cadence was ${getCadenceString(activity.cadenceAvg, activity.sportType)}.`)
                 }
             }
 
