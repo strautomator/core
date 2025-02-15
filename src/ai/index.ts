@@ -307,7 +307,6 @@ export class AI {
         const messages = []
 
         try {
-            const isRide
             if (options.fullDetails) {
                 if (activity.relativeEffort && activity.relativeEffort > 5) {
                     if (activity.relativeEffort > 500) {
