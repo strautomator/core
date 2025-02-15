@@ -15,6 +15,7 @@ import cache from "bitecache"
 import logger from "anyhow"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
+import { StravaSport } from "src/strava/types"
 const settings = require("setmeup").settings
 const allProviders = [anthropic, xai, openai, mistral, gemini]
 
@@ -156,6 +157,22 @@ export class AI {
     }
 
     /**
+     * Format the cadence based on the sport type (Run or Ride).
+     * @param cadence The cadence value.
+     * @param sportType The sport type.
+     */
+    private formatCadence = (cadence: number, sportType: StravaSport): string => {
+        const isRun = sportType.includes("Run")
+        const isRide = sportType.includes("Ride")
+        // assert at least one is true
+        if (!isRun && !isRide) {
+            throw new Error(`Invalid sport type to format cadence: ${sportType}`)
+        }
+        return isRun ? `${cadence * 2} SPM` : `${cadence} RPM`
+    }
+
+
+    /**
      * Get insights about the passed activity.
      * @param user The user.
      * @param options AI generation options.
@@ -213,7 +230,7 @@ export class AI {
                     if (a.tss > 0) subPrompt.push(`, a TSS of ${a.tss}`)
                     if (a.wattsAvg > 0) subPrompt.push(`, average power of ${a.wattsAvg} watts and maximum ${a.wattsMax} watts`)
                     if (a.hrAvg > 0) subPrompt.push(`, average heart rate of ${a.hrAvg} BPM and maximum ${a.hrMax} BPM`)
-                    if (a.cadenceAvg > 0) subPrompt.push(`, average cadence of ${isRide ? a.cadenceAvg + "RPM" : a.cadenceAvg * 2 + " SPM"}`)
+                    if (a.cadenceAvg > 0) subPrompt.push(`, average cadence of ${this.formatCadence(a.cadenceAvg, a.sportType)}`)
                     if (a.weatherSummary && !a.sportType.includes("Virtual")) subPrompt.push(`, and weather was ${a.weatherSummary.toLowerCase()}`)
                     messages.push(subPrompt.join("") + ".")
                 }
@@ -368,9 +385,9 @@ export class AI {
             if (options.fullDetails) {
                 if (options.activityStreams?.cadence?.avg) {
                     const cadenceAvg = options.activityStreams?.cadence?.avg
-                    messages.push(`Average cadence was ${cadenceAvg.firstHalf} on the first half, and ${cadenceAvg.secondHalf} on the second half.`)
+                    messages.push(`Average cadence was ${this.formatCadence(cadenceAvg.firstHalf, activity.sportType)} on the first half, and ${this.formatCadence(cadenceAvg.secondHalf, activity.sportType)} on the second half.`)
                 } else if (activity.cadenceAvg > 0) {
-                    messages.push(`Average cadence was ${activity.cadenceAvg}.`)
+                    messages.push(`Average cadence was ${this.formatCadence(activity.cadenceAvg, activity.sportType)}.`)
                 }
             }
 
