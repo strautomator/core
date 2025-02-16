@@ -215,7 +215,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
             const currentCounter = stats?.counter || 0
             const addCounter = stats?.activities.includes(activity.id) ? 0 : recipe.counterProp ? activity[recipe.counterProp] || 0 : 1
-            activityWithSuffix.counter = currentCounter + addCounter
+            activityWithSuffix.counter = (currentCounter + addCounter).toFixed(recipe.counterProp ? 1 : 0)
         }
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
