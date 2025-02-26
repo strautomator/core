@@ -12,4 +12,6 @@ export interface AffiliateLink {
     publisher: string
     /** Target URL. */
     url: string
+    /** Image URL (optional). */
+    imageUrl?: string
 }
