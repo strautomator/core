@@ -59,6 +59,27 @@
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
     },
+    // Afiliate settings (also used for the Country Linkify module).
+    "affiliates": {
+        "app": {
+            "homeUrl": "https://strautomator.com/billing/affiliates",
+            "title": "Strautomator"
+        },
+        "country": {
+            "cacheDuration": 900,
+            "default": "us",
+            "es": ["mt", "pt"],
+            "de": ["at", "be", "ch", "cz", "dk", "ee", "gi", "fi", "fr", "hu", "ie", "it", "nl", "no", "pl", "se", "sk"],
+            "uk": ["gb"]
+        },
+        "images": {
+            "path": "./static/images/affiliates/"
+        },
+        "server": {
+            "basePath": "/affiliates/",
+            "url": "https://links.strautomator.com/"
+        }
+    },
     "announcements": {
         // Active announcements should be cached for up to 30 minutes.
         "cacheDuration": 1800
@@ -86,6 +107,19 @@
         "retryInterval": 1100,
         // Default timeout of 2.5 minutes for axios requests. Value set in milliseconds.
         "timeout": 150000
+    },
+    // AWIN affiliates.
+    "awin": {
+        "cacheDuration": 300,
+        "api": {
+            "baseUrl": "https://api.awin.com/"
+        },
+        "feeds": {
+            "listUrl": "https://ui.awin.com/productdata-darwin-download/publisher/${publisherId}/${key}/1/feedList",
+            "baseUrl": "https://productdata.awin.com/datafeed/download/apikey/${key}/language/${language}/fid/${feedIds}/rid/0/hasEnhancedFeeds/0/columns/${columns}/format/csv/delimiter/%7C/compression/zip/adultcontent/1/",
+            "columns": "aw_deep_link,product_name,aw_product_id,merchant_product_id,merchant_image_url,description,merchant_category,search_price,merchant_name,category_name,aw_image_url,brand_name,in_stock,product_short_description,product_type,specifications,promotional_text,display_price",
+            "maxAgeDays": 30
+        }
     },
     "calendar": {
         // Default activity fields to be added to event details, based on the activity type.
@@ -116,37 +150,6 @@
         // This secret should be updated via the settings.secret.json file or
         // via the $SMU_cookie_secret environment variable.
         "secret": "Strautocookie-Super-Secret"
-    },
-    "countryLinkify": {
-        "app": {
-            "homeUrl": "https://strautomator.com/billing/affiliates",
-            "title": "Strautomator"
-        },
-        "country": {
-            "cacheDuration": 900,
-            "default": "us",
-            "es": ["mt", "pt"],
-            "de": ["at", "be", "ch", "cz", "dk", "ee", "gi", "fi", "fr", "hu", "ie", "it", "nl", "no", "pl", "se", "sk"],
-            "uk": ["gb"]
-        },
-        "images": {
-            "path": "./static/images/affiliates/"
-        },
-        "links": {
-            "aliases": {
-                "bike": ["bicycle"],
-                "e-bike": ["ebike", "electric-bike"],
-                "inner-tube": ["tpu-inner-tube", "latex-inner-tube"],
-                "gravel-bike": ["cx-bike", "cyclocross-bike"],
-                "mtb": ["mountainbike", "mountain-bike"],
-                "road-bike": ["race-bike", "racing-bike"],
-                "tire": ["tyre", "front-tire", "rear-tire", "front-tyre", "rear-tyre"]
-            }
-        },
-        "server": {
-            "basePath": "/affiliates/",
-            "url": "https://affiliates.strautomator.com/"
-        }
     },
     "database": {
         // If you're hosting multiple sites or services within the same Google Project,

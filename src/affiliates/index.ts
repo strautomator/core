@@ -1,16 +1,14 @@
 // Strautomator Core: Affiliates
 
-import {AffiliateProduct, AwinCsvProduct} from "./types"
-import {StorageBucket} from "../storage/types"
+import {AffiliateLink} from "./types"
+import {AwinPromotion} from "../awin/types"
 import {UserData} from "../users/types"
-import {axiosRequest} from "../axios"
+import awin from "../awin"
 import dayjs from "../dayjs"
 import maps from "../maps"
-import storage from "../storage"
 import cache from "bitecache"
-import csvParser from "csv-parser"
 import logger from "anyhow"
-import JSZip from "jszip"
+import _ from "lodash"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
@@ -25,140 +23,93 @@ export class Affiliates {
     }
 
     /**
-     * Map of target countries.
+     * Map of current promotions by country.
      */
-    targetCountries: {[key: string]: string} = {}
+    currentPromotions: {[country: string]: AwinPromotion[]} = {}
 
     /**
      * Init the Affiliates manager.
      */
     init = async (): Promise<void> => {
-        const cacheDuration = settings.countryLinkify.country.cacheDuration
-        const duration = dayjs.duration(cacheDuration, "seconds").humanize()
-        cache.setup("affiliates", cacheDuration)
-
-        const countries = Object.entries(settings.countryLinkify.country).filter((c) => Array.isArray(c[1]))
-        countries.forEach((c) => {
-            const arrCountries = c[1] as string[]
-            const code = c[0].toUpperCase()
-            this.targetCountries[code] = code
-            arrCountries.forEach((ac) => (this.targetCountries[ac.toUpperCase()] = code))
-        })
-
-        this.targetCountries.default = settings.countryLinkify.country.default
-
-        logger.info("Affiliates.init", `Cache affiliate references for up to ${duration}`)
+        settings.countryLinkify = settings.affiliates
+        cache.setup("affiliates", settings.affiliates.country.cacheDuration)
     }
 
-    // AWIN
+    // METHODS
     // --------------------------------------------------------------------------
 
     /**
-     * Download a product feed from AWIN for the specified country.
-     * @param country Country (name or code).
-     * @param asString If true, will return the CSV data as string, default is false (returns as stream).
+     * Refresh current promotions for all countries, excluding ones ending in less than 24 hours.
      */
-    getAwinFeed = async (country: string, asString?: boolean): Promise<NodeJS.ReadableStream | string> => {
+    refreshPromotions = async (): Promise<void> => {
         try {
-            country = maps.getCountryCode(country)
+            const minDate = dayjs().add(24, "hours")
+            const countryFeedIds = await awin.getCountryFeedIds()
+            const countryCodes = Object.keys(countryFeedIds)
 
-            const columns =
-                "aw_deep_link,product_name,aw_product_id,merchant_product_id,merchant_image_url,description,merchant_category,search_price,merchant_name,merchant_id,category_name,category_id,aw_image_url,currency,store_price,delivery_cost,merchant_deep_link,language,last_updated,display_price,data_feed_id,brand_name,product_model,specifications,product_short_description,condition,model_number,keywords,promotional_text,product_type,in_stock,brand_id,colour,dimensions,merchant_thumb_url,large_image"
-            const urls: {[country: string]: string} = {}
-            Object.entries(settings.affiliates.awin).forEach((a) => {
-                const country = (a[0] as string).toUpperCase()
-                const url = a[1] as string
-                urls[country] = url.replace("${columns}", columns)
-            })
+            const fetchPromotions = async (cc) => (this.currentPromotions[cc] = (await awin.getPromotions(cc)).filter((p) => dayjs(p.endDate).isAfter(minDate)))
+            await Promise.allSettled(countryCodes.map(fetchPromotions))
 
-            const targetCountry = this.targetCountries[country] || this.targetCountries["default"]
-            const targetUrl = urls[targetCountry]
+            logger.info("Affiliates.refreshPromotions", `Promotions refreshed for ${countryCodes.length} countries`)
+        } catch (ex) {
+            logger.error("Affiliates.refreshPromotions", ex)
+            throw ex
+        }
+    }
 
-            // Stop here if we do not have a feed for the specified country.
-            if (!targetUrl) {
-                logger.warn("Affiliates.getAwinFeed", `No target URL set for country ${country}, abort`)
-                return null
+    /**
+     * Find products and promotions related to the specified query.
+     * @param user The user.
+     * @param query Query to be used to find products and promotions.
+     */
+    findMatchingLinks = async (user: UserData, query: string): Promise<AffiliateLink[]> => {
+        try {
+            const country = (maps.getCountryCode(user.profile.country) || "US").toLowerCase()
+            const result: AffiliateLink[] = []
+
+            // Helper to normalize text (remove special accents).
+            const normalizer = (input) => input.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            const queryText = normalizer(query.toLowerCase())
+
+            // Helper to find matching products.
+            const matchProducts = async () => {
+                const products = await awin.getProducts(country)
+                products.forEach((p) => {
+                    const text = normalizer(_.compact([p.product_name, p.product_type, p.brand_name]).join(" ").toLowerCase())
+                    if (text.includes(queryText)) {
+                        result.push({
+                            title: p.product_name,
+                            description: p.product_short_description || p.merchant_category || p.category_name,
+                            publisher: p.merchant_name || p.brand_name,
+                            url: p.aw_deep_link
+                        })
+                    }
+                })
             }
 
-            // Download the ZIP file from AWIN.
-            const zipDownload = await axiosRequest({url: targetUrl, responseType: "arraybuffer"})
-            logger.debug("Affiliates.getAwinFeed", `Country ${country}`, `Downloaded: ${targetUrl}`)
+            // Helper to find matching promotions.
+            const matchPromotions = async () => {
+                const promotions = await awin.getPromotions(country)
+                promotions.forEach((p) => {
+                    const text = normalizer(p.title.toLowerCase())
+                    if (text.includes(queryText)) {
+                        result.push({
+                            title: p.title,
+                            description: p.description,
+                            publisher: p.advertiser?.name,
+                            url: p.urlTracking
+                        })
+                    }
+                })
+            }
 
-            // Extract the CSV file from the ZIP.
-            const zipFile = await JSZip.loadAsync(zipDownload)
-            const csvFile = zipFile.file(/\.csv$/)[0]
-            const result = asString ? await csvFile.async("text") : await csvFile.nodeStream("nodebuffer")
-
-            logger.info("Affiliates.getAwinFeed", `Country ${country}`, csvFile.name)
+            // Match products and promotions and return the results.
+            await Promise.allSettled([matchProducts(), matchPromotions()])
             return result
         } catch (ex) {
-            logger.error("Affiliates.getAwinFeed", country, ex)
+            logger.error("Affiliates.findMatchingLinks", logHelper.user(user), `Country ${user.profile.country}`, query, ex)
+            throw ex
         }
-    }
-
-    /**
-     * Download and save the AWIN feed for the specified country to the cache bucket.
-     * @param country Country (name or code).
-     */
-    saveAwinFeed = async (country: string): Promise<void> => {
-        try {
-            country = maps.getCountryCode(country)
-
-            // Download and save the feed.
-            const feed = (await this.getAwinFeed(country, true)) as string
-            await storage.setFile(StorageBucket.Cache, `awinfeed-${country.toLowerCase()}.csv`, feed, "text/csv")
-            logger.info("Affiliates.saveAwinFeed", country, `Size: ${feed.length} bytes`)
-        } catch (ex) {
-            logger.error("Affiliates.saveAwinFeed", country, ex)
-        }
-    }
-
-    /**
-     * Find products related to the specified query.
-     * @param user The user.
-     * @param productQuery Query to be used to find products.
-     * @param feed Optional, find in the specified feed, if not set a cached feed will be used.
-     */
-    findMatchingProducts = async (user: UserData, productQuery: string, feed?: NodeJS.ReadableStream): Promise<AffiliateProduct[]> => {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const country = maps.getCountryCode(user.profile.country)
-
-                // If a feed was not provided, get the cached feed from the storage.
-                if (!feed) {
-                    const cachedFile = await storage.getFile(StorageBucket.Cache, `awinfeed-${country.toLowerCase()}.csv`)
-                    if (cachedFile) {
-                        feed = cachedFile.createReadStream()
-                    }
-                }
-                if (!feed) {
-                    logger.warn("Affiliates.findMatchingProducts", logHelper.user(user), `Country ${user.profile.country}`, productQuery, "No feed available")
-                    return resolve(null)
-                }
-
-                // Stream the CSV and find matching products on the fly.
-                const products: AffiliateProduct[] = []
-                feed.pipe(csvParser({separator: "|"}))
-                    .on("data", (awinProd: AwinCsvProduct) => {
-                        if (awinProd.product_name?.toLowerCase().includes(productQuery.toLowerCase())) {
-                            products.push({
-                                name: awinProd.product_name,
-                                category: awinProd.merchant_category || awinProd.category_name,
-                                publisher: awinProd.brand_name,
-                                url: awinProd.aw_deep_link
-                            })
-                        }
-                    })
-                    .on("end", () => {
-                        logger.info("Affiliates.findMatchingProducts", logHelper.user(user), `Country ${user.profile.country}`, productQuery, `Found ${products.length} matches`)
-                        resolve(products)
-                    })
-                return feed
-            } catch (ex) {
-                logger.error("Affiliates.findMatchingProducts", logHelper.user(user), `Country ${user.profile.country}`, productQuery, ex)
-                reject(ex)
-            }
-        })
     }
 }
 
