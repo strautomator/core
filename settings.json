@@ -116,8 +116,8 @@
         },
         "feeds": {
             "listUrl": "https://ui.awin.com/productdata-darwin-download/publisher/${publisherId}/${key}/1/feedList",
-            "baseUrl": "https://productdata.awin.com/datafeed/download/apikey/${key}/language/${language}/fid/${feedIds}/rid/0/hasEnhancedFeeds/0/columns/${columns}/format/csv/delimiter/%7C/compression/zip/adultcontent/1/",
-            "columns": "aw_deep_link,product_name,aw_product_id,merchant_product_id,merchant_image_url,description,merchant_category,search_price,merchant_name,category_name,aw_image_url,brand_name,in_stock,product_short_description,product_type,specifications,promotional_text,display_price",
+            "baseUrl": "https://productdata.awin.com/datafeed/download/apikey/${key}/fid/${feedId}/language/${language}/columns/${columns}/format/csv/delimiter/%7C/compression/zip/adultcontent/1/",
+            "columns": "aw_deep_link,product_name,merchant_image_url,description,merchant_category,merchant_name,category_name,aw_image_url,brand_name,in_stock,product_short_description,product_type,specifications,promotional_text,display_price",
             "maxAgeDays": 30
         }
     },

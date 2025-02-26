@@ -31,7 +31,6 @@ export class Affiliates {
      * Init the Affiliates manager.
      */
     init = async (): Promise<void> => {
-        settings.countryLinkify = settings.affiliates
         cache.setup("affiliates", settings.affiliates.country.cacheDuration)
     }
 
@@ -44,7 +43,7 @@ export class Affiliates {
     refreshPromotions = async (): Promise<void> => {
         try {
             const minDate = dayjs().add(24, "hours")
-            const countryFeedIds = await awin.getCountryFeedIds()
+            const countryFeedIds = await awin.getCountryFeeds()
             const countryCodes = Object.keys(countryFeedIds)
 
             const fetchPromotions = async (cc) => (this.currentPromotions[cc] = (await awin.getPromotions(cc)).filter((p) => dayjs(p.endDate).isAfter(minDate)))
@@ -81,7 +80,8 @@ export class Affiliates {
                             title: p.product_name,
                             description: p.product_short_description || p.merchant_category || p.category_name,
                             publisher: p.merchant_name || p.brand_name,
-                            url: p.aw_deep_link
+                            url: p.aw_deep_link,
+                            imageUrl: p.aw_image_url || p.merchant_image_url
                         })
                     }
                 })
