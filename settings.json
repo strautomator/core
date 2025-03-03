@@ -224,8 +224,8 @@
         // By default, when update distance for gear components, get activities that happened
         // 2 days ago (so users will have some time to set the correct activity gear).
         "delayDays": 2,
-        // Notify users if components haven't been updated for more than 9 months.
-        "idleReminderDays": 270,
+        // Notify users if components haven't been updated for more than 12 months.
+        "idleReminderDays": 365,
         // Wait at least 10 days before sending another GearWear reminder.
         "reminderDays": 10,
         // Remind user if tracking was not reset and current usage has passed 15% of the target alert value.
@@ -496,8 +496,8 @@
         // Linkback text (will have the app title appended to it).
         "linkTexts": {
             "default": "Automated with",
-            "aiContent": "Powered by",
-            "aiInsights": "AI insights by"
+            "aiContent": "Powered with AI by",
+            "url": "strautomator.com"
         },
         // How many times a recipe can fail before getting disabled automatically.
         "maxFailures": 10,
