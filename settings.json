@@ -12,7 +12,7 @@
         "maxTokens": {
             "name": 55,
             "description": 230,
-            "insights": 10000,
+            "insights": 8100,
             // If max tokens were not enough, try again with a 20% higher limit.
             "multiplier": 1.2
         },
