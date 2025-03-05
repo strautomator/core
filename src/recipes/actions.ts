@@ -622,7 +622,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         // Weather is included only on recent activities.
         let activityWeather: ActivityWeather
         const isRecent = now.subtract(7, "days").isBefore(activity.dateEnd)
-        const rndWeather = user.isPro ? settings.plans.pro.generatedNames.weather : settings.plans.free.generatedNames.weather
+        const rndWeather = user.isPro ? settings.plans.pro.generatedContent.weather : settings.plans.free.generatedContent.weather
         if (activity.hasLocation && isRecent && Math.random() * 100 <= rndWeather) {
             const language = user.preferences.language
 
@@ -639,9 +639,9 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
 
         // Decide if we should use AI or fallback to template-based names.
         // User with privacy mode enabled, and free users activities processed in batch mode, are excluded.
-        let rndAi = user.isPro ? settings.plans.pro.generatedNames.ai : settings.plans.free.generatedNames.ai
+        let rndAi = user.isPro ? settings.plans.pro.generatedContent.ai : settings.plans.free.generatedContent.ai
         if (activity.batch) {
-            rndAi -= settings.plans.free.generatedNames.ai
+            rndAi -= settings.plans.free.generatedContent.ai
         } else if (action.type == RecipeActionType.GenerateInsights) {
             rndAi = user.isPro ? 100 : 0
         }
