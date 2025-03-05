@@ -134,6 +134,8 @@ export interface UserPreferences {
     noSuffixes?: boolean
     /** Privacy mode: do not save processed activities and records. */
     privacyMode?: boolean
+    /** Show ads in the website (in case of PRO account)? */
+    showAds?: boolean
 }
 
 /**
