@@ -452,17 +452,14 @@
             "futureCalendarDays": 5,
             // Free calendars are cached for around 12 hours.
             "calendarCacheDuration": 43200,
-            // Links on 1 out of 5 (20%) processed activities on free accounts by default.
-            "linksOn": 5,
+            // Links on 100% of processed activities on free accounts by default.
+            "linksOn": 1,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
-            // Use AI and weather parameters on 25% of "AI generate" recipe actions.
-            "generatedNames": {
-                "ai": 25,
-                "weather": 25
-            },
-            "generatedImages": {
-                "perWeek": 1
+            // Use AI and weather parameters on 20% of "AI generate" recipe actions.
+            "generatedContent": {
+                "ai": 20,
+                "weather": 20
             }
         },
         "pro": {
@@ -482,13 +479,10 @@
             "linksOn": 0,
             // Allow personal records for all sports.
             "recordSports": true,
-            // Use AI and weather parameters on around 99% of "AI generate" recipe actions.
-            "generatedNames": {
+            // Use AI and weather parameters on 99% "AI generate" recipe actions.
+            "generatedContent": {
                 "ai": 99,
                 "weather": 99
-            },
-            "generatedImages": {
-                "perWeek": 5
             }
         }
     },
