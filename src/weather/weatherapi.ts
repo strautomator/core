@@ -51,7 +51,12 @@ export class WeatherAPI implements WeatherProvider {
 
             const baseUrl = settings.weather.weatherapi.baseUrl
             const secret = settings.weather.weatherapi.secret
-            const lang = user.preferences.language || "en"
+            let lang: string = user.preferences.language || "en"
+            if (lang == "se") {
+                lang = "sv"
+            } else if (lang == "lt") {
+                lang = "en"
+            }
             const basePath = isFuture ? "forecast" : "current"
             const unixdt = isFuture ? `&unixdt=${utcDate.unix()}` : ""
             const weatherUrl = `${baseUrl}${basePath}.json?key=${secret}&lang=${lang}&aqi=yes&q=${coordinates.join(",")}${unixdt}`
