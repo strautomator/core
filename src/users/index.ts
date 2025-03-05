@@ -99,7 +99,7 @@ export class Users {
             // Switch to PRO if subscription is active, or back to free if it has expired.
             if (!user.isPro && subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
-            } else if (user.isPro && ["CANCELLED", "EXPIRED", "SUSPENDED"].includes(subscription.status)) {
+            } else if (user.isPro && user.subscriptionId == subscription.id && ["CANCELLED", "EXPIRED", "SUSPENDED"].includes(subscription.status)) {
                 await this.switchToFree(user, subscription)
             } else if (subscription.source == "paddle" && user.paddleTransactionId) {
                 await this.update({id: user.id, displayName: user.displayName, paddleTransactionId: FieldValue.delete() as any})
