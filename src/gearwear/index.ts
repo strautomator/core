@@ -6,6 +6,7 @@ import {notifyIdle} from "./notifications"
 import {resetTracking, updateTracking} from "./tracking"
 import {StravaActivity, StravaGear} from "../strava/types"
 import {UserData} from "../users/types"
+import {FieldValue} from "@google-cloud/firestore"
 import database from "../database"
 import eventManager from "../eventmanager"
 import strava from "../strava"
@@ -400,6 +401,26 @@ export class GearWear {
                 logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, ex)
             }
 
+            throw ex
+        }
+    }
+
+    /**
+     * Re-enable a disabled GearWear configuration.
+     * @param user The user.
+     * @param user GearWear to be re-enabled.
+     */
+    reEnable = async (user: UserData, gearwear: GearWearConfig): Promise<void> => {
+        try {
+            if (!gearwear.disabled) {
+                logger.warn("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, gearwear), "Not disabled, can't re-enable it")
+                return
+            }
+
+            await database.merge("gearwear", {id: gearwear.id, disabled: FieldValue.delete() as any})
+            logger.info("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, gearwear), "Re-enabled")
+        } catch (ex) {
+            logger.error("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, gearwear), ex)
             throw ex
         }
     }
