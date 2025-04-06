@@ -552,10 +552,15 @@ export class GearWear {
 
                 // Make sure the Gear is still valid on the user profile.
                 if (!_.find(user.profile.bikes, findId) && !_.find(user.profile.shoes, findId)) {
-                    await database.merge("gearwear", {id: config.id, disabled: true})
-                    eventManager.emit("GearWear.gearNotFound", user, config)
-                    logger.warn("GearWear.processUserActivities", logHelper.user(user), `Gear ${config.id} not found on user profile, disabled it`)
-                    continue
+                    const athlete = await strava.athletes.getAthlete(user.stravaTokens)
+                    if (!_.find(athlete.bikes, findId) && !_.find(athlete.shoes, findId)) {
+                        await database.merge("gearwear", {id: config.id, disabled: true})
+                        eventManager.emit("GearWear.gearNotFound", user, config)
+                        logger.warn("GearWear.processUserActivities", logHelper.user(user), `Gear ${config.id} not found on user profile, disabled it`)
+                        continue
+                    } else {
+                        logger.info("GearWear.processUserActivities", logHelper.user(user), `Gear ${config.id} found on refreshed athlete details`)
+                    }
                 }
 
                 // Get recent activities and update tracking.
