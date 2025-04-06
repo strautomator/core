@@ -59,7 +59,12 @@ export class VisualCrossing implements WeatherProvider {
             // Visual Crossing expects the date in their local timezone.
             const qDate = dDate.format("YYYY-MM-DDTHH:mm:ss")
             const latlon = coordinates.join(",")
-            const lang = user.preferences.language && user.preferences.language != "pt" ? user.preferences.language : "en"
+            let lang: string = user.preferences.language || "en"
+            if (lang == "se") {
+                lang = "sv"
+            } else if (lang == "lt" || lang == "pt") {
+                lang = "en"
+            }
             const include = diffHours > 1 ? "current,days,hours,fcst,obs" : "current"
             const basePath = diffHours > 1 ? `timeline/${latlon}/${qDate}` : `timeline/${latlon}`
             let weatherUrl = `${baseUrl}${basePath}?key=${secret}&include=${include}&lang=${lang}&unitGroup=metric`
