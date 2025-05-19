@@ -10,6 +10,7 @@ import _ from "lodash"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
+const settings = require("setmeup").settings
 
 // BATTERY TRACKING
 // --------------------------------------------------------------------------
@@ -92,6 +93,13 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
         if (isNew && tracker.devices.length == 0) {
             logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, "No battery statuses found, won't create a tracker")
             return
+        }
+
+        // Remove devices that were not updated for too long.
+        const minDate = dayjs().subtract(settings.gearwear.battery.maxAgeDays, "days")
+        const oldDevices = _.remove(tracker.devices, (d) => minDate.isAfter(d.dateUpdated))
+        if (oldDevices.length > 0) {
+            logger.info("GearWear.updateBatteryTracking", logHelper.user(user), `Removed unseen devices: ${oldDevices.map((d) => d.id).join(", ")}`)
         }
 
         // Sort the devices by ID.
