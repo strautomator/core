@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "25.197.12137",
+    "version": "25.215.11723",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -14,13 +14,13 @@
         "prepare": "tsc"
     },
     "dependencies": {
-        "@google-cloud/aiplatform": "^4.1.0",
-        "@google-cloud/firestore": "^7.11.0",
+        "@google-cloud/aiplatform": "^4.2.0",
+        "@google-cloud/firestore": "^7.11.1",
         "@google-cloud/storage": "^7.16.0",
         "@google-cloud/vertexai": "^1.10.0",
         "@googlemaps/google-maps-services-js": "^3.4.1",
         "@mapbox/polyline": "^1.2.1",
-        "@paddle/paddle-node-sdk": "^2.7.1",
+        "@paddle/paddle-node-sdk": "^2.7.2",
         "@rapideditor/country-coder": "^5.4.0",
         "anyhow": "^3.4.0",
         "axios": "^0.30.0",
@@ -29,7 +29,7 @@
         "csv-parser": "^3.2.0",
         "dayjs": "^1.11.13",
         "flatbush": "^3.3.1",
-        "ical-generator": "8.1.1",
+        "ical-generator": "9.0.0",
         "jaul": "^1.7.1",
         "jszip": "^3.10.1",
         "lodash": "^4.17.21",
@@ -39,9 +39,9 @@
         "typescript": "^5.8.3"
     },
     "devDependencies": {
-        "@types/express": "^5.0.1",
-        "@types/lodash": "^4.17.16",
-        "@types/node": "^22.15.17",
+        "@types/express": "^5.0.2",
+        "@types/lodash": "^4.17.17",
+        "@types/node": "^22.15.21",
         "@types/nodemailer": "^6.4.17",
         "chalk": "^4.1.2"
     },
