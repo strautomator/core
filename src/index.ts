@@ -152,9 +152,8 @@ let terminating = false
 /**
  * Startup routine.
  * @param quickStart Quick start modules will not wait and do less live requests.
- * @param onlyModules Optional, if passed only these modules will be started (in addition to the main ones).
  */
-export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
+export const startup = async (quickStart?: boolean) => {
     logger.info("Strautomator.startup", `PID ${process.pid}`)
 
     // Set it to gracefully shutdown.
@@ -229,9 +228,7 @@ export const startup = async (quickStart?: boolean, onlyModules?: string[]) => {
             const modSettings = settings[moduleName]
 
             if (modSettings?.disabled) {
-                logger.warn("Strautomator.startup", module.constructor.name, "Skip, mModule is disabled on settings")
-            } else if (onlyModules && !onlyModules.includes(moduleName)) {
-                logger.warn("Strautomator.startup", module.constructor.name, "Skip, module not enabled via onlyModules")
+                logger.warn("Strautomator.startup", module.constructor.name, "Skip, module is disabled on settings")
             } else {
                 if (quickStart) {
                     module.init(quickStart)
