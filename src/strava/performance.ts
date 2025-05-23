@@ -57,16 +57,15 @@ export class StravaPerformance {
                 logger.warn("Strava.processPerformance", logHelper.user(user), "Could not estimate the user's FTP")
             } else if (ftpEstimation.recentlyUpdated) {
                 logger.warn("Strava.processPerformance", logHelper.user(user), "FTP already updated recently")
-            } else {
-                await this.saveFtp(user, ftpEstimation)
-
-                // Notify the user about the FTP update.
+            } else if (await this.saveFtp(user, ftpEstimation)) {
                 const nOptions: Partial<BaseNotification> = {
                     title: `New FTP detected: ${ftpEstimation.ftpWatts} watts`,
                     body: `Your FTP was updated on Strava, based on results from recent activities.`,
                     href: "https://www.strava.com/settings/performance",
                     dateExpiry: dayjs().add(30, "days").toDate()
                 }
+
+                // Notify the user about the FTP update.
                 await notifications.createNotification(user, nOptions)
             }
 
