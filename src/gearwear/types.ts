@@ -30,15 +30,17 @@ export interface GearWearConfig {
     updating?: boolean
     /** Is the gearwear configuration disabled? */
     disabled?: boolean
+    /** List with the last processed activity IDs for this Gear. */
+    recentActivities?: number[]
     /** Details about the last update made to this GearWear. */
     lastUpdate?: {
         /** Date of last update. */
         date: Date
-        /** IDs of the activities. */
+        /** IDs of the activities processed in the last update. */
         activities: number[]
-        /** Total distance added. */
+        /** Total distance updated. */
         distance: number
-        /** Total time (in seconds) added. */
+        /** Total time (in seconds) updated. */
         time: number
     }
 }

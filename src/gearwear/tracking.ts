@@ -48,6 +48,9 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
 
         // Set the updating flag to avoid edits by the user while distance is updated.
         config.updating = true
+        if (user.isPro && !config.recentActivities) {
+            config.recentActivities = []
+        }
 
         // Iterate user activities to update the gear components distance.
         for (let activity of activities) {
@@ -71,6 +74,9 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
                 }
 
                 activityIds.push(activity.id)
+                if (user.isPro && !config.recentActivities.includes(activity.id)) {
+                    config.recentActivities.push(activity.id)
+                }
 
                 // Append totals.
                 if (distance > 0) totalDistance += distance
@@ -150,6 +156,11 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
             } catch (innerEx) {
                 logger.error("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, logHelper.activity(activity), innerEx)
             }
+        }
+
+        // Limit the amount of recent activities to 20.
+        if (config.recentActivities.length > settings.gearwear.maxRecentActivities) {
+            config.recentActivities = _.takeRight(config.recentActivities, settings.gearwear.maxRecentActivities)
         }
 
         // Set update details on the GearWear config.
