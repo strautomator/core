@@ -205,7 +205,7 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
                 }
             }
 
-            processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, hasCityMid: cityObj.cityMid, cityEnd: cityObj.cityEnd})
+            processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, cityMid: cityObj.cityMid, cityEnd: cityObj.cityEnd})
         }
 
         // Value has a counter tag? Get recipe stats to increment it.
