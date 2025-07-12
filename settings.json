@@ -232,9 +232,9 @@
         "reminderThreshold": 1.15,
         // Keep a maximum of 20 recent activity IDs per gear.
         "maxRecentActivities": 20,
-        // Remove devices that did not have their battery status updated for more than 90 days.
+        // Remove devices that did not have their battery status updated for more than 120 days.
         "battery": {
-            "maxAgeDays": 90
+            "maxAgeDays": 120
         }
     },
     "gemini": {
