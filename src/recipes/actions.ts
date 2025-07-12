@@ -1090,14 +1090,14 @@ export const toggleGearComponents = async (user: UserData, activity: StravaActiv
  */
 export const webhookAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
-        const arrValue = action.value.split(" ")
-        let targetUrl = arrValue.length > 1 ? arrValue.join(" ") : arrValue[0]
-        let method = arrValue[0]
+        const strValue = action.value.trim()
+        const arrValue = strValue.split(" ")
+        let method = arrValue.length == 1 ? "POST" : arrValue.shift().toUpperCase()
+        let targetUrl = arrValue.join("")
 
         // Make sure we're using a valid method. If not, defaults to POST.
-        if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-            method = "POST"
-            targetUrl = action.value
+        if (!["HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+            throw new Error(`Invalid webhook HTTP method: "${method}"`)
         }
 
         const options: AxiosConfig = {
@@ -1105,7 +1105,7 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, re
             url: encodeURI(jaul.data.replaceTags(targetUrl, activity)),
             timeout: settings.recipes.webhook.timeout
         }
-        if (method != "GET") {
+        if (!["HEAD", "GET"].includes(method)) {
             options.data = activity
         }
 
