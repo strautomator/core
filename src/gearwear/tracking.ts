@@ -159,7 +159,7 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
         }
 
         // Limit the amount of recent activities to 20.
-        if (config.recentActivities.length > settings.gearwear.maxRecentActivities) {
+        if (config.recentActivities?.length > settings.gearwear.maxRecentActivities) {
             config.recentActivities = _.takeRight(config.recentActivities, settings.gearwear.maxRecentActivities)
         }
 
