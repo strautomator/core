@@ -82,7 +82,7 @@ export class GitHubAPI {
             const result = await this.makeRequest("POST", "graphql", query)
             return result
         } catch (ex) {
-            logger.error("GitHub.graphQL", ex)
+            logger.error("GitHub.graphQL", query, ex)
             throw ex
         }
     }
@@ -102,7 +102,7 @@ export class GitHubAPI {
 
             return result
         } catch (ex) {
-            logger.error("GitHub.getRepoCommits", ex)
+            logger.error("GitHub.getRepoCommits", repo, ex)
             throw ex
         }
     }
@@ -120,9 +120,34 @@ export class GitHubAPI {
 
             return result
         } catch (ex) {
-            logger.error("GitHub.getRepoReleases", ex)
+            logger.error("GitHub.getRepoReleases", repo, ex)
             throw ex
         }
+    }
+
+    /**
+     * Create a new issue in the specified repository, and returns the issue number.
+     * @param repo The repo name.
+     * @param title Issue title.
+     * @param body Issue message body.
+     */
+    createIssue = async (repo: string, title: string, body: string): Promise<number> => {
+        try {
+            const reqPath = `repos/${repo}/issues`
+            const result = await this.makeRequest("POST", reqPath, {title, body})
+            const id = result?.id || null
+
+            if (id) {
+                logger.info("GitHub.createIssue", repo, title, `Created #${id}`)
+                return id
+            }
+
+            logger.warn("GitHub.createIssue", repo, title, "Failed to create or get ID for the new issue")
+        } catch (ex) {
+            logger.error("GitHub.createIssue", repo, title, ex)
+        }
+
+        return null
     }
 }
 

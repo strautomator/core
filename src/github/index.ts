@@ -171,7 +171,11 @@ export class GitHub {
                 const user = await users.getByUsername(username)
 
                 // Can't create subscription if a user with a similar username was not found.
+                // In this case, open an issue directly at the contact repo.
                 if (!user) {
+                    const iTitle = `Welcome @${username}!`
+                    const iBody = `Hi @${username},\n\nThanks for your support! Please send me your Strava ID here (or via info@strautomator.com) so I can switch your Strautomator account to PRO manually. Unfortunately the system could not find your account based on username / first name / last name.\n\nBest regards,\n\nIgor`
+                    await api.createIssue(settings.github.api.contactRepo, iTitle, iBody)
                     logger.warn("GitHub.processWebhook", details.join(", "), "User not found, won't set the subscription's user ID")
                 }
 
