@@ -4,7 +4,6 @@ import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
 import logger from "anyhow"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * GitHub API handler.
@@ -30,7 +29,6 @@ export class GitHubAPI {
         options.method = method
         options.url = `${settings.github.api.baseUrl}${path}`
         options.headers["Authorization"] = `Bearer ${settings.github.api.token}`
-        options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
         // Optional body.
         if (body) {

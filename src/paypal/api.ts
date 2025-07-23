@@ -7,7 +7,6 @@ import _ from "lodash"
 import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 // Helper function to get error details from PayPal responses.
 const parseResponseError = (err) => {
@@ -153,15 +152,12 @@ export class PayPalAPI {
 
             // Make sure headers object is set.
             if (!options.headers) options.headers = {}
+            options.headers["Authorization"] = `Bearer ${mEndpoint ? this.mAuth.accessToken : this.auth.accessToken}`
 
             // Set correct full URL.
             if (options.url.substring(0, 4) != "http") {
                 options.url = `${mEndpoint ? settings.paypal.api.mBaseUrl : settings.paypal.api.baseUrl}${options.url}`
             }
-
-            // Append auth header and custom user agent.
-            options.headers["Authorization"] = `Bearer ${mEndpoint ? this.mAuth.accessToken : this.auth.accessToken}`
-            options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
             // Return full representation?
             if (options.returnRepresentation) {

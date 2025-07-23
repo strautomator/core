@@ -4,6 +4,7 @@ import {RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStats
 import {recipeActionList} from "./lists"
 import {AiProviderName} from "../ai/types"
 import {GearWearComponent, GearWearConfig} from "../gearwear/types"
+import {getLyrics} from "../spotify/lyrics"
 import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaGear, StravaSport} from "../strava/types"
 import {UserData} from "../users/types"
@@ -14,7 +15,6 @@ import ai from "../ai"
 import fitparser from "../fitparser"
 import gearwear from "../gearwear"
 import maps from "../maps"
-import musixmatch from "../musixmatch"
 import notifications from "../notifications"
 import spotify from "../spotify"
 import strava from "../strava"
@@ -380,10 +380,10 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
         // Add lyrics (only available to PRO users).
         if (user.isPro) {
             if (processedValue.includes("spotify.lyricsStart")) {
-                musicTags.lyricsStart = await musixmatch.getLyrics(tracks[0])
+                musicTags.lyricsStart = await getLyrics(tracks[0])
             }
             if (processedValue.includes("spotify.lyricsEnd")) {
-                musicTags.lyricsEnd = await musixmatch.getLyrics(tracks[tracks.length - 1])
+                musicTags.lyricsEnd = await getLyrics(tracks[tracks.length - 1])
             }
         }
 

@@ -9,7 +9,6 @@ import querystring from "querystring"
 import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Garmin API handler.
@@ -83,7 +82,6 @@ export class GarminAPI {
         // Set auth header.
         const oauthData = oauth1.getData(options, tokens.accessToken, tokens.tokenSecret)
         options.headers["Authorization"] = oauth1.getHeader(oauthData)
-        options.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
         // Return raw data as buffer?
         if (returnBuffer) {

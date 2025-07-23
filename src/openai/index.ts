@@ -8,7 +8,6 @@ import Bottleneck from "bottleneck"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * OpenAI (ChatGPT) wrapper.
@@ -58,7 +57,7 @@ export class OpenAI implements AiProvider {
      * @param ex The error or exception object.
      */
     get baseHeaders() {
-        return {Authorization: `Bearer ${settings.openai.api.key}`, "User-Agent": `${settings.app.title} / ${packageVersion}`}
+        return {Authorization: `Bearer ${settings.openai.api.key}`}
     }
 
     // GENERAL PROMPTING

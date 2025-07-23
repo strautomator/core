@@ -11,7 +11,6 @@ import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Wahoo main API wrapper.
@@ -81,8 +80,7 @@ export class Wahoo {
         const options: AxiosConfig = {
             method: "GET",
             returnResponse: true,
-            url: targetUrl,
-            headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`}
+            url: targetUrl
         }
 
         // Token not needed for file downloads.

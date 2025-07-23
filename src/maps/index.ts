@@ -14,7 +14,6 @@ import dayjs from "../dayjs"
 import _ from "lodash"
 const axios = require("axios").default
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Google Maps wrapper.
@@ -199,8 +198,7 @@ export class Maps {
             const options: any = {
                 method: "GET",
                 returnResponse: true,
-                url: `${baseUrl}search?zoom=14&format=json&key=${token}&q=${address}`,
-                headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`}
+                url: `${baseUrl}search?zoom=14&format=json&key=${token}&q=${address}`
             }
 
             // Fetch geocode result from LocationIQ.
@@ -345,8 +343,7 @@ export class Maps {
             const options: any = {
                 method: "GET",
                 returnResponse: true,
-                url: `${baseUrl}reverse?zoom=14&format=json&key=${token}&lat=${coordinates[0]}&lon=${coordinates[1]}`,
-                headers: {"User-Agent": `${settings.app.title} / ${packageVersion}`}
+                url: `${baseUrl}reverse?zoom=14&format=json&key=${token}&lat=${coordinates[0]}&lon=${coordinates[1]}`
             }
 
             // Fetch geocode result from LocationIQ.

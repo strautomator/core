@@ -8,7 +8,6 @@ import Bottleneck from "bottleneck"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Mistral AI (Le Chat) wrapper.
@@ -67,7 +66,7 @@ export class Mistral implements AiProvider {
             const reqOptions: AxiosConfig = {
                 url: `${settings.mistral.api.baseUrl}chat/completions`,
                 method: "POST",
-                headers: {},
+                headers: {Authorization: `Bearer ${settings.mistral.api.key}`},
                 data: {
                     model: "mistral-small-latest",
                     max_tokens: options.maxTokens,
@@ -77,8 +76,6 @@ export class Mistral implements AiProvider {
                     ]
                 }
             }
-            reqOptions.headers["Authorization"] = `Bearer ${settings.mistral.api.key}`
-            reqOptions.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
             // Here we go!
             try {

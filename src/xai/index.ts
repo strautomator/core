@@ -8,7 +8,6 @@ import Bottleneck from "bottleneck"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * xAI (Grok) wrapper.
@@ -67,7 +66,7 @@ export class xAI implements AiProvider {
             const reqOptions: AxiosConfig = {
                 url: `${settings.xai.api.baseUrl}chat/completions`,
                 method: "POST",
-                headers: {},
+                headers: {Authorization: `Bearer ${settings.xai.api.key}`},
                 data: {
                     model: "grok-2",
                     max_tokens: options.maxTokens,
@@ -77,8 +76,6 @@ export class xAI implements AiProvider {
                     ]
                 }
             }
-            reqOptions.headers["Authorization"] = `Bearer ${settings.xai.api.key}`
-            reqOptions.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
             // Here we go!
             try {

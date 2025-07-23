@@ -8,7 +8,6 @@ import Bottleneck from "bottleneck"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Anthropic (Claude) wrapper.
@@ -77,7 +76,6 @@ export class Anthropic implements AiProvider {
             }
             reqOptions.headers["anthropic-version"] = settings.anthropic.api.version
             reqOptions.headers["x-api-key"] = settings.anthropic.api.key
-            reqOptions.headers["User-Agent"] = `${settings.app.title} / ${packageVersion}`
 
             // Here we go!
             try {
