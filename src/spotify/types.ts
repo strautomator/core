@@ -1,6 +1,26 @@
 // Strautomator Core: Spotify types
 
 /**
+ * Spotify API request options.
+ */
+export interface SpotifyRequestOptions {
+    /** Body to be posted to the API. */
+    data?: any
+    /** Request method. */
+    method?: "GET" | "POST"
+    /** Additional request headers. */
+    headers?: any
+    /** Path to be appended to the base API URL. */
+    path?: string
+    /** Target request URL including https://. */
+    url?: string
+    /** Custom timeout, in milliseconds. */
+    timeout?: number
+    /** Spotify tokens used to generate the Bearer auth header. */
+    tokens?: SpotifyTokens
+}
+
+/**
  * Spotify linked profile details.
  */
 export interface SpotifyProfile {
@@ -45,21 +65,13 @@ export interface SpotifyTrack {
 }
 
 /**
- * Spotify API request options.
+ * Represents cached version of track lyrics.
  */
-export interface SpotifyRequestOptions {
-    /** Body to be posted to the API. */
-    data?: any
-    /** Request method. */
-    method?: "GET" | "POST"
-    /** Additional request headers. */
-    headers?: any
-    /** Path to be appended to the base API URL. */
-    path?: string
-    /** Target request URL including https://. */
-    url?: string
-    /** Custom timeout, in milliseconds. */
-    timeout?: number
-    /** Spotify tokens used to generate the Bearer auth header. */
-    tokens?: SpotifyTokens
+export interface TrackLyrics {
+    /** ID of the Spotify track. */
+    id: string
+    /** Lyrics. */
+    lyrics: string
+    /** Date when it should expire (used for the Firestore TTL). */
+    dateExpiry?: Date
 }

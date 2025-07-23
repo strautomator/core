@@ -17,7 +17,6 @@ import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
-const packageVersion = require("../../package.json").version
 
 /**
  * Spotify API wrapper.
@@ -65,7 +64,9 @@ export class Spotify {
         const now = dayjs().unix()
 
         // Set final headers.
-        reqOptions.headers = _.assign(reqOptions.headers || {}, {"User-Agent": `${settings.app.title} / ${packageVersion}`})
+        if (!reqOptions.headers) {
+            reqOptions.headers = {}
+        }
         if (reqOptions.tokens) {
             reqOptions.headers.Authorization = `Bearer ${reqOptions.tokens.accessToken}`
         }

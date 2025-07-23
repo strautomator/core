@@ -71,8 +71,6 @@ import {Strava} from "./strava"
 export const strava: Strava = Strava.Instance
 import {Komoot} from "./komoot"
 export const komoot: Komoot = Komoot.Instance
-import {Musixmatch} from "./musixmatch"
-export const musixmatch: Musixmatch = Musixmatch.Instance
 import {AI} from "./ai"
 export const ai: AI = AI.Instance
 import {OpenAI} from "./openai"
@@ -245,7 +243,7 @@ export const startup = async (quickStart?: boolean) => {
     // Init individual modules now. Start with the most important modules, than the rest.
     const coreModules = [github, paypal, paddle, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
-    const otherModules = [affiliates, ai, announcements, anthropic, awin, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, mistral, musixmatch, notifications, openai, recipes, spotify, xai, wahoo, weather]
+    const otherModules = [affiliates, ai, announcements, anthropic, awin, calendar, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, mistral, notifications, openai, recipes, spotify, xai, wahoo, weather]
     await Promise.all(otherModules.map(initModule))
 
     process.env.SMU_APP_STARTED = "1"
