@@ -245,11 +245,18 @@
             "maxPerMinute": 20
         }
     },
+    "genius": {
+        "api": {
+            "baseUrl": "https://api.genius.com/"
+        },
+        "url": "https://genius.com/"
+    },
     "github": {
         "api": {
             "baseUrl": "https://api.github.com/",
             "repo": "strautomator/web",
             "coreRepo": "strautomator/core",
+            "contactRepo": "strautomator/contact",
             "username": "igoramadas"
         }
     },
@@ -340,17 +347,6 @@
             // Maximum requests per minute per instance.
             "maxPerMinute": 20
         }
-    },
-    // musixmatch integration. The API key must be set via secret settings or
-    // via the SMU_musixmatch_api_key environment variable.
-    "musixmatch": {
-        "api": {
-            "baseUrl": "https://api.musixmatch.com/ws/1.1/"
-        },
-        // Track lyrics are cached in memory for up to 1 minute. Value set in seconds.
-        "cacheDuration": 60,
-        // Track lyrics cached for up to 30 days in the database. Value set in seconds.
-        "maxCacheDuration": 2592000
     },
     "notifications": {
         // Cache notification results for up to 4 seconds.
@@ -533,10 +529,19 @@
         },
         // Cache profiles and recently played tracks for up to 1 minute. Value set in seconds.
         "cacheDuration": 60,
+        // Track lyrics cached for up to 30 days in the database. Value set in seconds.
+        "maxCacheDuration": 2592000,
         // Include tracks that started / ended within a minute of the activity date.
         "dateBufferSeconds": 60,
         // Maximum number of tracks returned.
         "trackLimit": 50
+    },
+    // STANDS4 APIs. The "uid" and "tokenId" must be set via secret settings or via the
+    // SMU_stands4_api_uid and SMU_stands4_api_tokenId environment variables.
+    "stands4": {
+        "api": {
+            "baseUrl": "https://www.stands4.com/services/v2/lyrics.php"
+        }
     },
     // Cloud Storage buckets, with optional TTLs (in days). If you wish to specify the bucket location,
     // please add a "location" parameter. Otherwise the default will be taken from "gcp.location".
