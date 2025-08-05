@@ -469,7 +469,7 @@
             // PRO accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
-            "maxClubs": 999,
+            "maxClubs": 30,
             // PRO accounts can trigger batch automations for activities up to 5 years old.
             "batchDays": 1825,
             // PRO accounts limited to 10 years in the past and up to 1 year in the future.
