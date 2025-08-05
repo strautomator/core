@@ -2,8 +2,7 @@
 
 import {AiGenerateOptions, AiProvider} from "../ai/types"
 import {UserData} from "../users/types"
-import {FinishReason, GenerateContentRequest, HarmBlockThreshold, HarmCategory, VertexAI} from "@google-cloud/vertexai"
-import {PredictionServiceClient} from "@google-cloud/aiplatform"
+import {GoogleGenAI, FinishReason, HarmBlockThreshold, HarmCategory, GenerateContentParameters} from "@google/genai"
 import _ from "lodash"
 import Bottleneck from "bottleneck"
 import logger from "anyhow"
@@ -26,14 +25,9 @@ export class Gemini implements AiProvider {
     limiter: Bottleneck
 
     /**
-     * The Vertex AI client, created on init().
+     * The GoogleGenAI client, created on init().
      */
-    client: VertexAI
-
-    /**
-     * Image generation client.
-     */
-    predictionClient: PredictionServiceClient
+    client: GoogleGenAI
 
     // INIT
     // --------------------------------------------------------------------------
@@ -43,8 +37,7 @@ export class Gemini implements AiProvider {
      */
     init = async (): Promise<void> => {
         try {
-            this.client = new VertexAI({project: settings.gcp.projectId, location: "europe-west4"})
-            this.predictionClient = new PredictionServiceClient({projectId: settings.gcp.projectId, apiEndpoint: "europe-west4-aiplatform.googleapis.com"})
+            this.client = new GoogleGenAI({project: settings.gcp.projectId, location: "europe-west4"})
 
             // Create the bottleneck rate limiter.
             this.limiter = new Bottleneck({
@@ -73,17 +66,16 @@ export class Gemini implements AiProvider {
      */
     prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
-            const model = this.client.preview.getGenerativeModel({model: "gemini-2.0-flash-lite"})
-            const reqOptions: GenerateContentRequest = {
+            const reqOptions: GenerateContentParameters = {
+                model: "gemini-2.0-flash-lite",
                 contents: [{role: "user", parts: messages.map((p) => ({text: p}))}],
-                safetySettings: [
-                    {category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
-                    {category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
-                    {category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
-                    {category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH}
-                ],
-                generationConfig: {
-                    maxOutputTokens: options.maxTokens
+                config: {
+                    safetySettings: [
+                        {category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
+                        {category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
+                        {category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
+                        {category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH}
+                    ]
                 }
             }
 
@@ -93,27 +85,27 @@ export class Gemini implements AiProvider {
                     throw new Error("Response is missing")
                 }
                 if (!response.candidates?.length) {
-                    throw new Error(`Response is missing a candidate: ${JSON.stringify(result.response, null, 0)}`)
+                    throw new Error(`Response is missing a candidate: ${JSON.stringify(result, null, 0)}`)
                 }
                 const candidate = response.candidates[0]
                 if (!candidate.content.parts?.length) {
-                    throw new Error(`Response is missing the content part: ${JSON.stringify(result.response, null, 0)}`)
+                    throw new Error(`Response is missing the content part: ${JSON.stringify(result, null, 0)}`)
                 }
                 return candidate.content.parts[0].text
             }
 
             // Here we go!
-            let result = await this.limiter.schedule(() => model.generateContent(reqOptions))
-            let text = parseResponse(result ? result.response : null)
+            let result = await this.limiter.schedule(() => this.client.models.generateContent(reqOptions))
+            let text = parseResponse(result)
 
             // If the response was cut due to insufficient tokens and the user is PRO, try again with a higher limit.
-            if (result?.response.candidates[0]?.finishReason === FinishReason.MAX_TOKENS) {
+            if (result?.candidates[0]?.finishReason === FinishReason.MAX_TOKENS) {
                 logger.warn("Gemini.prompt", logHelper.user(user), options.subject, "Early stop due to max tokens, will retry", text)
 
                 if (user.isPro) {
-                    reqOptions.generationConfig.maxOutputTokens = Math.round(options.maxTokens * settings.ai.maxTokens.multiplier)
-                    result = await this.limiter.schedule(() => model.generateContent(reqOptions))
-                    text = parseResponse(result ? result.response : null)
+                    reqOptions.config.maxOutputTokens = Math.round(options.maxTokens * settings.ai.maxTokens.multiplier)
+                    result = await this.limiter.schedule(() => this.client.models.generateContent(reqOptions))
+                    text = parseResponse(result)
                 }
             }
 
