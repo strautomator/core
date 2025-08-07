@@ -68,7 +68,7 @@ export class xAI implements AiProvider {
                 method: "POST",
                 headers: {Authorization: `Bearer ${settings.xai.api.key}`},
                 data: {
-                    model: "grok-2",
+                    model: "grok-4",
                     max_tokens: options.maxTokens,
                     messages: [
                         {role: "system", content: options.instruction},
