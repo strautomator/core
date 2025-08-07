@@ -374,6 +374,70 @@ export class Maps {
         }
     }
 
+    // CITIES
+    // --------------------------------------------------------------------------
+
+    /**
+     * Get the city name for the specified coordinates.
+     * @param coordinates Coordinates to be queried.
+     */
+    coordinatesToCity = async (coordinates: [number, number]): Promise<string> => {
+        if (!coordinates || coordinates.length < 2) {
+            logger.warn("Maps.coordinatesToCity", coordinates, "Invalid or missing coordinates")
+            return null
+        }
+
+        // First try with LocationIQ, then with Google.
+        try {
+            let address = await this.getReverseGeocode(coordinates, "locationiq")
+            if (!address || !address.city) {
+                address = await this.getReverseGeocode(coordinates, "google")
+            }
+            if (!address || !address.city) {
+                logger.warn("Maps.coordinatesToCity", coordinates, "Failed to get the city")
+                return null
+            }
+        } catch (ex) {
+            logger.error("Maps.coordinatesToCity", coordinates, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Parse the supplied object with coordinates and return a new object with the city names.
+     * @param sourceObj Object to be processed, with keys as identifiers and values as coordinates.
+     */
+    coordinatesToCityFromObj = async (sourceObj: {[k: string]: [number, number]}): Promise<{[key: string]: string}> => {
+        const result: {[key: string]: string} = {}
+        const keys = Object.keys(sourceObj || {})
+
+        if (!sourceObj || keys.length == 0) {
+            logger.warn("Maps.coordinatesToCityFromObj", "No source object keys were passed, won't process")
+            return null
+        }
+
+        // Process coordinates and get the cities in parallel.
+        try {
+            const getCity = async (key: string): Promise<void> => {
+                try {
+                    if (sourceObj[key]?.length == 2) {
+                        const city = await this.coordinatesToCity(sourceObj[key])
+                        if (city) {
+                            result[key] = city
+                        }
+                    }
+                } catch (keyEx) {
+                    logger.error("Maps.coordinatesToCityFromObj", key, sourceObj[key], keyEx)
+                }
+            }
+            await Promise.allSettled(keys.map(getCity))
+        } catch (ex) {
+            logger.error("Maps.coordinatesToCityFromObj", ex)
+        }
+
+        return result
+    }
+
     // IMAGES
     // --------------------------------------------------------------------------
 
