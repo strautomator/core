@@ -8,6 +8,7 @@ import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
 import recipeStats from "./stats"
 import fitparser from "../fitparser"
+import maps from "../maps"
 import spotify from "../spotify"
 import strava from "../strava"
 import weather from "../weather"
@@ -632,5 +633,44 @@ export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, 
     }
 
     logger.debug("Recipes.checkFirstOfDay", logHelper.activity(activity), condition, "Failed")
+    return false
+}
+
+/**
+ * Check if the passed activity starts or ends in the specified city.
+ * @param activity The Strava activity to be checked.
+ * @param condition The sport type recipe condition.
+ */
+export const checkCity = async (activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+    const op = condition.operator
+    let valid = false
+
+    // Stop here if activity has no location data or coordinates are not valid.
+    const coordinates = condition.property == "cityStart" ? activity.locationStart : condition.property == "cityEnd" ? activity.locationEnd : null
+    if (!activity.hasLocation || !coordinates) {
+        return condition.operator == RecipeOperator.NotEqual ? true : false
+    }
+
+    // Reverse geocode the coordinates to find the city.
+    let city = await maps.coordinatesToCity(coordinates)
+    if (!city) {
+        return condition.operator == RecipeOperator.NotEqual ? true : false
+    }
+
+    const value = condition.value.toString().toLowerCase()
+    city = city.toLowerCase()
+
+    // Check sport type.
+    if (op == RecipeOperator.Equal) {
+        valid = city == value
+    } else if (op == RecipeOperator.NotEqual) {
+        valid = city != value
+    }
+
+    if (valid) {
+        return true
+    }
+
+    logger.debug("Recipes.checkSportType", logHelper.activity(activity), condition, "Failed")
     return false
 }

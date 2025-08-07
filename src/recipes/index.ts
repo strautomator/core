@@ -414,6 +414,12 @@ export class Recipes {
                 if (!valid) return false
             }
 
+            // City conditions.
+            else if (prop == "cityStart" || prop == "cityEnd") {
+                const valid = await conditions.checkCity(activity, condition)
+                if (!valid) return false
+            }
+
             // Boolean condition.
             else if (_.isBoolean(condition.value)) {
                 const valid = conditions.checkBoolean(activity, condition)

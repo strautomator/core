@@ -154,57 +154,14 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 
         // City tag(s) set? Trigger a reverse geocode for the specified coordinates.
         const hasCityStart = processedValue.includes("${cityStart}")
+        const cityStart = hasCityStart ? activity.locationStart : null
         const hasCityMid = processedValue.includes("${cityMid}")
+        const cityMid = hasCityMid ? activity.locationMid : null
         const hasCityEnd = processedValue.includes("${cityEnd}")
+        const cityEnd = hasCityEnd ? activity.locationEnd : null
         if (hasCityStart || hasCityMid || hasCityEnd) {
-            const cityObj = {cityStart: "", cityMid: "", cityEnd: ""}
-
-            // Reverse geocode using LocationIQ. If it fails and user os PRO, fallback to Google.
-            if (activity.hasLocation) {
-                if (hasCityStart) {
-                    try {
-                        let address = await maps.getReverseGeocode(activity.locationStart, "locationiq")
-                        if ((!address || !address.city) && user.isPro) {
-                            address = await maps.getReverseGeocode(activity.locationStart, "google")
-                        }
-                        if (!address || !address.city) {
-                            throw new Error(`Failed to geocode: ${activity.locationStart.join(", ")}`)
-                        }
-                        cityObj.cityStart = address.city
-                    } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "cityStart", innerEx)
-                    }
-                }
-                if (hasCityMid) {
-                    try {
-                        let address = await maps.getReverseGeocode(activity.locationMid || activity.locationEnd, "locationiq")
-                        if ((!address || !address.city) && user.isPro) {
-                            address = await maps.getReverseGeocode(activity.locationMid || activity.locationEnd, "google")
-                        }
-                        if (!address || !address.city) {
-                            throw new Error(`Failed to geocode: ${activity.locationMid.join(", ")}`)
-                        }
-                        cityObj.cityMid = address.city
-                    } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "cityMid", innerEx)
-                    }
-                }
-                if (hasCityEnd) {
-                    try {
-                        let address = await maps.getReverseGeocode(activity.locationEnd, "locationiq")
-                        if ((!address || !address.city) && user.isPro) {
-                            address = await maps.getReverseGeocode(activity.locationEnd, "google")
-                        }
-                        if (!address || !address.city) {
-                            throw new Error(`Failed to geocode: ${activity.locationEnd.join(", ")}`)
-                        }
-                        cityObj.cityEnd = address.city
-                    } catch (innerEx) {
-                        logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), recipe.id, "cityEnd", innerEx)
-                    }
-                }
-            }
-
+            const sourceObj = {cityStart, cityMid, cityEnd}
+            const cityObj = activity.hasLocation ? await maps.coordinatesToCityFromObj(sourceObj) : {}
             processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, cityMid: cityObj.cityMid, cityEnd: cityObj.cityEnd})
         }
 
