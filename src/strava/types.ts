@@ -30,6 +30,10 @@ export interface StravaActivity {
     private?: boolean
     /** Marked as commute? */
     commute?: boolean
+    /** Tagged as a workout? */
+    workout?: boolean
+    /** Tagged as a race? */
+    race?: boolean
     /** Activity hidden on the home feed? */
     hideHome?: boolean
     /** Hide pace on the activity stats? */

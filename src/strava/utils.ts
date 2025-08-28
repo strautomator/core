@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Utils
 
-import {StravaActivity, StravaActivityPerformance, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaProfileStats, StravaRoute, StravaSport, StravaTotals} from "./types"
+import {StravaActivity, StravaActivityPerformance, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaProfileStats, StravaRideType, StravaRoute, StravaRunType, StravaSport, StravaTotals} from "./types"
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import {translation} from "../translations"
@@ -77,6 +77,13 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     // Has a description?
     if (data.description) {
         activity.description = data.description
+    }
+
+    // Tagged as a workout or race?
+    if (activity.workoutType == StravaRideType.Workout || activity.workoutType == StravaRunType.Workout) {
+        activity.workout = true
+    } else if (activity.workoutType == StravaRideType.Race || activity.workoutType == StravaRunType.Race) {
+        activity.race = true
     }
 
     // Has an external ID?
