@@ -378,7 +378,24 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
             return processedValue
         }
 
+        // Garmin splits should be converted to a nice string first.
+        if (processedValue.includes("${garmin.splits}") && garminActivity.splits?.length > 0) {
+            const summaries = garminActivity.splits.map((s) => {
+                const splitType = s.splitType || "Split"
+                delete s.splitType
+                const props = Object.entries(s)
+                const propValueMerge = (e) => {
+                    e[0] = e[0].replace(/([A-Z])/g, " $1").toLowerCase()
+                    return e.join(" = ")
+                }
+                const propValues = props.map((e) => propValueMerge(e)).join(", ")
+                return `${splitType}: ${propValues}`
+            })
+            garminActivity.splits = summaries.join("\n") as any
+        }
+
         processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.")
+        console.warn(processedValue)
     } catch (ex) {
         logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
