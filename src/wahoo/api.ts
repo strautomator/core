@@ -80,7 +80,8 @@ export class Wahoo {
         const options: AxiosConfig = {
             method: "GET",
             returnResponse: true,
-            url: targetUrl
+            url: targetUrl,
+            headers: {}
         }
 
         // Token not needed for file downloads.
