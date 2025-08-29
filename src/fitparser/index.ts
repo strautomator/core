@@ -50,6 +50,7 @@ export class FitParser {
         // Extract duration and distance from sessions.
         if (messages.sessionMesgs?.length > 0) {
             const sessions = messages.sessionMesgs
+
             fitFileActivity.distance = parseFloat((_.sumBy(sessions, "totalDistance") / 1000).toFixed(1))
             fitFileActivity.totalTime = Math.round(_.sumBy(sessions, "totalElapsedTime"))
 
@@ -116,6 +117,22 @@ export class FitParser {
                     }
                 })
             }
+        }
+
+        // Parse split summaries.
+        if (messages.splitMesgs?.length > 0) {
+            fitFileActivity.splits = messages.splitMesgs.map((s) => {
+                const split = {
+                    splitType: s.splitType ? s.splitType.replace(/([A-Z])/g, " $1").replace(/^./, (f) => f.toUpperCase()) : null,
+                    totalTime: s.totalElapsedTime ? dayjs.duration(s.totalElapsedTime, "seconds").format("HH:mm:ss") : "00:00:00",
+                    speedAvg: s.avgSpeed,
+                    distance: s.totalDistance,
+                    ascent: s.totalAscent,
+                    descent: s.totalDescent,
+                    calories: s.totalCalories
+                }
+                return _.omitBy(split, (v) => _.isNil(v))
+            })
         }
 
         // Decode primary benefit to a friendly string.

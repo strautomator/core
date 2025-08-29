@@ -44,6 +44,8 @@ export interface FitFileActivity {
     devices?: string[]
     /** Devices battery status. */
     deviceBattery?: FitDeviceBattery[]
+    /** Split summaries. */
+    splits?: FitSplitSummary[]
     /** Activity UTC start date. */
     dateStart?: Date
     /** Date when it should expire (used for the Firestore TTL). */
@@ -65,4 +67,24 @@ export interface FitDeviceBattery {
  */
 export interface FitDeviceNames {
     [deviceId: string]: string
+}
+
+/**
+ * Workout split summary.
+ */
+export interface FitSplitSummary {
+    /** Split type. */
+    splitType?: string
+    /** Total elapsed time. */
+    totalTime?: number
+    /** Average speed. */
+    speedAvg?: number
+    /** Total distance. */
+    distance?: number
+    /** Total ascent. */
+    ascent?: number
+    /** Total descent. */
+    descent?: number
+    /** Total calories. */
+    calories?: number
 }
