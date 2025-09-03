@@ -397,6 +397,8 @@ export class Maps {
                 logger.warn("Maps.coordinatesToCity", coordinates, "Failed to get the city")
                 return null
             }
+
+            return address.city
         } catch (ex) {
             logger.error("Maps.coordinatesToCity", coordinates, ex)
             throw ex
