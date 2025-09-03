@@ -123,7 +123,12 @@ export class FitParser {
         if (messages.splitMesgs?.length > 0) {
             fitFileActivity.splits = messages.splitMesgs.map((s) => {
                 const split = {
-                    splitType: s.splitType ? s.splitType.replace(/([A-Z])/g, " $1").replace(/^./, (f) => f.toUpperCase()) : null,
+                    splitType: s.splitType
+                        ? s.splitType
+                              .toString()
+                              .replace(/([A-Z])/g, " $1")
+                              .replace(/^./, (f) => f.toUpperCase())
+                        : null,
                     totalTime: s.totalElapsedTime ? dayjs.duration(s.totalElapsedTime, "seconds").format("HH:mm:ss") : "00:00:00",
                     speedAvg: s.avgSpeed,
                     distance: s.totalDistance,
