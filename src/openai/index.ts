@@ -76,7 +76,7 @@ export class OpenAI implements AiProvider {
                 method: "POST",
                 headers: this.baseHeaders,
                 data: {
-                    model: user.isPro && options.useReason ? "o3-mini" : "gpt-4o-mini",
+                    model: user.isPro && options.useReason ? "gpt-5-mini" : "gpt-5-nano",
                     max_tokens: options.maxTokens,
                     messages: [
                         {role: "system", content: options.instruction},
