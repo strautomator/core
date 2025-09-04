@@ -65,9 +65,9 @@ export function processWeatherSummary(summary: WeatherSummary, dDate: dayjs.Dayj
     if (!preferences) preferences = {}
 
     try {
-        const tempValue = parseFloat(summary.temperature.toString())
-        const humidityValue = summary.humidity ? parseFloat(summary.humidity.toString()) : null
-        const pressureValue = summary.pressure ? parseFloat(summary.pressure.toString()) : null
+        const tempValue = !_.isNil(summary.temperature) ? parseFloat(summary.temperature.toString()) : null
+        const humidityValue = !_.isNil(summary.humidity) ? parseFloat(summary.humidity.toString()) : null
+        const pressureValue = !_.isNil(summary.pressure) ? parseFloat(summary.pressure.toString()) : null
         const prcFog = translation("Fog", preferences)
         const prcDrizzle = translation("Drizzle", preferences)
         const prcRain = translation("Rain", preferences)
