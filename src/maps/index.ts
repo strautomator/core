@@ -202,7 +202,7 @@ export class Maps {
             }
 
             // Fetch geocode result from LocationIQ.
-            const res: any = await this.lociqLimiter.schedule({id: address.replace(/\s/g, "")}, () => axiosRequest(options))
+            const res: any = await this.lociqLimiter.schedule(() => axiosRequest(options))
             if (res.data && res.data.length > 0) {
                 return res.data.map((a) => {
                     return {
@@ -347,7 +347,7 @@ export class Maps {
             }
 
             // Fetch geocode result from LocationIQ.
-            const res: any = await this.lociqLimiter.schedule({id: coordinates.join("-")}, () => axiosRequest(options))
+            const res: any = await this.lociqLimiter.schedule(() => axiosRequest(options))
             if (res?.data?.address) {
                 const addressInfo = res.data.address
                 const address: MapAddress = {}

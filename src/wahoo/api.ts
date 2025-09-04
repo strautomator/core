@@ -93,8 +93,7 @@ export class Wahoo {
 
         // Dispatch request.
         try {
-            const jobId = `${targetUrl}-${tokens ? tokens.accessToken.substring(0, 6) : "clear"}`
-            const res: AxiosResponse = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
+            const res: AxiosResponse = await this.limiter.schedule(() => axiosRequest(options))
             return res ? res.data : null
         } catch (ex) {
             logger.error("Wahoo.makeRequest", targetUrl, ex)

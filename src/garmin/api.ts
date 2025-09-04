@@ -90,8 +90,7 @@ export class GarminAPI {
 
         // Dispatch request.
         try {
-            const jobId = `${targetUrl}-${new Date().valueOf()}`
-            const res: AxiosResponse = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
+            const res: AxiosResponse = await this.limiter.schedule(() => axiosRequest(options))
             return res ? res.data : null
         } catch (ex) {
             logger.error("Garmin.makeRequest", targetUrl, ex)
@@ -120,8 +119,7 @@ export class GarminAPI {
             options.headers.Authorization = oauth1.getHeader(oauthData)
 
             // Parse response string as a OAuth1Token object.
-            const jobId = `${path}-${dayjs().unix()}}`
-            const res = await this.limiter.schedule({id: jobId}, () => axiosRequest(options))
+            const res = await this.limiter.schedule(() => axiosRequest(options))
             if (res) {
                 return querystring.parse(res) as any
             }
