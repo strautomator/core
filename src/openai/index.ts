@@ -77,7 +77,7 @@ export class OpenAI implements AiProvider {
                 headers: this.baseHeaders,
                 data: {
                     model: user.isPro && options.useReason ? "gpt-5-mini" : "gpt-5-nano",
-                    max_tokens: options.maxTokens,
+                    max_completion_tokens: options.maxTokens,
                     messages: [
                         {role: "system", content: options.instruction},
                         {role: "user", content: messages.join(" ")}
