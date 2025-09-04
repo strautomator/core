@@ -7,7 +7,6 @@ import oauth1 from "./oauth1"
 import Bottleneck from "bottleneck"
 import querystring from "querystring"
 import logger from "anyhow"
-import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 
 /**
