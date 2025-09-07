@@ -747,11 +747,11 @@ export class Users {
                 // Merge the bikes and shoes instead.
                 if (userData.profile) {
                     for (let bike of userData.profile.bikes) {
-                        const existingBike = _.find(existingData.profile.bikes, {id: bike.id})
+                        const existingBike = _.find(existingData.profile?.bikes || [], {id: bike.id})
                         if (existingBike) _.defaults(bike, existingBike)
                     }
                     for (let shoes of userData.profile.shoes) {
-                        const existingShoes = _.find(existingData.profile.shoes, {id: shoes.id})
+                        const existingShoes = _.find(existingData.profile?.shoes || [], {id: shoes.id})
                         if (existingShoes) _.defaults(shoes, existingShoes)
                     }
                 }
@@ -846,13 +846,11 @@ export class Users {
                 if (user.stravaTokens) {
                     logs.push("Strava tokens")
                 }
-                if (user.profile) {
-                    if (user.profile.bikes?.length > 0) {
-                        logs.push(`Bikes: ${user.profile.bikes.length}`)
-                    }
-                    if (user.profile.shoes?.length > 0) {
-                        logs.push(`Shoes: ${user.profile.shoes.length}`)
-                    }
+                if (user.profile?.bikes?.length > 0) {
+                    logs.push(`Bikes: ${user.profile.bikes.length}`)
+                }
+                if (user.profile?.shoes?.length > 0) {
+                    logs.push(`Shoes: ${user.profile.shoes.length}`)
                 }
                 if (user.garmin) {
                     logs.push(`Garmin: ${logValue(user.garmin.id || user.garmin)}`)
