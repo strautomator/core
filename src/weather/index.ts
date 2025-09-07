@@ -245,10 +245,11 @@ export class Weather {
                     providerModule.disabledTillDate = utcNow.endOf("day").add(1, "hour").toDate()
                     logger.warn("Weather.getLocationWeather", failedProviderName, "Daily quota reached")
                 } else if (status == 429) {
-                    providerModule.disabledTillDate = utcNow.add(1, "hour").toDate()
+                    providerModule.disabledTillDate = utcNow.add(2, "hours").toDate()
                     logger.warn("Weather.getLocationWeather", failedProviderName, "Hourly quota reached")
-                } else if (providerModule.stats.repeatedErrors >= settings.weather.maxRepeatedErrors) {
-                    providerModule.disabledTillDate = utcNow.add(8, "hours").toDate()
+                }
+                if (providerModule.stats.repeatedErrors >= settings.weather.maxRepeatedErrors) {
+                    providerModule.disabledTillDate = utcNow.add(12, "hours").toDate()
                     providerModule.stats.repeatedErrors = 0
                     logger.warn("Weather.getLocationWeather", failedProviderName, "Temporarily disabled, too many repeated errors")
                 }
