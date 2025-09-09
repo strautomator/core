@@ -124,6 +124,7 @@ export const recipePropertyList = [
     {value: "garmin.pedalSmoothness", text: "Garmin pedal smoothness", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100, isPro: true},
     {value: "garmin.pedalTorqueEffect", text: "Garmin pedal torque effectiveness", type: "number", operators: recipeOperatorList.number, suffix: "%", min: 0, max: 100, isPro: true},
     {value: "garmin.sportProfile", text: "Garmin sport profile name", type: "string", operators: recipeOperatorList.is, isPro: true},
+    {value: "garmin.name", text: "Garmin activity name", type: "string", operators: recipeOperatorList.text, isPro: true},
     {value: "garmin.workoutName", text: "Garmin workout name", type: "string", operators: recipeOperatorList.text, isPro: true},
     {value: "garmin.workoutNotes", text: "Garmin workout notes", type: "string", operators: recipeOperatorList.text, isPro: true},
     {value: "wahoo.sensor", text: "Wahoo sensor ID", type: "string", operators: recipeOperatorList.is, isPro: true},
