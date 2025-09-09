@@ -333,6 +333,9 @@ export class PayPalSubscriptions {
             if (!user.subscriptionId || !subscriptionId) {
                 throw new Error(`User ${user.id} has no active subscription`)
             }
+            if (!user.paddleId) {
+                throw new Error(`User ${user.id} has no Paddle ID, can't refund`)
+            }
 
             const now = dayjs()
             const sub = await this.getSubscription(subscriptionId)
@@ -340,11 +343,11 @@ export class PayPalSubscriptions {
                 throw new Error(`Subscription not found or not active`)
             }
 
-            // Make sure we have a valid completed transaction in the last 6 months, otherwise a refund can't be processed.
-            const transactions = await this.getTransactions(subscriptionId, now.subtract(179, "days").toDate(), now.toDate())
+            // Make sure we have a valid completed transaction in the last 11 months, otherwise a refund can't be processed.
+            const transactions = await this.getTransactions(subscriptionId, now.subtract(340, "days").toDate(), now.toDate())
             const transaction = transactions.find((t) => t.status == "COMPLETED")
             if (!transaction) {
-                logger.warn("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, "No transactions in the last 6 months, can't refund")
+                logger.warn("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, "No transactions in the last 11 months, can't refund")
                 return null
             }
 
