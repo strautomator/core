@@ -103,17 +103,17 @@ export class FitParser {
 
         // Found devices in the FIT file? Generate device IDs.
         if (messages.deviceInfoMesgs?.length > 0) {
-            const filter = (d) => d.manufacturer && d.serialNumber
+            const filter = (d) => (d.manufacturer || d.antplusDeviceType || d.bleDeviceType) && d.serialNumber
             const validDevices = _.uniqBy(messages.deviceInfoMesgs.filter(filter), (d: any) => this.getDeviceString(d))
             fitFileActivity.devices = validDevices.map((d) => this.getDeviceString(d))
 
-            // Identify devices battery statuses.
-            const batteryDevices = validDevices.filter((d) => d.batteryStatus)
+            // Identify devices battery statuses, also including the creator device details.
+            const batteryDevices = validDevices.filter((d) => d.batteryStatus || d.deviceIndex == "creator")
             if (batteryDevices.length > 0) {
                 fitFileActivity.deviceBattery = batteryDevices.map((d) => {
                     return {
                         id: this.getDeviceString(d),
-                        status: d.batteryStatus
+                        status: d.batteryStatus || "ok"
                     }
                 })
             }
@@ -293,8 +293,9 @@ export class FitParser {
      * @param d The device info message.
      */
     private getDeviceString = (d) => {
+        const brand = d.manufacturer || "generic"
         const deviceName = d.garminProduct || d.faveroProduct || d.shimanoProduct || d.productName || d.antplusDeviceType || d.bleDeviceType || d.localDeviceType || d.sourceType
-        return `${d.manufacturer}.${deviceName}.${d.serialNumber}`.replace(/\_/g, "").replace(/\s/g, "").toLowerCase()
+        return `${brand}.${deviceName}.${d.serialNumber}`.replace(/\_/g, "").replace(/\s/g, "").toLowerCase()
     }
 }
 
