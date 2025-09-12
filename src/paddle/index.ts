@@ -180,19 +180,18 @@ export class PaddleWrapper {
             // Process webhook according to the event type.
             if (ev.eventType == EventName.CustomerUpdated) {
                 await this.customers.onCustomerUpdated(ev)
-                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
             } else if (ev.eventType == EventName.SubscriptionActivated) {
                 await this.subscriptions.onSubscriptionCreated(ev)
-                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
             } else if ([EventName.SubscriptionPastDue, EventName.SubscriptionPaused, EventName.SubscriptionResumed, EventName.SubscriptionCanceled].includes(ev.eventType)) {
                 await this.subscriptions.onSubscriptionUpdated(ev)
-                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
             } else if ([EventName.TransactionCompleted].includes(ev.eventType)) {
                 await this.subscriptions.onTransaction(ev)
-                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id)
             } else {
-                logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id, "No action taken")
+                logger.debug("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id, "No action taken")
+                return
             }
+
+            logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id, `From ${clientIP}`)
         } catch (ex) {
             logger.error("Paddle.processWebhook", ex)
         }
