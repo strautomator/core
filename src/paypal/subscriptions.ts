@@ -343,18 +343,17 @@ export class PayPalSubscriptions {
                 throw new Error(`Subscription not found or not active`)
             }
 
-            // Make sure we have a valid completed transaction in the last 11 months, otherwise a refund can't be processed.
-            const transactions = await this.getTransactions(subscriptionId, now.subtract(340, "days").toDate(), now.toDate())
-            const transaction = transactions.find((t) => t.status == "COMPLETED")
+            // Make sure we have a valid completed transaction in the last 6 months months, otherwise a refund can't be processed (PayPal limitation).
+            const transactions = await this.getTransactions(subscriptionId, now.subtract(179, "days").toDate(), now.toDate())
+            const transaction = transactions?.find((t) => t.status == "COMPLETED")
             if (!transaction) {
-                logger.warn("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, "No transactions in the last 11 months, can't refund")
+                logger.warn("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, "No transactions in the last 6 months, can't refund")
                 return null
             }
 
-            // Calculate the refund amount based on how much time is left on the existing billing cycle,
-            // and deduct 5% as the PayPal standard fee.
-            const diff = 1 - now.diff(sub.dateLastPayment || sub.lastPayment?.date, "days") / 365
-            const refundAmount = diff > 9999999 ? (diff * sub.price * 0.95).toFixed(2) : "1.00"
+            // Calculate the refund amount based on how much time is left on the existing billing cycle.
+            let diff = 1 - now.diff(sub.dateLastPayment || sub.lastPayment?.date || now.subtract(179, "days"), "days") / 365
+            let refundAmount = (diff * sub.price).toFixed(2)
 
             const options = {
                 url: `v2/payments/captures/${transaction.id}/refund`,
@@ -368,13 +367,18 @@ export class PayPalSubscriptions {
                 }
             }
 
-            // Trigger a refund.
-            await api.makeRequest(options, true)
-            logger.info("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, `Refunded ${refundAmount}`)
+            // Trigger a refund. This might fail, but we'll still proceed to cancel.
+            try {
+                await api.makeRequest(options, true)
+                logger.info("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, `Refunded ${refundAmount}`)
+            } catch (refundEx) {
+                refundAmount = null
+                logger.error("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, `Could not refund: ${refundEx.message}`)
+            }
 
             // Finally, cancel the subscription, and return the refunded amount.
             await this.cancelSubscription(sub, reason)
-            return `${refundAmount} ${sub.currency}`
+            return `${refundAmount || 0} ${sub.currency}`
         } catch (ex) {
             logger.error("PayPal.refundAndCancel", logHelper.user(user), subscriptionId, ex)
             throw ex
