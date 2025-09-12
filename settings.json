@@ -394,8 +394,8 @@
         // or via the SMU_paddle_priceId and SMU_paddle_webhookId env variables.
         "priceId": null,
         "webhookId": null,
-        // If you wish to accept Paddle webhook events from any IP, set the ips to null.
-        "ips": ["34.232.58.13", "34.195.105.136", "34.237.3.244", "35.155.119.135", "52.11.166.252", "34.212.5.7"]
+        // If you wish to restrict webhook events sent by Paddle to specific IPs, you may set them here as an array.
+        "ips": null
     },
     "paypal": {
         "api": {
