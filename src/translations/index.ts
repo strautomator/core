@@ -11,6 +11,8 @@ import lt from "./lt"
 import nl from "./nl"
 import pl from "./pl"
 import pt from "./pt"
+import se from "./se"
+import sk from "./sk"
 import logger from "anyhow"
 
 /**
@@ -25,7 +27,9 @@ export const languageStrings: {[id: string]: LanguageString} = {
     lt: lt,
     nl: nl,
     pl: pl,
-    pt: pt
+    pt: pt,
+    se: se,
+    sk: sk
 }
 
 /**
