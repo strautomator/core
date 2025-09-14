@@ -214,7 +214,11 @@ export class PaddleSubscriptions {
                 sub = await subscriptions.getById(data.subscriptionId)
             }
 
-            // Make sure the subscription was previously created.
+            // Make sure the subscription was previously created. If we can't find, try checking by user ID.
+            if (!sub && user.subscriptionId) {
+                logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `Subscription ${data.subscriptionId} not found, trying ${user.subscriptionId} instead`)
+                sub = await subscriptions.getById(user.subscriptionId)
+            }
             if (!sub) {
                 throw new Error(`Subscription ${data.subscriptionId} not found`)
             }
