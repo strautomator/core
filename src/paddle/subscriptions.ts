@@ -99,6 +99,10 @@ export class PaddleSubscriptions {
                 dateUpdated: dayjs(data.updatedAt || new Date()).toDate()
             }
 
+            if (data.items?.at(0)?.price?.unitPrice) {
+                sub.price = parseFloat(data.items.at(0)?.price?.unitPrice.amount) / 100
+            }
+
             if (lifetime) {
                 sub.frequency = "lifetime"
                 sub.dateLastPayment = sub.dateUpdated

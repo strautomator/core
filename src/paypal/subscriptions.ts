@@ -325,7 +325,7 @@ export class PayPalSubscriptions {
     /**
      * Refund (if possible) and cancel the specified subscription, and return the refunded amount as string
      * @param user The user data.
-     * @param subscriptionId The subscription to be refunded.
+     * @param subscriptionId The PayPal subscription to be refunded.
      * @param reason Optional reason for the refund.
      */
     refundAndCancel = async (user: UserData, subscriptionId: string, reason: string): Promise<string> => {
