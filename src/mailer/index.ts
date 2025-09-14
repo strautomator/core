@@ -197,18 +197,18 @@ export class Mailer {
             }
         } catch (ex) {
             if (clients.length > 0 && sendingOptions?.html) {
-                logger.error("Mailer.send", client.options["host"], options.to, subject, ex, "Will try the fallback SMTP")
+                logger.error("Mailer.send", options.to, subject, ex, "Will try a fallback SMTP")
 
                 // Try again using the fallback SMTP client.
                 try {
                     await clients.pop().sendMail(sendingOptions)
                     logger.info("Mailer.send.fallback", options.to, subject)
                 } catch (fallbackEx) {
-                    logger.error("Mailer.send.fallback", client.options["host"], options.to, subject, fallbackEx)
+                    logger.error("Mailer.send.fallback", options.to, subject, fallbackEx)
                     logger.warn("Mailer.send", options.to, subject, body)
                 }
             } else {
-                logger.error("Mailer.send", client.options["host"], options.to, subject, ex)
+                logger.error("Mailer.send", options.to, subject, ex)
             }
         }
     }
