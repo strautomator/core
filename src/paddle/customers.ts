@@ -97,7 +97,7 @@ export class PaddleCustomers {
             // Make sure we do not have duplicates.
             const existing = await users.getByPaddleId(user.paddleId)
             if (existing && existing.id != user.id) {
-                throw new Error("That email or customer ID is already in use by another user")
+                throw new Error("Mismatching customer ID")
             }
 
             const name = user.profile.firstName && user.profile.lastName ? `${user.profile.firstName} ${user.profile.lastName}` : user.displayName

@@ -1057,6 +1057,8 @@ export class Users {
             await database.merge("users", data)
 
             logger.info("Users.setEmail", logHelper.user(user), email)
+
+            eventManager.emit("Users.emailUpdated", user)
         } catch (ex) {
             logger.error("Users.setEmail", logHelper.user(user), email, ex)
             throw ex

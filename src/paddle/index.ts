@@ -79,11 +79,26 @@ export class PaddleWrapper {
                 await this.loadLive()
             }
 
-            // Unsubscribe when user gets deleted.
+            // Customer email update and deletion events.
+            eventManager.on("Users.emailUpdated", this.onEmailUpdated)
             eventManager.on("Users.delete", this.onUserDelete)
         } catch (ex) {
             logger.error("Paddle.init", ex)
             throw ex
+        }
+    }
+
+    /**
+     * Change email on Paddle when user email is updated.
+     * @param user User that had its email updated.
+     */
+    private onEmailUpdated = async (user: UserData): Promise<void> => {
+        try {
+            if (user.paddleId && user.email) {
+                await this.api.client.customers.update(user.paddleId, {email: user.email})
+            }
+        } catch (ex) {
+            logger.error("Paddle.onEmailUpdated", logHelper.user(user), user.email, "Failed to update user email on Paddle", ex)
         }
     }
 
