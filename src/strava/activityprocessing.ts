@@ -2,6 +2,7 @@
 
 import {StravaActivity, StravaActivityFilter, StravaProcessedActivity, StravaRideType, StravaRunType} from "./types"
 import {isActivityIgnored} from "./utils"
+import {updateBatteryTracking} from "../gearwear/battery"
 import {RecipeData} from "../recipes/types"
 import {getActionSummary, getConditionSummary} from "../recipes/utils"
 import {UserData} from "../users/types"
@@ -187,7 +188,7 @@ export class StravaActivityProcessing {
 
             // If user has no recipes and hasn't logged in for a while? Stop here.
             if ((!user.recipes || Object.keys(user.recipes).length == 0) && dayjs().diff(user.dateLogin, "days") > settings.users.idleDays.default) {
-                logger.info("Strava.processActivity", logHelper.user(user), `No recipes, or user is idle, won't process activity ${activityId}`)
+                logger.info("Strava.processActivity", logHelper.user(user), `No recipes, user is idle, won't process activity ${activityId}`)
                 return null
             }
 
@@ -216,6 +217,17 @@ export class StravaActivityProcessing {
                 }
 
                 throw ex
+            }
+
+            // Update battery tracking straight away if user is PRO and activity was made with a Garmin or Wahoo device.
+            try {
+                const device = activity.device?.toLowerCase() || ""
+                const isGarminWahoo = (user.garmin?.id || user.wahoo?.id) && (device.includes("garmin") || device.includes("wahoo"))
+                if (user.isPro && isGarminWahoo) {
+                    updateBatteryTracking(user, [activity])
+                }
+            } catch (batteryEx) {
+                logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Failed to update sensor batteries", batteryEx)
             }
 
             // Check for FTP updates in case user has opted-in and the activity happened in the last few days.
