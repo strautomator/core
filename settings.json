@@ -233,7 +233,7 @@
         // Keep a maximum of 20 recent activity IDs per gear.
         "maxRecentActivities": 20,
         // Remove devices that did not have their battery status updated for more than 90 days by default.
-        // Mark as status unknown if not updates for more than 60 days.
+        // Mark as status unknown if no updates for more than 60 days.
         "battery": {
             "idleDays": 60,
             "maxAgeDays": 90
