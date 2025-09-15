@@ -1,7 +1,6 @@
 // Strautomator Core: GearWear
 
 import {GearWearDbState, GearWearConfig, GearWearComponent, GearWearBatteryTracker} from "./types"
-import {updateBatteryTracking} from "./battery"
 import {notifyIdle} from "./notifications"
 import {resetTracking, updateTracking} from "./tracking"
 import {StravaActivity, StravaGear} from "../strava/types"
@@ -288,6 +287,17 @@ export class GearWear {
     getBatteryTracker = async (user: UserData): Promise<GearWearBatteryTracker> => {
         try {
             const result: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
+
+            // Devices that were not seen for a while will have their battery status set to unknown.
+            if (result?.devices) {
+                const minDate = dayjs().subtract(settings.gearwear.battery.idleDays, "days")
+                for (let d of result.devices) {
+                    if (minDate.isAfter(d.dateUpdated)) {
+                        d.status = "unknown"
+                    }
+                }
+            }
+
             return result
         } catch (ex) {
             logger.error("GearWear.getBatteryTracker", logHelper.user(user), ex)
@@ -296,6 +306,7 @@ export class GearWear {
     }
 
     // UPDATE AND DELETE
+
     // --------------------------------------------------------------------------
 
     /**
@@ -588,11 +599,6 @@ export class GearWear {
                 const gearActivities = _.filter(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
                 await updateTracking(user, config, gearActivities)
                 count += gearActivities.length
-            }
-
-            // If user is PRO and has a Garmin or Wahoo profile linked, track battery levels.
-            if (user.isPro && !user.preferences.privacyMode && (user.garmin?.id || user.wahoo?.id)) {
-                await updateBatteryTracking(user, activities)
             }
         } catch (ex) {
             logger.error("GearWear.processUserActivities", logHelper.user(user), dateString, ex)
