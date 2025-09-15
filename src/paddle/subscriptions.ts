@@ -260,7 +260,7 @@ export class PaddleSubscriptions {
                 }
                 const nextPayment = data.billingPeriod?.endsAt ? dayjs(data.billingPeriod.endsAt) : null
                 if (nextPayment && (!sub.dateNextPayment || nextPayment.diff(sub.dateNextPayment, "hours") > 1)) {
-                    updatedSub.dateLastPayment = nextPayment.toDate()
+                    updatedSub.dateNextPayment = nextPayment.toDate()
                     hasChanges = true
                 }
             }
