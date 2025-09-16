@@ -63,13 +63,14 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
                     logger.info("GearWear.updateBatteryTracking", logHelper.user(user), `Processing ${matching.deviceBattery.length} devices for activity ${activity.id}`)
 
                     for (let deviceBattery of matching.deviceBattery) {
-                        const existing = tracker.devices.find((d) => d.id == deviceBattery.id)
+                        const existing = tracker.devices.find((d) => deviceBattery.id == d.id || deviceBattery.id.startsWith(d.id))
                         let changedToLow = false
                         if (existing) {
                             if (existing.status != deviceBattery.status) {
                                 logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New status: ${deviceBattery.id} - ${deviceBattery.status}`)
                                 changedToLow = true
                             }
+                            existing.id = deviceBattery.id
                             existing.status = deviceBattery.status
                             existing.dateUpdated = dateUpdated
                         } else {
