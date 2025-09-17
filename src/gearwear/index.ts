@@ -1,6 +1,7 @@
 // Strautomator Core: GearWear
 
-import {GearWearDbState, GearWearConfig, GearWearComponent, GearWearBatteryTracker} from "./types"
+import {GearWearDbState, GearWearConfig, GearWearComponent} from "./types"
+import {getBatteryTracker, updateBatteryTracker, deleteBatteryTrackerDevice} from "./battery"
 import {notifyIdle} from "./notifications"
 import {resetTracking, updateTracking} from "./tracking"
 import {StravaActivity, StravaGear} from "../strava/types"
@@ -30,6 +31,9 @@ export class GearWear {
     notifyIdle = notifyIdle
     resetTracking = resetTracking
     updateTracking = updateTracking
+    getBatteryTracker = getBatteryTracker
+    updatedBatteryTracker = updateBatteryTracker
+    deleteBatteryTrackerDevice = deleteBatteryTrackerDevice
 
     // INIT
     // --------------------------------------------------------------------------
@@ -276,31 +280,6 @@ export class GearWear {
             return result
         } catch (ex) {
             logger.error("GearWear.getByUser", logHelper.user(user), ex)
-            throw ex
-        }
-    }
-
-    /**
-     * Get the devices battery tracker for the specified user.
-     * @param user The user.
-     */
-    getBatteryTracker = async (user: UserData): Promise<GearWearBatteryTracker> => {
-        try {
-            const result: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
-
-            // Devices that were not seen for a while will have their battery status set to unknown.
-            if (result?.devices) {
-                const minDate = dayjs().subtract(settings.gearwear.battery.idleDays, "days")
-                for (let d of result.devices) {
-                    if (minDate.isAfter(d.dateUpdated)) {
-                        d.status = "unknown"
-                    }
-                }
-            }
-
-            return result
-        } catch (ex) {
-            logger.error("GearWear.getBatteryTracker", logHelper.user(user), ex)
             throw ex
         }
     }

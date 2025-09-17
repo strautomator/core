@@ -2,7 +2,7 @@
 
 import {StravaActivity, StravaActivityFilter, StravaProcessedActivity, StravaRideType, StravaRunType} from "./types"
 import {isActivityIgnored} from "./utils"
-import {updateBatteryTracking} from "../gearwear/battery"
+import {updateBatteryTracker} from "../gearwear/battery"
 import {RecipeData} from "../recipes/types"
 import {getActionSummary, getConditionSummary} from "../recipes/utils"
 import {UserData} from "../users/types"
@@ -224,7 +224,7 @@ export class StravaActivityProcessing {
                 const device = activity.device?.toLowerCase() || ""
                 const isGarminWahoo = (user.garmin?.id || user.wahoo?.id) && (device.includes("garmin") || device.includes("wahoo"))
                 if (user.isPro && isGarminWahoo) {
-                    updateBatteryTracking(user, [activity])
+                    updateBatteryTracker(user, [activity])
                 }
             } catch (batteryEx) {
                 logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "Failed to update sensor batteries", batteryEx)

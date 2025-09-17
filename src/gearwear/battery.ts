@@ -16,18 +16,43 @@ const settings = require("setmeup").settings
 // --------------------------------------------------------------------------
 
 /**
+ * Get the devices battery tracker for the specified user.
+ * @param user The user.
+ */
+export const getBatteryTracker = async (user: UserData): Promise<GearWearBatteryTracker> => {
+    try {
+        const result: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
+
+        // Devices that were not seen for a while will have their battery status set to unknown.
+        if (result?.devices) {
+            const minDate = dayjs().subtract(settings.gearwear.battery.idleDays, "days")
+            for (let d of result.devices) {
+                if (minDate.isAfter(d.dateUpdated)) {
+                    d.status = "unknown"
+                }
+            }
+        }
+
+        return result
+    } catch (ex) {
+        logger.error("GearWear.getBatteryTracker", logHelper.user(user), ex)
+        throw ex
+    }
+}
+
+/**
  * Keep track of sensor battery levels, available to PRO only, disabled if privacyMode is set.
  * @param user The user.
  * @param activities Strava activities to be processed.
  */
-export const updateBatteryTracking = async (user: UserData, activities: StravaActivity[]): Promise<void> => {
+export const updateBatteryTracker = async (user: UserData, activities: StravaActivity[]): Promise<void> => {
     const debugLogger = user.debug ? logger.warn : logger.debug
     const activitiesLog = `${activities.length || "no"} activities`
     const now = dayjs.utc().toDate()
 
     try {
         if (!activities || activities.length == 0) {
-            debugLogger("GearWear.updateBatteryTracking", logHelper.user(user), "No activities to process")
+            debugLogger("GearWear.updateBatteryTracker", logHelper.user(user), "No activities to process")
             return
         }
 
@@ -52,7 +77,7 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
             try {
                 const matching = await fitparser.getMatchingActivity(user, activity)
                 if (!matching) {
-                    debugLogger("GearWear.updateBatteryTracking", logHelper.user(user), `Activity ${activity.id} has no matching FIT file`)
+                    debugLogger("GearWear.updateBatteryTracker", logHelper.user(user), `Activity ${activity.id} has no matching FIT file`)
                     continue
                 }
 
@@ -60,14 +85,14 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
 
                 // Iterate and update device battery status.
                 if (matching.deviceBattery?.length > 0) {
-                    logger.info("GearWear.updateBatteryTracking", logHelper.user(user), `Processing ${matching.deviceBattery.length} devices for activity ${activity.id}`)
+                    logger.info("GearWear.updateBatteryTracker", logHelper.user(user), `Processing ${matching.deviceBattery.length} devices for activity ${activity.id}`)
 
                     for (let deviceBattery of matching.deviceBattery) {
                         const existing = tracker.devices.find((d) => deviceBattery.id == d.id || deviceBattery.id.startsWith(d.id))
                         let changedToLow = false
                         if (existing) {
                             if (existing.status != deviceBattery.status) {
-                                logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New status: ${deviceBattery.id} - ${deviceBattery.status}`)
+                                logger.info("GearWear.updateBatteryTracker", logHelper.user(user), activitiesLog, `New status: ${deviceBattery.id} - ${deviceBattery.status}`)
                                 changedToLow = true
                             }
                             existing.id = deviceBattery.id
@@ -75,7 +100,7 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
                             existing.dateUpdated = dateUpdated
                         } else {
                             tracker.devices.push({id: deviceBattery.id, status: deviceBattery.status, dateUpdated: dateUpdated})
-                            logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `New device tracked: ${deviceBattery.id} - ${deviceBattery.status}`)
+                            logger.info("GearWear.updateBatteryTracker", logHelper.user(user), activitiesLog, `New device tracked: ${deviceBattery.id} - ${deviceBattery.status}`)
                             changedToLow = true
                         }
 
@@ -86,13 +111,13 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
                     }
                 }
             } catch (innerEx) {
-                logger.error("GearWear.updateBatteryTracking", logHelper.user(user), logHelper.activity(activity), innerEx)
+                logger.error("GearWear.updateBatteryTracker", logHelper.user(user), logHelper.activity(activity), innerEx)
             }
         }
 
         // No need to save a new tracker if no device battery were found.
         if (isNew && tracker.devices.length == 0) {
-            logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, "No battery statuses found, won't create a tracker")
+            logger.info("GearWear.updateBatteryTracker", logHelper.user(user), activitiesLog, "No battery statuses found, won't create a tracker")
             return
         }
 
@@ -100,7 +125,7 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
         const minDate = dayjs().subtract(settings.gearwear.battery.maxAgeDays, "days")
         const oldDevices = _.remove(tracker.devices, (d) => minDate.isAfter(d.dateUpdated))
         if (oldDevices.length > 0) {
-            logger.info("GearWear.updateBatteryTracking", logHelper.user(user), `Removed unseen devices: ${oldDevices.map((d) => d.id).join(", ")}`)
+            logger.info("GearWear.updateBatteryTracker", logHelper.user(user), `Removed unseen devices: ${oldDevices.map((d) => d.id).join(", ")}`)
         }
 
         // Sort the devices by ID.
@@ -108,7 +133,7 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
 
         // Save tracker to the database.
         await database.set("gearwear-battery", tracker, user.id)
-        logger.info("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, `Tracking ${tracker.devices.length} devices`)
+        logger.info("GearWear.updateBatteryTracker", logHelper.user(user), activitiesLog, `Tracking ${tracker.devices.length} devices`)
 
         // Check if user wants to be notified about low battery devices.
         if (!user.preferences.gearwearBatteryAlert || !user.email || lowBatteryDevices.length == 0) {
@@ -122,8 +147,35 @@ export const updateBatteryTracking = async (user: UserData, activities: StravaAc
             to: user.email
         })
 
-        logger.info("GearWear.updateBatteryTracking.email", logHelper.user(user), `Devices: ${lowBatteryDevices.map((d) => d.id).join(", ")}`, "Email sent")
+        logger.info("GearWear.updateBatteryTracker.email", logHelper.user(user), `Devices: ${lowBatteryDevices.map((d) => d.id).join(", ")}`, "Email sent")
     } catch (ex) {
-        logger.error("GearWear.updateBatteryTracking", logHelper.user(user), activitiesLog, ex)
+        logger.error("GearWear.updateBatteryTracker", logHelper.user(user), activitiesLog, ex)
+    }
+}
+
+/**
+ * Remove the specified sensor ID from the devices list of the battery tracker.
+ * @param user The user data.
+ * @param sensorId ID of the sensor to be removed from tracking.
+ */
+export const deleteBatteryTrackerDevice = async (user: UserData, sensorId: string): Promise<void> => {
+    try {
+        const tracker: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
+        if (tracker?.devices?.length > 0) {
+            const removed = _.remove(tracker.devices, {id: sensorId})
+
+            // Only update the record on the database if a device was actually removed.
+            if (removed.length > 0) {
+                await database.set("gearwear-battery", tracker, user.id)
+                logger.info("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Removed sensor ${sensorId}`)
+
+                return
+            }
+        }
+
+        logger.warn("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Sensor ${sensorId} not found`)
+    } catch (ex) {
+        logger.error("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Sensor ${sensorId}`, ex)
+        throw ex
     }
 }
