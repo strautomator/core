@@ -41,7 +41,7 @@ export const getBatteryTracker = async (user: UserData): Promise<GearWearBattery
 }
 
 /**
- * Keep track of sensor battery levels, available to PRO only, disabled if privacyMode is set.
+ * Keep track of device battery levels, available to PRO only, disabled if privacyMode is set.
  * @param user The user.
  * @param activities Strava activities to be processed.
  */
@@ -154,28 +154,28 @@ export const updateBatteryTracker = async (user: UserData, activities: StravaAct
 }
 
 /**
- * Remove the specified sensor ID from the devices list of the battery tracker.
+ * Remove the specified device ID from the devices list of the battery tracker.
  * @param user The user data.
- * @param sensorId ID of the sensor to be removed from tracking.
+ * @param deviceId ID of the device to be removed from tracking.
  */
-export const deleteBatteryTrackerDevice = async (user: UserData, sensorId: string): Promise<void> => {
+export const deleteBatteryTrackerDevice = async (user: UserData, deviceId: string): Promise<void> => {
     try {
         const tracker: GearWearBatteryTracker = await database.get("gearwear-battery", user.id)
         if (tracker?.devices?.length > 0) {
-            const removed = _.remove(tracker.devices, {id: sensorId})
+            const removed = _.remove(tracker.devices, {id: deviceId})
 
             // Only update the record on the database if a device was actually removed.
             if (removed.length > 0) {
                 await database.set("gearwear-battery", tracker, user.id)
-                logger.info("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Removed sensor ${sensorId}`)
+                logger.info("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Removed device ${deviceId}`)
 
                 return
             }
         }
 
-        logger.warn("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Sensor ${sensorId} not found`)
+        logger.warn("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Device ${deviceId} not found`)
     } catch (ex) {
-        logger.error("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Sensor ${sensorId}`, ex)
+        logger.error("GearWear.deleteBatteryTrackerDevice", logHelper.user(user), `Device ${deviceId}`, ex)
         throw ex
     }
 }
