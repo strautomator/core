@@ -294,8 +294,10 @@ export class FitParser {
      */
     private getDeviceString = (d) => {
         const brand = d.manufacturer || "generic"
+        const antId = d.antId || d.antDeviceNumber
+        const deviceId = antId ? `${d.serialNumber}.${antId}` : d.serialNumber
         const deviceName = d.garminProduct || d.faveroProduct || d.shimanoProduct || d.productName || d.antplusDeviceType || d.bleDeviceType || d.localDeviceType || d.sourceType
-        const deviceId = d.antDeviceNumber ? `${d.serialNumber}.${d.antDeviceNumber}` : d.serialNumber
+
         return `${brand}.${deviceName}.${deviceId}`.replace(/\_/g, "").replace(/\s/g, "").toLowerCase()
     }
 }

@@ -8818,6 +8818,20 @@ const Profile = {
                     hasComponents: false,
                     subFields: []
                 },
+                24: {
+                    num: 24,
+                    name: "antId",
+                    type: "uint32z",
+                    array: "false",
+                    scale: 1,
+                    offset: 0,
+                    units: "",
+                    bits: [],
+                    components: [],
+                    isAccumulated: false,
+                    hasComponents: false,
+                    subFields: []
+                },
                 25: {
                     num: 25,
                     name: "sourceType",
