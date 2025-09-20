@@ -392,9 +392,7 @@
             "key": null,
             "clientToken": null
         },
-        // The price and webhook IDs must be taken from Paddle and set on the settings.secret.json file,
-        // or via the SMU_paddle_priceId and SMU_paddle_webhookId env variables.
-        "priceId": null,
+        // The Paddle webhook ID must be set on the settings.secret.json file or via the SMU_paddle_webhookId env variable.
         "webhookId": null,
         // If you wish to restrict webhook events sent by Paddle to specific IPs, you may set them here as an array.
         "ips": null
