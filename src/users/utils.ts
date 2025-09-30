@@ -59,7 +59,7 @@ export const validateUserPreferences = (user: Partial<UserData>): void => {
             if (typeof user.preferences.gearwearDelayDays != "number") {
                 user.preferences.gearwearDelayDays = parseInt(user.preferences.gearwearDelayDays)
             }
-            if (user.preferences.gearwearDelayDays < 0 || user.preferences.gearwearDelayDays > 3) {
+            if (user.preferences.gearwearDelayDays < 1 || user.preferences.gearwearDelayDays > 3) {
                 fields.push(`gearwearDelayDays: ${user.preferences.gearwearDelayDays}`)
                 user.preferences.gearwearDelayDays = FieldValue.delete() as any
             }
