@@ -300,10 +300,16 @@ export class Recipes {
 
             // Recipe not valid for this activity? Log what failed.
             // Polyline contents won't be logged.
+            // Dates will be logged considering the activity's timezone offset.
             if (!valid) {
                 let conditionProp = condition.property == "polyline" ? null : activity[condition.property]
-                if (_.isDate(conditionProp)) conditionProp = dayjs(conditionProp).format("lll")
-                else if (_.isArray(conditionProp)) conditionProp = conditionProp.length
+                if (_.isDate(conditionProp)) {
+                    let dateProp = dayjs.utc(conditionProp)
+                    const timeLog = dateProp.second() + dateProp.minute() * 60 + dateProp.hour() * 3600
+                    conditionProp = `${dateProp.format("lll")} | ${timeLog}, offset ${activity.utcStartOffset} min`
+                } else if (_.isArray(conditionProp)) {
+                    conditionProp = conditionProp.length
+                }
 
                 let logValue = conditionProp ? `Not a match: ${conditionProp}` : "Not a match"
                 logger.info("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `${condition.property} ${condition.operator} ${condition.value}`, logValue)
