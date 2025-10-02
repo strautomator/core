@@ -34,6 +34,7 @@ export const checkText = (activity: StravaActivity, condition: RecipeCondition, 
     // Activity field has no value? Stop here.
     let refText = !fitFileActivity ? activity[prop] : fitFileActivity[prop.replace("garmin.", "").replace("wahoo.", "")]
     if (_.isNil(refText)) {
+        logger.debug("Recipes.checkText", logHelper.activity(activity), condition, "Missing referenced property")
         return false
     }
 
@@ -97,6 +98,7 @@ export const checkNumber = (activity: StravaActivity, condition: RecipeCondition
 
     // Activity field has no value? Stop here.
     if (_.isNil(aNumber)) {
+        logger.debug("Recipes.checkNumber", logHelper.activity(activity), condition, "Not a number")
         return false
     }
 
@@ -139,6 +141,7 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
 
     // Activity location field has no value? Stop here.
     if (_.isNil(activity[prop])) {
+        logger.debug("Recipes.checkLocation", logHelper.activity(activity), condition, "Missing location")
         return false
     }
 
@@ -186,6 +189,7 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
 
     // Activity field has no value? Stop here.
     if (_.isNil(activity[prop])) {
+        logger.debug("Recipes.checkTimestamp", logHelper.activity(activity), condition, "Missing property timestamp")
         return false
     }
 
@@ -320,11 +324,12 @@ export const checkWeekday = (activity: StravaActivity, condition: RecipeConditio
 
     // No valid start date? Stop here.
     if (!activity.dateStart) {
+        logger.debug("Recipes.checkWeekday", logHelper.activity(activity), condition, "Missing dateStart")
         return false
     }
 
     // Activity start date.
-    let aDate = dayjs.utc(activity["dateStart"])
+    let aDate = dayjs.utc(activity.dateStart)
     if (activity.utcStartOffset) {
         aDate = aDate.add(activity.utcStartOffset, "minutes")
     }
@@ -359,12 +364,13 @@ export const checkDateRange = (activity: StravaActivity, condition: RecipeCondit
 
     // No valid date? Stop here.
     if (!activity.dateStart || !activity.dateEnd) {
+        logger.debug("Recipes.checkDateRange", logHelper.activity(activity), condition, "Missing dateStart or dateEnd")
         return false
     }
 
     // Activity start and end date.
-    let aStartDate = dayjs.utc(activity["dateStart"])
-    let aEndDate = dayjs.utc(activity["dateEnd"])
+    let aStartDate = dayjs.utc(activity.dateStart)
+    let aEndDate = dayjs.utc(activity.dateEnd)
     if (activity.utcStartOffset) {
         aStartDate = aStartDate.add(activity.utcStartOffset, "minutes")
         aEndDate = aEndDate.add(activity.utcStartOffset, "minutes")
@@ -671,6 +677,6 @@ export const checkCity = async (activity: StravaActivity, condition: RecipeCondi
         return true
     }
 
-    logger.debug("Recipes.checkSportType", logHelper.activity(activity), condition, "Failed")
+    logger.debug("Recipes.checkCity", logHelper.activity(activity), condition, "Failed")
     return false
 }
