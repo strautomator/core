@@ -23,7 +23,7 @@ export class WahooProfiles {
     /**
      * Get a Wahoo profile for the specified user.
      * @param user User requesting the Wahoo profile data.
-     * @param tokens Optional tokens, in case the profile is being set for the first time.
+     * @param tokens Optional tokens to be used to fetch the profile.
      */
     getProfile = async (user: UserData, tokens?: WahooTokens): Promise<WahooProfile> => {
         try {
@@ -34,8 +34,11 @@ export class WahooProfiles {
                 return cached
             }
 
-            if (!tokens) tokens = user.wahoo.tokens
-            tokens = await api.validateTokens(user, tokens)
+            // Validate and use the existing tokens if none were passed.
+            if (!tokens) {
+                await api.validateTokens(user)
+                tokens = user.wahoo.tokens
+            }
 
             // Make request to fetch profile.
             const res = await api.makeRequest(tokens, "v1/user")
@@ -48,6 +51,8 @@ export class WahooProfiles {
             // Save to cache and return the user profile.
             cache.set("wahoo", cacheId, profile)
             logger.info("Wahoo.getProfile", logHelper.user(user), `ID ${profile.id}`)
+
+            user.wahoo.tokens = tokens
             return profile
         } catch (ex) {
             const err = logger.error("Wahoo.getProfile", logHelper.user(user), ex)
@@ -64,8 +69,6 @@ export class WahooProfiles {
      */
     saveProfile = async (user: UserData, profile: WahooProfile): Promise<void> => {
         try {
-            user.wahoo = profile
-
             const data: Partial<UserData> = {id: user.id, displayName: user.displayName, wahoo: profile}
             if (profile.email && !user.email) {
                 data.email = profile.email
@@ -80,8 +83,27 @@ export class WahooProfiles {
 
             logger.info("Wahoo.saveProfile", logHelper.user(user), `ID ${profile.id}`)
             await users.update(data)
+
+            user.wahoo = profile
         } catch (ex) {
             logger.error("Wahoo.saveProfile", logHelper.user(user), `ID ${profile.id}`, ex)
+        }
+    }
+
+    /**
+     * Helper to refresh the Wahoo profile for the specified user (getProfile + saveProfile).
+     * @param user The user that should be refreshed.
+     */
+    refreshProfile = async (user: UserData): Promise<void> => {
+        try {
+            if (!user || !user.wahoo?.tokens) {
+                throw new Error("User has no Wahoo access tokens")
+            }
+
+            const profile = await this.getProfile(user)
+            await this.saveProfile(user, profile)
+        } catch (ex) {
+            logger.error("Wahoo.refreshProfile", logHelper.user(user), ex)
         }
     }
 

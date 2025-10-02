@@ -224,23 +224,20 @@ export class Wahoo {
 
     /**
      * Make sure the user tokens are valid, and if necessary refresh them.
-     * @param user The user.
-     * @param tokens Optional tokens, if not passed will use the existing ones.
+     * @param user The user to be validated.
      */
-    validateTokens = async (user: UserData, tokens?: WahooTokens): Promise<WahooTokens> => {
+    validateTokens = async (user: UserData): Promise<void> => {
         try {
-            if (!tokens) tokens = user.wahoo.tokens
-
-            if (tokens.expiresAt <= dayjs().unix()) {
-                tokens = await this.refreshToken(user)
-                user.wahoo.tokens = tokens
+            if (!user.wahoo?.tokens) {
+                throw new Error("User has no Wahoo tokens")
+            }
+            if (user.wahoo.tokens.expiresAt <= dayjs().unix()) {
+                user.wahoo.tokens = await this.refreshToken(user)
             }
         } catch (ex) {
             logger.error("Wahoo.validateTokens", logHelper.user(user), ex)
             throw new Error("Token validation has failed")
         }
-
-        return tokens
     }
 
     /**

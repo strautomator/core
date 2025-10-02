@@ -27,12 +27,8 @@ export class WahooActivities {
      * @param webhookData The Wahoo webhook data.
      */
     processActivity = async (user: UserData, webhookData: WahooWebhookData): Promise<any> => {
-        if (!webhookData || !webhookData.workout_summary || !webhookData.workout_summary.workout) {
-            logger.error("Wahoo.processActivity", logHelper.user(user), logHelper.wahooWebhook(webhookData), "Missing workout summary, won't process")
-            return
-        }
-        if (!webhookData.workout_summary.file) {
-            logger.error("Wahoo.processActivity", logHelper.user(user), logHelper.wahooWebhook(webhookData), "Missing workout file URL, won't process")
+        if (!webhookData || !webhookData.workout_summary?.workout || !webhookData.workout_summary?.file) {
+            logger.error("Wahoo.processActivity", logHelper.user(user), logHelper.wahooWebhook(webhookData), "Missing workout summary or file URL, won't process")
             return
         }
 
@@ -68,20 +64,24 @@ export class WahooActivities {
     // --------------------------------------------------------------------------
 
     /**
-     * Get list of activities (workouts) for the user.
+     * Get list of recent activities (workouts) for the user.
      * @param user User requesting the Wahoo data.
-     * @param dateFrom From date.
-     * @param dateTo Optional date to, defaults to dateFrom + 24 hours.
      */
     getActivities = async (user: UserData): Promise<WahooActivity[]> => {
         try {
-            const data = await api.makeRequest(user.wahoo.tokens, "v1/workouts")
+            if (!user.wahoo?.tokens) {
+                throw new Error("User has no Wahoo tokens")
+            }
 
+            await api.validateTokens(user)
+
+            const data = await api.makeRequest(user.wahoo.tokens, "v1/workouts")
             if (data?.workouts) {
                 logger.info("Wahoo.getActivities", logHelper.user(user), `Got ${data.workouts.length} recent activities`)
                 return data.workouts.map((w) => toWahooActivity(w))
             }
 
+            // Got no recent activities.
             logger.info("Wahoo.getActivities", logHelper.user(user), "No recent activities")
             return []
         } catch (ex) {
@@ -97,11 +97,15 @@ export class WahooActivities {
      */
     getActivityFile = async (user: UserData, webhookData: WahooWebhookData): Promise<any> => {
         try {
-            if (!webhookData || !webhookData.workout_summary || !webhookData.workout_summary.file) {
-                throw new Error("Missing activity file URL")
+            if (!user.wahoo?.tokens) {
+                throw new Error("User has no Wahoo tokens")
+            }
+            if (!webhookData?.workout_summary?.file?.url) {
+                throw new Error("Missing activity file URL in the webhook data")
             }
 
-            // Try fetching the FIT file specified in the webhook data.
+            await api.validateTokens(user)
+
             const res = await api.makeRequest(null, webhookData.workout_summary.file.url, true)
             if (res) {
                 return Buffer.from(res)
