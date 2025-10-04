@@ -449,8 +449,8 @@
             "maxClubs": 5,
             // Free accounts can trigger batch automations for activities up to 30 days old.
             "batchDays": 30,
-            // Free accounts limited to 6 months in the past and up to 5 days in the future.
-            "pastCalendarDays": 180,
+            // Free accounts limited to 3 months in the past and up to 5 days in the future.
+            "pastCalendarDays": 90,
             "futureCalendarDays": 5,
             // Free calendars are cached for around 12 hours.
             "calendarCacheDuration": 43200,
@@ -458,10 +458,10 @@
             "linksOn": 1,
             // Track personal records for which sports?
             "recordSports": ["Ride", "VirtualRide", "Run", "VirtualRun"],
-            // Use AI and weather parameters on 20% of "AI generate" recipe actions.
+            // Use AI and weather parameters on 10% of "AI generate" recipe actions.
             "generatedContent": {
-                "ai": 20,
-                "weather": 20
+                "ai": 10,
+                "weather": 10
             }
         },
         "pro": {
