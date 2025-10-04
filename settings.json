@@ -498,7 +498,7 @@
         // How many times a recipe can fail before getting disabled automatically.
         "maxFailures": 10,
         // Max number of activity IDs kept on the recipe stats.
-        "maxActivityIds": 500,
+        "maxActivityIds": 100,
         // Max length for specific properties.
         "maxLength": {
             "title": 40,
