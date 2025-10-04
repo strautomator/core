@@ -197,8 +197,8 @@
         },
         // Cache profiles and Garmin data for up to 2 minutes. Value set in seconds.
         "cacheDuration": 120,
-        // Garmin data will be stored in the database for up to 10 days.
-        "maxCacheDuration": 864000
+        // Garmin data will be stored in the database for up to 7 days.
+        "maxCacheDuration": 604800
     },
     "gcp": {
         // The project ID on Google Cloud must be set on the settings.secret.json file
@@ -322,8 +322,8 @@
         "cachePrecision": 2,
         // Cache geolocation results in memory for up to 12 hours. Value set in seconds.
         "cacheDuration": 43200,
-        // Geolocation will be cached on the database for up to 10 days. Value set in seconds.
-        "maxCacheDuration": 864000,
+        // Geolocation will be cached on the database for up to 7 days. Value set in seconds.
+        "maxCacheDuration": 604800,
         // Circle color, will also be used as a fill color with half opacity.
         "circleColor": "0x0066CC",
         // Default marker style and color.
@@ -353,12 +353,12 @@
     "notifications": {
         // Cache notification results for up to 4 seconds.
         "cacheDuration": 4,
-        // Messages will auto expire after 6 months.
-        "defaultExpireDays": 180,
+        // Messages will auto expire after 4 months.
+        "defaultExpireDays": 120,
         // Send notifications via email if unread notifications hits a certain count.
         "emailReminderCount": 10,
-        // Delete read messages after 90 days.
-        "readDeleteAfterDays": 90
+        // Delete read messages after 60 days.
+        "readDeleteAfterDays": 60
     },
     "oauth": {
         // Auth failure date is reset after 14 days by default.
@@ -593,11 +593,11 @@
             "clubs-group-events": 1800,
             "gear": 600,
             "routes": 7200,
-            "power-intervals": 2419200
+            "power-intervals": 1209720
         },
         // Do not process club events with more than 2 years of age (past or future).
         "clubs": {
-            "maxAgeDays": 730
+            "maxAgeDays": 365
         },
         "ftp": {
             // Estimated FTP will go down by 1% for each retroactive week of no activities.
@@ -619,8 +619,8 @@
         "processedActivities": {
             // Activities containing this hashtag on their names will be ignored by Strautomator.
             "ignoreHashtag": "#strautomator-ignore",
-            // Processed activity details will be deleted from the database after 2 years. Value set in days.
-            "maxAgeDays": 730
+            // Processed activity details will be deleted from the database after 1 year. Value set in days.
+            "maxAgeDays": 365
         },
         "processingQueue": {
             // Default delay for queued activities is 10 minutes, value set in seconds.
@@ -678,8 +678,8 @@
         },
         // Cache profiles and Wahoo data for up to 2 minutes. Value set in seconds.
         "cacheDuration": 120,
-        // Wahoo data will be stored in the database for up to 10 days.
-        "maxCacheDuration": 864000
+        // Wahoo data will be stored in the database for up to 7 days.
+        "maxCacheDuration": 604800
     },
     // Weather settings. The rate limits set here should be enough for basic usage using free accounts,
     // but should be updated in production when used with a paid plan.
