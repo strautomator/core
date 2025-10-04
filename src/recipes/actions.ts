@@ -395,7 +395,6 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
         }
 
         processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.")
-        console.warn(processedValue)
     } catch (ex) {
         logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
     }
