@@ -595,9 +595,9 @@
             "routes": 7200,
             "power-intervals": 1209720
         },
-        // Do not process club events with more than 2 years of age (past or future).
+        // Do not process club events with more than 1 year of age (past or future).
         "clubs": {
-            "maxAgeDays": 365
+            "maxAgeDays": 366
         },
         "ftp": {
             // Estimated FTP will go down by 1% for each retroactive week of no activities.
@@ -704,9 +704,9 @@
             "aqiBaseUrl": "https://air-quality-api.open-meteo.com/v1/air-quality",
             // Open-Meteo API rate limits.
             "rateLimit": {
-                "maxConcurrent": 4,
-                "perHour": 1000,
-                "perDay": 5000
+                "maxConcurrent": 3,
+                "perHour": 900,
+                "perDay": 4500
             },
             // The Open-Meteo API does not need a secret.
             "secret": true
@@ -732,7 +732,7 @@
             "rateLimit": {
                 "maxConcurrent": 2,
                 "perHour": 20,
-                "perDay": 450
+                "perDay": 400
             },
             // The Tomorrow API secret MUST be set via secret settings or
             // via the SMU_tomorrow_api_secret environment variable.
@@ -744,8 +744,8 @@
             /// Visual Crossing API rate limits.
             "rateLimit": {
                 "maxConcurrent": 1,
-                "perHour": 100,
-                "perDay": 500
+                "perHour": 80,
+                "perDay": 400
             },
             // The Visual Crossing API secret MUST be set via secret settings or
             // via the SMU_weather_visualcrossing_secret environment variable.
@@ -757,8 +757,8 @@
             // WeatherAPI.com rate limits.
             "rateLimit": {
                 "maxConcurrent": 4,
-                "perHour": 1000,
-                "perDay": 5000
+                "perHour": 900,
+                "perDay": 4500
             },
             // The WeatherAPI.com secret MUST be set via secret settings or
             // via the SMU_weather_weatherapi_secret environment variable.
