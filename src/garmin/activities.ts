@@ -64,6 +64,10 @@ export class GarminActivities {
                     } catch (innerEx) {
                         logger.error("Garmin.processActivity", logHelper.user(user), logHelper.fitFileActivity(garminActivity), "Failed to parse fit file", innerEx)
                     }
+
+                    logger.info("Garmin.processActivity", logHelper.user(user), logHelper.garminPing(ping), "Processed")
+                } else {
+                    logger.info("Garmin.processActivity", logHelper.user(user), logHelper.garminPing(ping), "No FIT data to process")
                 }
             }
         } catch (ex) {

@@ -52,6 +52,10 @@ export class WahooActivities {
                 } catch (innerEx) {
                     logger.error("Wahoo.processActivity", logHelper.user(user), logHelper.fitFileActivity(wahooActivity), "Failed to parse fit file", innerEx)
                 }
+
+                logger.info("Wahoo.processActivity", logHelper.user(user), logHelper.wahooWebhook(webhookData), "Processed")
+            } else {
+                logger.info("Wahoo.processActivity", logHelper.user(user), logHelper.wahooWebhook(webhookData), "No FIT data to process")
             }
         } catch (ex) {
             logger.error("Wahoo.processActivity", logHelper.user(user), logHelper.wahooWebhook(webhookData), ex)
