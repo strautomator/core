@@ -112,7 +112,7 @@ export class StravaWebhooks {
                 }
             }
 
-            if (ex.response && ex.response.data && ex.response.data.errors) {
+            if (ex.response?.data?.errors) {
                 logger.error("Strava.createWebhook", ex, ex.response.data.errors[0])
             } else {
                 logger.error("Strava.createWebhook", ex)
