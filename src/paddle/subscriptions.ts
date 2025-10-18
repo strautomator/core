@@ -309,21 +309,31 @@ export class PaddleSubscriptions {
 
     /**
      * Get the subscription details based on ID or user.
-     * @param idOrUser The subscription ID or user data.
+     * @param idOrUser The subscription / transaction ID or user data.
      */
-    getSubscription = async (idOrUser: string | UserData): Promise<Subscription> => {
+    getSubscription = async (idOrUser: string | UserData): Promise<Subscription | Transaction> => {
         const logDetails = _.isString(idOrUser) ? idOrUser : logHelper.user(idOrUser)
 
         try {
-            let result: Subscription
+            let result: Subscription | Transaction
 
             if (_.isString(idOrUser)) {
-                result = await api.client.subscriptions.get(idOrUser)
+                if (idOrUser.substring(0, 4) == "txn_") {
+                    result = await api.client.transactions.get(idOrUser)
+                } else {
+                    result = await api.client.subscriptions.get(idOrUser)
+                }
             } else {
-                let res = api.client.subscriptions.list({perPage: settings.paddle.api.pageSize, customerId: [idOrUser.paddleId]})
-                let page = await res.next()
-                if (page.length > 0) {
-                    result = page[0]
+                const sList = api.client.subscriptions.list({perPage: settings.paddle.api.pageSize, customerId: [idOrUser.paddleId]})
+                const sPage = await sList.next()
+                if (sPage.length > 0) {
+                    result = _.sortBy(sPage, "updatedAt").pop()
+                } else {
+                    const tList = api.client.transactions.list({perPage: settings.paddle.api.pageSize, customerId: [idOrUser.paddleId]})
+                    const tPage = await tList.next()
+                    if (tPage.length > 0) {
+                        result = _.sortBy(tPage, "updatedAt").pop()
+                    }
                 }
             }
 
