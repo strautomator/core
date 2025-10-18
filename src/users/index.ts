@@ -1307,7 +1307,7 @@ export class Users {
             delete user.isPro
 
             const status = subscription?.status.toLowerCase() || "cancelled"
-            logger.info("Users.switchToFree", logHelper.user(user), `Subscription: ${subscription.source} ${subscription.id} - ${status}`)
+            logger.info("Users.switchToFree", logHelper.user(user), subscription ? `Subscription: ${subscription.source} ${subscription.id} - ${status}` : "No subscription found for the user")
             eventManager.emit("Users.switchToFree", user, subscription)
         } catch (ex) {
             logger.error("Users.switchToFree", logHelper.user(user), ex)
