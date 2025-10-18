@@ -203,8 +203,11 @@ export const checkTimestamp = (activity: StravaActivity, condition: RecipeCondit
     const likeBuffer = isPace ? 60 : 1800
 
     // Parse activity as pace, time (duration) or full datetime.
-    if (isPace || isTime) {
+    if (isTime) {
         aTime = activity[prop]
+    } else if (isPace) {
+        const arrPace = activity[prop].split(":")
+        aTime = parseInt(arrPace[0]) * 60 + parseInt(arrPace[1])
     } else {
         let aDate = dayjs.utc(activity[prop])
         if (activity.utcStartOffset) {
