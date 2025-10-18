@@ -20,6 +20,8 @@ export interface CalendarData {
     clubEventCount?: number
     /** How many GearWear component changes the calendar has. */
     gearEventCount?: number
+    /** How many requests were triggered on the last calendar build task. */
+    lastRequestCount?: number
     /** Flag to set if the calendar is considered expired and should be updated. */
     pendingUpdate?: boolean
     /** Date when the calendar cache was last accessed. */

@@ -70,6 +70,7 @@ export class CalendarBuilder {
             // Important: activities and clubs events will be cached in the storage bucket, as the data
             // comes from Strava, but gear history changes won't, as we control that data.
             dbCalendar.cacheCount = 0
+            dbCalendar.lastRequestCount = 0
             if (dbCalendar.options.activities) {
                 dbCalendar.activityCount = 0
                 await buildActivities(user, dbCalendar, cal, cachedEvents)

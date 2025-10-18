@@ -38,15 +38,24 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
 
         // Helper to process club events.
         const getEvents = async (club: StravaClub) => {
-            if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) return
-
+            if (dbCalendar.lastRequestCount > settings.calendar.maxRequestsPerBatch) {
+                debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max request count ${dbCalendar.lastRequestCount}, skip it`)
+                return
+            }
+            if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) {
+                debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max events ${dbCalendar.activityCount} on first build, skip it`)
+                return
+            }
             if ((!dbCalendar.options.includeAllCountries || partialFirstBuild) && club.country != user.profile.country) {
                 debugLogger("Calendar.buildClubs", logHelper.user(user), `User country ${user.profile.country} != club ${club.id} country ${club.country}, skip it`)
                 return
             }
 
             const addClubEvent = async (clubEvent: StravaClubEvent) => {
-                if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) return
+                if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) {
+                    debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max events ${dbCalendar.activityCount} on first build build, skip it`)
+                    return
+                }
 
                 // Check if event has future dates.
                 const hasFutureDate = clubEvent.dates.find((d) => today.isBefore(d))
@@ -58,6 +67,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                     if (idString) {
                         try {
                             clubEvent.route = await strava.routes.getRoute(user, idString)
+                            dbCalendar.lastRequestCount++
                         } catch (routeEx) {
                             logger.warn("Calendar.buildClubs", logHelper.user(user), `Failed to fetch route for event ${clubEvent.id}`)
                         }
@@ -80,6 +90,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                 const eventDates = partialFirstBuild ? _.sortBy(clubEvent.dates, (d) => Math.abs(today.diff(d, "hours"))) : clubEvent.dates
                 for (let startDate of eventDates) {
                     if (dateFrom.isAfter(startDate) || dateTo.isBefore(startDate)) continue
+
                     let endDate = dayjs(startDate).add(settings.calendar.eventDurationMinutes, "minutes").toDate()
 
                     const eventTimestamp = Math.round(startDate.valueOf() / 1000)
@@ -149,6 +160,19 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                     // Add club event to the calendar.
                     cal.createEvent(eventData)
                     dbCalendar.clubEventCount++
+
+                    // Alert if the amount of club events on the initial partial build has been reached.
+                    if (partialFirstBuild && dbCalendar.clubEventCount == settings.calendar.partialFirstBuild) {
+                        logger.info("Calendar.buildClubs", logHelper.user(user), `Reached ${settings.calendar.partialFirstBuild} events on the initial build, will resume on the next batch`)
+                    }
+                }
+
+                // Alert if we reach the max request count.
+                if (dbCalendar.lastRequestCount == settings.calendar.maxRequestsPerBatch) {
+                    if (clubEvents.length > 0 || clubs.length > 0) {
+                        dbCalendar.pendingUpdate = true
+                    }
+                    logger.info("Calendar.buildClubs", logHelper.user(user), `Reached max request count of ${dbCalendar.lastRequestCount}, will resume on the next batch`)
                 }
             }
 
@@ -165,6 +189,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                 if (dbCalendar.options.excludeNotJoined && !e.joined) return false
                 return true
             })
+            dbCalendar.lastRequestCount++
 
             // Iterate user's club events to get their details and push to the calendar.
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
@@ -186,6 +211,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
         }
 
         // Iterate user's clubs to get their events and push to the calendar.
+        dbCalendar.lastRequestCount++
         const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
         while (clubs.length) {
             await Promise.allSettled(clubs.splice(0, batchSize).map(getEvents))

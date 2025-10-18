@@ -121,6 +121,8 @@ export const buildGearWear = async (user: UserData, dbCalendar: CalendarData, ca
                     }
                 })
             }
+
+            dbCalendar.lastRequestCount++
         }
     } catch (ex) {
         logger.error("Calendar.buildGearWear", logHelper.user(user), optionsLog, ex)

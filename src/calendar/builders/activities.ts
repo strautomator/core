@@ -68,10 +68,12 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
 
         // Helper to process and add an activity to the calendar.
         const addActivity = async (activity: StravaActivity) => {
+            if (dbCalendar.lastRequestCount > settings.calendar.maxRequestsPerBatch) {
+                debugLogger("Calendar.buildActivities", logHelper.user(user), `Over max request count ${dbCalendar.lastRequestCount}, skip it`)
+                return
+            }
             if (partialFirstBuild && dbCalendar.activityCount >= settings.calendar.partialFirstBuild) {
-                if (dbCalendar.activityCount == settings.calendar.partialFirstBuild) {
-                    logger.info("Calendar.buildActivities", logHelper.user(user), `Reached ${settings.calendar.partialFirstBuild} activities on the initial partial build, stop here`)
-                }
+                debugLogger("Calendar.buildActivities", logHelper.user(user), `Over max activities ${dbCalendar.activityCount} activities on first build, skip it`)
                 return
             }
 
@@ -79,6 +81,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
             // call to get the full activity details, as the activity listing endpoint won't return it.
             if (needsFullData) {
                 activity = await strava.activities.getActivity(user, activity.id)
+                dbCalendar.lastRequestCount++
             }
 
             // Activity event metadata.
@@ -188,6 +191,16 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
             } catch (innerEx) {
                 logger.error("Calendar.buildActivities", logHelper.user(user), logHelper.activity(activity), innerEx)
             }
+
+            // Alert if we reach the max request count or the amount of activities on the initial partial build.
+            if (dbCalendar.lastRequestCount == settings.calendar.maxRequestsPerBatch) {
+                if (activities.length > 0) {
+                    dbCalendar.pendingUpdate = true
+                }
+                logger.info("Calendar.buildActivities", logHelper.user(user), `Reached max request count of ${dbCalendar.lastRequestCount}, will resume on the next batch`)
+            } else if (partialFirstBuild && dbCalendar.activityCount == settings.calendar.partialFirstBuild) {
+                logger.info("Calendar.buildActivities", logHelper.user(user), `Reached ${settings.calendar.partialFirstBuild} activities on the initial build, will resume on the next batch`)
+            }
         }
 
         // Filter activities based on calendar options.
@@ -202,6 +215,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
         logger.info("Calendar.buildActivities", logHelper.user(user), optionsLog, `Will process ${activities.length} out of ${sourceActivities.length} activities${needsFullData ? ", fetching individually (needs full data)" : ""}`)
 
         // Iterate user's club events to get their details and push to the calendar.
+        dbCalendar.lastRequestCount += Math.ceil(sourceActivities.length / settings.strava.api.pageSize)
         const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
         while (activities.length) {
             await Promise.allSettled(activities.splice(0, batchSize).map(addActivity))
