@@ -140,10 +140,19 @@
         "eventSummary": "${name} ${icon}",
         // Default event duration in minutes (ie. for past club events).
         "eventDurationMinutes": 15,
+        // Max number of API requests to be triggered per batch.
+        "maxRequestsPerBatch": 500,
         // A calendar will be deleted if no client requests it after 4 days.
         "maxCacheDuration": 345600,
         // Calendar events will cached if they're older than 30 days, by default.
         "minAgeForCachingDays": 30
+    },
+    "chatbase": {
+        "api": {
+            "baseUrl": "https://www.chatbase.co/api/v1/"
+        },
+        // Chatbase will use the cheapest Gemini 2.0 by default.
+        "model": "gemini-2.0-flash"
     },
     "cookie": {
         "sessionName": "strautsession",
