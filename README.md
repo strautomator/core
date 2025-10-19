@@ -7,7 +7,7 @@ This is the core module of Strautomator, containing most of its business logic. 
 Some main points to know before you start:
 
 -   Code is mostly TypeScript
--   Should run on Node 18+
+-   Should run on Node 20+
 -   Optimized for GCP (Google Cloud Platform)
 
 ### Required 3rd party services
@@ -27,6 +27,7 @@ Additional integrations:
 -   PayPal API
 -   Spotify API
 -   Wahoo Cloud API
+-   Chatbase API
 -   AI providers: Anthropic, Gemini, Mistral, OpenAI, xAI
 -   Weather providers: Open-Meteo, OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
 
