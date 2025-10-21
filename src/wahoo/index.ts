@@ -141,17 +141,20 @@ export class Wahoo {
             // State is prefixed with the user ID.
             const arrState = req.query.state.toString().split("-")
             const userId = arrState[0]
-            if (!userId || arrState.length != 2) {
-                throw new Error("Invalid auth state")
-            }
+            const authState = arrState.pop()
 
             // Validate referenced user.
+            if (!userId) {
+                throw new Error("Invalid auth state, can't identify user")
+            }
             const user = await users.getById(userId)
             if (!user) {
                 throw new Error("Invalid user")
             }
-            if (user.wahooAuthState != arrState[1]) {
-                throw new Error("Invalid auth state")
+
+            // Alert (but proceed) if auth state is wrong.
+            if (user.wahooAuthState != authState) {
+                logger.warn("Wahoo.processAuthCode", logHelper.user(user), `Invalid auth state: ${authState}`)
             }
 
             const tokens = await this.getToken(user, req.query.code as string)

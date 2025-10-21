@@ -52,7 +52,6 @@ export class WahooProfiles {
             cache.set("wahoo", cacheId, profile)
             logger.info("Wahoo.getProfile", logHelper.user(user), `ID ${profile.id}`)
 
-            user.wahoo.tokens = tokens
             return profile
         } catch (ex) {
             const err = logger.error("Wahoo.getProfile", logHelper.user(user), ex)
@@ -110,9 +109,8 @@ export class WahooProfiles {
     /**
      * Clear the Wahoo profile for the specified user account.
      * @param user The user.
-     * @param skipDeregistration If true, will not call the deregistration endpoint on Wahoo.
      */
-    deleteProfile = async (user: UserData, skipDeregistration?: boolean): Promise<void> => {
+    deleteProfile = async (user: UserData): Promise<void> => {
         try {
             if (!user || !user.wahoo) {
                 logger.warn("Wahoo.deleteProfile", logHelper.user(user), "User has no Wahoo profile to delete")
@@ -122,10 +120,8 @@ export class WahooProfiles {
             const profileId = user.wahoo.id
             const cacheId = `profile-${user.id}`
 
-            // Make request to unlink profile, unless the skipDeregistration is set.
-            if (!skipDeregistration) {
-                await api.revokeToken(user)
-            }
+            // Revoke the token.
+            await api.revokeToken(user)
 
             // Delete profile from cache and database.
             const data: Partial<UserData> = {id: user.id, displayName: user.displayName, wahoo: FieldValue.delete() as any, wahooAuthState: FieldValue.delete() as any}
