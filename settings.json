@@ -727,8 +727,8 @@
             // OpenWeatherMap API rate limits.
             "rateLimit": {
                 "maxConcurrent": 4,
-                "perHour": 200,
-                "perDay": 1000
+                "perHour": 180,
+                "perDay": 900
             },
             // The OpenWeatherMap API secret MUST be set via secret settings or
             // via the SMU_weather_openweathermap_secret environment variable.
