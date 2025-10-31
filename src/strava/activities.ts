@@ -228,7 +228,7 @@ export class StravaActivities {
         const useHashtag = user.preferences.activityHashtag
 
         // Add link back to Strautomator on some percentage of activities (depending on user PRO status and settings).
-        // If user has a custom linksOn, it will add the linkback even if user has PRO status.
+        // If user has a custom linksOn, it will add the backlink even if user has PRO status.
         const defaultLinksOn = user.isPro ? 0 : settings.plans.free.linksOn
         const linksOn = user.preferences ? user.preferences.linksOn || defaultLinksOn : defaultLinksOn
         const shouldAddLink = (!user.isPro || linksOn > 0) && user.activityCount > 0 && user.activityCount % linksOn == 0 && settings.app.url
@@ -239,16 +239,16 @@ export class StravaActivities {
                 return
             }
 
-            // Time to add a linkback on the activity?
+            // Time to add a backlink on the activity?
             if (shouldAddLink) {
-                activity.linkback = true
+                activity.backlink = true
 
                 // By default, link will be added to the description.
                 // TODO! Strava seems to be blocking links, so add just the title instead.
                 if (!useHashtag) {
                     let appReference = settings.recipes.linkTexts.url || settings.app.title
 
-                    // Only proceed if a linkback was not previously added.
+                    // Only proceed if a backlink was not previously added.
                     const alreadyLinked = activity.description ? activity.description.includes(appReference) : false
                     if (!alreadyLinked) {
                         let text = settings.recipes.linkTexts.default
@@ -272,7 +272,7 @@ export class StravaActivities {
                             activity.updatedFields.push("description")
                         }
                     } else {
-                        logResult.push("Linkback already present on description")
+                        logResult.push("Backlink already present on description")
                     }
                 }
 
@@ -291,7 +291,7 @@ export class StravaActivities {
                             activity.updatedFields.push("name")
                         }
                     } else {
-                        logResult.push("Linkback hashtag already present on name")
+                        logResult.push("Backlink hashtag already present on name")
                     }
                 }
             }

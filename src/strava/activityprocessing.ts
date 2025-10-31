@@ -87,6 +87,13 @@ export class StravaActivityProcessing {
             const activities = await database.search("activities", where, ["dateProcessed", "desc"], limit)
             logger.info("Strava.getProcessedActivities", logHelper.user(user), `Got ${activities.length || "no"} activities${logFrom}${logTo}${logLimit}`)
 
+            // TODO! Remove this once all previous activities have been updated with the new backlink field.
+            activities.forEach((a) => {
+                if (a.linkback) {
+                    a.backlink = true
+                }
+            })
+
             return activities
         } catch (ex) {
             logger.error("Strava.getProcessedActivities", logHelper.user(user), dateFrom, dateTo, ex)
@@ -400,10 +407,10 @@ export class StravaActivityProcessing {
                 }
             }
 
-            // Linkback added to activity?
-            if (activity.linkback) {
-                logger.info("Strava.linkback", logHelper.user(user), logHelper.activity(activity))
-                data.linkback = true
+            // Backlink added to activity?
+            if (activity.backlink) {
+                logger.info("Strava.backlink", logHelper.user(user), logHelper.activity(activity))
+                data.backlink = true
             }
 
             // Make sure error is a string (if an error was passed).

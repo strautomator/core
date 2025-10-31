@@ -175,7 +175,7 @@ export interface StravaActivity {
     /** List of segment KOMs. */
     komSegments?: string[]
     /** Was a link to Strautomator added to the activity (internal use only)? */
-    linkback?: boolean
+    backlink?: boolean
     /** Activity counter (extra field used exclusively when replacing activity tags). */
     counter?: number
     /** Flag: is the activity part of a batch processing operation? */
@@ -288,7 +288,7 @@ export interface StravaProcessedActivity {
         [id: string]: any
     }
     /** Was a link to Strautomator added to the activity? */
-    linkback?: boolean
+    backlink?: boolean
     /** If failed, this will contain the error description. */
     error?: string
     /** Is the activity queued to be processed? */
