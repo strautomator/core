@@ -498,7 +498,7 @@
         }
     },
     "recipes": {
-        // Linkback text (will have the app title appended to it).
+        // Backlink text (will have the app title appended to it).
         "linkTexts": {
             "default": "Automated with",
             "aiContent": "Powered with AI by",
