@@ -256,6 +256,8 @@ export class AI {
      * @param messages Messages to be sent.
      */
     private prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<AiGeneratedResponse> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         const activity = options.activity
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
@@ -287,9 +289,9 @@ export class AI {
                 prompt: messages.join(" "),
                 response: response
             }
-            if (user.debug) {
-                logger.warn("AI.prompt.debug", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `Response: ${result.response}`)
-            }
+
+            debugLogger("AI.prompt", logHelper.user(user), subject, result.provider, `Prompt: ${result.prompt}`, `Response: ${result.response}`)
+
             return result
         }
 

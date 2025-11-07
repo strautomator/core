@@ -787,7 +787,7 @@ export class Users {
 
                 if (existingData.debug) {
                     const diff = _.reduce(existingData, (result, value, key) => (_.isEqual(value, userData[key]) ? result : result.concat(key)), [])
-                    logger.info("Users.upsert.debug", logHelper.user(userData), JSON.stringify(diff, null, 0))
+                    logger.warn("Users.upsert", logHelper.user(userData), "Diff", JSON.stringify(diff, null, 0))
                 }
             }
 
@@ -821,6 +821,8 @@ export class Users {
      * @param replace Set to true to fully replace data instead of merging, default is false.
      */
     update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         try {
             const logs = []
             const logValue = (value: any) => (value == FieldValue.delete() ? "deleted" : value)
@@ -853,13 +855,13 @@ export class Users {
                     logs.push(`Shoes: ${user.profile.shoes.length}`)
                 }
                 if (user.garmin) {
-                    logs.push(`Garmin: ${logValue(user.garmin.id || user.garmin)}`)
+                    logs.push(`Garmin: ${logValue(user.garmin.id || "unset")}`)
                 }
                 if (user.wahoo) {
-                    logs.push(`Wahoo: ${logValue(user.wahoo.id || user.wahoo)}`)
+                    logs.push(`Wahoo: ${logValue(user.wahoo.id || "unset")}`)
                 }
                 if (user.spotify) {
-                    logs.push(`Spotify: ${logValue("auth")}`)
+                    logs.push(`Spotify: ${logValue(user.spotify.id || "unset")}`)
                 }
                 if (user.paddleId) {
                     logs.push(`Paddle ID: ${logValue(user.paddleId)}`)
@@ -884,9 +886,7 @@ export class Users {
             }
 
             logger.info("Users.update", logHelper.user(user), logs.length > 0 ? logs.join(" | ") : "Updated")
-            if (user.debug) {
-                logger.info("Users.update.debug", logHelper.user(user), JSON.stringify(user, null, 0))
-            }
+            debugLogger("Users.update", logHelper.user(user), JSON.stringify(user, null, 0))
         } catch (ex) {
             logger.error("Users.update", logHelper.user(user), ex)
             throw ex
