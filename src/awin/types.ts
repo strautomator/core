@@ -28,10 +28,15 @@ export interface AwinPromotion {
     promotionId: number
     title: string
     description: string
+    status: string
     startDate: string
     endDate: string
+    url: string
     urlTracking: string
     advertiser: {
         name: string
+    }
+    voucher?: {
+        code: string
     }
 }

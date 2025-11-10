@@ -164,6 +164,8 @@ export class AWIN {
      */
     downloadProducts = async (countryCode: string): Promise<void> => {
         try {
+            countryCode = countryCode.toLowerCase()
+
             const result = []
             const countryFeeds = await this.getCountryFeeds()
             if (!countryFeeds[countryCode]) {
@@ -222,6 +224,7 @@ export class AWIN {
             while (countryFeeds[countryCode].length > 0) {
                 await Promise.allSettled(countryFeeds[countryCode].splice(0, 2).map(downloadFeed))
             }
+
             await this.saveToCache(`awin-products-${countryCode}.json`, `[${result.join(",")}]`, true)
             logger.info("AWIN.downloadProducts", countryCode, `${result.length} products`)
         } catch (ex) {
@@ -235,21 +238,25 @@ export class AWIN {
      */
     downloadPromotions = async (countryCode: string): Promise<void> => {
         try {
+            countryCode = countryCode.toLowerCase()
+
             const url = `${settings.awin.api.baseUrl}publisher/${settings.awin.publisherId}/promotions`
             const headers = {Authorization: `Bearer ${settings.awin.api.token}`}
             const data = {filters: {regionCodes: [countryCode.toUpperCase()], membership: "joined"}}
             const reqOptions: AxiosRequestConfig = {url, headers, data, method: "POST", responseType: "json"}
-            const result = []
+            const result: AwinPromotion[] = []
 
-            // Keep fetching while there are more pages.
+            // Keep fetching while there are more pages. We specifically filter promotions based on domain or advertiser name
+            // as some advertisers might have promotions set as global, even thou they do not sell globally.
             let res = await axiosRequest(reqOptions)
-            while (res.data && res.data.length > 0 && res.pagination.page <= res.pagination.total) {
-                result.push(...res.data.map((p) => JSON.stringify(_.pick(p, ["promotionId", "title", "description", "startDate", "endDate", "urlTracking", "advertiser"]), null, 0)))
+            while (res.data?.length > 0 && res.pagination.page <= res.pagination.total) {
+                const countryPromotions = res.data.filter((p) => p.url.includes(`.${countryCode}/`) || p.advertiser?.name.includes(`${countryCode.toUpperCase()}`))
+                result.push(countryPromotions.map((p) => _.pick(p, ["promotionId", "title", "description", "status", "startDate", "endDate", "url", "urlTracking", "advertiser", "voucher"])))
                 reqOptions.data.pagination = {page: res.pagination.page + 1}
                 res = await axiosRequest(reqOptions)
             }
 
-            await this.saveToCache(`awin-promotions-${countryCode}.json`, `[${result.join(",")}]`)
+            await this.saveToCache(`awin-promotions-${countryCode}.json`, JSON.stringify(result, null, 0))
             logger.info("AWIN.downloadPromotions", countryCode, `${result.length} promotions`)
         } catch (ex) {
             logger.error("AWIN.downloadPromotions", countryCode, ex)
@@ -265,7 +272,9 @@ export class AWIN {
      */
     getProducts = async (countryCode: string): Promise<AwinProduct[]> => {
         try {
-            const cachedFile = await this.readFromCache(`awin-products-${countryCode.toLowerCase()}.json`, true)
+            countryCode = countryCode.toLowerCase()
+
+            const cachedFile: AwinProduct[] = await this.readFromCache(`awin-products-${countryCode}.json`, true)
             if (!cachedFile) {
                 logger.warn("AWIN.getProducts", countryCode, "No product feeds found in the cache storage")
                 return []
@@ -284,7 +293,9 @@ export class AWIN {
      */
     getPromotions = async (countryCode: string): Promise<AwinPromotion[]> => {
         try {
-            const cachedFile = await this.readFromCache(`awin-promotions-${countryCode.toLowerCase()}.json`)
+            countryCode = countryCode.toLowerCase()
+
+            const cachedFile: AwinPromotion[] = await this.readFromCache(`awin-promotions-${countryCode}.json`)
             if (!cachedFile) {
                 logger.warn("AWIN.getPromotions", countryCode, "No promotion feeds available in the cache storage")
                 return []
