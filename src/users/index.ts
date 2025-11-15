@@ -821,8 +821,6 @@ export class Users {
      * @param replace Set to true to fully replace data instead of merging, default is false.
      */
     update = async (user: Partial<UserData>, replace?: boolean): Promise<void> => {
-        const debugLogger = user.debug ? logger.warn : logger.debug
-
         try {
             const logs = []
             const logValue = (value: any) => (value == FieldValue.delete() ? "deleted" : value)
@@ -886,7 +884,6 @@ export class Users {
             }
 
             logger.info("Users.update", logHelper.user(user), logs.length > 0 ? logs.join(" | ") : "Updated")
-            debugLogger("Users.update", logHelper.user(user), JSON.stringify(user, null, 0))
         } catch (ex) {
             logger.error("Users.update", logHelper.user(user), ex)
             throw ex
