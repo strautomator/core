@@ -12,6 +12,7 @@ import eventManager from "../eventmanager"
 import strava from "../strava"
 import users from "../users"
 import _ from "lodash"
+import cache from "bitecache"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
@@ -71,8 +72,132 @@ export class GearWear {
             logger.error("GearWear.init", ex)
         }
 
+        eventManager.on("Strava.activityUpdated", this.onStravaActivityUpdated)
+        eventManager.on("Strava.activityDeleted", this.onStravaActivityDeleted)
+        eventManager.on("Strava.activityProcessed", this.onStravaActivityProcessed)
         eventManager.on("Users.delete", this.onUserDelete)
         eventManager.on("Users.switchToFree", this.onUserSwitchToFree)
+    }
+
+    /**
+     * Rollback GearWear tracking if an activity was updated with a different gear. Will only proceed if user is PRO.
+     * @param user The user owning the activity.
+     * @param activityId The ID of the updated activity.
+     */
+    private onStravaActivityUpdated = async (user: UserData, activityId: number): Promise<void> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+        if (!user.isPro) return
+
+        try {
+            const recentCached = cache.get("processed-activities", activityId)
+
+            // Check if it wasn't a recent update triggered by a recent automation. If so, stop right here,
+            // otherwise proceed to fetch the live activity data.
+            if (recentCached) {
+                debugLogger("GearWear.onStravaActivityUpdated", logHelper.user(user), activityId, "Update webhook event likely due to an update made by Strautomator, will not proceed")
+                return
+            }
+
+            const activity = await strava.activities.getActivity(user, activityId)
+            if (!activity?.gear) {
+                debugLogger("GearWear.onStravaActivityUpdated", logHelper.user(user), activityId, "Could not fetch activity gear details, abort")
+                return
+            }
+
+            // Get the current gear set on the activity and find the previous config (if any) that had this activity tracked.
+            const config = activity.gear?.id ? await this.getById(activity.gear.id) : null
+            const previousConfig = await this.getByActivityId(user, activityId)
+            if ((!config && !previousConfig) || config?.id == previousConfig?.id) {
+                debugLogger("GearWear.onStravaActivityUpdated", logHelper.user(user), activityId, "No gear config to be updated")
+                return
+            }
+
+            // Rollback the previous and update the current config, if needed.
+            if (previousConfig && previousConfig?.id != activity.gear.id) {
+                await updateTracking(user, previousConfig, [activity], true)
+            }
+            if (config && !config.recentActivities?.includes(activity.id)) {
+                await updateTracking(user, config, [activity])
+            }
+        } catch (ex) {
+            logger.error("GearWear.onStravaActivityUpdated", logHelper.user(user), activityId, ex)
+        }
+    }
+
+    /**
+     * Rollback GearWear tracking if an activity was deleted. Will only proceed if user is PRO.
+     * @param user The user owning the activity.
+     * @param activityId The ID of the deleted activity.
+     */
+    private onStravaActivityDeleted = async (user: UserData, activityId: number): Promise<void> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+        if (!user.isPro) return
+
+        try {
+            const config = await this.getByActivityId(user, activityId)
+            if (!config) {
+                return
+            }
+
+            // GearWear config found so we'll try to get the previous activity details from a saved processed activity.
+            const processedActivity = await strava.activityProcessing.getProcessedActivity(user, activityId)
+            if (!processedActivity) {
+                debugLogger("GearWear.onStravaActivityDeleted", logHelper.user(user), activityId, `No processed activity found, cannot rollback tracking for gear ${config.id}`)
+                return
+            }
+
+            // Emulate an existing activity and rollback the tracking for the deleted activity.
+            const activity: StravaActivity = _.pick(processedActivity, ["id", "name", "dateStart", "distance", "totalTime", "movingTime", "type", "gear"]) as StravaActivity
+            await updateTracking(user, config, [activity], true)
+        } catch (ex) {
+            logger.error("GearWear.onStravaActivityDeleted", logHelper.user(user), activityId, ex)
+        }
+    }
+
+    /**
+     * Trigger the GearWear processing straight away for activities that had their gear changed.
+     * Will only proceed if user is PRO and the gear of the activity was updated by an automation.
+     * @param user The user owning the activity.
+     * @param activity The Strava activity that was just processed.
+     */
+    private onStravaActivityProcessed = async (user: UserData, activity: StravaActivity): Promise<void> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+        if (!user.isPro) return
+
+        try {
+            if (!activity.distance && !activity.movingTime) return
+            if (!activity.updatedFields || !activity.updatedFields.includes("gear") || !activity.gear) return
+
+            // First we check if the activity was previously tracked by another GearWear config,
+            // and if so, rollback the tracking on that previous config.
+            const previousConfig = await this.getByActivityId(user, activity.id)
+            if (previousConfig) {
+                if (previousConfig.id != activity.gear.id) {
+                    debugLogger("GearWear.onStravaActivityProcessed", logHelper.user(user), logHelper.activity(activity), `Gear has changed from ${previousConfig.id} to ${activity.gear.id}`)
+                    await updateTracking(user, previousConfig, [activity], true)
+                } else {
+                    debugLogger("GearWear.onStravaActivityProcessed", logHelper.user(user), logHelper.activity(activity), `Same gear ${previousConfig.id}, no further processing needed`)
+                    return
+                }
+            }
+
+            const config = await this.getById(activity.gear.id)
+            if (!config) {
+                return
+            }
+
+            // We found a matching GearWear config, so now we double check if the gear is still valid on the user's profile.
+            const findId = {id: config.id}
+            if (!_.find(user.profile.bikes, findId) && !_.find(user.profile.shoes, findId)) {
+                logger.warn("GearWear.onStravaActivityProcessed", logHelper.user(user), logHelper.activity(activity), `Gear ${activity.gear.id} not found on user profile, abort`)
+                return
+            }
+
+            // Gear is valid, proceed to update the tracking.
+            await updateTracking(user, config, [activity])
+        } catch (ex) {
+            logger.error("GearWear.onStravaActivityProcessed", logHelper.user(user), logHelper.activity(activity), ex)
+        }
     }
 
     /**
@@ -134,25 +259,27 @@ export class GearWear {
     /**
      * Validate a GearWear configuration set by the user.
      * @param user The user object.
-     * @param gearwear The GearWear configuration.
+     * @param config The GearWear configuration.
      */
-    validate = (user: UserData, gearwear: GearWearConfig): void => {
+    validate = (user: UserData, config: GearWearConfig): void => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         try {
-            if (!gearwear) {
+            if (!config) {
                 throw new Error("Gear wear config is empty")
             }
 
-            if (!gearwear.id) {
+            if (!config.id) {
                 throw new Error("Missing gear ID")
             }
 
-            let gear = _.find(user.profile.bikes, {id: gearwear.id}) || _.find(user.profile.shoes, {id: gearwear.id})
+            let gear = _.find(user.profile.bikes, {id: config.id}) || _.find(user.profile.shoes, {id: config.id})
 
-            // Make sure the components were set.
+            // Make sure gear still exists and the components were set.
             if (!gear) {
-                throw new Error(`User has no gear ID ${gearwear.id}`)
+                throw new Error(`User has no gear ID ${config.id}`)
             }
-            if (!gearwear.components) {
+            if (!config.components) {
                 throw new Error("Missing gear components")
             }
 
@@ -160,7 +287,7 @@ export class GearWear {
             const validCompFields = ["name", "currentDistance", "currentTime", "alertDistance", "alertTime", "preAlertPercent", "datePreAlertSent", "dateAlertSent", "dateLastUpdate", "activityCount", "history", "disabled"]
 
             // Validate individual components.
-            for (let comp of gearwear.components) {
+            for (let comp of config.components) {
                 if (comp.alertDistance > 0 && comp.alertDistance < 100) {
                     throw new Error("Minimum accepted alert distance is 100")
                 }
@@ -193,13 +320,19 @@ export class GearWear {
                 const compFields = Object.keys(comp)
                 for (let key of compFields) {
                     if (!validCompFields.includes(key)) {
-                        logger.error("GearWear.validate", logHelper.user(user), `Gear ${gearwear.id} - ${comp.name}`, `Removed invalid field: ${key}`)
+                        logger.error("GearWear.validate", logHelper.user(user), `Gear ${config.id} - ${comp.name}`, `Removed invalid field: ${key}`)
                         delete comp[key]
                     }
                 }
             }
+
+            // Make sure the name is up-to-date.
+            if (config.name != gear.name) {
+                debugLogger("GearWear.validate", logHelper.user(user), `Gear ${config.id}, updated name from "${config.name || ""}" to "${gear.name}"`)
+                config.name = gear.name
+            }
         } catch (ex) {
-            logger.error("GearWear.validate", logHelper.user(user), JSON.stringify(gearwear, null, 0), ex)
+            logger.error("GearWear.validate", logHelper.user(user), JSON.stringify(config, null, 0), ex)
             throw ex
         }
     }
@@ -284,8 +417,34 @@ export class GearWear {
         }
     }
 
-    // UPDATE AND DELETE
+    /**
+     * Get the GearWear by a recent activity ID.
+     * @param user The user owner of the GearWear.
+     * @param activityId The ID of the activity.
+     */
+    getByActivityId = async (user: UserData, activityId: number): Promise<GearWearConfig> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
 
+        try {
+            const configs: GearWearConfig[] = await database.search("gearwear", ["recentActivities", "array-contains", activityId])
+            if (configs.length == 0) {
+                debugLogger("GearWear.getByActivityId", logHelper.user(user), activityId, "No matching config found")
+                return null
+            }
+
+            // Only 1 matching GearWear for an activity expected. Alert if that's not the case.
+            if (configs.length > 1) {
+                logger.warn("GearWear.getByActivityId", logHelper.user(user), activityId, `Multiple configs found: ${_.map(configs, "id").join(", ")}`)
+            }
+
+            return configs.shift()
+        } catch (ex) {
+            logger.error("GearWear.getByActivityId", logHelper.user(user), activityId, ex)
+            throw ex
+        }
+    }
+
+    // UPDATE AND DELETE
     // --------------------------------------------------------------------------
 
     /**
@@ -344,51 +503,51 @@ export class GearWear {
     /**
      * Create or update a GearWear config.
      * @param user The user owner of the gear.
-     * @param gearwear The GearWear configuration.
+     * @param config The GearWear configuration.
      * @param toggledComponents Optional in case of toggling components, which components were toggled? Used for logging only.
      */
-    upsert = async (user: UserData, gearwear: GearWearConfig, toggledComponents?: GearWearComponent[]): Promise<GearWearConfig> => {
-        const doc = database.doc("gearwear", gearwear.id)
+    upsert = async (user: UserData, config: GearWearConfig, toggledComponents?: GearWearComponent[]): Promise<GearWearConfig> => {
+        const doc = database.doc("gearwear", config.id)
         let action: string
 
         try {
             const docSnapshot = await doc.get()
             const exists = docSnapshot.exists
-            action = gearwear.disabled ? "Disabled" : exists ? "Updated" : "Created"
+            action = config.disabled ? "Disabled" : exists ? "Updated" : "Created"
 
-            const bike = _.find(user.profile.bikes, {id: gearwear.id})
-            const shoe = _.find(user.profile.shoes, {id: gearwear.id})
+            const bike = _.find(user.profile.bikes, {id: config.id})
+            const shoe = _.find(user.profile.shoes, {id: config.id})
             const gear: StravaGear = bike || shoe
 
             if (!gear) {
                 if (exists) {
-                    gearwear.disabled = true
+                    config.disabled = true
                 }
 
-                throw new Error(`Gear ${gearwear.id} does not exist`, {cause: {status: 404}})
+                throw new Error(`Gear ${config.id} does not exist`, {cause: {status: 404}})
             }
 
             // Validate configuration before proceeding.
-            this.validate(user, gearwear)
+            this.validate(user, config)
 
             // Save to the database.
-            await database.merge("gearwear", gearwear, doc)
+            await database.merge("gearwear", config, doc)
 
             // Details to be logged depending on toggled components.
-            const logDetails = toggledComponents ? toggledComponents.map((c) => `${c.name}: ${c.disabled ? "disabled" : "enabled"}`) : `Components: ${_.map(gearwear.components, "name").join(", ")}`
-            logger.info("GearWear.upsert", logHelper.user(user), `${action} ${gearwear.id} - ${gear.name}`, logDetails)
+            const logDetails = toggledComponents ? toggledComponents.map((c) => `${c.name}: ${c.disabled ? "disabled" : "enabled"}`) : `Components: ${_.map(config.components, "name").join(", ")}`
+            logger.info("GearWear.upsert", logHelper.user(user), `${action} ${config.id} - ${gear.name}`, logDetails)
 
-            return gearwear
+            return config
         } catch (ex) {
             if (doc && ex.cause?.status == 404) {
                 try {
-                    await database.merge("gearwear", gearwear, doc)
-                    logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id} not found, will disable its GearWear`)
+                    await database.merge("gearwear", config, doc)
+                    logger.error("GearWear.upsert", logHelper.user(user), `Gear ${config.id} not found, will disable its GearWear`)
                 } catch (innerEx) {
-                    logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, innerEx)
+                    logger.error("GearWear.upsert", logHelper.user(user), `Gear ${config.id}`, innerEx)
                 }
             } else {
-                logger.error("GearWear.upsert", logHelper.user(user), `Gear ${gearwear.id}`, ex)
+                logger.error("GearWear.upsert", logHelper.user(user), `Gear ${config.id}`, ex)
             }
 
             throw ex
@@ -398,33 +557,33 @@ export class GearWear {
     /**
      * Re-enable a disabled GearWear configuration.
      * @param user The user.
-     * @param user GearWear to be re-enabled.
+     * @param config GearWear to be re-enabled.
      */
-    reEnable = async (user: UserData, gearwear: GearWearConfig): Promise<void> => {
+    reEnable = async (user: UserData, config: GearWearConfig): Promise<void> => {
         try {
-            if (!gearwear.disabled) {
-                logger.warn("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, gearwear), "Not disabled, can't re-enable it")
+            if (!config.disabled) {
+                logger.warn("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, config), "Not disabled, can't re-enable it")
                 return
             }
 
-            await database.merge("gearwear", {id: gearwear.id, disabled: FieldValue.delete() as any})
-            logger.info("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, gearwear), "Re-enabled")
+            await database.merge("gearwear", {id: config.id, disabled: FieldValue.delete() as any})
+            logger.info("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, config), "Re-enabled")
         } catch (ex) {
-            logger.error("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, gearwear), ex)
+            logger.error("GearWear.reEnable", logHelper.user(user), logHelper.gearwearConfig(user, config), ex)
             throw ex
         }
     }
 
     /**
      * Delete the specified GearWear configuration.
-     * @param user GearWear to be deleted.
+     * @param config GearWear to be deleted.
      */
-    delete = async (gearwear: GearWearConfig): Promise<void> => {
+    delete = async (config: GearWearConfig): Promise<void> => {
         try {
-            await database.doc("gearwear", gearwear.id).delete()
-            logger.warn("GearWear.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id} configuration deleted`)
+            await database.doc("gearwear", config.id).delete()
+            logger.warn("GearWear.delete", `User ${config.userId}`, `Gear ${config.id} configuration deleted`)
         } catch (ex) {
-            logger.error("GearWear.delete", `User ${gearwear.userId}`, `Gear ${gearwear.id}`, ex)
+            logger.error("GearWear.delete", `User ${config.userId}`, `Gear ${config.id}`, ex)
             throw ex
         }
     }
@@ -477,7 +636,7 @@ export class GearWear {
                 try {
                     const user = await users.getById(userId)
                     if (user.suspended) {
-                        logger.warn("GearWear.processRecentActivities", `${logHelper.user(user)} is suspended, will not process`)
+                        logger.warn("GearWear.processRecentActivities", logHelper.user(user), "User is suspended, abort")
                         return
                     }
 
@@ -550,7 +709,7 @@ export class GearWear {
 
             // No recent activities found? Stop here.
             if (activities.length == 0) {
-                logger.info("GearWear.processUserActivities", logHelper.user(user), dateString, `No activities to process`)
+                logger.info("GearWear.processUserActivities", logHelper.user(user), dateString, "No activities to process")
                 return 0
             }
 
@@ -560,11 +719,13 @@ export class GearWear {
             const activeConfigs = configs.filter((c) => !c.disabled)
             for (let config of activeConfigs) {
                 const findId = {id: config.id}
+                let foundGear = (_.find(user.profile.bikes || [], findId) || _.find(user.profile.shoes || [], findId)) as StravaGear
 
-                // Make sure the Gear is still valid on the user profile.
-                if (!_.find(user.profile.bikes, findId) && !_.find(user.profile.shoes, findId)) {
+                // Make sure the gear is still valid on the user profile.
+                if (!foundGear) {
                     const athlete = await strava.athletes.getAthlete(user.stravaTokens)
-                    if (!_.find(athlete.bikes, findId) && !_.find(athlete.shoes, findId)) {
+                    foundGear = (_.find(athlete.bikes || [], findId) || _.find(athlete.shoes || [], findId)) as StravaGear
+                    if (!foundGear) {
                         await database.merge("gearwear", {id: config.id, disabled: true})
                         eventManager.emit("GearWear.gearNotFound", user, config)
                         logger.warn("GearWear.processUserActivities", logHelper.user(user), `Gear ${config.id} not found on user profile, disabled it`)
@@ -574,10 +735,23 @@ export class GearWear {
                     }
                 }
 
-                // Get recent activities and update tracking.
-                const gearActivities = _.filter(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear && activity.gear.id == config.id)
+                // Make sure the gear name is up-to-date.
+                if (config.name != foundGear.name) {
+                    logger.info("GearWear.processUserActivities", logHelper.user(user), `Gear ${config.id}, updated name from "${config.name || ""}" to "${foundGear.name}"`)
+                    config.name = foundGear.name
+                }
+
+                // Get recent activities for the current gear and update the tracking.
+                const gearActivities = _.filter(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear?.id == config.id)
                 await updateTracking(user, config, gearActivities)
                 count += gearActivities.length
+
+                // Double check if recent activities were previously set to another gear config. If that's the case, rollback the tracking.
+                const previousConfig = configs.find((c) => c.recentActivities?.find((a) => gearActivities.some((ga) => ga.id == a)))
+                if (previousConfig && previousConfig.id != config.id) {
+                    const previousActivities = activities.filter((a) => previousConfig.recentActivities.includes(a.id))
+                    await updateTracking(user, previousConfig, previousActivities, true)
+                }
             }
         } catch (ex) {
             logger.error("GearWear.processUserActivities", logHelper.user(user), dateString, ex)

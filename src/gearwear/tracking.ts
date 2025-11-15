@@ -21,8 +21,9 @@ const settings = require("setmeup").settings
  * @param user The user owner of the gear and component.
  * @param config The GearWear configuration.
  * @param activities Strava activities to be processed.
+ * @param rollback If true, the specified activities will be rolled back and tracking removed from the passed GearWear
  */
-export const updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[]): Promise<void> => {
+export const updateTracking = async (user: UserData, config: GearWearConfig, activities: StravaActivity[], rollback?: boolean): Promise<void> => {
     const debugLogger = user.debug ? logger.warn : logger.debug
     const now = dayjs.utc()
 
@@ -48,7 +49,7 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
 
         // Set the updating flag to avoid edits by the user while distance is updated.
         config.updating = true
-        if (user.isPro && !config.recentActivities) {
+        if (!config.recentActivities) {
             config.recentActivities = []
         }
 
@@ -63,18 +64,24 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
 
                 // Stop here if activity has no valid distance and time.
                 if (!distance && !activity.movingTime) {
-                    logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} nas no distance or time`)
-                    continue
-                }
-
-                // Make sure we don't process the same activity again in case the user has changed the delay preference.
-                if (config.lastUpdate && config.lastUpdate.activities.includes(activity.id)) {
-                    logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} was already processed`)
+                    debugLogger("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} nas no distance or time, abort`)
                     continue
                 }
 
                 activityIds.push(activity.id)
-                if (user.isPro && !config.recentActivities.includes(activity.id)) {
+
+                // Make sure we don't process (or rollback) the activity again.
+                if (rollback) {
+                    if (!config.recentActivities?.includes(activity.id)) {
+                        debugLogger("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} not found on list of recent activities, abort`)
+                        continue
+                    }
+                    _.remove(config.recentActivities, (aid) => aid == activity.id)
+                } else {
+                    if (config.recentActivities.includes(activity.id)) {
+                        debugLogger("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${logHelper.activity(activity)} was already processed, abort`)
+                        continue
+                    }
                     config.recentActivities.push(activity.id)
                 }
 
@@ -96,27 +103,34 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
                     // If component was recently reset, then do not update the tracking
                     // as the activity was still for the previous component.
                     const historyDates = historyLength > 0 ? component.history.map((h) => dayjs(h.date).utc().valueOf()) : []
-                    const mostRecentTimestamp = _.max(historyDates) || 0
-                    if (mostRecentTimestamp >= activity.dateStart.valueOf()) {
-                        logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, `Replaced recently so won't update the tracking for activity ${activity.id}`)
+                    const resetRecentTimestamp = _.max(historyDates) || 0
+                    if (activity.dateStart && activity.dateStart.valueOf() < resetRecentTimestamp) {
+                        logger.warn("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id} - ${component.name}`, `Replaced recently so won't process the tracking for activity ${activity.id}`)
+                        continue
+                    }
+
+                    // Set defaults.
+                    if (!component.activityCount) component.activityCount = 0
+                    if (!component.currentDistance) component.currentDistance = 0
+                    if (!component.currentTime) component.currentTime = 0
+
+                    // Rolling back? Reduce the component tracking (distance and hours) and jump to the next component.
+                    if (rollback) {
+                        component.activityCount--
+                        if (distance > 0) component.currentDistance -= distance
+                        if (activity.movingTime > 0) component.currentTime -= activity.movingTime
+                        component.currentDistance = Math.round(component.currentDistance * 10) / 10
+                        component.currentTime = Math.round(component.currentTime * 10) / 10
+
                         continue
                     }
 
                     component.dateLastUpdate = now.toDate()
 
-                    // Increase activity count.
-                    if (!component.activityCount) component.activityCount = 0
+                    // Update the tracking values (distance and hours).
                     component.activityCount++
-
-                    // Make sure current values are at least 0.
-                    if (!component.currentDistance) component.currentDistance = 0
-                    if (!component.currentTime) component.currentTime = 0
-
-                    // Increase distance (distance) and time (hours).
                     if (distance > 0) component.currentDistance += distance
                     if (activity.movingTime > 0) component.currentTime += activity.movingTime
-
-                    // Round to 1 decimal case.
                     component.currentDistance = Math.round(component.currentDistance * 10) / 10
                     component.currentTime = Math.round(component.currentTime * 10) / 10
 
@@ -158,12 +172,15 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
             }
         }
 
-        // Limit the amount of recent activities to 20.
-        if (config.recentActivities?.length > settings.gearwear.maxRecentActivities) {
-            config.recentActivities = _.takeRight(config.recentActivities, settings.gearwear.maxRecentActivities)
+        // Limit the amount of recent activities kept in the GearWear config.
+        const maxActivities = user.isPro ? settings.plans.pro.maxGearRecentActivities : settings.plans.free.maxGearRecentActivities
+        if (config.recentActivities.length > maxActivities) {
+            config.recentActivities = _.takeRight(config.recentActivities, maxActivities)
         }
 
-        // Set update details on the GearWear config.
+        debugLogger("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `Previously updated on ${config.lastUpdate?.date.toLocaleString()}`, `Recent activities: ${config.recentActivities?.join(", ") || "none"}`)
+
+        // Keep this update details on the GearWear config.
         config.updating = false
         config.lastUpdate = {
             date: now.toDate(),
@@ -171,13 +188,16 @@ export const updateTracking = async (user: UserData, config: GearWearConfig, act
             distance: parseFloat(totalDistance.toFixed(1)),
             time: totalTime
         }
+        if (rollback) {
+            config.lastUpdate.rollback = true
+        }
 
         // Save config to the database.
         await database.set("gearwear", config, config.id)
 
         const updatedCount = config.components.length - disabledCount
         const units = user.profile.units == "imperial" ? "mi" : "km"
-        logger.info("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${updatedCount} components`, `Added ${totalDistance.toFixed(1)} ${units}, ${(totalTime / 3600).toFixed(1)} hours`)
+        logger.info("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, `${updatedCount} components`, `${rollback ? "Rollback, removed" : "Added"} ${totalDistance.toFixed(1)} ${units}, ${(totalTime / 3600).toFixed(1)} hours`)
     } catch (ex) {
         logger.error("GearWear.updateTracking", logHelper.user(user), `Gear ${config.id}`, ex)
     }
