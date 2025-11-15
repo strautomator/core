@@ -167,7 +167,7 @@ export const recipeActionList = [
     {value: "hideStatHeartRate", text: "Hide heart rate"},
     {value: "hideStatPower", text: "Hide power"},
     {value: "hideStatStartTime", text: "Hide start time"},
-    {value: "enableGearComponent", text: "Enable Gear component"},
-    {value: "disableGearComponent", text: "Disable Gear component"},
+    {value: "enableGearComponent", text: "Enable gear component"},
+    {value: "disableGearComponent", text: "Disable gear component"},
     {value: "webhook", text: "Webhook", isPro: true}
 ]
