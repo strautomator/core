@@ -239,8 +239,6 @@
         "reminderDays": 10,
         // Remind user if tracking was not reset and current usage has passed 15% of the target alert value.
         "reminderThreshold": 1.15,
-        // Keep a maximum of 20 recent activity IDs per gear.
-        "maxRecentActivities": 20,
         // Remove devices that did not have their battery status updated for more than 90 days by default.
         // Mark as status unknown if no updates for more than 60 days.
         "battery": {
@@ -455,6 +453,7 @@
             // Free accounts are limited to 3 recipes and 2 gearwear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
+            "maxGearRecentActivities": 3,
             "maxClubs": 5,
             // Free accounts can trigger batch automations for activities up to 30 days old.
             "batchDays": 30,
@@ -478,6 +477,7 @@
             // PRO accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
+            "maxGearRecentActivities": 50,
             "maxClubs": 30,
             // PRO accounts can trigger batch automations for activities up to 5 years old.
             "batchDays": 1825,
@@ -626,6 +626,8 @@
             "minRideTime": 1200
         },
         "processedActivities": {
+            // Cache IDs of recently processed activities in memory for 60 seconds.
+            "cacheDuration": 60,
             // Activities containing this hashtag on their names will be ignored by Strautomator.
             "ignoreHashtag": "#strautomator-ignore",
             // Processed activity details will be deleted from the database after 1 year. Value set in days.
