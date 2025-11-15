@@ -260,7 +260,7 @@ export const startup = async (quickStart?: boolean) => {
             const processQueuedActivities = async () => {
                 await strava.activityProcessing.processQueuedActivities()
             }
-            setInterval(processQueuedActivities, 1000 * 60 * 2)
+            setInterval(processQueuedActivities, 1002 * 60 * 2)
 
             // Cleanup old queued activities every hour.
             const cleanupQueuedActivities = async () => {
@@ -271,7 +271,7 @@ export const startup = async (quickStart?: boolean) => {
                     await strava.activityProcessing.deleteQueuedActivity(activity)
                 }
             }
-            setInterval(cleanupQueuedActivities, 1000 * 60 * 60)
+            setInterval(cleanupQueuedActivities, 1060 * 60 * 60)
 
             // Regenerate calendars every 3 minutes.
             const regenerateCalendars = async () => {
@@ -281,7 +281,7 @@ export const startup = async (quickStart?: boolean) => {
                     await calendar.generate(cUser, pCalendar)
                 }
             }
-            setInterval(regenerateCalendars, 1000 * 60 * 3)
+            setInterval(regenerateCalendars, 1003 * 60 * 3)
 
             // Cleanup cached Strava responses, processed activities, notifications and GDPR archives right away.
             strava.cleanupCache()

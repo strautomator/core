@@ -15,7 +15,7 @@ export interface StravaActivity {
     /** External ID (from the uploader service). */
     externalId?: string
     /** Activity basic type (Ride, Run, etc). */
-    type: StravaSport
+    type?: StravaSport
     /** Activity extended sport type (includes Gravel Ride, Mountain Bike Ride, Trail Run, etc) */
     sportType?: StravaSport
     /** Workout (ride or run) type. */
@@ -228,10 +228,10 @@ export interface StravaActivityStreams {
 export interface StravaProcessedActivity {
     /** Activity ID. */
     id: number
+    /** Name of the saved activity. */
+    name: string
     /** Activity extended sport type (includes Gravel Ride, Mountain Bike Ride, Trail Run, etc) */
     sportType?: StravaSport
-    /** Name of the saved activity. */
-    name?: string
     /** Start date of the activity. */
     dateStart?: Date
     /** Original UTC offset (timezone) of the activity. */
@@ -305,7 +305,7 @@ export interface StravaProcessedActivity {
     dateQueued?: Date
     /** Processing date. */
     dateProcessed?: Date
-    /** Device that recorded the activity. */
+    /** Device or app that recorded the activity. */
     device?: string
     /** Matching Garmin activity (not saved to the DB, must be populated separately). */
     garminActivity?: FitFileActivity

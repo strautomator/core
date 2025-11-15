@@ -461,7 +461,7 @@ export class Recipes {
      */
     processAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
         const debugLogger = user.debug ? logger.warn : logger.debug
-        debugLogger("Recipes.processAction", user, activity, action)
+        debugLogger("Recipes.processAction", logHelper.user(user), logHelper.activity(activity), `${action.type} ${action.value}`)
 
         if (!activity.updatedFields) {
             activity.updatedFields = []
