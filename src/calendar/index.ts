@@ -50,9 +50,9 @@ export class Calendar {
 
             logger.info("Calendar.init", `Cache durations: Free ${durationFree}, PRO ${durationPro}`)
 
-            eventManager.on("Strava.createActivity", this.onCreateActivity)
-            eventManager.on("Strava.processActivity", this.onProcessActivity)
-            eventManager.on("Strava.deleteActivity", this.onDeleteActivity)
+            eventManager.on("Strava.activityCreated", this.onActivityCreated)
+            eventManager.on("Strava.activityDeleted", this.onActivityDeleted)
+            eventManager.on("Strava.activityProcessed", this.onActivityProcessed)
             eventManager.on("Users.delete", this.deleteForUser)
             eventManager.on("Users.setUrlToken", this.deleteForUser)
             eventManager.on("Users.setCalendarTemplate", this.deleteForUser)
@@ -69,7 +69,7 @@ export class Calendar {
      * @param activityId The Strava activity ID.
      * @param processedActivity Optional processed activity (if an automation was triggered).
      */
-    private onCreateActivity = async (user: UserData, activityId: string): Promise<void> => {
+    private onActivityCreated = async (user: UserData, activityId: string): Promise<void> => {
         if (!user.isPro) return
 
         const activityLog = `Activity ${activityId}`
@@ -78,10 +78,10 @@ export class Calendar {
             const calendars = await this.getByUser(user, {activities: true})
             if (calendars.length > 0) {
                 calendars.forEach(async (cal) => (cal.pendingUpdate ? false : await database.merge("calendars", {id: cal.id, pendingUpdate: true})))
-                logger.info("Calendar.onCreateActivity", logHelper.user(user), activityLog, `${calendars.length} calendars pending update`)
+                logger.info("Calendar.onActivityCreated", logHelper.user(user), activityLog, `${calendars.length} calendars pending update`)
             }
         } catch (ex) {
-            logger.error("Calendar.onCreateActivity", logHelper.user(user), activityLog, ex)
+            logger.error("Calendar.onActivityCreated", logHelper.user(user), activityLog, ex)
         }
     }
 
@@ -90,7 +90,7 @@ export class Calendar {
      * @param user The user.
      * @param activity The Strava activity.
      */
-    private onProcessActivity = async (user: UserData, activity: StravaActivity): Promise<void> => {
+    private onActivityProcessed = async (user: UserData, activity: StravaActivity): Promise<void> => {
         if (activity.batch) return
         if (Math.random() < 0.6) return
 
@@ -98,10 +98,10 @@ export class Calendar {
             const calendars = await this.getByUser(user, {activities: true})
             if (calendars.length > 0) {
                 calendars.forEach(async (cal) => (cal.pendingUpdate ? false : await database.merge("calendars", {id: cal.id, pendingUpdate: true})))
-                logger.info("Calendar.onProcessActivity", logHelper.user(user), logHelper.activity(activity), `${calendars.length} calendars pending update`)
+                logger.info("Calendar.onActivityProcessed", logHelper.user(user), logHelper.activity(activity), `${calendars.length} calendars pending update`)
             }
         } catch (ex) {
-            logger.error("Calendar.onProcessActivity", logHelper.user(user), logHelper.activity(activity), ex)
+            logger.error("Calendar.onActivityProcessed", logHelper.user(user), logHelper.activity(activity), ex)
         }
     }
 
@@ -110,7 +110,7 @@ export class Calendar {
      * @param user The user.
      * @param activityId The Strava activity ID.
      */
-    private onDeleteActivity = async (user: UserData, activityId: string): Promise<void> => {
+    private onActivityDeleted = async (user: UserData, activityId: string): Promise<void> => {
         const debugLogger = user.debug ? logger.warn : logger.debug
         const activityLog = `Activity ${activityId}`
         const eventId = `activity-${activityId}`
@@ -123,7 +123,7 @@ export class Calendar {
                 try {
                     const buffer = await file.download()
                     if (!buffer) {
-                        debugLogger("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `No data for ${file.name}`)
+                        debugLogger("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `No data for ${file.name}`)
                         continue
                     }
 
@@ -137,7 +137,7 @@ export class Calendar {
                         if (cachedEvents[eventId]) {
                             delete cachedEvents[eventId]
                             await storage.setFile(StorageBucket.Calendar, file.name, JSON.stringify(cachedEvents, null, 2), "application/json")
-                            logger.info("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
+                            logger.info("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
                         }
                     } else if (file.name.endsWith(".ics")) {
                         const updatedIcs = await this.removeEventFromIcs(data, eventId)
@@ -145,15 +145,15 @@ export class Calendar {
                         // Found a matching activity on the ICS output? Delete and save the file back.
                         if (updatedIcs) {
                             await storage.setFile(StorageBucket.Calendar, file.name, updatedIcs, "text/calendar")
-                            logger.info("Calendar.onDeleteActivity", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
+                            logger.info("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `Deleted from ${file.name}`)
                         }
                     }
                 } catch (fileEx) {
-                    logger.error("Calendar.onDeleteActivity", logHelper.user(user), activityLog, file.name, fileEx)
+                    logger.error("Calendar.onActivityDeleted", logHelper.user(user), activityLog, file.name, fileEx)
                 }
             }
         } catch (ex) {
-            logger.error("Calendar.onDeleteActivity", logHelper.user(user), activityLog, ex)
+            logger.error("Calendar.onActivityDeleted", logHelper.user(user), activityLog, ex)
         }
     }
 
