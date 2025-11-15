@@ -13,6 +13,7 @@ import stravaWebhooks from "./webhooks"
 import database from "../database"
 import eventManager from "../eventmanager"
 import dayjs from "../dayjs"
+import cache from "bitecache"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
@@ -84,6 +85,8 @@ export class Strava {
      */
     init = async (quickStart?: boolean): Promise<void> => {
         await api.init()
+
+        cache.setup("processed-activities", settings.strava.processedActivities.cacheDuration)
 
         // Make sure there's a valid webhook set on Strava.
         try {

@@ -17,6 +17,7 @@ import recipes from "../recipes"
 import users from "../users"
 import weather from "../weather"
 import _ from "lodash"
+import cache from "bitecache"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
@@ -41,9 +42,9 @@ export class StravaActivityProcessing {
      * @param id The activity ID.
      *
      */
-    getProcessedActivity = async (user: UserData, id: string): Promise<StravaProcessedActivity[]> => {
+    getProcessedActivity = async (user: UserData, id: number): Promise<StravaProcessedActivity> => {
         try {
-            const activity = await database.get("activities", id)
+            const activity = await database.get("activities", id.toString())
 
             if (activity) {
                 logger.info("Strava.getProcessedActivity", logHelper.user(user), logHelper.activity(activity))
@@ -292,10 +293,10 @@ export class StravaActivityProcessing {
                     return null
                 }
 
-                // Save to Strava and emit the activity process event.
+                // Save to Strava!
                 try {
                     await stravaActivities.setActivity(user, activity)
-                    eventManager.emit("Strava.processActivity", user, activity)
+                    cache.set("processed-activities", activity.id, activity.dateStart)
                 } catch (ex) {
                     logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, ex)
                     saveError = ex.friendlyMessage || ex.message || ex
@@ -319,7 +320,7 @@ export class StravaActivityProcessing {
                     }
                 }
 
-                // Save activity to the database and update count on user data.
+                // Save processed activity to the database and update count on user data.
                 try {
                     await users.setActivityCount(user)
                     user.activityCount++
@@ -356,6 +357,7 @@ export class StravaActivityProcessing {
         try {
             const data: StravaProcessedActivity = {
                 id: activity.id,
+                name: activity.name,
                 dateProcessed: dayjs.utc().toDate(),
                 userId: user.id
             }
@@ -389,11 +391,11 @@ export class StravaActivityProcessing {
             // Extra activity details in case user has not opted for the privacy mode.
             // Even more details if user has opted in for the AI features.
             if (!user.preferences.privacyMode) {
-                const mainFields = ["sportType", "name", "dateStart", "utcStartOffset", "totalTime", "movingTime", "device", "newRecords"]
+                const mainFields = ["sportType", "name", "dateStart", "utcStartOffset", "totalTime", "movingTime", "distance", "distanceUnit", "device", "newRecords"]
                 _.assign(data, _.pick(activity, mainFields))
 
                 if (user.preferences.aiEnabled) {
-                    const extraFields = ["distance", "distanceUnit", "elevationGain", "elevationUnit", "speedAvg", "speedMax", "wattsAvg", "wattsWeighted", "wattsMax", "wattsKg", "hrAvg", "hrMax", "cadenceAvg", "tss", "weatherSummary"]
+                    const extraFields = ["elevationGain", "elevationUnit", "speedAvg", "speedMax", "wattsAvg", "wattsWeighted", "wattsMax", "wattsKg", "hrAvg", "hrMax", "cadenceAvg", "tss", "weatherSummary"]
                     _.assign(data, _.pick(activity, extraFields))
 
                     // Weather summaries are not available for batch processed activities.
@@ -421,6 +423,9 @@ export class StravaActivityProcessing {
             // Save and return result. Empty processed values are removed before saving.
             await database.set("activities", _.omitBy(data, _.isNil), activity.id.toString())
             logger.debug("Strava.saveProcessedActivity", data)
+
+            // Dispatch processed event and return saved data.
+            eventManager.emit("Strava.activityProcessed", user, activity)
 
             return data
         } catch (ex) {
