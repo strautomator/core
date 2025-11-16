@@ -31,7 +31,7 @@ export const notifyUsage = async (user: UserData, component: GearWearComponent, 
     const datePreAlertSent = component.datePreAlertSent ? dayjs.utc(component.datePreAlertSent) : null
     const dateAlertSent = component.dateAlertSent ? dayjs.utc(component.dateAlertSent) : null
     if (datePreAlertSent?.isAfter(minReminderDate) || dateAlertSent?.isAfter(minReminderDate)) {
-        logger.warn("GearWear.notifyUsage", logHelper.user(user), logGear, "User was already notified recently")
+        logger.warn("GearWear.notifyUsage", logHelper.user(user), logGear, "User was notified recently, abort")
         return
     }
 
@@ -71,7 +71,7 @@ export const notifyUsage = async (user: UserData, component: GearWearComponent, 
                 usage: Math.round(usage),
                 alertDetails: alertDetails.join(", "),
                 resetLink: `${settings.app.url}gear/edit?id=${gear.id}&reset=${encodeURIComponent(compName)}`,
-                affiliateLink: `${settings.affiliates.server.url}s/${compName}?rn=1&from=${encodeURIComponent(settings.app.title)}`,
+                affiliateLink: `${settings.affiliates.server.url}s/${compName.toLowerCase()}?rn=1&from=${encodeURIComponent(settings.app.title)}`,
                 tips: component.name.toLowerCase().replace(/ /g, "")
             }
 
