@@ -112,11 +112,11 @@ export class Strava {
      * @param user The user.
      * @param activityId The Strava activity ID.
      */
-    private onActivityDeleted = async (user: UserData, activityId: string): Promise<void> => {
+    private onActivityDeleted = async (user: UserData, activityId: number): Promise<void> => {
         const activityLog = `Activity ${activityId}`
 
         try {
-            const count = await database.delete("activities", activityId)
+            const count = await database.delete("activities", activityId.toString())
             if (count > 0) {
                 logger.info("Strava.onActivityDeleted", logHelper.user(user), activityLog, "Deleted from the database")
             }
