@@ -694,6 +694,8 @@ export class GearWear {
      * @param dDateTo Get activities that occurred before this timestamp.
      */
     processUserActivities = async (user: UserData, configs: GearWearConfig[], dDateFrom: dayjs.Dayjs, dDateTo: dayjs.Dayjs): Promise<number> => {
+        const debugLogger = user.debug ? logger.warn : logger.debug
+
         let dateString = `${dDateFrom.format("ll")} to ${dDateTo.format("ll")}`
         let count = 0
 
@@ -741,16 +743,23 @@ export class GearWear {
                     config.name = foundGear.name
                 }
 
-                // Get recent activities for the current gear and update the tracking.
-                const gearActivities = _.filter(activities, (activity: StravaActivity) => (activity.distance || activity.movingTime) && activity.gear?.id == config.id)
-                await updateTracking(user, config, gearActivities)
-                count += gearActivities.length
+                // Filter only activities for the current gear.
+                const gearActivities = _.filter(activities, (a: StravaActivity) => (a.distance || a.movingTime) && a.gear?.id == config.id)
 
-                // Double check if recent activities were previously set to another gear config. If that's the case, rollback the tracking.
+                // Double check if the activities were previously set to another gear config. If that's the case, rollback the tracking.
                 const previousConfig = configs.find((c) => c.recentActivities?.find((a) => gearActivities.some((ga) => ga.id == a)))
                 if (previousConfig && previousConfig.id != config.id) {
-                    const previousActivities = activities.filter((a) => previousConfig.recentActivities.includes(a.id))
+                    const previousActivities = activities.filter((a) => previousConfig.recentActivities?.includes(a.id))
                     await updateTracking(user, previousConfig, previousActivities, true)
+                }
+
+                // Get updated activities for the current gear and do the tracking.
+                const updatedActivities = gearActivities.filter((a) => !config.recentActivities?.includes(a.id))
+                if (updatedActivities.length > 0) {
+                    await updateTracking(user, config, updatedActivities)
+                    count += gearActivities.length
+                } else {
+                    debugLogger("GearWear.processUserActivities", logHelper.user(user), dateString, `No updated activities for gear ${config.id} - ${config.name}`)
                 }
             }
         } catch (ex) {
