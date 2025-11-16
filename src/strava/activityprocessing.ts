@@ -273,7 +273,7 @@ export class StravaActivityProcessing {
                         }
                     }
                 } catch (innerEx) {
-                    logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, innerEx)
+                    logger.error("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, logHelper.recipe(recipe), innerEx)
                 }
             }
 
@@ -285,7 +285,7 @@ export class StravaActivityProcessing {
                 logger.info("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, pActivity.queued ? "From queue" : "Realtime", `Recipes: ${recipeIds.join(", ")}`, `Actions: ${_.uniq(actions).join(", ")}`)
 
                 // Remove duplicates from list of updated fields.
-                activity.updatedFields = _.uniq(activity.updatedFields)
+                activity.updatedFields = _.uniq(activity.updatedFields || [])
 
                 // Write suspended (possibly missing permissions)? Stop here.
                 if (user.writeSuspended) {

@@ -112,87 +112,92 @@ export class StravaAthletes {
     checkActivityRecords = async (user: UserData, activities: StravaActivity[]): Promise<StravaAthleteRecords> => {
         const debugLogger = user.debug ? logger.warn : logger.debug
 
-        if (user.suspended) {
-            logger.warn("Strava.checkActivityRecords", logHelper.user(user), `User suspended, won't check`)
-            return null
-        }
-        if (user.preferences.privacyMode) {
-            logger.info("Strava.checkActivityRecords", logHelper.user(user), "User has opted in for privacy mode, won't check")
-            return null
-        }
-        if (!activities || activities.length == 0) {
-            debugLogger("Strava.checkActivityRecords", logHelper.user(user), "No activities to be checked")
-            return null
-        }
-
-        // Only proceed if athlete has the records document initialized.
-        const allRecords = await this.getAthleteRecords(user)
-        if (!allRecords) {
-            debugLogger("Strava.checkActivityRecords", logHelper.user(user), "No previous records found, will not proceed")
-            return null
-        }
-
-        const result: StravaAthleteRecords = {}
-        const minMovingTime = settings.strava.records.minMovingTimeAvg
-        let hasNewRecord = false
-
-        // Iterate the passed activities to check for new records.
-        for (let activity of activities) {
-            try {
-                if (!user.isPro && !settings.plans.free.recordSports.includes(activity.sportType)) {
-                    debugLogger("Strava.checkActivityRecords", logHelper.user(user), `${logHelper.activity(activity)} ${activity.sportType} not tracked on free accounts`)
-                    continue
-                }
-
-                if (!allRecords[activity.sportType]) {
-                    allRecords[activity.sportType] = {}
-                }
-
-                const currentRecords: StravaRecords = allRecords[activity.sportType]
-
-                // If activity had no power meter, exclude the power based records.
-                // Check all of the possible record properties.
-                const props = activity.hasPower ? StravaTrackedRecords : StravaTrackedRecords.filter((r) => !r.includes("watts"))
-                for (let prop of props) {
-                    const currentValue: number = currentRecords[prop] ? currentRecords[prop].value || 0 : 0
-
-                    // Has broken a new record? If an average-based metric, was the
-                    // activity longer than the minMovingTimeAvg setting?
-                    if (activity[prop] && activity[prop] > currentValue) {
-                        if (prop.includes("Avg") && activity.movingTime < minMovingTime) {
-                            debugLogger("Strava.checkActivityRecords", logHelper.user(user), prop, `${logHelper.activity(activity)} has less than ${minMovingTime}`)
-                            continue
-                        }
-
-                        // Make sure the new records references exist.
-                        if (!result[activity.sportType]) result[activity.sportType] = {}
-                        if (!activity.newRecords) activity.newRecords = []
-
-                        const details: StravaRecordDetails = {
-                            value: activity[prop],
-                            previous: currentValue,
-                            activityId: activity.id,
-                            date: activity.dateEnd
-                        }
-
-                        allRecords[activity.sportType][prop] = details
-                        result[activity.sportType][prop] = details
-                        activity.newRecords.push(prop)
-
-                        hasNewRecord = true
-                    }
-                }
-            } catch (ex) {
-                logger.error("Strava.checkActivityRecords", logHelper.user(user), logHelper.activity(activity), ex)
+        try {
+            if (user.suspended) {
+                logger.warn("Strava.checkActivityRecords", logHelper.user(user), `User suspended, won't check`)
+                return null
             }
-        }
+            if (user.preferences?.privacyMode) {
+                logger.info("Strava.checkActivityRecords", logHelper.user(user), "User has opted in for privacy mode, won't check")
+                return null
+            }
+            if (!activities || activities.length == 0) {
+                debugLogger("Strava.checkActivityRecords", logHelper.user(user), "No activities to be checked")
+                return null
+            }
 
-        // User has broken a personal record? Save it.
-        if (hasNewRecord) {
-            await this.setAthleteRecords(user, result)
-            return result
-        } else {
-            debugLogger("Strava.checkActivityRecords", logHelper.user(user), `${activities.length} activities`, `No new records`)
+            // Only proceed if athlete has the records document initialized.
+            const allRecords = await this.getAthleteRecords(user)
+            if (!allRecords) {
+                debugLogger("Strava.checkActivityRecords", logHelper.user(user), "No previous records found, will not proceed")
+                return null
+            }
+
+            const result: StravaAthleteRecords = {}
+            const minMovingTime = settings.strava.records.minMovingTimeAvg
+            let hasNewRecord = false
+
+            // Iterate the passed activities to check for new records.
+            for (let activity of activities) {
+                try {
+                    if (!user.isPro && !settings.plans.free.recordSports.includes(activity.sportType)) {
+                        debugLogger("Strava.checkActivityRecords", logHelper.user(user), `${logHelper.activity(activity)} ${activity.sportType} not tracked on free accounts`)
+                        continue
+                    }
+
+                    if (!allRecords[activity.sportType]) {
+                        allRecords[activity.sportType] = {}
+                    }
+
+                    const currentRecords: StravaRecords = allRecords[activity.sportType]
+
+                    // If activity had no power meter, exclude the power based records.
+                    // Check all of the possible record properties.
+                    const props = activity.hasPower ? StravaTrackedRecords : StravaTrackedRecords.filter((r) => !r.includes("watts"))
+                    for (let prop of props) {
+                        const currentValue: number = currentRecords[prop] ? currentRecords[prop].value || 0 : 0
+
+                        // Has broken a new record? If an average-based metric, was the
+                        // activity longer than the minMovingTimeAvg setting?
+                        if (activity[prop] && activity[prop] > currentValue) {
+                            if (prop.includes("Avg") && activity.movingTime < minMovingTime) {
+                                debugLogger("Strava.checkActivityRecords", logHelper.user(user), prop, `${logHelper.activity(activity)} has less than ${minMovingTime}`)
+                                continue
+                            }
+
+                            // Make sure the new records references exist.
+                            if (!result[activity.sportType]) result[activity.sportType] = {}
+                            if (!activity.newRecords) activity.newRecords = []
+
+                            const details: StravaRecordDetails = {
+                                value: activity[prop],
+                                previous: currentValue,
+                                activityId: activity.id,
+                                date: activity.dateEnd
+                            }
+
+                            allRecords[activity.sportType][prop] = details
+                            result[activity.sportType][prop] = details
+                            activity.newRecords.push(prop)
+
+                            hasNewRecord = true
+                        }
+                    }
+                } catch (ex) {
+                    logger.error("Strava.checkActivityRecords", logHelper.user(user), logHelper.activity(activity), ex)
+                }
+            }
+
+            // User has broken a personal record? Save it.
+            if (hasNewRecord) {
+                await this.setAthleteRecords(user, result)
+                return result
+            }
+
+            debugLogger("Strava.checkActivityRecords", logHelper.user(user), `${activities.length} activities`, "No new records")
+            return null
+        } catch (ex) {
+            logger.error("Strava.checkActivityRecords", logHelper.user(user), `${activities.length} activities`, ex)
             return null
         }
     }
