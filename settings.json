@@ -512,7 +512,7 @@
         "maxLength": {
             "title": 40,
             "conditionValue": 800,
-            "actionValue": 1000
+            "actionValue": 1500
         },
         // Webhook timeout is set to 2 seconds by default. Value in milliseconds.
         "webhook": {
