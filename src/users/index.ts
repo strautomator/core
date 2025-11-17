@@ -442,9 +442,11 @@ export class Users {
     getById = async (id: string): Promise<UserData> => {
         try {
             const user: UserData = await database.get("users", id)
-            if (user && !user.countryCode && user.profile?.country) {
-                user.countryCode = maps.getCountryCode(user.profile.country)
+
+            if (!user) {
+                logger.debug("Users.getById", id, "Not found")
             }
+
             return user
         } catch (ex) {
             logger.error("Users.getById", id, ex)
@@ -718,6 +720,10 @@ export class Users {
                 userData.recipeCount = 0
                 userData.activityCount = 0
                 userData.urlToken = crypto.randomBytes(12).toString("hex")
+
+                if (profile.country) {
+                    userData.countryCode = maps.getCountryCode(profile.country)
+                }
             }
             // If user exists, update the relevant data.
             else {
@@ -753,6 +759,9 @@ export class Users {
                     for (let shoes of userData.profile.shoes) {
                         const existingShoes = _.find(existingData.profile?.shoes || [], {id: shoes.id})
                         if (existingShoes) _.defaults(shoes, existingShoes)
+                    }
+                    if (userData.countryCode) {
+                        userData.countryCode = maps.getCountryCode(profile.country)
                     }
                 }
 
