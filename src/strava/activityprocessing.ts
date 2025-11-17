@@ -224,6 +224,7 @@ export class StravaActivityProcessing {
                     await this.queueActivity(user, activityId, false, `${status}: ${message}`)
                 }
 
+                ex.message = `Failed to get activity from Strava: ${message}`
                 throw ex
             }
 
@@ -253,7 +254,11 @@ export class StravaActivityProcessing {
             // Check for new records.
             stravaAthletes.checkActivityRecords(user, [activity])
 
-            // Get recipes, having the defaults first and then sorted by order.
+            // Check and get recipes, sorted by the user-specified order.
+            if (!user.recipes) {
+                debugLogger("Strava.processActivity", logHelper.user(user), `Activity ${activityId}`, "User has no recipes to process")
+                return null
+            }
             let sortedRecipes: RecipeData[] = _.sortBy(Object.values(user.recipes), ["defaultFor", "order", "title"])
 
             // If PRO subscription was cancelled but user still have many recipes, consider just the first ones.
