@@ -504,7 +504,7 @@ export class Maps {
             value = [value[1], value[0]]
         }
 
-        return iso1A2Code(value, {level: "territory"})
+        return iso1A2Code(value, {level: "territory"}) || iso1A2Code(value)
     }
 
     /**
