@@ -16,7 +16,7 @@ import logger from "anyhow"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const allProviders = [anthropic, xai, openai, mistral, gemini]
+const allProviders = [anthropic, xai, gemini, mistral, openai]
 
 /**
  * AI / LLM wrapper.
@@ -262,9 +262,10 @@ export class AI {
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
         // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
+        // If no provider was selected, will use a random one in 20% of the cases.
         const providers = allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
         const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
-        let provider: AiProvider = preferredProviders.pop() || providers.pop()
+        let provider: AiProvider = preferredProviders.pop() || Math.random() < 0.8 ? providers.pop() : _.sample(providers)
 
         // Keep trying with different providers.
         let response: string
