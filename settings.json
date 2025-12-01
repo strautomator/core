@@ -329,8 +329,8 @@
         "cachePrecision": 2,
         // Cache geolocation results in memory for up to 12 hours. Value set in seconds.
         "cacheDuration": 43200,
-        // Geolocation will be cached on the database for up to 7 days. Value set in seconds.
-        "maxCacheDuration": 604800,
+        // Geolocation will be cached on the database for up to 10 days. Value set in seconds.
+        "maxCacheDuration": 864000,
         // Circle color, will also be used as a fill color with half opacity.
         "circleColor": "0x0066CC",
         // Default marker style and color.
