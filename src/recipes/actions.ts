@@ -6,7 +6,7 @@ import {AiProviderName} from "../ai/types"
 import {GearWearComponent, GearWearConfig} from "../gearwear/types"
 import {getLyrics} from "../spotify/lyrics"
 import {transformActivityFields} from "../strava/utils"
-import {StravaActivity, StravaGear, StravaSport} from "../strava/types"
+import {StravaActivity, StravaActivityToProcess, StravaGear, StravaSport} from "../strava/types"
 import {UserData} from "../users/types"
 import {ActivityWeather} from "../weather/types"
 import {AxiosConfig, axiosRequest} from "../axios"
@@ -139,31 +139,15 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
  * @param recipe The source recipe.
  * @param action The action details.
  */
-export const defaultAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+export const replaceTagsAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
     try {
         let processedValue = (action.value || "").toString()
-        let activityWithSuffix: StravaActivity = _.cloneDeep(activity)
-
-        // Pre-process activity data and append suffixes to values before processing.
-        transformActivityFields(user, activityWithSuffix)
-
-        // Replace main tags.
-        if (processedValue) {
-            processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix)
+        if (processedValue.trim() == "") {
+            logger.warn("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), "Empty action value")
+            return true
         }
 
-        // City tag(s) set? Trigger a reverse geocode for the specified coordinates.
-        const hasCityStart = processedValue.includes("${cityStart}")
-        const cityStart = hasCityStart ? activity.locationStart : null
-        const hasCityMid = processedValue.includes("${cityMid}")
-        const cityMid = hasCityMid ? activity.locationMid : null
-        const hasCityEnd = processedValue.includes("${cityEnd}")
-        const cityEnd = hasCityEnd ? activity.locationEnd : null
-        if (hasCityStart || hasCityMid || hasCityEnd) {
-            const sourceObj = {cityStart, cityMid, cityEnd}
-            const cityObj = activity.hasLocation ? await maps.coordinatesToCityFromObj(sourceObj) : {}
-            processedValue = jaul.data.replaceTags(processedValue, {cityStart: cityObj.cityStart, cityMid: cityObj.cityMid, cityEnd: cityObj.cityEnd})
-        }
+        let activityToProcess: StravaActivityToProcess = _.cloneDeep(activity)
 
         // Value has a counter tag? Get recipe stats to increment it.
         // Do not increment if it identifies that the automation has executed before.
@@ -172,37 +156,41 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
             const currentCounter = stats?.counter || 0
             const addCounter = stats?.activities.includes(activity.id) ? 0 : recipe.counterProp ? activity[recipe.counterProp] || 0 : 1
-            activityWithSuffix.counter = (currentCounter + addCounter).toFixed(recipe.counterProp ? 1 : 0)
+            activityToProcess.counter = (currentCounter + addCounter).toFixed(recipe.counterProp ? 1 : 0)
+        }
+
+        // City tags on the value? Fetch cities and process them.
+        if (processedValue.includes("${city")) {
+            _.assign(activityToProcess, await getCityTags(user, activity, recipe, processedValue))
         }
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
         if (processedValue.includes("${weather.")) {
-            processedValue = await addWeatherTags(user, activity, recipe, processedValue)
+            _.assign(activityToProcess, await getWeatherTags(user, activity, recipe, processedValue))
         }
 
         // Music tags on the value? Fetch from Spotify if the user has an account linked.
         if (processedValue.includes("${spotify.")) {
-            processedValue = await addSpotifyTags(user, activity, recipe, processedValue)
+            _.assign(activityToProcess, await getSpotifyTags(user, activity, recipe, processedValue))
         }
 
         // Garmin tags on the value? Get those from the corresponding FIT file activity.
         if (processedValue.includes("${garmin.")) {
-            processedValue = await addGarminTags(user, activity, recipe, processedValue)
+            _.assign(activityToProcess, await getGarminTags(user, activity, recipe, processedValue))
         }
 
         // Wahoo tags on the value? Get those from the corresponding FIT file activity.
         if (processedValue.includes("${wahoo.")) {
-            processedValue = await addWahooTags(user, activity, recipe, processedValue)
+            _.assign(activityToProcess, await getWahooTags(user, activity, recipe, processedValue))
         }
 
-        // Replace remaining tags with an empty string.
-        if (processedValue) {
-            processedValue = jaul.data.replaceTags(processedValue, activityWithSuffix, null, true)
-        }
+        // Append suffixes to values and replace tags.
+        transformActivityFields(user, activityToProcess)
+        processedValue = processedValue.replace(/\$\{(.*?)\}/g, (_match, tag) => _.get(activityToProcess, tag, ""))
 
         // Empty value? Stop here.
-        if (processedValue === null || processedValue.toString().trim() === "") {
-            logger.warn("Recipes.defaultAction", logHelper.user(user), logHelper.activity(activity), "Processed action value is empty")
+        if (processedValue.trim() == "") {
+            logger.warn("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), "Processed action value is empty")
             return true
         }
 
@@ -264,71 +252,101 @@ export const defaultAction = async (user: UserData, activity: StravaActivity, re
 }
 
 /**
+ * Default action to add city tags to the activity name or description.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param processedValue The action's processed value.
+ */
+export const getCityTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<Partial<StravaActivityToProcess>> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
+
+    if (!activity.hasLocation) {
+        debugLogger("Recipes.getCityTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Activity has no location data, will skip")
+        return null
+    }
+
+    try {
+        const hasCityStart = processedValue.includes("${cityStart}")
+        const cityStart = hasCityStart ? activity.locationStart : null
+        const hasCityMid = processedValue.includes("${cityMid}")
+        const cityMid = hasCityMid ? activity.locationMid : null
+        const hasCityEnd = processedValue.includes("${cityEnd}")
+        const cityEnd = hasCityEnd ? activity.locationEnd : null
+
+        // Has a specific city set (start, mid or end)? Get all of them.
+        if (hasCityStart || hasCityMid || hasCityEnd) {
+            const sourceObj = {cityStart, cityMid, cityEnd}
+            return await maps.coordinatesToCityFromObj(sourceObj)
+        }
+
+        // Otherwise defaults to just ${city}.
+        return {city: await maps.coordinatesToCity(activity.locationStart || activity.locationMid || activity.locationEnd)}
+    } catch (ex) {
+        logger.warn("Recipes.getCityTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        return null
+    }
+}
+
+/**
  * Default action to add weather tags to the activity name or description.
  * @param user The activity owner.
  * @param activity The Strava activity details.
  * @param recipe The source recipe.
  * @param processedValue The action's processed value.
  */
-export const addWeatherTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+export const getWeatherTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<Partial<StravaActivityToProcess>> => {
     try {
         const aqiNeeded = processedValue.includes("${weather.") && processedValue.includes(".aqi")
         const weatherSummary = await weather.getActivityWeather(user, activity, aqiNeeded)
-
         if (!weatherSummary) {
-            logger.warn("Recipes.addWeatherTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Got no valid activity weather")
-            processedValue = jaul.data.replaceTags(processedValue, "", "weather.start.")
-            processedValue = jaul.data.replaceTags(processedValue, "", "weather.end.")
-            processedValue = jaul.data.replaceTags(processedValue, "", "weather.")
-            return processedValue
+            logger.warn("Recipes.getWeatherTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Got no valid activity weather")
+            return null
         }
 
-        // Weather specific at the start.
+        const result: Partial<StravaActivityToProcess> = {
+            weather: weatherSummary.mid || weatherSummary.start || weatherSummary.end
+        }
+
+        // Check the weather was specifically requested for the start or end of the activity.
         if (processedValue.includes("${weather.start.")) {
-            processedValue = jaul.data.replaceTags(processedValue, weatherSummary.start || "", "weather.start.")
+            result.weather.start = weatherSummary.start
         }
-
-        // Weather specific at the end.
         if (processedValue.includes("${weather.end.")) {
-            processedValue = jaul.data.replaceTags(processedValue, weatherSummary.end || "", "weather.end.")
+            result.weather.end = weatherSummary.end
         }
 
-        // More time during the day or during the night?
-        if (processedValue.includes("${weather.")) {
-            processedValue = jaul.data.replaceTags(processedValue, weatherSummary.mid || weatherSummary.end || weatherSummary.end || "", "weather.")
-        }
+        return result
     } catch (ex) {
-        logger.warn("Recipes.addWeatherTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        logger.warn("Recipes.getWeatherTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        return null
     }
-
-    return processedValue
 }
 
 /**
  * Default action to add music tags to the activity name or description.
  * @param user The activity owner.
- * @param activity The Strava activity details.
+ * @param activity The unprocessed Strava activity details.
+ * @param activityToProcess The Strava activity details.
  * @param recipe The source recipe.
  * @param processedValue The action's processed value.
  */
-export const addSpotifyTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+export const getSpotifyTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<Partial<StravaActivityToProcess>> => {
     const debugLogger = user.debug ? logger.warn : logger.debug
 
     if (!user.spotify) {
-        debugLogger("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Spotify profile linked, will skip")
-        return processedValue
+        debugLogger("Recipes.getSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Spotify profile linked, will skip")
+        return null
     }
 
     try {
         const tracks = await spotify.getActivityTracks(user, activity)
-
         if (!tracks || tracks.length == 0) {
-            logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "No Spotify tracks returned for the activity")
-            processedValue = jaul.data.replaceTags(processedValue, "", "spotify.")
-            return processedValue
+            logger.warn("Recipes.getSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "No Spotify tracks returned for the activity")
+            return null
         }
 
-        const musicTags: RecipeMusicTags = {
+        const spotifyTags: RecipeMusicTags = {
             trackStart: tracks[0].title,
             trackEnd: tracks[tracks.length - 1].title,
             trackList: tracks.map((t) => t.title).join("\n") + "\n#spotify"
@@ -337,19 +355,18 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
         // Add lyrics (only available to PRO users).
         if (user.isPro) {
             if (processedValue.includes("spotify.lyricsStart")) {
-                musicTags.lyricsStart = await getLyrics(tracks[0])
+                spotifyTags.lyricsStart = await getLyrics(tracks[0])
             }
             if (processedValue.includes("spotify.lyricsEnd")) {
-                musicTags.lyricsEnd = await getLyrics(tracks[tracks.length - 1])
+                spotifyTags.lyricsEnd = await getLyrics(tracks[tracks.length - 1])
             }
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, musicTags, "spotify.")
+        return {spotify: spotifyTags}
     } catch (ex) {
-        logger.warn("Recipes.addSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        logger.warn("Recipes.getSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        return null
     }
-
-    return processedValue
 }
 
 /**
@@ -359,23 +376,23 @@ export const addSpotifyTags = async (user: UserData, activity: StravaActivity, r
  * @param recipe The source recipe.
  * @param processedValue The action's processed value.
  */
-export const addGarminTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+export const getGarminTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<Partial<StravaActivityToProcess>> => {
     const debugLogger = user.debug ? logger.warn : logger.debug
 
     if (!user.isPro) {
-        debugLogger("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
-        return processedValue
+        debugLogger("Recipes.getGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
+        return null
     }
     if (!user.garmin) {
-        debugLogger("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Garmin profile linked, will skip")
-        return processedValue
+        debugLogger("Recipes.getGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Garmin profile linked, will skip")
+        return null
     }
 
     try {
         let garminActivity = await fitparser.getMatchingActivity(user, activity, "garmin")
         if (!garminActivity) {
-            logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Garmin activity")
-            return processedValue
+            logger.warn("Recipes.getGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Garmin activity")
+            return null
         }
 
         // Garmin splits should be converted to a nice string first.
@@ -394,12 +411,11 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
             garminActivity.splits = summaries.join("\n") as any
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, garminActivity, "garmin.")
+        return {garmin: garminActivity}
     } catch (ex) {
-        logger.warn("Recipes.addGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        logger.warn("Recipes.getGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        return null
     }
-
-    return processedValue
 }
 
 /**
@@ -409,31 +425,46 @@ export const addGarminTags = async (user: UserData, activity: StravaActivity, re
  * @param recipe The source recipe.
  * @param processedValue The action's processed value.
  */
-export const addWahooTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<string> => {
+export const getWahooTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<Partial<StravaActivityToProcess>> => {
     const debugLogger = user.debug ? logger.warn : logger.debug
 
     if (!user.isPro) {
-        debugLogger("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
-        return processedValue
+        debugLogger("Recipes.getWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, will skip")
+        return null
     }
     if (!user.wahoo) {
-        debugLogger("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Wahoo profile linked, will skip")
-        return processedValue
+        debugLogger("Recipes.getWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Wahoo profile linked, will skip")
+        return null
     }
 
     try {
         let wahooActivity = await fitparser.getMatchingActivity(user, activity, "wahoo")
         if (!wahooActivity) {
-            logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Wahoo activity")
-            return processedValue
+            logger.warn("Recipes.getWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Wahoo activity")
+            return null
         }
 
-        processedValue = jaul.data.replaceTags(processedValue, wahooActivity, "wahoo.")
-    } catch (ex) {
-        logger.warn("Recipes.addWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
-    }
+        // Garmin splits should be converted to a nice string first.
+        if (processedValue.includes("${garmin.splits}") && wahooActivity.splits?.length > 0) {
+            const summaries = wahooActivity.splits.map((s) => {
+                const splitType = s.splitType || "Split"
+                delete s.splitType
+                const props = Object.entries(s)
+                const propValueMerge = (e) => {
+                    e[0] = e[0].replace(/([A-Z])/g, " $1").toLowerCase()
+                    return e.join(" = ")
+                }
+                const propValues = props.map((e) => propValueMerge(e)).join(", ")
+                return `${splitType}: ${propValues}`
+            })
+            wahooActivity.splits = summaries.join("\n") as any
+        }
 
-    return processedValue
+        return {wahoo: wahooActivity}
+    } catch (ex) {
+        logger.warn("Recipes.getWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        return null
+    }
 }
 
 /**

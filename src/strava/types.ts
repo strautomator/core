@@ -199,6 +199,30 @@ export interface StravaActivity {
 }
 
 /**
+ * Activity with extended fields (used when processing activities).
+ */
+export interface StravaActivityToProcess extends StravaActivity {
+    /** City (any) */
+    city?: string
+    /** City start. */
+    cityStart?: string
+    /** City mid point. */
+    cityMid?: string
+    /** City end. */
+    cityEnd?: string
+    /** Counter. */
+    counter?: any
+    /** Garmin data. */
+    garmin?: any
+    /** Spotify data. */
+    spotify?: any
+    /** Wahoo data. */
+    wahoo?: any
+    /** Weather data. */
+    weather?: any
+}
+
+/**
  * A summary of the activity performance.
  */
 export interface StravaActivityPerformance {

@@ -503,7 +503,7 @@ export class Recipes {
         }
 
         // Other actions (set description or name).
-        return actions.defaultAction(user, activity, recipe, action)
+        return actions.replaceTagsAction(user, activity, recipe, action)
     }
 
     // SHARED RECIPES
