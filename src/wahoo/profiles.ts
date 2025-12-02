@@ -4,6 +4,7 @@ import {WahooProfile, WahooTokens} from "./types"
 import {UserData} from "../users/types"
 import {FieldValue} from "@google-cloud/firestore"
 import api from "./api"
+import eventManager from "../eventmanager"
 import users from "../users"
 import _ from "lodash"
 import cache from "bitecache"
@@ -51,6 +52,7 @@ export class WahooProfiles {
             // Save to cache and return the user profile.
             cache.set("wahoo", cacheId, profile)
             logger.info("Wahoo.getProfile", logHelper.user(user), `ID ${profile.id}`)
+            eventManager.emit("Wahoo.tokenSuccess", user)
 
             return profile
         } catch (ex) {
@@ -68,6 +70,8 @@ export class WahooProfiles {
      */
     saveProfile = async (user: UserData, profile: WahooProfile): Promise<void> => {
         try {
+            user.wahoo = profile
+
             const data: Partial<UserData> = {id: user.id, displayName: user.displayName, wahoo: profile}
             if (profile.email && !user.email) {
                 data.email = profile.email
@@ -76,7 +80,9 @@ export class WahooProfiles {
             // We don't need to store the user's email.
             delete profile.email
 
+            // Reset auth state.
             if (user.wahooAuthState) {
+                delete user.wahooAuthState
                 data.wahooAuthState = FieldValue.delete() as any
             }
 

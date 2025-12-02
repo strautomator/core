@@ -150,6 +150,7 @@ export class Wahoo {
      * Refresh OAuth2 tokens from Wahoo.
      * @param user The user.
      * @param refreshToken Optional new refresh token for the user, otherwise use existing one.
+     * @event Wahoo.tokenFailure
      */
     refreshToken = async (user: UserData, refreshToken?: string): Promise<WahooTokens> => {
         try {
@@ -186,6 +187,8 @@ export class Wahoo {
             }
 
             logger.info("Wahoo.refreshToken", logHelper.user(user), "Refreshed tokens")
+            eventManager.emit("Wahoo.tokenSuccess", user)
+
             return tokens
         } catch (ex) {
             const err = logger.error("Wahoo.refreshToken", logHelper.user(user), ex)

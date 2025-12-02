@@ -243,6 +243,7 @@ export class Spotify {
      * Refresh OAuth2 tokens from Spotify.
      * @param user The user.
      * @param refreshToken Optional new refresh token for the user, otherwise use existing one.
+     * @event Spotify.tokenFailure
      */
     refreshToken = async (user: UserData, refreshToken?: string): Promise<SpotifyTokens> => {
         try {
@@ -286,6 +287,8 @@ export class Spotify {
             }
 
             logger.info("Spotify.refreshToken", logHelper.user(user), "Refreshed tokens")
+            eventManager.emit("Spotify.tokenSuccess", user)
+
             return tokens
         } catch (ex) {
             const err = logger.error("Spotify.refreshToken", logHelper.user(user), ex)
@@ -335,6 +338,7 @@ export class Spotify {
      * Get a Spotify profile for the specified user.
      * @param user User requesting the Spotify profile data.
      * @param tokens Optional tokens, in case the profile is being set for the first time.
+     * @event Spotify.tokenFailure
      */
     getProfile = async (user: UserData, tokens?: SpotifyTokens): Promise<SpotifyProfile> => {
         try {
@@ -359,6 +363,8 @@ export class Spotify {
             // Save to cache and return the user profile.
             cache.set("spotify", cacheId, profile)
             logger.info("Spotify.getProfile", logHelper.user(user), `ID ${profile.id}`)
+            eventManager.emit("Spotify.tokenSuccess", user)
+
             return profile
         } catch (ex) {
             const err = logger.error("Spotify.getProfile", logHelper.user(user), ex)
@@ -432,7 +438,10 @@ export class Spotify {
             user.spotify = profile
 
             const data: Partial<UserData> = {id: user.id, displayName: user.displayName, spotify: profile}
+
+            // Reset auth state.
             if (user.spotifyAuthState) {
+                delete user.spotifyAuthState
                 data.spotifyAuthState = FieldValue.delete() as any
             }
 

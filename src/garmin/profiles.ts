@@ -4,6 +4,7 @@ import {GarminProfile} from "./types"
 import {UserData} from "../users/types"
 import {FieldValue} from "@google-cloud/firestore"
 import api from "./api"
+import eventManager from "../eventmanager"
 import users from "../users"
 import cache from "bitecache"
 import logger from "anyhow"
@@ -44,6 +45,8 @@ export class GarminProfiles {
             // Save to cache and return the user profile.
             cache.set("garmin", cacheId, profile)
             logger.info("Garmin.getProfile", logHelper.user(user), `ID ${profile.id}`)
+            eventManager.emit("Garmin.tokenSuccess", user)
+
             return profile
         } catch (ex) {
             logger.error("Garmin.getProfile", logHelper.user(user), ex)
@@ -61,6 +64,8 @@ export class GarminProfiles {
             user.garmin = profile
 
             const data: Partial<UserData> = {id: user.id, displayName: user.displayName, garmin: profile}
+
+            // Reset auth state.
             if (user.garminAuthState) {
                 delete user.garminAuthState
                 data.garminAuthState = FieldValue.delete() as any

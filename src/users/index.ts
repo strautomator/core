@@ -71,7 +71,11 @@ export class Users {
         eventManager.on("Strava.missingPermission", this.onStravaMissingPermission)
         eventManager.on("Strava.refreshToken", this.onStravaRefreshToken)
         eventManager.on("Strava.tokenFailure", this.onStravaTokenFailure)
+        eventManager.on("Spotify.tokenSuccess", this.onSpotifyTokenSuccess)
         eventManager.on("Spotify.tokenFailure", this.onSpotifyTokenFailure)
+        eventManager.on("Wahoo.tokenSuccess", this.onWahooTokenSuccess)
+        eventManager.on("Wahoo.tokenFailure", this.onWahooTokenFailure)
+        eventManager.on("Garmin.tokenSuccess", this.onGarminTokenSuccess)
         eventManager.on("Garmin.activityFailure", this.onGarminActivityFailure)
     }
 
@@ -279,22 +283,29 @@ export class Users {
     }
 
     /**
-     * When a Spotify refresh token has expired or a token has failed, notify the user.
+     * Reset the auth failure counter for Spotify if the tokens are successfully refreshed.
+     * @param user The user.
+     */
+    private onSpotifyTokenSuccess = async (user: UserData): Promise<void> => {
+        try {
+            if (!user.spotifyFailures) return
+            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, spotifyFailures: FieldValue.delete() as any}
+            await this.update(data)
+        } catch (ex) {
+            logger.error("Users.onSpotifyTokenSuccess", logHelper.user(user), ex)
+        }
+    }
+
+    /**
+     * When a Spotify refresh token has expired or a token has failed repeatedly, notify the user.
      * @param user The user.
      */
     private onSpotifyTokenFailure = async (user: UserData): Promise<void> => {
-        const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName}
+        const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, spotifyFailures: user.spotifyFailures || 0 + 1}
 
-        // When the token has failed for the first time, set the auth state to "token-failed".
-        // If it fails again, notify the user.
+        // Too many repeated failures? Notify the user to reauthorize Spotify.
         try {
-            if (!user.spotifyAuthState) {
-                user.spotifyAuthState = "token-failed"
-            } else if (user.spotifyAuthState == "token-failed") {
-                user.spotifyAuthState = "token-fail-notified"
-                delete user.spotify
-
-                // Failed at least twice, so notify the user that reauth is needed and reset the existing Spotify tokens.
+            if (user.spotifyFailures == settings.oauth.tokenFailuresAlert || user.spotifyFailures == settings.oauth.tokenFailuresDisable) {
                 const nOptions: Partial<AuthNotification> = {
                     title: "Spotify reauthentication needed",
                     body: "Your Spotify account authentication has expired, please login again.",
@@ -302,16 +313,78 @@ export class Users {
                     auth: true
                 }
                 await notifications.createNotification(user, nOptions)
-            } else {
-                return
+
+                // Way too many failures? Force clear the Spotify profile.
+                if (user.spotifyFailures == settings.oauth.tokenFailuresDisable) {
+                    updatedUser.spotify = FieldValue.delete() as any
+                    updatedUser.spotifyAuthState = FieldValue.delete() as any
+                    delete user.spotify
+                }
             }
 
-            // Reset the Spotify user data.
-            updatedUser.spotifyAuthState = user.spotifyAuthState
-            updatedUser.spotify = FieldValue.delete() as any
             await this.update(updatedUser)
         } catch (ex) {
             logger.error("Users.onSpotifyTokenFailure", ex)
+        }
+    }
+
+    /**
+     * Reset the auth failure counter for Wahoo if the tokens are successfully refreshed.
+     * @param user The user.
+     */
+    private onWahooTokenSuccess = async (user: UserData): Promise<void> => {
+        try {
+            if (!user.wahooFailures) return
+            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, wahooFailures: FieldValue.delete() as any}
+            await this.update(data)
+        } catch (ex) {
+            logger.error("Users.onWahooTokenSuccess", logHelper.user(user), ex)
+        }
+    }
+
+    /**
+     * When a Wahoo refresh token has expired or a token has failed repeatedly, notify the user.
+     * @param user The user.
+     */
+    private onWahooTokenFailure = async (user: UserData): Promise<void> => {
+        const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, wahooFailures: user.wahooFailures || 0 + 1}
+
+        // Too many repeated failures? Notify the user to reauthorize Wahoo.
+        try {
+            if (user.wahooFailures == settings.oauth.tokenFailuresAlert || user.wahooFailures == settings.oauth.tokenFailuresDisable) {
+                const nOptions: Partial<AuthNotification> = {
+                    title: "Wahoo reauthentication needed",
+                    body: "Your Wahoo account authentication has expired, please login again.",
+                    href: "/account?wahoo=link",
+                    auth: true
+                }
+                await notifications.createNotification(user, nOptions)
+
+                // Way too many failures? Force clear the Wahoo profile.
+                if (user.wahooFailures == settings.oauth.tokenFailuresDisable) {
+                    updatedUser.wahoo = FieldValue.delete() as any
+                    updatedUser.wahooAuthState = FieldValue.delete() as any
+                    delete user.wahoo
+                }
+            }
+
+            await this.update(updatedUser)
+        } catch (ex) {
+            logger.error("Users.onWahooTokenFailure", ex)
+        }
+    }
+
+    /**
+     * Reset the auth failure counter for Garmin if the tokens are successfully refreshed.
+     * @param user The user.
+     */
+    private onGarminTokenSuccess = async (user: UserData): Promise<void> => {
+        try {
+            if (!user.garminFailures) return
+            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, garminFailures: FieldValue.delete() as any}
+            await this.update(data)
+        } catch (ex) {
+            logger.error("Users.onGarminTokenSuccess", logHelper.user(user), ex)
         }
     }
 
@@ -320,11 +393,11 @@ export class Users {
      * @param user The user.
      */
     private onGarminActivityFailure = async (user: UserData): Promise<void> => {
-        const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, garminFailures: user.garminFailures ? user.garminFailures + 1 : 1}
+        const updatedUser: Partial<UserData> = {id: user.id, displayName: user.displayName, garminFailures: user.garminFailures || 0 + 1}
 
         // Too many repeated failures? Notify the user to reauthorize Garmin.
         try {
-            if (user.garminFailures == settings.oauth.tokenFailuresDisable) {
+            if (user.garminFailures == settings.oauth.tokenFailuresAlert || user.garminFailures == settings.oauth.tokenFailuresDisable) {
                 const nOptions: Partial<AuthNotification> = {
                     title: "Garmin reauthentication needed",
                     body: "The service failed to connect to your Garmin data too many times, please login again.",
@@ -332,6 +405,13 @@ export class Users {
                     auth: true
                 }
                 await notifications.createNotification(user, nOptions)
+
+                // Way too many failures? Force clear the Garmin profile.
+                if (user.garminFailures == settings.oauth.tokenFailuresDisable) {
+                    updatedUser.garmin = FieldValue.delete() as any
+                    updatedUser.garminAuthState = FieldValue.delete() as any
+                    delete user.garmin
+                }
             }
 
             await this.update(updatedUser)

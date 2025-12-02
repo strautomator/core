@@ -57,7 +57,7 @@ export class GarminActivities {
                         }
 
                         // Reset the Garmin failures counter, if there's one.
-                        if (user.garminFailures && user.garminFailures > 0) {
+                        if (user.garminFailures) {
                             delete user.garminFailures
                             await users.update({id: user.id, displayName: user.displayName, garminFailures: FieldValue.delete() as any})
                         }

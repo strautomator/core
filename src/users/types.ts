@@ -44,20 +44,24 @@ export interface UserData {
     preferences?: UserPreferences
     /** FTP status. */
     ftpStatus?: UserFtpStatus
+    /** Linked Spotify account. */
+    spotify?: SpotifyProfile
+    /** Spotify authentication state. */
+    spotifyAuthState?: string
+    /** Spotify repeated failures count. */
+    spotifyFailures?: number
     /** Linked Garmin account. */
     garmin?: GarminProfile
     /** Garmin authentication state. */
     garminAuthState?: string
     /** Garmin repeated failures count. */
     garminFailures?: number
-    /** Linked Spotify account. */
-    spotify?: SpotifyProfile
-    /** Spotify authentication state. */
-    spotifyAuthState?: string
     /** Linked Wahoo profile. */
     wahoo?: WahooProfile
     /** Wahoo authentication state. */
     wahooAuthState?: string
+    /** Wahoo repeated failures count. */
+    wahooFailures?: number
     /** Names given to device IDs by the user. */
     fitDeviceNames?: FitDeviceNames
     /** Custom URL token used to get the calendar. */
