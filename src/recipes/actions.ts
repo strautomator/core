@@ -161,27 +161,32 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
 
         // City tags on the value? Fetch cities and process them.
         if (processedValue.includes("${city")) {
-            _.assign(activityToProcess, await getCityTags(user, activity, recipe, processedValue))
+            const assign = await getCityTags(user, activity, recipe, processedValue)
+            if (assign) _.assign(activityToProcess, assign)
         }
 
         // Weather tags on the value? Fetch weather and process it, but only if activity has a location set.
         if (processedValue.includes("${weather.")) {
-            _.assign(activityToProcess, await getWeatherTags(user, activity, recipe, processedValue))
+            const assign = await getWeatherTags(user, activity, recipe, processedValue)
+            if (assign) _.assign(activityToProcess, assign)
         }
 
         // Music tags on the value? Fetch from Spotify if the user has an account linked.
         if (processedValue.includes("${spotify.")) {
-            _.assign(activityToProcess, await getSpotifyTags(user, activity, recipe, processedValue))
+            const assign = await getSpotifyTags(user, activity, recipe, processedValue)
+            if (assign) _.assign(activityToProcess, assign)
         }
 
         // Garmin tags on the value? Get those from the corresponding FIT file activity.
         if (processedValue.includes("${garmin.")) {
-            _.assign(activityToProcess, await getGarminTags(user, activity, recipe, processedValue))
+            const assign = await getGarminTags(user, activity, recipe, processedValue)
+            if (assign) _.assign(activityToProcess, assign)
         }
 
         // Wahoo tags on the value? Get those from the corresponding FIT file activity.
         if (processedValue.includes("${wahoo.")) {
-            _.assign(activityToProcess, await getWahooTags(user, activity, recipe, processedValue))
+            const assign = await getWahooTags(user, activity, recipe, processedValue)
+            if (assign) _.assign(activityToProcess, assign)
         }
 
         // Append suffixes to values and replace tags.
@@ -262,7 +267,11 @@ export const getCityTags = async (user: UserData, activity: StravaActivity, reci
     const debugLogger = user.debug ? logger.warn : logger.debug
 
     if (!activity.hasLocation) {
-        debugLogger("Recipes.getCityTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Activity has no location data, will skip")
+        debugLogger("Recipes.getCityTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Activity has no location data, abort")
+        return null
+    }
+    if (!user.isPro) {
+        debugLogger("Recipes.getCityTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User is not PRO, abort")
         return null
     }
 
