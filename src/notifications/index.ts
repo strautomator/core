@@ -232,6 +232,8 @@ export class Notifications {
                 return false
             }
 
+            const expiryDays = Math.floor(settings.notifications.defaultExpireDays / 2)
+            notification.dateExpiry = dayjs.utc().add(expiryDays, "days").toDate()
             notification.dateRead = new Date()
             notification.read = true
 
@@ -300,26 +302,6 @@ export class Notifications {
             }
         } catch (ex) {
             logger.error("Notifications.sendEmailReminders", ex)
-        }
-    }
-
-    // MAINTENANCE
-    // --------------------------------------------------------------------------
-
-    /**
-     * Remove old / read and expired notifications.
-     */
-    cleanup = async (): Promise<void> => {
-        try {
-            const date = dayjs.utc().subtract(settings.notifications.readDeleteAfterDays, "days").toDate()
-
-            let counter = 0
-            counter += await database.delete("notifications", ["dateRead", "<", date])
-            counter += await database.delete("notifications", ["dateExpiry", "<", date])
-
-            logger.info("Notifications.cleanup", `Deleted ${counter} notifications`)
-        } catch (ex) {
-            logger.error("Notifications.cleanup", ex)
         }
     }
 }
