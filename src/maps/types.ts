@@ -30,4 +30,8 @@ export interface MapCoordinates {
     longitude: number
     /** Place ID on the geocoding provider. */
     placeId?: string
+    /** Timestamp when these coordinates were last resolved. */
+    dateCached?: Date
+    /** Expiry date (used as TTL in Firestore). */
+    dateExpiry?: Date
 }

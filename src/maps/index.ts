@@ -98,24 +98,41 @@ export class Maps {
 
             // Sanitize address and get its ID.
             address = jaul.data.removeFromString(decodeURIComponent(address), ["%", "{", "}", "[", "]", "(", ")", "@"])
-            const addressId = address.toLowerCase().replace(/ /g, "")
 
             // Adapt region to correct ccTLD.
             if (region == "gb") {
                 region = "uk"
             }
 
-            // Location stored on cache?
-            const cached = cache.get("maps", `${region || "global"}-${addressId}`)
-            if (cached) {
-                logger.debug("Maps.getGeocode.fromCache", address, region, `${cached.length} results`)
-                return cached
+            const now = dayjs()
+            const cacheId = `${provider}-${region || "global"}-${address.replace(/[^a-z0-9–]/g, "")}`.toLowerCase()
+
+            // Location cached in memory?
+            const memCached = cache.get("maps", cacheId)
+            if (memCached) {
+                logger.debug("Maps.getGeocode.fromCache", provider, address, region, `${memCached.length} results`)
+                return memCached
+            }
+
+            // Location cached in the database?
+            const dbCached: {mapCoordinates: MapCoordinates[]} = await database.get("maps", cacheId)
+            if (dbCached) {
+                logger.debug("Maps.getGeocode.fromCache", provider, address, region, `${dbCached.mapCoordinates.length} results`)
+                return dbCached.mapCoordinates
             }
 
             // Get geocoded result from the specified provider.
             const results = provider == "google" ? await this.getGeocode_Google(address, region) : await this.getGeocode_LocationIQ(address, region)
-            if (results) {
-                cache.set("maps", `${region}-${addressId}`, results)
+            if (results?.length > 0) {
+                const toCache = {
+                    mapCoordinates: results,
+                    dateCached: now.toDate(),
+                    dateExpiry: now.add(settings.maps.maxCacheDuration, "seconds").toDate()
+                }
+
+                cache.set("maps", cacheId, results)
+                database.set("maps", toCache, cacheId)
+
                 logger.info("Maps.getGeocode", provider, address, region, `${results.length} result(s)`)
                 return results
             }
@@ -158,7 +175,7 @@ export class Maps {
 
             // Get geocode from Google Maps.
             const res = await this.googleClient.geocode(geoRequest)
-            if (res.data && res.data.results && res.data.results.length > 0) {
+            if (res?.data?.results?.length > 0) {
                 return res.data.results.map((r) => {
                     return {
                         address: r.formatted_address,
@@ -203,7 +220,7 @@ export class Maps {
 
             // Fetch geocode result from LocationIQ.
             const res: any = await this.lociqLimiter.schedule(() => axiosRequest(options))
-            if (res.data && res.data.length > 0) {
+            if (res?.data?.length > 0) {
                 return res.data.map((a) => {
                     return {
                         address: a.display_name,
@@ -238,20 +255,21 @@ export class Maps {
             const now = dayjs()
 
             // Cache coordinates with a precision of 1km.
-            const cacheId = `reverse-${provider}-${coordinates.map((c) => (Math.round(c * 100) / 100).toFixed(settings.maps.cachePrecision)).join("-")}`
+            const rounder = (c) => (Math.round(c * 100) / 100).toFixed(settings.maps.cachePrecision)
+            const cacheId = `reverse-${provider}-${coordinates.map(rounder).join(".").replace(/\./g, "-").replace(/--/g, "-")}`
             const logCoordinates = coordinates.join(", ")
 
             // Location cached in memory?
             const memCached = cache.get("maps", cacheId)
             if (memCached) {
-                logger.debug("Maps.getReverseGeocode.fromCache", logCoordinates, this.getAddressLog(memCached, true))
+                logger.debug("Maps.getReverseGeocode.fromCache", provider, logCoordinates, this.getAddressLog(memCached, true))
                 return memCached
             }
 
             // Location cached in the database?
             const dbCached: MapAddress = await database.get("maps", cacheId)
-            if (dbCached && dayjs(dbCached.dateCached).isAfter(now.subtract(settings.maps.maxCacheDuration, "seconds"))) {
-                logger.debug("Maps.getReverseGeocode.fromCache", logCoordinates, this.getAddressLog(dbCached, true))
+            if (dbCached) {
+                logger.debug("Maps.getReverseGeocode.fromCache", provider, logCoordinates, this.getAddressLog(dbCached, true))
                 return dbCached
             }
 
@@ -264,11 +282,11 @@ export class Maps {
                 cache.set("maps", cacheId, address)
                 database.set("maps", address, cacheId)
 
-                logger.info("Maps.getReverseGeocode", provider, coordinates.join(", "), this.getAddressLog(address))
+                logger.info("Maps.getReverseGeocode", provider, logCoordinates, this.getAddressLog(address))
                 return address
             }
 
-            logger.info("Maps.getReverseGeocode", provider, `No results for ${coordinates.join(", ")}`)
+            logger.info("Maps.getReverseGeocode", provider, logCoordinates, "No results")
             return null
         } catch (ex) {
             logger.error("Maps.getReverseGeocode", provider, coordinates, ex)
@@ -520,27 +538,6 @@ export class Maps {
         }
 
         return emojiFlag(value, {level: "territory"})
-    }
-
-    // CLEANUP
-    // --------------------------------------------------------------------------
-
-    /**
-     * Delete cached geolocation data from the database.
-     * @param all If true, all cached data will be deleted, otherwise just the older ones.
-     */
-    cleanup = async (all?: boolean): Promise<void> => {
-        const since = dayjs().subtract(settings.maps.maxCacheDuration, "seconds")
-        const sinceLog = all ? "All" : `Since ${since.format("lll")}`
-
-        try {
-            const where: any[] = [["dateCached", "<", since.toDate()]]
-            const count = await database.delete("maps", where)
-
-            logger.info("Maps.cleanup", sinceLog, `${count || "Nothing"} deleted`)
-        } catch (ex) {
-            logger.error("Maps.cleanup", sinceLog, ex)
-        }
     }
 
     // HELPERS
