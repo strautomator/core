@@ -151,22 +151,6 @@ export class Announcements {
             logger.error("Announcements.setReadCount", id, ex)
         }
     }
-
-    // MAINTENANCE
-    // --------------------------------------------------------------------------
-
-    /**
-     * Remove expired announcements.
-     */
-    cleanup = async (): Promise<void> => {
-        try {
-            const dateExpiry = dayjs.utc().subtract(settings.notifications.readDeleteAfterDays, "days").toDate()
-            const counter = await database.delete("announcements", ["dateExpiry", "<", dateExpiry])
-            logger.info("Announcements.cleanup", `Deleted ${counter} announcements`)
-        } catch (ex) {
-            logger.error("Announcements.cleanup", ex)
-        }
-    }
 }
 
 // Exports...
