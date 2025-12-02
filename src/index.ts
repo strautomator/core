@@ -286,7 +286,6 @@ export const startup = async (quickStart?: boolean) => {
             // Cleanup cached Strava responses, processed activities, notifications and GDPR archives right away.
             strava.cleanupCache()
             strava.activityProcessing.deleteProcessedActivities(null, settings.strava.processedActivities.maxAgeDays)
-            notifications.cleanup()
             gdpr.clearArchives()
 
             // Process GearWear configurations.
