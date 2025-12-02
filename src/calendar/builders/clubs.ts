@@ -39,21 +39,21 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
         // Helper to process club events.
         const getEvents = async (club: StravaClub) => {
             if (dbCalendar.lastRequestCount > settings.calendar.maxRequestsPerBatch) {
-                debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max request count ${dbCalendar.lastRequestCount}, skip it`)
+                debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max request count ${dbCalendar.lastRequestCount}, abort`)
                 return
             }
             if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) {
-                debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max events ${dbCalendar.activityCount} on first build, skip it`)
+                debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max events ${dbCalendar.activityCount} on first build, abort`)
                 return
             }
             if ((!dbCalendar.options.includeAllCountries || partialFirstBuild) && club.country != user.profile.country) {
-                debugLogger("Calendar.buildClubs", logHelper.user(user), `User country ${user.profile.country} != club ${club.id} country ${club.country}, skip it`)
+                debugLogger("Calendar.buildClubs", logHelper.user(user), `User country ${user.profile.country} != club ${club.id} country ${club.country}, abort`)
                 return
             }
 
             const addClubEvent = async (clubEvent: StravaClubEvent) => {
                 if (partialFirstBuild && dbCalendar.clubEventCount >= settings.calendar.partialFirstBuild) {
-                    debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max events ${dbCalendar.activityCount} on first build build, skip it`)
+                    debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max events ${dbCalendar.activityCount} on first build build, abort`)
                     return
                 }
 
@@ -182,7 +182,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                 if (dbCalendar.options.sportTypes?.length > 0) {
                     const sportTypes = dbCalendar.options.sportTypes.map((t) => t.toLowerCase())
                     if (!sportTypes.includes(e.type.toLowerCase())) {
-                        debugLogger("Calendar.buildClubs", logHelper.user(user), `Event ${e.id} type ${e.type} not in the list ${dbCalendar.options.sportTypes.join(",")}, skip it`)
+                        debugLogger("Calendar.buildClubs", logHelper.user(user), `Event ${e.id} type ${e.type} not in the list ${dbCalendar.options.sportTypes.join(",")}, abort`)
                         return false
                     }
                 }

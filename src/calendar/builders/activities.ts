@@ -69,11 +69,11 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
         // Helper to process and add an activity to the calendar.
         const addActivity = async (activity: StravaActivity) => {
             if (dbCalendar.lastRequestCount > settings.calendar.maxRequestsPerBatch) {
-                debugLogger("Calendar.buildActivities", logHelper.user(user), `Over max request count ${dbCalendar.lastRequestCount}, skip it`)
+                debugLogger("Calendar.buildActivities", logHelper.user(user), `Over max request count ${dbCalendar.lastRequestCount}, abort`)
                 return
             }
             if (partialFirstBuild && dbCalendar.activityCount >= settings.calendar.partialFirstBuild) {
-                debugLogger("Calendar.buildActivities", logHelper.user(user), `Over max activities ${dbCalendar.activityCount} activities on first build, skip it`)
+                debugLogger("Calendar.buildActivities", logHelper.user(user), `Over max activities ${dbCalendar.activityCount} activities on first build, abort`)
                 return
             }
 
