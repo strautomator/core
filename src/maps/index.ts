@@ -110,14 +110,14 @@ export class Maps {
             // Location cached in memory?
             const memCached = cache.get("maps", cacheId)
             if (memCached) {
-                logger.debug("Maps.getGeocode.fromCache", provider, address, region, `${memCached.length} results`)
+                logger.debug("Maps.getGeocode", provider, address, region, `${memCached.length} results`, "From memory cache")
                 return memCached
             }
 
             // Location cached in the database?
-            const dbCached: {mapCoordinates: MapCoordinates[]} = await database.get("maps", cacheId)
+            const dbCached: {mapCoordinates: MapCoordinates[]; dateCached: Date} = await database.get("maps", cacheId)
             if (dbCached) {
-                logger.debug("Maps.getGeocode.fromCache", provider, address, region, `${dbCached.mapCoordinates.length} results`)
+                logger.info("Maps.getGeocode", provider, address, region, `${dbCached.mapCoordinates.length} results`, `From cache: ${dayjs(dbCached.dateCached).format("lll")}`)
                 return dbCached.mapCoordinates
             }
 
@@ -262,14 +262,14 @@ export class Maps {
             // Location cached in memory?
             const memCached = cache.get("maps", cacheId)
             if (memCached) {
-                logger.debug("Maps.getReverseGeocode.fromCache", provider, logCoordinates, this.getAddressLog(memCached, true))
+                logger.debug("Maps.getReverseGeocode", provider, logCoordinates, this.getAddressLog(memCached), "From memory cache")
                 return memCached
             }
 
             // Location cached in the database?
             const dbCached: MapAddress = await database.get("maps", cacheId)
             if (dbCached) {
-                logger.debug("Maps.getReverseGeocode.fromCache", provider, logCoordinates, this.getAddressLog(dbCached, true))
+                logger.info("Maps.getReverseGeocode", provider, logCoordinates, this.getAddressLog(dbCached), `From cache: ${dayjs(dbCached.dateCached).format("lll")}`)
                 return dbCached
             }
 
@@ -586,18 +586,13 @@ export class Maps {
     /**
      * Return the log string for the supplied address.
      * @param address The address data.
-     * @param fromCache If coming from the cache, also log the cache date.
      */
-    private getAddressLog = (address: MapAddress, fromCache?: boolean): string => {
+    private getAddressLog = (address: MapAddress): string => {
         const result: string[] = []
 
         if (address.neighborhood) result.push(address.neighborhood)
         if (address.city) result.push(address.city)
         if (address.country) result.push(address.country)
-
-        if (fromCache && address.dateCached) {
-            result.push(`Cached ${dayjs(address.dateCached).format("lll")}`)
-        }
 
         return result.join(", ")
     }
