@@ -360,7 +360,7 @@ export class GearWear {
         const logDate = `Since ${date.format("lll")}`
 
         try {
-            const result: GearWearConfig[] = await database.search("gearwear", ["lastUpdate.date", ">", date])
+            const result: GearWearConfig[] = await database.search("gearwear", ["lastUpdate.date", ">", date.toDate()])
             logger.info("GearWear.getUpdatedSince", logDate, `Got ${result.length} configurations`)
             return result
         } catch (ex) {
