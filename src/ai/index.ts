@@ -262,10 +262,9 @@ export class AI {
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
         // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
-        // If no provider was selected, will use a random one in 20% of the cases.
-        const providers = allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
-        const preferredProviders = _.remove(providers, (p) => p.constructor.name.toLowerCase() == options.provider)
-        let provider: AiProvider = preferredProviders.pop() || Math.random() < 0.8 ? providers.pop() : _.sample(providers)
+        const availableProviders = allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 1)
+        const preferredProviders = _.remove(allProviders, (p) => p.constructor.name.toLowerCase() == options.provider)
+        let provider: AiProvider = preferredProviders.pop() || availableProviders.pop()
 
         // Keep trying with different providers.
         let response: string
@@ -274,11 +273,11 @@ export class AI {
                 response = await provider.prompt(user, options, messages)
                 if (!response) {
                     logger.warn("AI.prompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
-                    provider = providers.length > 0 ? providers.pop() : null
+                    provider = availableProviders.length > 0 ? availableProviders.pop() : null
                 }
             } catch (ex) {
                 logger.warn("AI.prompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
-                provider = providers.length > 0 ? providers.pop() : null
+                provider = availableProviders.length > 0 ? availableProviders.pop() : null
             }
         }
 
