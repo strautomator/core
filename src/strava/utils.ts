@@ -745,7 +745,7 @@ export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
  * @param activity The Strava activity to be transformed.
  * @param noSuffixes Do not append suffixes to the processed values.
  */
-export const transformActivityFields = (user: UserData, activity: StravaActivity | StravaActivityToProcess, noSuffixes?: boolean): void => {
+export const transformActivityFields = (user: UserData, activity: StravaActivityToProcess, noSuffixes?: boolean): void => {
     noSuffixes = noSuffixes || user.preferences.noSuffixes || false
 
     for (let prop of recipePropertyList) {
@@ -793,6 +793,30 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
     // Replace gear object with the gear name.
     if (activity.gear && activity.gear.name) {
         activity.gear = activity.gear.name as any
+    }
+
+    // Garmin and Wahoo splits should have a summary string as splitsText.
+    if (activity.garmin || activity.wahoo) {
+        const splitsText = (splits: any[]) => {
+            const summaries = splits.map((s) => {
+                const splitType = s.splitType || "Split"
+                delete s.splitType
+                const props = Object.entries(s)
+                const propValueMerge = (e) => {
+                    e[0] = e[0].replace(/([A-Z])/g, " $1").toLowerCase()
+                    return e.join(" = ")
+                }
+                const propValues = props.map((e) => propValueMerge(e)).join(", ")
+                return `${splitType}: ${propValues}`
+            })
+            return summaries.join("\n")
+        }
+        if (activity.garmin?.splits?.length > 0) {
+            activity.garmin.splitsText = splitsText(activity.garmin.splits)
+        }
+        if (activity.wahoo?.splits?.length > 0) {
+            activity.wahoo.splitsText = splitsText(activity.wahoo.splits)
+        }
     }
 
     // Replace activity null values with an empty string.
