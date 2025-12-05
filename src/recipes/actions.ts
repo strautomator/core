@@ -179,13 +179,13 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
 
         // Garmin tags on the value? Get those from the corresponding FIT file activity.
         if (processedValue.includes("${garmin.")) {
-            const assign = await getGarminTags(user, activity, recipe, processedValue)
+            const assign = await getGarminTags(user, activity, recipe)
             if (assign) _.assign(activityToProcess, assign)
         }
 
         // Wahoo tags on the value? Get those from the corresponding FIT file activity.
         if (processedValue.includes("${wahoo.")) {
-            const assign = await getWahooTags(user, activity, recipe, processedValue)
+            const assign = await getWahooTags(user, activity, recipe)
             if (assign) _.assign(activityToProcess, assign)
         }
 
@@ -383,9 +383,8 @@ export const getSpotifyTags = async (user: UserData, activity: StravaActivity, r
  * @param user The activity owner.
  * @param activity The Strava activity details.
  * @param recipe The source recipe.
- * @param processedValue The action's processed value.
  */
-export const getGarminTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<Partial<StravaActivityToProcess>> => {
+export const getGarminTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData): Promise<Partial<StravaActivityToProcess>> => {
     const debugLogger = user.debug ? logger.warn : logger.debug
 
     if (!user.isPro) {
@@ -404,22 +403,6 @@ export const getGarminTags = async (user: UserData, activity: StravaActivity, re
             return null
         }
 
-        // Garmin splits should be converted to a nice string first.
-        if (processedValue.includes("${garmin.splits}") && garminActivity.splits?.length > 0) {
-            const summaries = garminActivity.splits.map((s) => {
-                const splitType = s.splitType || "Split"
-                delete s.splitType
-                const props = Object.entries(s)
-                const propValueMerge = (e) => {
-                    e[0] = e[0].replace(/([A-Z])/g, " $1").toLowerCase()
-                    return e.join(" = ")
-                }
-                const propValues = props.map((e) => propValueMerge(e)).join(", ")
-                return `${splitType}: ${propValues}`
-            })
-            garminActivity.splits = summaries.join("\n") as any
-        }
-
         return {garmin: garminActivity}
     } catch (ex) {
         logger.warn("Recipes.getGarminTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
@@ -432,9 +415,8 @@ export const getGarminTags = async (user: UserData, activity: StravaActivity, re
  * @param user The activity owner.
  * @param activity The Strava activity details.
  * @param recipe The source recipe.
- * @param processedValue The action's processed value.
  */
-export const getWahooTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<Partial<StravaActivityToProcess>> => {
+export const getWahooTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData): Promise<Partial<StravaActivityToProcess>> => {
     const debugLogger = user.debug ? logger.warn : logger.debug
 
     if (!user.isPro) {
@@ -451,22 +433,6 @@ export const getWahooTags = async (user: UserData, activity: StravaActivity, rec
         if (!wahooActivity) {
             logger.warn("Recipes.getWahooTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Could not find a matching Wahoo activity")
             return null
-        }
-
-        // Garmin splits should be converted to a nice string first.
-        if (processedValue.includes("${garmin.splits}") && wahooActivity.splits?.length > 0) {
-            const summaries = wahooActivity.splits.map((s) => {
-                const splitType = s.splitType || "Split"
-                delete s.splitType
-                const props = Object.entries(s)
-                const propValueMerge = (e) => {
-                    e[0] = e[0].replace(/([A-Z])/g, " $1").toLowerCase()
-                    return e.join(" = ")
-                }
-                const propValues = props.map((e) => propValueMerge(e)).join(", ")
-                return `${splitType}: ${propValues}`
-            })
-            wahooActivity.splits = summaries.join("\n") as any
         }
 
         return {wahoo: wahooActivity}

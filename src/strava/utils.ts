@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Utils
 
-import {StravaActivity, StravaActivityPerformance, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaProfileStats, StravaRideType, StravaRoute, StravaRunType, StravaSport, StravaTotals} from "./types"
+import {StravaActivity, StravaActivityPerformance, StravaActivityToProcess, StravaClub, StravaClubEvent, StravaGear, StravaLap, StravaProfile, StravaProfileStats, StravaRideType, StravaRoute, StravaRunType, StravaSport, StravaTotals} from "./types"
 import {UserData} from "../users/types"
 import {recipePropertyList} from "../recipes/lists"
 import {translation} from "../translations"
@@ -745,7 +745,7 @@ export function getSportIcon(source: StravaActivity | StravaClubEvent): string {
  * @param activity The Strava activity to be transformed.
  * @param noSuffixes Do not append suffixes to the processed values.
  */
-export const transformActivityFields = (user: UserData, activity: StravaActivity, noSuffixes?: boolean): void => {
+export const transformActivityFields = (user: UserData, activity: StravaActivity | StravaActivityToProcess, noSuffixes?: boolean): void => {
     noSuffixes = noSuffixes || user.preferences.noSuffixes || false
 
     for (let prop of recipePropertyList) {
