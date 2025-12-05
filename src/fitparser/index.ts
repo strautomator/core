@@ -119,9 +119,10 @@ export class FitParser {
             }
         }
 
-        // Parse split summaries.
+        // Parse split summaries, only consider active splits (had changes in speed, ascent or descent).
         if (messages.splitMesgs?.length > 0) {
-            fitFileActivity.splits = messages.splitMesgs.map((s) => {
+            const activeSplits = messages.splitMesgs.filter((s) => s.avgSpeed > 0 || s.totalAscent > 0 || s.totalDescent > 0)
+            fitFileActivity.splits = activeSplits.map((s) => {
                 const split = {
                     splitType: s.splitType
                         ? s.splitType
