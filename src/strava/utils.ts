@@ -277,7 +277,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     }
 
     // Check for completed segment efforts
-    // (includes segemnts/counts and new PRs and KOMs).
+    // (includes segments/counts and new PRs and KOMs).
     if (data.segment_efforts?.length > 0) {
         activity.segments = data.segment_efforts.map((r) => r.segment.id)
 
