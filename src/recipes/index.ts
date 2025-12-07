@@ -398,7 +398,7 @@ export class Recipes {
 
             // Activity includes specified segment?
             else if (prop == "segmentIncluded") {
-                const valid = await conditions.checkSegmentIncluded(activity, condition)
+                const valid = conditions.checkSegmentIncluded(activity, condition)
                 if (!valid) return false
             }
 
