@@ -304,10 +304,11 @@ export const checkGear = (activity: StravaActivity, condition: RecipeCondition):
  */
 export const checkSegmentIncluded = async (activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
     const segments = activity.segments || []
-    const requiredSegment = condition.value.toString()
+    const segmentId = condition.value.toString()
+    const op = condition.operator
 
-    const segmentIncluded = segments.includes(requiredSegment)
-    return segmentIncluded
+    const segmentIncluded = segments.includes(segmentId)
+    return op == RecipeOperator.Equal ? segmentIncluded : !segmentIncluded
 }
 
 /**
