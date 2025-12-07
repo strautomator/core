@@ -155,7 +155,17 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
         if (hasCounter) {
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
             const currentCounter = stats?.counter || 0
-            const addCounter = stats?.activities.includes(activity.id) ? 0 : recipe.counterProp ? activity[recipe.counterProp] || 0 : 1
+
+            const processedBefore = stats?.activities.includes(activity.id)
+            let addCounter = 0
+            if (!processedBefore) {
+                // for counter props with conditions, increment by that condition
+                if (recipe.counterProp === "segmentCounts") {
+                    addCounter = activity.segmentCounts?.[recipe.counterCondition] || 0
+                } else {
+                    addCounter = recipe.counterProp ? activity[recipe.counterProp] || 0 : 1
+                }
+            }
             activityToProcess.counter = (currentCounter + addCounter).toFixed(recipe.counterProp ? 1 : 0)
         }
 

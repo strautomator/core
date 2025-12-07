@@ -396,6 +396,12 @@ export class Recipes {
                 if (!valid) return false
             }
 
+            // Activity includes specified segment?
+            else if (prop == "segmentIncluded") {
+                const valid = conditions.checkSegmentIncluded(activity, condition)
+                if (!valid) return false
+            }
+
             // New records?
             else if (prop == "newRecords" || prop == "komSegments" || prop == "prSegments") {
                 const valid = conditions.checkNewRecords(activity, condition)
