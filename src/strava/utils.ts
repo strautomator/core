@@ -282,7 +282,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         activity.segments = data.segment_efforts.map((r) => r.segment.id.toString())
 
         for (const segmentEffort of data.segment_efforts) {
-            const segmentId = segmentEffort.segment.id
+            const segmentId = segmentEffort.segment.id.toString()
             const currentCount = activity.segmentCounts?.[segmentId] || 0
             const newCount = currentCount + 1
             activity.segmentCounts = {
