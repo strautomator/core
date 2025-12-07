@@ -276,8 +276,21 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         activity.tss = Math.round(tss)
     }
 
-    // Check for new PRs and KOMs.
+    // Check for completed segment efforts
+    // (includes segemnts/counts and new PRs and KOMs).
     if (data.segment_efforts?.length > 0) {
+        activity.segments = data.segment_efforts.map((r) => r.segment.id)
+
+        for (const segmentEffort of data.segment_efforts) {
+            const segmentId = segmentEffort.segment.id
+            const currentCount = activity.segmentCounts?.[segmentId] || 0
+            const newCount = currentCount + 1
+            activity.segmentCounts = {
+                ...activity.segmentCounts,
+                [segmentId]: newCount
+            }
+        }
+
         const pr: any[] = data.segment_efforts.filter((r) => r.pr_rank == 1)
         const kom: any[] = data.segment_efforts.filter((r) => r.kom_rank == 1)
 

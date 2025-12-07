@@ -170,6 +170,10 @@ export interface StravaActivity {
     lapTime?: number
     /** List of new all time activity-property records. */
     newRecords?: string[]
+    /** List of completed segment efforts. */
+    segments?: string[]
+    /** Segment efforts counted by segment ID. */
+    segmentCounts?: Record<string, number>
     /** List of segment personal bests. */
     prSegments?: string[]
     /** List of segment KOMs. */

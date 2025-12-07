@@ -298,6 +298,19 @@ export const checkGear = (activity: StravaActivity, condition: RecipeCondition):
 }
 
 /**
+ * Check if the passed activity includes the specified segment at least once.
+ * @param activity The Strava activity to be checked.
+ * @param condition The segment id recipe condition.
+ */
+export const checkSegmentIncluded = async (activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+    const segments = activity.segments || []
+    const requiredSegment = condition.value.toString()
+
+    const segmentIncluded = segments.includes(requiredSegment)
+    return segmentIncluded
+}
+
+/**
  * Check if the passed activity has broken new all time / segment / KOM records.
  * @param activity The Strava activity to be checked.
  * @param condition The weekday based recipe condition.
