@@ -302,7 +302,7 @@ export const checkGear = (activity: StravaActivity, condition: RecipeCondition):
  * @param activity The Strava activity to be checked.
  * @param condition The segment id recipe condition.
  */
-export const checkSegmentIncluded = async (activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+export const checkSegmentIncluded = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const segments = activity.segments || []
     const segmentId = condition.value.toString()
     const op = condition.operator
