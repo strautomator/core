@@ -26,7 +26,7 @@ export interface RecipeData {
     defaultFor?: StravaSport
     /** Which activity property to use when increasing the (optional) recipe data counter? If unset, will increment by 1. */
     counterProp?: string
-    /** Condition for the counter (e.g. ) */
+    /** Condition for the counter (used to store the specified segment id for counts based on segment completion counts) */
     counterCondition?: string
     /** Do not reset the counter automatically every year. */
     counterNoReset?: boolean
