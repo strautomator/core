@@ -159,11 +159,33 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
             const processedBefore = stats?.activities.includes(activity.id)
             let addCounter = 0
             if (!processedBefore) {
-                // for counter props with conditions, increment by that condition
-                if (recipe.counterProp === "segmentCounts") {
-                    addCounter = activity.segmentCounts?.[recipe.counterCondition] || 0
-                } else {
-                    addCounter = recipe.counterProp ? activity[recipe.counterProp] || 0 : 1
+                const arrPropValue = recipe.counterProp ? recipe.counterProp.split(".") : null
+
+                // A bit of a "catch-all" for counters. We try to get the sub property by the passed ID
+                // (the second bit after the dot separator, if there's a dot).
+                // If existing, we check if it has a "count", and if not, we use the value itself (or 1).
+                // If not found, we try getting any sub property that has the specified flag, for instance
+                // the "kom" or "pr" flags inside the segment objects.
+                // Finally, we check for the main properties (distance, elevationGain or lapCount).
+                // If nothing was found, defaults to 1.
+                try {
+                    if (!arrPropValue) {
+                        addCounter = 1
+                    } else if (arrPropValue.length == 2) {
+                        const propRef = activity[arrPropValue[0]]
+                        if (propRef) {
+                            const byId = propRef[arrPropValue[1]]
+                            const byProperty = byId ? null : Object.values(propRef).find((p) => p[arrPropValue[1]])
+                            addCounter = byId?.count || byId || byProperty || 0
+                            if (isNaN(addCounter)) {
+                                addCounter = 0
+                            }
+                        }
+                    } else {
+                        addCounter = activity[arrPropValue[0]] || 0
+                    }
+                } catch (counterEx) {
+                    logger.error("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), "Failed to process counter", counterEx)
                 }
             }
             activityToProcess.counter = (currentCounter + addCounter).toFixed(recipe.counterProp ? 1 : 0)

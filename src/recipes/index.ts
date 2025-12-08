@@ -355,13 +355,13 @@ export class Recipes {
             const propDetails = recipePropertyList.find((p) => p.value == prop)
 
             // Weather conditions.
-            if (prop.indexOf("weather") == 0) {
+            if (prop.startsWith("weather")) {
                 const valid = await conditions.checkWeather(user, activity, condition)
                 if (!valid) return false
             }
 
             // Garmin and Wahoo conditions (FIT file activities).
-            else if (prop.indexOf("garmin") == 0 || prop.indexOf("wahoo") == 0) {
+            else if (prop.startsWith("garmin") || prop.startsWith("wahoo")) {
                 const valid = await conditions.checkGarminWahoo(user, activity, condition)
                 if (!valid) return false
             }
@@ -396,14 +396,14 @@ export class Recipes {
                 if (!valid) return false
             }
 
-            // Activity includes specified segment?
-            else if (prop == "segmentIncluded") {
-                const valid = conditions.checkSegmentIncluded(activity, condition)
+            // Segment conditions.
+            else if (prop.startsWith("segments.") || prop == "komSegments" || prop == "prSegments") {
+                const valid = conditions.checkSegments(activity, condition)
                 if (!valid) return false
             }
 
-            // New records?
-            else if (prop == "newRecords" || prop == "komSegments" || prop == "prSegments") {
+            // New all-time records condition.
+            else if (prop == "newRecords") {
                 const valid = conditions.checkNewRecords(activity, condition)
                 if (!valid) return false
             }
@@ -421,7 +421,7 @@ export class Recipes {
             }
 
             // First activity of the day condition.
-            else if (prop.indexOf("firstOfDay") == 0) {
+            else if (prop.startsWith("firstOfDay")) {
                 const valid = await conditions.checkFirstOfDay(user, activity, condition, recipe)
                 if (!valid) return false
             }

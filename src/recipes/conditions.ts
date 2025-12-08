@@ -300,15 +300,38 @@ export const checkGear = (activity: StravaActivity, condition: RecipeCondition):
 /**
  * Check if the passed activity includes the specified segment at least once.
  * @param activity The Strava activity to be checked.
- * @param condition The segment id recipe condition.
+ * @param condition The segment-based recipe condition.
  */
-export const checkSegmentIncluded = (activity: StravaActivity, condition: RecipeCondition): boolean => {
-    const segments = activity.segments || []
-    const segmentId = condition.value.toString()
+export const checkSegments = (activity: StravaActivity, condition: RecipeCondition): boolean => {
     const op = condition.operator
+    const cProp = condition.property
+    const cValue = condition.value.toString()
+    let found = false
 
-    const segmentIncluded = segments.includes(segmentId)
-    return op == RecipeOperator.Equal ? segmentIncluded : !segmentIncluded
+    if (!activity.segments) {
+        return op == RecipeOperator.NotEqual
+    }
+
+    if (cProp == "segments.kom" || cProp == "komSegments") {
+        found = Object.values(activity.segments).find((s) => s.kom) ? true : false
+    } else if (cProp == "segments.pr" || cProp == "prSegments") {
+        found = Object.values(activity.segments).find((s) => s.pr) ? true : false
+    } else if (cProp == "segments") {
+        found = activity.segments[cValue] ? true : false
+    } else {
+        logger.debug("Recipes.checkSegments", logHelper.activity(activity), condition, "Failed")
+        return false
+    }
+
+    if (op == RecipeOperator.Equal) {
+        return found ? true : false
+    }
+    if (op == RecipeOperator.NotEqual) {
+        return found ? false : true
+    }
+
+    logger.debug("Recipes.checkSegments", logHelper.activity(activity), condition, "Failed")
+    return false
 }
 
 /**
