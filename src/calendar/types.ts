@@ -26,6 +26,8 @@ export interface CalendarData {
     pendingUpdate?: boolean
     /** Date when the calendar cache was last accessed. */
     dateAccess?: Date
+    /** Date when the calendar was first built. */
+    dateCreated?: Date
     /** Date when the cache was last updated. */
     dateUpdated?: Date
     /** Date when the calendar should be automatically expired. */

@@ -192,7 +192,8 @@ export class Calendar {
                 _.assign(dbCalendar.options, _.pick(options, ["daysFrom", "daysTo", "fresher"]))
                 options = dbCalendar.options
             } else {
-                dbCalendar = {id: calendarId, userId: user.id, options: options, dateUpdated: now.toDate()}
+                const nowDate = now.toDate()
+                dbCalendar = {id: calendarId, userId: user.id, options: options, dateCreated: nowDate, dateUpdated: nowDate}
             }
             this.validateOptions(user, options)
             optionsLog = _.map(_.toPairs(options), (r) => r.join("=")).join(" | ")
@@ -214,8 +215,13 @@ export class Calendar {
                 if (user.isPro && options.fresher) {
                     cacheDuration = cacheDuration / 2
                 }
+                if (now.subtract(cacheDuration, "seconds").isBefore(dbCalendar.dateCreated)) {
+                    cacheDuration = cacheDuration / 2
+                }
+
                 const dateUpdated = dayjs(dbCalendar.dateUpdated)
-                const minDateUpdated = dayjs().subtract(cacheDuration, "seconds")
+                const partialFirstBuild = dateUpdated.isAfter(dbCalendar.dateCreated)
+                const minDateUpdated = dayjs().subtract(partialFirstBuild ? cacheDuration / 2 : cacheDuration, "seconds")
                 const shouldUpdate = dateUpdated.isBefore(minDateUpdated) && (onlyClubs || dateUpdated.isBefore(lastActivity))
 
                 // Calendar needs to be refreshed? Set the flag for the next scheduled function.
@@ -234,6 +240,7 @@ export class Calendar {
             // Update calendar timestamps and save to the database.
             dbCalendar.dateAccess = now.toDate()
             dbCalendar.dateExpiry = now.add(settings.calendar.maxCacheDuration, "seconds").toDate()
+
             await database.merge("calendars", dbCalendar)
 
             // Return the calendar file URL.

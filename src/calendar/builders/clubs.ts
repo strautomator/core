@@ -30,7 +30,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
     const dateFrom = today.subtract(daysFrom, "days")
     const dateTo = today.add(daysTo, "days").endOf("day")
     const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
-    const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
+    const partialFirstBuild = dayjs(dbCalendar.dateUpdated).isAfter(dbCalendar.dateCreated)
     const tOrganizer = translation("Organizer", user.preferences, true)
 
     try {

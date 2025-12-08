@@ -31,13 +31,15 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
     const dateFrom = today.subtract(daysFrom, "days")
     const dateTo = today.add(daysTo, "days").endOf("day")
     const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
-    const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
+    const partialFirstBuild = dayjs(dbCalendar.dateUpdated).isAfter(dbCalendar.dateCreated)
+    const maxDaysPerBatch = settings.calendar.maxDaysPerBatch
     const fieldSettings = settings.calendar.activityFields
     const calendarTemplate: UserCalendarTemplate = user.isPro ? user.preferences.calendarTemplate || {} : {}
     const customEventDetails = calendarTemplate.eventDetails || ""
     const needsFullData = !partialFirstBuild && (customEventDetails.includes("${description}") || customEventDetails.includes("${calories}"))
 
     let after = dateFrom
+    let before = dateTo
     try {
         debugLogger("Calendar.buildActivities", logHelper.user(user), optionsLog, "Preparing to build")
 
@@ -64,6 +66,10 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
             }
 
             after = lastCachedDate
+            if (after.isBefore(today.subtract(maxDaysPerBatch - 1, "days"))) {
+                before = after.add(maxDaysPerBatch, "days")
+                dbCalendar.pendingUpdate = true
+            }
         }
 
         // Helper to process and add an activity to the calendar.
@@ -204,7 +210,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
         }
 
         // Filter activities based on calendar options.
-        const sourceActivities = await strava.activities.getActivities(user, {after: after, before: dateTo})
+        const sourceActivities = await strava.activities.getActivities(user, {after, before})
         const activities = sourceActivities.filter((a) => {
             if (!a.dateStart || !a.dateEnd) return false
             if (dbCalendar.options.sportTypes?.length > 0 && !dbCalendar.options.sportTypes.includes(a.sportType)) return false

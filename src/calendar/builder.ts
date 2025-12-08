@@ -47,7 +47,7 @@ export class CalendarBuilder {
             // Create ical container.
             const calData: ICalCalendarData = {
                 name: calName,
-                prodId: {company: "Devv", language: "EN", product: settings.app.title},
+                prodId: {company: "Strautomator", language: "EN", product: settings.app.title},
                 url: `${settings.app.url}calendar/${user.urlToken}`,
                 ttl: user.isPro ? settings.plans.pro.calendarCacheDuration : settings.plans.free.calendarCacheDuration
             }
@@ -55,10 +55,10 @@ export class CalendarBuilder {
 
             // First time that the calendar is being built? Use a shorter date range
             // to speed things up. The correct ranges will be applied subsequently.
-            const partialFirstBuild = !dbCalendar.dateAccess && settings.calendar.partialFirstBuild
+            const partialFirstBuild = dayjs(dbCalendar.dateUpdated).isAfter(dbCalendar.dateCreated)
             if (partialFirstBuild) {
-                dbCalendar.options.daysFrom = Math.ceil(dbCalendar.options.daysFrom / 4)
-                dbCalendar.options.daysTo = Math.ceil(dbCalendar.options.daysTo / 4)
+                dbCalendar.options.daysFrom = Math.ceil(dbCalendar.options.daysFrom / 5)
+                dbCalendar.options.daysTo = Math.ceil(dbCalendar.options.daysTo / 5)
                 dbCalendar.pendingUpdate = true
             } else if (dbCalendar.pendingUpdate) {
                 dbCalendar.pendingUpdate = FieldValue.delete() as any
