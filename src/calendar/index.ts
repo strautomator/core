@@ -202,6 +202,11 @@ export class Calendar {
             cacheFileId = `${user.id}/${calendarId}.ics`
             const cachedFile = await storage.getFile(StorageBucket.Calendar, cacheFileId)
 
+            // Set missing date created.
+            if (!dbCalendar.dateCreated) {
+                dbCalendar.dateCreated = dayjs(cachedFile?.metadata?.timeCreated || dayjs(dbCalendar.dateUpdated).startOf("day").toDate()).toDate()
+            }
+
             // If the calendar is being requested for the first time, do a faster, partial generation first.
             if (!cachedFile) {
                 delete dbCalendar.dateAccess
