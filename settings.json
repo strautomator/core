@@ -143,7 +143,7 @@
         // Max date range in days per batch of calendar updates.
         "maxDaysPerBatch": 365,
         // Max number of API requests to be triggered per batch.
-        "maxRequestsPerBatch": 800,
+        "maxRequestsPerBatch": 600,
         // A calendar will be deleted if no client requests it after 4 days.
         "maxCacheDuration": 345600,
         // Calendar events will cached if they're older than 30 days, by default.
