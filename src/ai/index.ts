@@ -1,9 +1,10 @@
 // Strautomator Core: AI / LLM
 
-import {AiGenerateOptions, AiGeneratedResponse, AiProvider} from "./types"
+import {AiGenerateOptions, AiGeneratedResponse, AiProvider, AiProviderName} from "./types"
 import {calculatePowerIntervals, getCadenceString} from "../strava/utils"
 import {UserData} from "../users/types"
 import {translation} from "../translations"
+import openrouter from "../openrouter"
 import anthropic from "../anthropic"
 import gemini from "../gemini"
 import mistral from "../mistral"
@@ -16,7 +17,7 @@ import logger from "anyhow"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const allProviders = [anthropic, xai, gemini, mistral, openai]
+const allProviders = [openrouter, anthropic, xai, gemini, mistral, openai]
 
 /**
  * AI / LLM wrapper.
@@ -60,7 +61,7 @@ export class AI {
             }
             const result: any = count ? await database.count("ai", where) : await database.search("ai", where)
 
-            logger.info("AI.getCachedResponses", logHelper.user(user), count ? `Count ${result}` : `Got ${result.length} cached responnses`)
+            logger.info("AI.getCachedResponses", logHelper.user(user), count ? `Count ${result}` : `Got ${result.length} cached responses`)
             return result
         } catch (ex) {
             logger.error("AI.getCachedResponses", logHelper.user(user), ex)
@@ -93,7 +94,7 @@ export class AI {
             }
 
             // Get the activity prompt.
-            const messages = [`Please generate a single name for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}. The activity started at ${aDate.format("HH:MM")}.`]
+            const messages = [`Generate a single name for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}. The activity started at ${aDate.format("HH:MM")}.`]
             messages.push(...this.getActivityPrompt(user, options))
             messages.push("Answer the generated name only, with no additional text or Markdown formatting.")
             messages.push(...this.getHumourAndTranslation(user, options))
@@ -134,7 +135,7 @@ export class AI {
 
             // Get the activity prompt.
             const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            const messages = [`Please write a very short poem for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
+            const messages = [`Write a very short poem for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
             messages.push(...this.getActivityPrompt(user, options))
             messages.push("Answer the generated poem only, with no additional text, limited to a maximum of 10 lines.")
             messages.push(...this.getHumourAndTranslation(user, options))
@@ -186,7 +187,7 @@ export class AI {
             }
 
             const now = dayjs.utc()
-            const messages = ["Please give me some important metrics about my activity performance."]
+            const messages = ["Give me some important metrics about my activity performance."]
 
             // Recent activities were passed? Use them for context. At the moment we only use activities that have at least power or HR data.
             if (options.recentActivities?.length > 0 && options.fullDetails) {
@@ -260,6 +261,11 @@ export class AI {
 
         const activity = options.activity
         const subject = options.activity ? logHelper.activity(activity) : options.subject
+
+        // Free accounts defaults to OpenRouter.
+        if (!user.isPro && !options.provider) {
+            options.provider = AiProviderName.OpenRouter
+        }
 
         // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
         const availableProviders = allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 1)

@@ -83,6 +83,8 @@ import {xAI} from "./xai"
 export const xai: xAI = xAI.Instance
 import {Mistral} from "./mistral"
 export const mistral: Mistral = Mistral.Instance
+import {OpenRouter} from "./openrouter"
+export const openrouter: OpenRouter = OpenRouter.Instance
 import {Chatbase} from "./chatbase"
 export const chatbase: Chatbase = Chatbase.Instance
 import {FitParser} from "./fitparser"
@@ -245,7 +247,7 @@ export const startup = async (quickStart?: boolean) => {
     // Init individual modules now. Start with the most important modules, than the rest.
     const coreModules = [github, paypal, paddle, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
-    const otherModules = [affiliates, ai, announcements, anthropic, awin, calendar, chatbase, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, mistral, notifications, openai, recipes, spotify, xai, wahoo, weather]
+    const otherModules = [affiliates, ai, announcements, anthropic, awin, calendar, chatbase, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, mistral, notifications, openai, openrouter, recipes, spotify, xai, wahoo, weather]
     await Promise.all(otherModules.map(initModule))
 
     process.env.SMU_APP_STARTED = "1"

@@ -13,6 +13,7 @@ export enum AiProviderName {
     Gemini = "gemini",
     Mistral = "mistral",
     OpenAI = "openai",
+    OpenRouter = "openrouter",
     xAI = "xai"
 }
 
