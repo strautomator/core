@@ -389,6 +389,15 @@
             "maxPerMinute": 120
         }
     },
+    "openrouter": {
+        "api": {
+            "baseUrl": "https://openrouter.ai/api/v1/",
+            // Maximum concurrent requests per instance.
+            "maxConcurrent": 2,
+            // Maximum requests per minute per instance.
+            "maxPerMinute": 10
+        }
+    },
     "paddle": {
         "api": {
             "environment": "production",
