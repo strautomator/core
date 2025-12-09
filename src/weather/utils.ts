@@ -334,64 +334,66 @@ export function getMoonPhase(date: Date): MoonPhase {
 
 /**
  * Get the sunrise and sunset on the specified coordinates / date.
+ * Largely based on https://www.npmjs.com/package/suncalc.
  * @param coordinates Latitude and longitude.
  * @param dDate The date (as a DayJS object).
  */
 export function getSuntimes(coordinates: [number, number], dDate: dayjs.Dayjs): Suntimes {
-    const date = dDate.toDate()
+    const dateString = dDate.format("HH:mm")
+    const tzOffset = dDate.utcOffset()
+
+    const rad = Math.PI / 180
+    const dayMs = 1000 * 60 * 60 * 24
+    const J1970 = 2440588
+    const J2000 = 2451545
+    const e = rad * 23.4397
+    const J0 = 0.0009
+
+    const toJulian = (date) => date.valueOf() / dayMs - 0.5 + J1970
+    const fromJulian = (j) => dayjs(new Date((j + 0.5 - J1970) * dayMs)).utcOffset(tzOffset)
+    const julianCycle = (d, lw) => Math.round(d - J0 - lw / (2 * Math.PI))
+    const solarMeanAnomaly = (d) => rad * (357.5291 + 0.98560028 * d)
+    const toDays = (date) => toJulian(date) - J2000
+    const approxTransit = (Ht, lw, n) => J0 + (Ht + lw) / (2 * Math.PI) + n
+    const solarTransitJ = (ds, M, L) => J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L)
+    const hourAngle = (h, phi, d) => Math.acos((Math.sin(h) - Math.sin(phi) * Math.sin(d)) / (Math.cos(phi) * Math.cos(d)))
+    const observerAngle = (height) => (-2.076 * Math.sqrt(height)) / 60
+    const declination = (l, b) => Math.asin(Math.sin(b) * Math.cos(e) + Math.cos(b) * Math.sin(e) * Math.sin(l))
+    const getSetJ = (h, lw, phi, dec, n, M, L) => solarTransitJ(approxTransit(hourAngle(h, phi, dec), lw, n), M, L)
+    const eclipticLongitude = (M) => {
+        const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M))
+        const P = rad * 102.9372
+        return M + C + P + Math.PI
+    }
+
     const lat = coordinates[0]
     const lng = coordinates[1]
-    const radians = Math.PI / 180.0
-    const degrees = 180.0 / Math.PI
+    const date = dDate.toDate()
+    const lw = rad * -lng
+    const phi = rad * lat
+    const dh = observerAngle(20)
+    const d = toDays(date)
+    const n = julianCycle(d, lw)
+    const ds = approxTransit(0, lw, n)
+    const M = solarMeanAnomaly(ds)
+    const L = eclipticLongitude(M)
+    const dec = declination(L, 0)
+    const Jnoon = solarTransitJ(ds, M, L)
+    const h0 = (-0.833 + dh) * rad
+    const Jset = getSetJ(h0, lw, phi, dec, n, M, L)
+    const Jrise = Jnoon - (Jset - Jnoon)
 
-    // Based on https://gist.github.com/ruiokada/b28076d4911820ddcbbc
-    const a = Math.floor((14 - (date.getMonth() + 1.0)) / 12)
-    const y = date.getFullYear() + 4800 - a
-    const m = date.getMonth() + 1 + 12 * a - 3
-    const jDay = date.getDate() + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045
-    const nStar = jDay - 2451545.0009 - lng / 360.0
-    const n = Math.floor(nStar + 0.5)
-    const solarNoon = 2451545.0009 - lng / 360.0 + n
-    const M = 356.047 + 0.9856002585 * n
-    const C = 1.9148 * Math.sin(M * radians) + 0.02 * Math.sin(2 * M * radians) + 0.0003 * Math.sin(3 * M * radians)
-    const L = (M + 102.9372 + C + 180) % 360
-    const jTransit = solarNoon + 0.0053 * Math.sin(M * radians) - 0.0069 * Math.sin(2 * L * radians)
-    const D = Math.asin(Math.sin(L * radians) * Math.sin(23.45 * radians)) * degrees
-    const cosOmega = (Math.sin(-0.83 * radians) - Math.sin(lat * radians) * Math.sin(D * radians)) / (Math.cos(lat * radians) * Math.cos(D * radians))
+    const sunrise = fromJulian(Jrise).format("HH:mm")
+    const sunset = fromJulian(Jset).format("HH:mm")
+    const timeOfDay = dateString >= sunrise && dateString <= sunset ? "day" : "night"
+    const result: Suntimes = {
+        sunrise,
+        sunset,
+        timeOfDay
+    }
 
-    // Sun never rises or never sets.
-    if (cosOmega > 1) return {timeOfDay: "night"}
-    if (cosOmega < -1) return {timeOfDay: "day"}
-
-    // Get Julian dates of sunrise/sunset.
-    const omega = Math.acos(cosOmega) * degrees
-    const jRise = jTransit - omega / 360.0
-    const jSet = jTransit + omega / 360.0
-
-    // Calculate it.
-    const utcRise = 24 * (jRise - jDay) + 12
-    const utcSet = 24 * (jSet - jDay) + 12
-    const localRise = (utcRise + dDate.utcOffset() / 60) % 24
-    const localSet = (utcSet + dDate.utcOffset() / 60) % 24
-
-    let hourSunrise: any = Math.floor(localRise)
-    let minuteSunrise: any = Math.round((localRise - Math.floor(localRise)) * 60)
-    let hourSunset: any = Math.floor(localSet)
-    let minuteSunset: any = Math.round((localSet - Math.floor(localSet)) * 60)
-    if (hourSunrise < 10) hourSunrise = `0${hourSunrise}`
-    if (minuteSunrise < 10) minuteSunrise = `0${minuteSunrise}`
-    if (hourSunset < 10) hourSunset = `0${hourSunset}`
-    if (minuteSunset < 10) minuteSunset = `0${minuteSunset}`
-
-    const sunrise = `${hourSunrise}:${minuteSunrise}`
-    const sunset = `${hourSunset}:${minuteSunset}`
-    const fDate = dDate.format("HH:mm")
-    const timeOfDay = fDate >= sunrise && fDate <= sunset ? "day" : "night"
-    const suntimesResult: Suntimes = {sunrise: sunrise, sunset: sunset, timeOfDay: timeOfDay}
-
-    logger.debug("Weather.getSuntimes", dDate.format("lll"), suntimesResult)
-
-    return suntimesResult
+    logger.debug("Weather.getSuntimes", coordinates.join(", "), dDate.format("YYYY-MM-DD HH:mm:ss"), `${result.sunrise} - ${result.sunset}`)
+    return result
 }
 
 /**
