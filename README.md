@@ -10,9 +10,9 @@ Some main points to know before you start:
 -   Should run on Node 20+
 -   Optimized for GCP (Google Cloud Platform)
 
-### Required 3rd party services
+### 3rd party services
 
-Main integrations:
+Required integrations:
 
 -   [GCP](https://console.cloud.google.com/apis/credentials)
 -   [Strava API](https://www.strava.com/settings/api)
@@ -28,10 +28,12 @@ Additional integrations:
 -   Spotify API
 -   Wahoo Cloud API
 -   Chatbase API
--   AI providers: Anthropic, Gemini, Mistral, OpenAI, xAI
+-   AI providers: Anthropic, Gemini, Mistral, OpenAI, xAI, OpenRouter
 -   Weather providers: Open-Meteo, OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
 
-Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For multiple power users, you might need to subscribe to paid plans.
+Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For power users, you might need to subscribe to paid plans.
+
+If you are not planning to use a specific integration, you can simply add the "disabled" flag to one of the settings.json files. Please note that by doing so, some features might not work properly.
 
 ### Getting your GCP credentials
 
