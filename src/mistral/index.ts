@@ -81,7 +81,7 @@ export class Mistral implements AiProvider {
             try {
                 const result = await this.limiter.schedule(() => axiosRequest(reqOptions))
 
-                // Successful prompt response? Extract the generated activity name.
+                // Successful prompt response? Extract the content.
                 if (result?.choices?.length > 0) {
                     const content = _.compact(result.choices.map((c) => c.message?.content))
                     return content.join(" ")

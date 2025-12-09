@@ -498,7 +498,7 @@ export class Recipes {
             return actions.mapStyleAction(user, activity, recipe, action)
         }
 
-        // Auto generated activity names?
+        // Auto generated content with AI?
         else if (action.type == RecipeActionType.GenerateName || action.type == RecipeActionType.GenerateDescription || action.type == RecipeActionType.GenerateInsights) {
             return actions.aiGenerateAction(user, activity, recipe, action)
         }

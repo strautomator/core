@@ -17,7 +17,7 @@ import logger from "anyhow"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const allProviders = [openrouter, anthropic, xai, gemini, mistral, openai]
+const allProviders = [anthropic, xai, gemini, mistral, openai, openrouter]
 
 /**
  * AI / LLM wrapper.
