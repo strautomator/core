@@ -225,7 +225,7 @@ export class Calendar {
                 }
 
                 const dateUpdated = dayjs(dbCalendar.dateUpdated)
-                const partialFirstBuild = dateUpdated.isAfter(dbCalendar.dateCreated)
+                const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated)
                 const minDateUpdated = dayjs().subtract(partialFirstBuild ? cacheDuration / 2 : cacheDuration, "seconds")
                 const shouldUpdate = dateUpdated.isBefore(minDateUpdated) && (onlyClubs || dateUpdated.isBefore(lastActivity))
 

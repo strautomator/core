@@ -24,8 +24,8 @@ export const buildGearWear = async (user: UserData, dbCalendar: CalendarData, ca
     const daysTo = dbCalendar.options.daysTo
     const dateFrom = today.subtract(daysFrom, "days")
     const dateTo = today.add(daysTo, "days").endOf("day")
-    const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
     const distanceUnits = user.profile.units == "imperial" ? "mi" : "km"
+    const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
 
     try {
         debugLogger("Calendar.buildGearWear", logHelper.user(user), optionsLog, "Preparing to build")

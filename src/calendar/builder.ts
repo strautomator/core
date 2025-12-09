@@ -55,7 +55,8 @@ export class CalendarBuilder {
 
             // First time that the calendar is being built? Use a shorter date range
             // to speed things up. The correct ranges will be applied subsequently.
-            const partialFirstBuild = dayjs(dbCalendar.dateUpdated).isAfter(dbCalendar.dateCreated)
+            const dateUpdated = dayjs(dbCalendar.dateUpdated)
+            const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated)
             if (partialFirstBuild) {
                 dbCalendar.options.daysFrom = Math.ceil(dbCalendar.options.daysFrom / 5)
                 dbCalendar.options.daysTo = Math.ceil(dbCalendar.options.daysTo / 5)

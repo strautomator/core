@@ -29,9 +29,10 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
     const daysTo = dbCalendar.options.daysTo
     const dateFrom = today.subtract(daysFrom, "days")
     const dateTo = today.add(daysTo, "days").endOf("day")
-    const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
-    const partialFirstBuild = dayjs(dbCalendar.dateUpdated).isAfter(dbCalendar.dateCreated)
+    const dateUpdated = dayjs(dbCalendar.dateUpdated)
+    const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated)
     const tOrganizer = translation("Organizer", user.preferences, true)
+    const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
 
     try {
         debugLogger("Calendar.buildClubs", logHelper.user(user), optionsLog, "Preparing to build")
@@ -186,7 +187,9 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                         return false
                     }
                 }
-                if (dbCalendar.options.excludeNotJoined && !e.joined) return false
+                if (dbCalendar.options.excludeNotJoined && !e.joined) {
+                    return false
+                }
                 return true
             })
             dbCalendar.lastRequestCount++

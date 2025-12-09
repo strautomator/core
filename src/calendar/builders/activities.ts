@@ -30,13 +30,14 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
     const daysTo = dbCalendar.options.daysTo
     const dateFrom = today.subtract(daysFrom, "days")
     const dateTo = today.add(daysTo, "days").endOf("day")
-    const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
-    const partialFirstBuild = dayjs(dbCalendar.dateUpdated).isAfter(dbCalendar.dateCreated)
+    const dateUpdated = dayjs(dbCalendar.dateUpdated)
+    const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated)
     const maxDaysPerBatch = settings.calendar.maxDaysPerBatch
     const fieldSettings = settings.calendar.activityFields
     const calendarTemplate: UserCalendarTemplate = user.isPro ? user.preferences.calendarTemplate || {} : {}
     const customEventDetails = calendarTemplate.eventDetails || ""
     const needsFullData = !partialFirstBuild && (customEventDetails.includes("${description}") || customEventDetails.includes("${calories}"))
+    const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
 
     let after = dateFrom
     let before = dateTo
