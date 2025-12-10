@@ -24,6 +24,8 @@ export interface CalendarData {
     lastRequestCount?: number
     /** Flag to set if the calendar is considered expired and should be updated. */
     pendingUpdate?: boolean
+    /** Flag to force refresh the calendar and ignore cached events. */
+    refresh?: boolean
     /** Date when the calendar cache was last accessed. */
     dateAccess?: Date
     /** Date when the calendar was first built. */

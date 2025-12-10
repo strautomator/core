@@ -31,7 +31,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
     const dateFrom = today.subtract(daysFrom, "days")
     const dateTo = today.add(daysTo, "days").endOf("day")
     const dateUpdated = dayjs(dbCalendar.dateUpdated)
-    const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated)
+    const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated) && !dbCalendar.refresh
     const maxDaysPerBatch = settings.calendar.maxDaysPerBatch
     const fieldSettings = settings.calendar.activityFields
     const calendarTemplate: UserCalendarTemplate = user.isPro ? user.preferences.calendarTemplate || {} : {}
@@ -67,7 +67,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
             }
 
             after = lastCachedDate
-            if (after.isBefore(today.subtract(maxDaysPerBatch - 1, "days"))) {
+            if (!dbCalendar.refresh && after.isBefore(today.subtract(maxDaysPerBatch - 1, "days"))) {
                 before = after.add(maxDaysPerBatch, "days")
                 dbCalendar.pendingUpdate = true
             }
@@ -75,7 +75,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
 
         // Helper to process and add an activity to the calendar.
         const addActivity = async (activity: StravaActivity) => {
-            if (dbCalendar.lastRequestCount > settings.calendar.maxRequestsPerBatch) {
+            if (!dbCalendar.refresh && dbCalendar.lastRequestCount > settings.calendar.maxRequestsPerBatch) {
                 debugLogger("Calendar.buildActivities", logHelper.user(user), `Over max request count ${dbCalendar.lastRequestCount}, abort`)
                 return
             }

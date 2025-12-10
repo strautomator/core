@@ -30,7 +30,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
     const dateFrom = today.subtract(daysFrom, "days")
     const dateTo = today.add(daysTo, "days").endOf("day")
     const dateUpdated = dayjs(dbCalendar.dateUpdated)
-    const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated)
+    const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated) && !dbCalendar.refresh
     const tOrganizer = translation("Organizer", user.preferences, true)
     const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
 
@@ -39,7 +39,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
 
         // Helper to process club events.
         const getEvents = async (club: StravaClub) => {
-            if (dbCalendar.lastRequestCount > settings.calendar.maxRequestsPerBatch) {
+            if (!dbCalendar.refresh && dbCalendar.lastRequestCount > settings.calendar.maxRequestsPerBatch) {
                 debugLogger("Calendar.buildClubs", logHelper.user(user), `Over max request count ${dbCalendar.lastRequestCount}, abort`)
                 return
             }
@@ -59,11 +59,12 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                 }
 
                 // Check if event has future dates.
-                const hasFutureDate = clubEvent.dates.find((d) => today.isBefore(d))
+                const futureDate = clubEvent.dates.find((d) => today.isBefore(d))
+                debugLogger("Calendar.buildClubs", logHelper.user(user), `Future date: ${futureDate}`)
 
                 // Club has a route set? Fetch the full route details. PRO users will also
                 // get distance and times from Komoot routes.
-                if (hasFutureDate) {
+                if (futureDate) {
                     const idString = clubEvent?.route ? clubEvent.route["idString"] : null
                     if (idString) {
                         try {

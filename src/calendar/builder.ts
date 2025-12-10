@@ -56,7 +56,7 @@ export class CalendarBuilder {
             // First time that the calendar is being built? Use a shorter date range
             // to speed things up. The correct ranges will be applied subsequently.
             const dateUpdated = dayjs(dbCalendar.dateUpdated)
-            const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated)
+            const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated) && !dbCalendar.refresh
             if (partialFirstBuild) {
                 dbCalendar.options.daysFrom = Math.ceil(dbCalendar.options.daysFrom / 5)
                 dbCalendar.options.daysTo = Math.ceil(dbCalendar.options.daysTo / 5)
@@ -116,7 +116,14 @@ export class CalendarBuilder {
             const countLog = `Total ${eventCount}, ${uncachedCount} not cached`
             const sizeLog = `${size.toFixed(2)} MB`
             const timeLog = `Generated in ${duration} seconds`
-            logger.info("Calendar.build", logHelper.user(user), optionsLog, countLog, `Diff: ${diffLog.length > 0 ? diffLog.join(", ") : "nothing added"}`, sizeLog, timeLog)
+
+            // Reset the refresh flag, if set.
+            if (dbCalendar.refresh) {
+                dbCalendar.refresh = FieldValue.delete() as any
+                logger.info("Calendar.build", logHelper.user(user), optionsLog, countLog, `Refreshed, diff: ${diffLog.length > 0 ? diffLog.join(", ") : "nothing added"}`, sizeLog, timeLog)
+            } else {
+                logger.info("Calendar.build", logHelper.user(user), optionsLog, countLog, `Diff: ${diffLog.length > 0 ? diffLog.join(", ") : "nothing added"}`, sizeLog, timeLog)
+            }
 
             // If this is the first partial build, we don't want to cache anything yet.
             // Otherwise, exclude GearWear events, compact the cached events and map them

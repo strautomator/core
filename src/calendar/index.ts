@@ -4,7 +4,7 @@ import {CalendarData, CalendarOptions} from "./types"
 import {StorageBucket} from "../storage/types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
-import calendarGenerator from "./builder"
+import calendarBuilder from "./builder"
 import _ from "lodash"
 import crypto from "crypto"
 import database from "../database"
@@ -26,11 +26,6 @@ export class Calendar {
     static get Instance() {
         return this._instance || (this._instance = new this())
     }
-
-    /**
-     * Calendar generator.
-     */
-    generator = calendarGenerator
 
     /**
      * Map of IDs and timestamps of the calendars being built at the moment.
@@ -78,7 +73,7 @@ export class Calendar {
             const calendars = await this.getByUser(user, {activities: true})
             if (calendars.length > 0) {
                 calendars.forEach(async (cal) => (cal.pendingUpdate ? false : await database.merge("calendars", {id: cal.id, pendingUpdate: true})))
-                logger.info("Calendar.onActivityCreated", logHelper.user(user), activityLog, `${calendars.length} calendars pending update`)
+                logger.info("Calendar.onActivityCreated", logHelper.user(user), activityLog, `${calendars.length} calendar(s) pending update`)
             }
         } catch (ex) {
             logger.error("Calendar.onActivityCreated", logHelper.user(user), activityLog, ex)
@@ -225,7 +220,7 @@ export class Calendar {
                 }
 
                 const dateUpdated = dayjs(dbCalendar.dateUpdated)
-                const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated)
+                const partialFirstBuild = !dateUpdated.isAfter(dbCalendar.dateCreated) && !dbCalendar.refresh
                 const minDateUpdated = dayjs().subtract(partialFirstBuild ? cacheDuration / 2 : cacheDuration, "seconds")
                 const shouldUpdate = dateUpdated.isBefore(minDateUpdated) && (onlyClubs || dateUpdated.isBefore(lastActivity))
 
@@ -436,7 +431,7 @@ export class Calendar {
             }
 
             // Build the calendar.
-            const result = await calendarGenerator.build(user, dbCalendar, cachedEvents)
+            const result = await calendarBuilder.build(user, dbCalendar, cachedEvents)
             if (result?.ics) {
                 debugLogger("Calendar.generate", logHelper.user(user), optionsLog, "Ready to save")
 
