@@ -166,7 +166,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     // Conversion to imperial units.
     // Climbing ration multiplier is 100ft / 1mi.
     // Speeds are in mph, distance in miles, and elevation in feet.
-    if (profile.units == "imperial") {
+    if (profile.units == "imperial" && activity.sportType != StravaSport.Swim) {
         cRatioMultiplier = 100
         distanceMultiplier = rMiles
         elevationMultiplier = rFeet
@@ -180,12 +180,14 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     let elevationMax: number = data.elev_high * elevationMultiplier
 
     // Calculate pace in minutes, and get seconds with leading 0.
-    let paceDurationAvg = dayjs.duration(60 / avgSpeed, "minutes")
+    // Pace calculation depends on the sport.
+    const paceFactor = activity.sportType == StravaSport.Swim ? 10 : 1
+    let paceDurationAvg = dayjs.duration(60 / avgSpeed / paceFactor, "minutes")
     let avgPaceMinutes = paceDurationAvg.minutes()
     let avgPaceSeconds: any = paceDurationAvg.seconds()
     if (paceDurationAvg.milliseconds() > 500) avgPaceSeconds += 1
     if (avgPaceSeconds < 10) avgPaceSeconds = `0${avgPaceSeconds}`
-    let paceDurationMax = dayjs.duration(60 / maxSpeed, "minutes")
+    let paceDurationMax = dayjs.duration(60 / maxSpeed / paceFactor, "minutes")
     let maxPaceMinutes = paceDurationMax.minutes()
     let maxPaceSeconds: any = paceDurationMax.seconds()
     if (paceDurationMax.milliseconds() > 500) maxPaceSeconds += 1
@@ -612,8 +614,11 @@ export const getCadenceString = (cadence: number, sportType: StravaSport): strin
     if (!cadence || !sportType) return "not available"
     const isRide = sportType?.includes("Ride")
     const isRun = sportType?.includes("Run")
-    if (!isRide && !isRun) return "not available"
-    return isRide ? `${cadence} RPM` : `${cadence * 2} SPM`
+    const isSwim = sportType?.includes("Swim")
+    if (isRide) return `${cadence} rpm`
+    if (isRun) return `${cadence * 2} spm`
+    if (isSwim) return `${cadence} spm`
+    return "not available"
 }
 
 /**
@@ -756,8 +761,13 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
     for (let prop of recipePropertyList) {
         let suffix = user.profile.units == "imperial" && prop.impSuffix ? prop.impSuffix : prop.suffix
 
+        // Sport-specific suffix.
+        if (prop.sportSuffix && prop.sportSuffix[activity.sportType]) {
+            suffix = prop.sportSuffix[activity.sportType]
+        }
+
         // Fahrenheit temperature suffix (special case).
-        if (prop.fSuffix && user.preferences.weatherUnit == "f") {
+        else if (prop.fSuffix && user.preferences.weatherUnit == "f") {
             suffix = prop.fSuffix
         }
 

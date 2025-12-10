@@ -112,9 +112,9 @@ export interface StravaActivity {
     speedMax?: number
     /** Speed unit. */
     speedUnit?: "km/h" | "mi/h"
-    /** Average pace (per km/mi), as string. */
+    /** Average pace (per /km /mi /100m), as string. */
     paceAvg?: string
-    /** Maximum pace (per km/mi), as string. */
+    /** Maximum pace (per /km /mi /100m), as string. */
     paceMax?: string
     /** Average watts. */
     wattsAvg?: number
