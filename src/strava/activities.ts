@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaActivityQuery, StravaActivityStreams, StravaGear} from "./types"
+import {StravaActivity, StravaActivityQuery, StravaActivityStreams, StravaGear, StravaRawActivityStreams} from "./types"
 import {toStravaActivity} from "./utils"
 import {UserData} from "../users/types"
 import stravaAthletes from "./athletes"
@@ -211,6 +211,35 @@ export class StravaActivities {
         } catch (ex) {
             logger.error("Strava.getStreams", logHelper.user(user), `Activity ${id}`, ex)
             throw ex
+        }
+    }
+
+    /**
+     * Get the raw values for all streams available on the activity.
+     * @param user The user.
+     * @param id The activity ID.
+     */
+    getAllRawStreams = async (user: UserData, id: number): Promise<StravaRawActivityStreams> => {
+        const tokens = user.stravaTokens
+        const streamKeys = "time,latlng,altitude,distance,velocity_smooth,heartrate,cadence,watts,temp,grade_smooth"
+
+        try {
+            const response = await api.get(tokens, `activities/${id}/streams`, {keys: streamKeys, key_by_type: true, noCache: true})
+
+            // Extract stream data.
+            const streams: StravaRawActivityStreams = {}
+            for (const key of Object.keys(response)) {
+                if (response[key]?.data) {
+                    streams[key] = response[key].data
+                }
+            }
+
+            const arrLog = Object.entries(streams).map((e) => `${e[0]}" ${e[1].length}`)
+            logger.info("Strava.getAllRawStreams", logHelper.user(user), `Activity ${id}`, arrLog.join(", "))
+            return streams
+        } catch (ex) {
+            logger.error("Strava.getAllRawStreams", logHelper.user(user), `Activity ${id}`, ex)
+            return {}
         }
     }
 

@@ -245,6 +245,32 @@ export interface StravaActivityStreams {
 }
 
 /**
+ * Full raw activity streams from Strava.
+ */
+export interface StravaRawActivityStreams {
+    /** Time stream (seconds from start). */
+    time?: number[]
+    /** Latitude/longitude stream. */
+    latlng?: [number, number][]
+    /** Altitude stream (meters). */
+    altitude?: number[]
+    /** Distance stream (meters). */
+    distance?: number[]
+    /** Velocity smooth stream (m/s). */
+    velocity_smooth?: number[]
+    /** Heart rate stream (bpm). */
+    heartrate?: number[]
+    /** Cadence stream (rpm). */
+    cadence?: number[]
+    /** Power stream (watts). */
+    watts?: number[]
+    /** Temperature stream (celsius). */
+    temp?: number[]
+    /** Grade adjusted stream. */
+    grade_smooth?: number[]
+}
+
+/**
  * Processed or queued activity details to be saved on the database.
  */
 export interface StravaProcessedActivity {
