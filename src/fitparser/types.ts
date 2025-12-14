@@ -88,3 +88,23 @@ export interface FitSplitSummary {
     /** Total calories. */
     calories?: number
 }
+
+/**
+ * Training metrics calculated from the activity.
+ */
+export interface FitTrainingMetrics {
+    /** Training stress score. */
+    tss?: number
+    /** Intensity factor. */
+    intensityFactor?: number
+    /** Normalized power. */
+    normalizedPower?: number
+    /** Aerobic training effect (1.0-5.0). */
+    aerobicTrainingEffect?: number
+    /** Anaerobic training effect (1.0-5.0). */
+    anaerobicTrainingEffect?: number
+    /** Training load peak. */
+    trainingLoadPeak?: number
+    /** Primary training benefit (0-7). */
+    primaryBenefit?: number
+}

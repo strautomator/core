@@ -3,10 +3,12 @@
 
 import {Decoder, Stream} from "./sdk"
 import {FitFileActivity} from "./types"
+import {calculateTrainingMetrics, encodeFitFile} from "./builder"
 import {DatabaseSearchOptions} from "../database/types"
 import {StravaActivity, StravaProcessedActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
+import stravaActivities from "../strava/activities"
 import _ from "lodash"
 import logger from "anyhow"
 import jaul from "jaul"
@@ -283,6 +285,28 @@ export class FitParser {
             logger.info("FitParser.saveProcessedActivity", logHelper.user(user), source, logHelper.fitFileActivity(activity), `${logDevices} devices`)
         } catch (ex) {
             logger.error("FitParser.saveProcessedActivity", logHelper.user(user), source, logHelper.fitFileActivity(activity), ex)
+        }
+    }
+
+    // BUILDING FIT FILES
+    // --------------------------------------------------------------------------
+
+    /**
+     * Build a FIT file from Strava activity data. Will not work if the activity was recorded with a Garmin.
+     * @param user The user.
+     * @param activity The Strava activity.
+     */
+    buildFitFile = async (user: UserData, activity: StravaActivity): Promise<Buffer> => {
+        try {
+            const streams = await stravaActivities.getAllRawStreams(user, activity.id)
+            const metrics = calculateTrainingMetrics(user, activity, streams)
+            const fitData = encodeFitFile(activity, streams, metrics)
+
+            logger.info("FitParser.buildFitFile", logHelper.user(user), `Activity ${activity.id}`, `Generated ${fitData.length} bytes`)
+            return fitData
+        } catch (ex) {
+            logger.error("FitParser.buildFitFile", logHelper.user(user), `Activity ${activity.id}`, ex)
+            throw ex
         }
     }
 
