@@ -386,10 +386,16 @@ export class StravaAPI {
             const now = dayjs()
             const arrPath = path.split("/")
 
+            // No cache flag specified?
+            const noCache = params?.noCache || false
+            if (noCache) {
+                delete params.noCache
+            }
+
             // The cache key is composed by the first, or first and third parts of the requested path.
             const cacheKey = (arrPath.length < 3 ? arrPath[0] : `${arrPath[0]}-${arrPath[2]}`).replace("_", "-")
             const cacheDuration = settings.strava.cacheDuration[cacheKey]
-            const shouldCache = cacheDuration && tokens && tokens.accessToken
+            const shouldCache = !noCache && cacheDuration && tokens && tokens.accessToken
             let cacheId: string
 
             // Resource might be cached in the database?
