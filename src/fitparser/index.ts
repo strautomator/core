@@ -89,6 +89,46 @@ export class FitParser {
                         fitFileActivity[field] = value
                     }
                 }
+
+                // Extract details from custom / Connect IQ developer fields.
+                if (session.developerFields) {
+                    if (!fitFileActivity.customFields) {
+                        fitFileActivity.customFields = {}
+                    }
+
+                    // Build a lookup map from field key to field name.
+                    const fieldNameMap: {[key: string]: string} = {}
+                    if (messages.fieldDescriptions?.length > 0) {
+                        for (const desc of messages.fieldDescriptions) {
+                            if (desc.key != null && desc.fieldName) {
+                                const name = Array.isArray(desc.fieldName) ? desc.fieldName[0] : desc.fieldName
+                                if (name) {
+                                    fieldNameMap[desc.key] = name
+                                }
+                            }
+                        }
+                    }
+
+                    const lowercaser = (_, char) => char.toUpperCase()
+                    const uppercaser = (char) => char.toLowerCase()
+
+                    // Parse each developer field. Will  look up field name from descriptions and
+                    // fall back to field key / ID if not found. Fields parsed in camelCase.
+                    for (let [fieldKey, fieldValue] of Object.entries(session.developerFields)) {
+                        if (_.isNil(fieldValue) || fieldValue === "") continue
+
+                        const fieldName = fieldNameMap[fieldKey] || fieldKey
+                        const camelCaseKey = fieldName.replace(/[:\s]+(.)/g, lowercaser).replace(/^(.)/, uppercaser)
+                        const normalizedKey = camelCaseKey.replace(/[:\s]+/g, "")
+
+                        // Only store numeric or string values.
+                        if (_.isNumber(fieldValue)) {
+                            fitFileActivity.customFields[normalizedKey] = parseFloat(fieldValue.toFixed(2))
+                        } else if (_.isString(fieldValue)) {
+                            fitFileActivity.customFields[normalizedKey] = fieldValue
+                        }
+                    }
+                }
             }
         }
 

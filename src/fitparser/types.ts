@@ -46,6 +46,8 @@ export interface FitFileActivity {
     deviceBattery?: FitDeviceBattery[]
     /** Split summaries. */
     splits?: FitSplitSummary[]
+    /** Additional custom fields. */
+    customFields?: {[key: string]: number | string}
     /** Activity UTC start date. */
     dateStart?: Date
     /** Date when it should expire (used for the Firestore TTL). */
