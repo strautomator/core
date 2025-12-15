@@ -26,6 +26,8 @@ export interface UserData {
     displayName?: string
     /** Is activated with a Pro account? */
     isPro?: boolean
+    /** Is the PRO subscription still in trial mode? */
+    isTrial?: boolean
     /** User profile data from Strava. */
     profile: StravaProfile
     /** Estimated fitness level. */

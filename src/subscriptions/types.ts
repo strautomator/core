@@ -11,7 +11,7 @@ export interface BaseSubscription {
     /** Subscription source. */
     source: "amex" | "friend" | "github" | "paddle" | "paypal" | "n26" | "revolut" | "traderepublic"
     /** Subscription status. */
-    status: "APPROVAL_PENDING" | "APPROVED" | "ACTIVE" | "SUSPENDED" | "CANCELLED" | "EXPIRED"
+    status: "APPROVAL_PENDING" | "APPROVED" | "TRIAL" | "ACTIVE" | "SUSPENDED" | "CANCELLED" | "EXPIRED"
     /** Payment currency. */
     currency?: string
     /** Payment price. */

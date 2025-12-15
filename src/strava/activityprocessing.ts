@@ -124,7 +124,7 @@ export class StravaActivityProcessing {
             }
 
             // Check if passed date range is valid.
-            const maxDays = user.isPro ? settings.plans.pro.batchDays : settings.plans.free.batchDays
+            const maxDays = !user.isTrial && user.isPro ? settings.plans.pro.batchDays : settings.plans.free.batchDays
             const minDate = now.subtract(maxDays + 1, "days").startOf("day")
             if (minDate.isAfter(dDateFrom)) {
                 throw new Error(`Invalid date range, minimum allowed date: ${minDate.format("LL")}`)

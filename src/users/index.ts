@@ -101,9 +101,11 @@ export class Users {
             }
 
             // Switch to PRO if subscription is active, or back to free if it has expired.
-            if (!user.isPro && subscription.status == "ACTIVE") {
+            if (subscription.status == "TRIAL") {
+                await this.switchToPro(user, subscription, true)
+            } else if (subscription.status == "ACTIVE") {
                 await this.switchToPro(user, subscription)
-            } else if (user.isPro && user.subscriptionId == subscription.id && ["CANCELLED", "EXPIRED", "SUSPENDED"].includes(subscription.status)) {
+            } else if (user.subscriptionId == subscription.id && ["CANCELLED", "EXPIRED", "SUSPENDED"].includes(subscription.status)) {
                 await this.switchToFree(user, subscription)
             } else if (subscription.source == "paddle" && user.paddleTransactionId) {
                 await this.update({id: user.id, displayName: user.displayName, paddleTransactionId: FieldValue.delete() as any})
@@ -1296,24 +1298,36 @@ export class Users {
      * Switch the specified user to the PRO plan.
      * @param user Data for the user that should be updated.
      * @param subscription Optional subscription that was created, otherwise default to a "friend" subscription.
+     * @param trial Is the subscription in trial period?
      */
-    switchToPro = async (user: UserData, subscription?: BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription): Promise<void> => {
+    switchToPro = async (user: UserData, subscription?: BaseSubscription | PaddleSubscription | GitHubSubscription, trial?: boolean): Promise<void> => {
         try {
+            if (user.isPro && subscription.status != "TRIAL") {
+                logger.warn("Users.switchToPro", logHelper.user(user), "User is already PRO, abort")
+                return
+            }
+
             const proUser: Partial<UserData> = {
                 id: user.id,
                 displayName: user.displayName,
                 subscriptionId: subscription.id,
-                isPro: true,
-                preferences: {
-                    linksOn: settings.plans.pro.linksOn
-                }
+                isPro: true
             }
             if (user.paddleTransactionId) {
                 proUser.paddleTransactionId = FieldValue.delete() as any
             }
 
+            if (trial) {
+                proUser.isTrial = true
+            } else {
+                proUser.preferences = {linksOn: settings.plans.pro.linksOn}
+                if (user.isTrial) {
+                    proUser.isTrial = FieldValue.delete() as any
+                }
+            }
+
             // Additional subscription processing for email and transaction ID.
-            if (subscription.source == "paddle" || subscription.source == "paypal") {
+            if (subscription.source == "paddle") {
                 const sub = subscription as PaddleSubscription | PayPalSubscription
 
                 // Email passed with the subscription and was not set for that user? Set it now.
@@ -1352,11 +1366,19 @@ export class Users {
      */
     switchToFree = async (user: UserData, subscription?: BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription): Promise<void> => {
         try {
+            if (!user.isPro) {
+                logger.warn("Users.switchToFree", logHelper.user(user), "User is already on free plan, abort")
+                return
+            }
+
             const freeUser: Partial<UserData> = {
                 id: user.id,
                 displayName: user.displayName,
                 subscriptionId: FieldValue.delete() as any,
                 isPro: false
+            }
+            if (user.isTrial) {
+                freeUser.isTrial = FieldValue.delete() as any
             }
             if (user.paddleTransactionId) {
                 freeUser.paddleTransactionId = FieldValue.delete() as any
@@ -1382,7 +1404,7 @@ export class Users {
             }
 
             // Force expire the subscription if it's still active.
-            if (subscription?.status == "ACTIVE") {
+            if (subscription?.status == "TRIAL" || subscription?.status == "ACTIVE") {
                 await subscriptions.expire(subscription)
             }
 

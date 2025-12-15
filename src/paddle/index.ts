@@ -195,6 +195,8 @@ export class PaddleWrapper {
             // Process webhook according to the event type.
             if (ev.eventType == EventName.CustomerUpdated) {
                 await this.customers.onCustomerUpdated(ev)
+            } else if (ev.eventType == EventName.SubscriptionTrialing) {
+                await this.subscriptions.onSubscriptionTrialling(ev)
             } else if (ev.eventType == EventName.SubscriptionActivated) {
                 await this.subscriptions.onSubscriptionCreated(ev)
             } else if ([EventName.SubscriptionPastDue, EventName.SubscriptionPaused, EventName.SubscriptionResumed, EventName.SubscriptionCanceled].includes(ev.eventType)) {

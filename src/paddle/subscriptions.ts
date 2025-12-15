@@ -67,6 +67,59 @@ export class PaddleSubscriptions {
     }
 
     /**
+     * Create a matching subscription when user starts the trial period.
+     * @param entity Subscription notification.
+     */
+    onSubscriptionTrialling = async (entity: EventEntity): Promise<PaddleSubscription> => {
+        const data = entity.data as SubscriptionNotification
+
+        try {
+            const customData = entity.data as any
+            const userId = customData?.userId || null
+
+            let user = await users.getByPaddleId(data.customerId)
+            if (!user && userId) {
+                logger.warn("Paddle.onSubscriptionTrialling", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
+                user = await users.getById(userId)
+            }
+            if (!user) {
+                throw new Error(`User ${data.customerId || userId} not found`)
+            }
+
+            // Required fields.
+            const sub: PaddleSubscription = {
+                source: "paddle",
+                id: data.id,
+                userId: user.id,
+                customerId: data.customerId,
+                status: "TRIAL",
+                dateCreated: dayjs(data.createdAt || new Date()).toDate(),
+                dateUpdated: dayjs(data.updatedAt || new Date()).toDate()
+            }
+
+            if (data.currencyCode) {
+                sub.currency = data.currencyCode
+            }
+            if (data.items?.at(0)?.price?.unitPrice) {
+                sub.price = parseFloat(data.items.at(0)?.price?.unitPrice.amount) / 100
+            }
+            if (data.billingCycle) {
+                sub.frequency = data.billingCycle.interval == "month" ? "monthly" : "yearly"
+                this.setPaymentDates(sub, data)
+            }
+
+            // Save to the database.
+            await subscriptions.create(sub)
+            eventManager.emit("Paddle.onSubscriptionTrialling", sub)
+
+            return sub
+        } catch (ex) {
+            logger.error("Paddle.onSubscriptionTrialling", logHelper.paddleEvent(entity), ex)
+            return null
+        }
+    }
+
+    /**
      * Create a matching subscription when it gets activated by Paddle.
      * @param entity Subscription notification.
      * @param lifetime Is it a lifetime subscription?
@@ -87,6 +140,12 @@ export class PaddleSubscriptions {
                 throw new Error(`User ${data.customerId || userId} not found`)
             }
 
+            // Check if the subscription already exists (trial or previous failed attempts).
+            const existing = await subscriptions.getById(data.id)
+            if (existing) {
+                logger.info("Paddle.onSubscriptionCreated", logHelper.paddleEvent(entity), `Previous subscription found with status ${existing.status}`)
+            }
+
             // Required fields.
             const sub: PaddleSubscription = {
                 source: "paddle",
@@ -95,7 +154,7 @@ export class PaddleSubscriptions {
                 customerId: data.customerId,
                 status: !lifetime && data.status != "active" ? "APPROVAL_PENDING" : "ACTIVE",
                 currency: data.currencyCode,
-                dateCreated: dayjs(data.createdAt || new Date()).toDate(),
+                dateCreated: existing?.dateCreated || dayjs(data.createdAt || new Date()).toDate(),
                 dateUpdated: dayjs(data.updatedAt || new Date()).toDate()
             }
 
