@@ -35,6 +35,7 @@ const FIT_MESG_NUM = {
     FILE_CREATOR: 49,
     EVENT: 21,
     DEVICE_INFO: 23,
+    WORKOUT: 26,
     SPORT: 12,
     RECORD: 20,
     LAP: 19,
@@ -73,6 +74,7 @@ const FIT_SPORT = {
 }
 const FIT_SUB_SPORT = {
     GENERIC: 0,
+    INDOOR_CYCLING: 6,
     ROAD: 7,
     MOUNTAIN: 8,
     GRAVEL: 65,
@@ -90,6 +92,20 @@ const FIT_PRIMARY_BENEFIT = {
     VO2MAX: 5,
     ANAEROBIC: 6,
     SPRINT: 7
+}
+
+// FIT device info.
+const FIT_MANUFACTURER = {
+    GARMIN: 1,
+    TACX: 89
+}
+const FIT_PRODUCT = {
+    GARMIN: 3843,
+    TACX: 30045
+}
+const FIT_SW_VERSION = {
+    GARMIN: 2833,
+    TACX: 450
 }
 
 // Garmin epoch (Dec 31, 1989, 00:00:00 UTC).
@@ -318,11 +334,12 @@ export function encodeFitFile(activity: StravaActivity, streams: StravaRawActivi
     const endTime = activity.dateEnd || new Date(startTime.getTime() + (activity.totalTime || 0) * 1000)
     const endTimestamp = dateToGarminTimestamp(endTime)
 
-    const {sport, subSport} = mapStravaSportToFit(activity.sportType || activity.type)
-    encoder.writeFileIdMessage(startTimestamp)
-    encoder.writeFileCreatorMessage()
-    encoder.writeDeviceInfoMessage(startTimestamp, activity.trainer)
+    const {sport, subSport} = mapStravaSportToFit(activity.sportType || activity.type, activity.trainer)
+    encoder.writeFileIdMessage(activity, startTimestamp)
+    encoder.writeFileCreatorMessage(activity)
+    encoder.writeDeviceInfoMessage(activity, startTimestamp)
     encoder.writeSportMessage(activity.name, sport, subSport)
+    encoder.writeWorkoutMessage(activity.name, sport)
     encoder.writeEventMessage(startTimestamp, FIT_EVENT.TIMER, FIT_EVENT_TYPE.START)
 
     // Record messages (data points).
@@ -371,10 +388,14 @@ export function encodeFitFile(activity: StravaActivity, streams: StravaRawActivi
 /**
  * Map Strava sport type to FIT sport and sub-sport.
  * @param stravaSport The Strava sport type.
+ * @param trainer Whether the activity was done on a trainer.
  */
-function mapStravaSportToFit(stravaSport: StravaSport): {sport: number; subSport: number} {
+function mapStravaSportToFit(stravaSport: StravaSport, trainer?: boolean): {sport: number; subSport: number} {
     switch (stravaSport) {
         case StravaSport.Ride:
+            if (trainer) {
+                return {sport: FIT_SPORT.CYCLING, subSport: FIT_SUB_SPORT.INDOOR_CYCLING}
+            }
             return {sport: FIT_SPORT.CYCLING, subSport: FIT_SUB_SPORT.ROAD}
         case StravaSport.GravelRide:
             return {sport: FIT_SPORT.CYCLING, subSport: FIT_SUB_SPORT.GRAVEL}
@@ -430,7 +451,7 @@ class FitEncoder {
     /**
      * Write file ID message.
      */
-    writeFileIdMessage(timestamp: number): void {
+    writeFileIdMessage(activity: StravaActivity, timestamp: number): void {
         const localMesgType = this.defineMessage(FIT_MESG_NUM.FILE_ID, [
             {fieldNum: 0, size: 1, baseType: FIT_BASE_TYPE.ENUM}, // type
             {fieldNum: 1, size: 2, baseType: FIT_BASE_TYPE.UINT16}, // manufacturer
@@ -439,34 +460,30 @@ class FitEncoder {
             {fieldNum: 4, size: 4, baseType: FIT_BASE_TYPE.UINT32} // time_created
         ])
 
-        this.writeDataMessage(localMesgType, [
-            FIT_FILE_TYPE.ACTIVITY, // type = activity
-            1, // manufacturer = Garmin (1)
-            0, // product
-            Math.floor(Math.random() * 0xffffffff), // serial_number (random)
-            timestamp // time_created
-        ])
+        const manufacturer = activity.trainer ? FIT_MANUFACTURER.TACX : FIT_MANUFACTURER.GARMIN
+        const serial = Math.floor(Math.random() * 0xffffffff)
+
+        this.writeDataMessage(localMesgType, [FIT_FILE_TYPE.ACTIVITY, manufacturer, 0, serial, timestamp])
     }
 
     /**
      * Write file creator message.
      */
-    writeFileCreatorMessage(): void {
+    writeFileCreatorMessage(activity: StravaActivity): void {
         const localMesgType = this.defineMessage(FIT_MESG_NUM.FILE_CREATOR, [
             {fieldNum: 0, size: 2, baseType: FIT_BASE_TYPE.UINT16}, // software_version
             {fieldNum: 1, size: 1, baseType: FIT_BASE_TYPE.UINT8} // hardware_version
         ])
 
-        this.writeDataMessage(localMesgType, [
-            100, // software_version
-            1 // hardware_version
-        ])
+        const version = activity.trainer ? FIT_SW_VERSION.TACX : FIT_SW_VERSION.GARMIN
+
+        this.writeDataMessage(localMesgType, [version, 1])
     }
 
     /**
      * Write device info message.
      */
-    writeDeviceInfoMessage(timestamp: number, virtual: boolean): void {
+    writeDeviceInfoMessage(activity: StravaActivity, timestamp: number): void {
         const localMesgType = this.defineMessage(FIT_MESG_NUM.DEVICE_INFO, [
             {fieldNum: 253, size: 4, baseType: FIT_BASE_TYPE.UINT32}, // timestamp
             {fieldNum: 0, size: 1, baseType: FIT_BASE_TYPE.UINT8}, // device_index
@@ -476,18 +493,11 @@ class FitEncoder {
             {fieldNum: 5, size: 2, baseType: FIT_BASE_TYPE.UINT16} // software_version
         ])
 
-        const manufacturer = virtual ? 89 : 1
-        const version = virtual ? 400 : 2833
-        const garminProductId = virtual ? 30045 : 3843
+        const manufacturer = activity.trainer ? FIT_MANUFACTURER.TACX : FIT_MANUFACTURER.GARMIN
+        const version = activity.trainer ? FIT_SW_VERSION.TACX : FIT_SW_VERSION.GARMIN
+        const productId = activity.trainer ? FIT_PRODUCT.TACX : FIT_PRODUCT.GARMIN
 
-        this.writeDataMessage(localMesgType, [
-            timestamp, // timestamp
-            0, // device_index = creator
-            0, // device_type
-            manufacturer, // manufacturer = Garmin
-            garminProductId, // product
-            version // software_version
-        ])
+        this.writeDataMessage(localMesgType, [timestamp, 0, 0, manufacturer, productId, version])
     }
 
     /**
@@ -495,7 +505,7 @@ class FitEncoder {
      */
     writeSportMessage(name: string, sport: number, subSport: number): void {
         const maxNameLength = 24
-        const truncatedName = name ? name.substring(0, maxNameLength - 1) : "Activity"
+        const truncatedName = name ? name.substring(0, maxNameLength - 1) : "Strava activity"
         const nameBytes = Buffer.from(truncatedName + "\0", "utf8")
         const nameLength = Math.min(nameBytes.length, maxNameLength)
 
@@ -509,6 +519,23 @@ class FitEncoder {
     }
 
     /**
+     * Write workout message with activity name as wkt_name field.
+     */
+    writeWorkoutMessage(name: string, sport: number): void {
+        const maxNameLength = 64
+        const truncatedName = name ? name.substring(0, maxNameLength - 1) : "Strava activity"
+        const nameBytes = Buffer.from(truncatedName + "\0", "utf8")
+        const nameLength = Math.min(nameBytes.length, maxNameLength)
+
+        const localMesgType = this.defineMessage(FIT_MESG_NUM.WORKOUT, [
+            {fieldNum: 4, size: 1, baseType: FIT_BASE_TYPE.ENUM}, // sport
+            {fieldNum: 8, size: nameLength, baseType: FIT_BASE_TYPE.STRING} // wkt_name
+        ])
+
+        this.writeDataMessageWithString(localMesgType, [sport], nameBytes.subarray(0, nameLength))
+    }
+
+    /**
      * Write event message.
      */
     writeEventMessage(timestamp: number, event: number, eventType: number): void {
@@ -519,12 +546,7 @@ class FitEncoder {
             {fieldNum: 3, size: 4, baseType: FIT_BASE_TYPE.UINT32} // data
         ])
 
-        this.writeDataMessage(localMesgType, [
-            timestamp, // timestamp
-            event, // event
-            eventType, // event_type
-            0 // data
-        ])
+        this.writeDataMessage(localMesgType, [timestamp, event, eventType, 0])
     }
 
     /**
@@ -547,7 +569,7 @@ class FitEncoder {
         ]
         const values: number[] = [timestamp]
 
-        // Add position fields if available
+        // Add position fields if available.
         if (lat !== null && lng !== null) {
             fields.push({fieldNum: 0, size: 4, baseType: FIT_BASE_TYPE.SINT32}) // position_lat
             fields.push({fieldNum: 1, size: 4, baseType: FIT_BASE_TYPE.SINT32}) // position_long
@@ -567,31 +589,31 @@ class FitEncoder {
             values.push(Math.round(distance * DISTANCE_SCALE))
         }
 
-        // Add speed (enhanced_speed for better precision)
+        // Add speed (enhanced_speed for better precision).
         if (speed !== undefined) {
             fields.push({fieldNum: 73, size: 4, baseType: FIT_BASE_TYPE.UINT32}) // enhanced_speed
             values.push(Math.round(speed * SPEED_SCALE))
         }
 
-        // Add heart rate
+        // Add heart rate.
         if (heartRate !== undefined) {
             fields.push({fieldNum: 3, size: 1, baseType: FIT_BASE_TYPE.UINT8}) // heart_rate
             values.push(Math.round(heartRate))
         }
 
-        // Add cadence
+        // Add cadence.
         if (cadence !== undefined) {
             fields.push({fieldNum: 4, size: 1, baseType: FIT_BASE_TYPE.UINT8}) // cadence
             values.push(Math.round(cadence))
         }
 
-        // Add power
+        // Add power.
         if (power !== undefined) {
             fields.push({fieldNum: 7, size: 2, baseType: FIT_BASE_TYPE.UINT16}) // power
             values.push(Math.round(power))
         }
 
-        // Add temperature
+        // Add temperature.
         if (temperature !== undefined) {
             fields.push({fieldNum: 13, size: 1, baseType: FIT_BASE_TYPE.SINT8}) // temperature
             values.push(Math.round(temperature))
@@ -635,26 +657,26 @@ class FitEncoder {
         ])
 
         this.writeDataMessage(localMesgType, [
-            0, // message_index
-            endTimestamp, // timestamp
-            FIT_EVENT.LAP, // event
-            FIT_EVENT_TYPE.STOP, // event_type
-            startTimestamp, // start_time
-            elapsedTime, // total_elapsed_time
-            timerTime, // total_timer_time
-            Math.round(distance), // total_distance
-            Math.round(avgSpeed), // enhanced_avg_speed
-            Math.round(maxSpeed), // enhanced_max_speed
-            activity.calories || 0, // total_calories
-            activity.hrAvg || 0, // avg_heart_rate
-            activity.hrMax || 0, // max_heart_rate
-            activity.cadenceAvg || 0, // avg_cadence
-            activity.wattsAvg || 0, // avg_power
-            activity.wattsMax || 0, // max_power
-            activity.elevationGain || 0, // total_ascent
-            0, // total_descent
-            sport, // sport
-            subSport // sub_sport
+            0,
+            endTimestamp,
+            FIT_EVENT.LAP,
+            FIT_EVENT_TYPE.STOP,
+            startTimestamp,
+            elapsedTime,
+            timerTime,
+            Math.round(distance),
+            Math.round(avgSpeed),
+            Math.round(maxSpeed),
+            activity.calories || 0,
+            activity.hrAvg || 0,
+            activity.hrMax || 0,
+            activity.cadenceAvg || 0,
+            activity.wattsAvg || 0,
+            activity.wattsMax || 0,
+            activity.elevationGain || 0,
+            0,
+            sport,
+            subSport
         ])
     }
 
@@ -706,36 +728,36 @@ class FitEncoder {
         ])
 
         this.writeDataMessage(localMesgType, [
-            0, // message_index
-            endTimestamp, // timestamp
-            FIT_EVENT.SESSION, // event
-            FIT_EVENT_TYPE.STOP, // event_type
-            startTimestamp, // start_time
-            startLat, // start_position_lat
-            startLng, // start_position_long
-            sport, // sport
-            subSport, // sub_sport
-            elapsedTime, // total_elapsed_time
-            timerTime, // total_timer_time
-            Math.round(distance), // total_distance
-            Math.round(avgSpeed), // enhanced_avg_speed
-            Math.round(maxSpeed), // enhanced_max_speed
-            activity.calories || 0, // total_calories
-            activity.hrAvg || 0, // avg_heart_rate
-            activity.hrMax || 0, // max_heart_rate
-            activity.cadenceAvg || 0, // avg_cadence
-            activity.wattsAvg || 0, // avg_power
-            activity.wattsMax || 0, // max_power
-            activity.elevationGain || 0, // total_ascent
-            0, // total_descent
-            1, // num_laps
-            metrics.normalizedPower || 0, // normalized_power
-            Math.round((metrics.tss || 0) * 10), // training_stress_score (scaled by 10)
-            Math.round((metrics.intensityFactor || 0) * 1000), // intensity_factor (scaled by 1000)
-            Math.round((metrics.aerobicTrainingEffect || 0) * TRAINING_EFFECT_SCALE), // total_training_effect
-            Math.round((metrics.anaerobicTrainingEffect || 0) * TRAINING_EFFECT_SCALE), // total_anaerobic_training_effect
-            Math.round((metrics.trainingLoadPeak || 0) * TRAINING_LOAD_SCALE), // training_load_peak
-            metrics.primaryBenefit || 0 // primary_benefit
+            0,
+            endTimestamp,
+            FIT_EVENT.SESSION,
+            FIT_EVENT_TYPE.STOP,
+            startTimestamp,
+            startLat,
+            startLng,
+            sport,
+            subSport,
+            elapsedTime,
+            timerTime,
+            Math.round(distance),
+            Math.round(avgSpeed),
+            Math.round(maxSpeed),
+            activity.calories || 0,
+            activity.hrAvg || 0,
+            activity.hrMax || 0,
+            activity.cadenceAvg || 0,
+            activity.wattsAvg || 0,
+            activity.wattsMax || 0,
+            activity.elevationGain || 0,
+            0,
+            1,
+            metrics.normalizedPower || 0,
+            Math.round((metrics.tss || 0) * 10),
+            Math.round((metrics.intensityFactor || 0) * 1000),
+            Math.round((metrics.aerobicTrainingEffect || 0) * TRAINING_EFFECT_SCALE),
+            Math.round((metrics.anaerobicTrainingEffect || 0) * TRAINING_EFFECT_SCALE),
+            Math.round((metrics.trainingLoadPeak || 0) * TRAINING_LOAD_SCALE),
+            metrics.primaryBenefit || 0
         ])
     }
 
@@ -756,15 +778,7 @@ class FitEncoder {
             {fieldNum: 5, size: 4, baseType: FIT_BASE_TYPE.UINT32} // local_timestamp
         ])
 
-        this.writeDataMessage(localMesgType, [
-            endTimestamp, // timestamp
-            timerTime, // total_timer_time
-            numSessions, // num_sessions
-            0, // type = manual
-            FIT_EVENT.ACTIVITY, // event
-            FIT_EVENT_TYPE.STOP, // event_type
-            endTimestamp // local_timestamp
-        ])
+        this.writeDataMessage(localMesgType, [endTimestamp, timerTime, numSessions, 0, FIT_EVENT.ACTIVITY, FIT_EVENT_TYPE.STOP, endTimestamp])
     }
 
     /**
