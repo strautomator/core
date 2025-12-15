@@ -7,18 +7,18 @@ export const recipeOperatorList = {
     // Free text.
     text: [
         {value: "any", text: "has any value", description: "Field has any value set"},
-        {value: "like", text: "contains", description: "Text contains the value set below"},
-        {value: "notlike", text: "does not contain", description: "Text does not contain the value set below"},
-        {value: "=", text: "is exactly", description: "Text matches exactly the value set below"}
+        {value: "like", text: "contains", description: "Text contains the value set"},
+        {value: "notlike", text: "does not contain", description: "Text does not contain the value set"},
+        {value: "=", text: "is exactly", description: "Text matches exactly the value set"}
     ],
     // Only positive numbers.
     number: [
-        {value: "like", text: "is around (±10%)", description: "Number is within ±10% of the value set below"},
-        {value: "approx", text: "is around (±3%)", description: "Number is within ±3% of the value set below"},
-        {value: "=", text: "is exactly", description: "Number matches exactly the value set below"},
-        {value: "!=", text: "is not", description: "Number is different than the value set below"},
-        {value: "<", text: "is lower than", description: "Number less than the value set below"},
-        {value: ">", text: "is higher than", description: "Number greater than the value set below"}
+        {value: "like", text: "is around (±10%)", description: "Number is within ±10% of the value set"},
+        {value: "approx", text: "is around (±3%)", description: "Number is within ±3% of the value set"},
+        {value: "=", text: "is exactly", description: "Number matches exactly the value set"},
+        {value: "!=", text: "is not", description: "Number is different than the value set"},
+        {value: "<", text: "is lower than", description: "Number less than the value set"},
+        {value: ">", text: "is higher than", description: "Number greater than the value set"}
     ],
     // Location coordinates.
     location: [
@@ -29,27 +29,27 @@ export const recipeOperatorList = {
     ],
     // Time.
     time: [
-        {value: "like", text: "at around (±30min)", description: "Time within 30 min. of the value set below"},
-        {value: "approx", text: "at around (±10min)", description: "Time within 10 min. of the value set below"},
-        {value: "=", text: "at (±1min)", description: "Time within 1 min. of the value set below"},
-        {value: "<", text: "is before", description: "Time is before the value set below"},
-        {value: ">", text: "is after", description: "Time is after the value set below"}
+        {value: "like", text: "at around (±30min)", description: "Time within 30 min. of the value set"},
+        {value: "approx", text: "at around (±10min)", description: "Time within 10 min. of the value set"},
+        {value: "=", text: "at (±1min)", description: "Time within 1 min. of the value set"},
+        {value: "<", text: "is before", description: "Time is before the value set"},
+        {value: ">", text: "is after", description: "Time is after the value set"}
     ],
     // Elapsed time.
     elapsedTime: [
-        {value: "like", text: "is around (±30min)", description: "Elapsed time within 30 min. of the value set below"},
-        {value: "approx", text: "is around (±10min)", description: "Elapsed time within 10 min. of the value set below"},
-        {value: "=", text: "is exactly (±1min)", description: "Elapsed time within 1 min. of the value set below"},
-        {value: "<", text: "is less than", description: "Elapsed time is less than the value set below"},
-        {value: ">", text: "is more than", description: "Elapsed time is greater than the value set below"}
+        {value: "like", text: "is around (±30min)", description: "Elapsed time within 30 min. of the value set"},
+        {value: "approx", text: "is around (±10min)", description: "Elapsed time within 10 min. of the value set"},
+        {value: "=", text: "is exactly (±1min)", description: "Elapsed time within 1 min. of the value set"},
+        {value: "<", text: "is less than", description: "Elapsed time is less than the value set"},
+        {value: ">", text: "is more than", description: "Elapsed time is greater than the value set"}
     ],
     // Pace.
     pace: [
-        {value: "like", text: "is around (±60sec)", description: "Pace within 60 sec. of the value set below"},
-        {value: "approx", text: "is around (±20sec)", description: "Pace within 20 sec. of the value set below"},
-        {value: "=", text: "is exactly (±1sec)", description: "Pace within 1 sec. of the value set below"},
-        {value: "<", text: "is faster than", description: "Pace is faster than the value set below"},
-        {value: ">", text: "is slower than", description: "Pace is slower than the value set below"}
+        {value: "like", text: "is around (±60sec)", description: "Pace within 60 sec. of the value set"},
+        {value: "approx", text: "is around (±20sec)", description: "Pace within 20 sec. of the value set"},
+        {value: "=", text: "is exactly (±1sec)", description: "Pace within 1 sec. of the value set"},
+        {value: "<", text: "is faster than", description: "Pace is faster than the value set"},
+        {value: ">", text: "is slower than", description: "Pace is slower than the value set"}
     ],
     // Yes or no.
     is: [
