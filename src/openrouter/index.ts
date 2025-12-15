@@ -68,7 +68,7 @@ export class OpenRouter implements AiProvider {
                 method: "POST",
                 headers: {Authorization: `Bearer ${settings.openrouter.api.key}`},
                 data: {
-                    models: ["mistralai/mistral-small-3.1-24b-instruct:free", "google/gemini-2.0-flash-exp:free", "openai/gpt-oss-20b:free", "openai/gpt-5-nano"],
+                    models: ["mistralai/mistral-small-3.1-24b-instruct:free", "google/gemini-2.0-flash-exp:free", "openai/gpt-5-nano"],
                     max_tokens: options.maxTokens,
                     stream: false,
                     messages: [
