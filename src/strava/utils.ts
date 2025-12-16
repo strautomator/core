@@ -57,7 +57,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
         hrMax: data.max_heartrate ? Math.round(data.max_heartrate) : null,
         hasCadence: data.average_cadence > 0,
         cadenceAvg: Math.round(data.average_cadence) || null,
-        cadenceSpm: data.average_cadence ? Math.round(data.average_cadence * 2) : null,
+        cadenceSpm: data.average_cadence ? Math.round(data.type == "Swim" ? data.average_cadence : data.average_cadence * 2) : null,
         calories: data.calories || null,
         relativeEffort: data.suffer_score || null,
         perceivedExertion: data.perceived_exertion || null,
