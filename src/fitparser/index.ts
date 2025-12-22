@@ -98,8 +98,8 @@ export class FitParser {
 
                     // Build a lookup map from field key to field name.
                     const fieldNameMap: {[key: string]: string} = {}
-                    if (messages.fieldDescriptions?.length > 0) {
-                        for (const desc of messages.fieldDescriptions) {
+                    if (messages.fieldDescriptionMesgs?.length > 0) {
+                        for (const desc of messages.fieldDescriptionMesgs) {
                             if (desc.key != null && desc.fieldName) {
                                 const name = Array.isArray(desc.fieldName) ? desc.fieldName[0] : desc.fieldName
                                 if (name) {
@@ -205,6 +205,8 @@ export class FitParser {
         } else {
             delete fitFileActivity.pedalBalance
         }
+
+        console.warn(JSON.stringify(fitFileActivity, null, 2))
 
         logger.info("FitParser.parse", logHelper.user(user), logHelper.fitFileActivity(fitFileActivity, true))
     }
