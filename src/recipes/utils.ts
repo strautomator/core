@@ -67,8 +67,11 @@ export const getActionSummary = (action: RecipeAction): string => {
 export const getConditionSummary = (condition: RecipeCondition): string => {
     try {
         const property = _.find(recipePropertyList, {value: condition.property})
-        const fieldText = property.text
+        if (!property) {
+            return `${condition.property} ${condition.operator} ${condition.value}`
+        }
 
+        const fieldText = property.text
         if (!property.operators) {
             return fieldText
         }
