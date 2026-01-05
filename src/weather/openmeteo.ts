@@ -88,9 +88,8 @@ export class OpenMeteo implements WeatherProvider {
             if (diffHours > maxHours) throw new Error(`Date out of range: ${isoDate}`)
 
             const baseUrl = settings.weather.openmeteo.aqiBaseUrl
-            const dateFormat = utcDate.format("YYYY-MM-DD")
-            const daysQuery = isFuture ? `start_date=${dateFormat}&end_date=${dateFormat}` : `past_days=${utcNow.dayOfYear() - utcNow.subtract(diffHours, "hours").dayOfYear()}`
-            const aqiUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&hourly=european_aqi,us_aqi`
+            const daysQuery = isFuture ? "forecast_days=7" : `past_days=${utcNow.dayOfYear() - utcNow.subtract(diffHours, "hours").dayOfYear()}`
+            const aqiUrl = `${baseUrl}?latitude=${coordinates[0]}&longitude=${coordinates[1]}&${daysQuery}&current=european_aqi,us_aqi&hourly=european_aqi,us_aqi`
 
             // Fetch air quality data.
             logger.debug("OpenMeteo.getAirQuality", aqiUrl)
@@ -179,12 +178,20 @@ export class OpenMeteo implements WeatherProvider {
         // No valid hourly index found? Stop here.
         if (index == -1) return null
 
-        const aqi = data.hourly.european_aqi?.at(index)
-        if (aqi > 300) return 5
-        if (aqi > 200) return 4
-        if (aqi > 150) return 3
-        if (aqi > 100) return 2
-        if (aqi > 50) return 1
+        const aqiUS = data.hourly.us_aqi?.at(index) || -1
+        if (aqiUS > 300) return 5
+        if (aqiUS > 200) return 4
+        if (aqiUS > 150) return 3
+        if (aqiUS > 100) return 2
+        if (aqiUS > 50) return 1
+
+        const aqiEU = data.hourly.european_aqi?.at(index) || -1
+        if (aqiEU > 80) return 5
+        if (aqiEU > 60) return 4
+        if (aqiEU > 40) return 3
+        if (aqiEU > 20) return 2
+        if (aqiEU > 0) return 1
+
         return 0
     }
 }
