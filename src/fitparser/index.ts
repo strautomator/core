@@ -206,8 +206,6 @@ export class FitParser {
             delete fitFileActivity.pedalBalance
         }
 
-        console.warn(JSON.stringify(fitFileActivity, null, 2))
-
         logger.info("FitParser.parse", logHelper.user(user), logHelper.fitFileActivity(fitFileActivity, true))
     }
 
