@@ -105,7 +105,7 @@ export const EmailTemplates = {
     },
 
     // Alert sent to user when devices are reported to have low battery.
-    GearWearBattery: {
+    GearWearLowBattery: {
         subject: "Devices with low battery",
         body:
             "<p>" +
