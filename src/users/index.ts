@@ -1132,10 +1132,12 @@ export class Users {
             // Make sure email has changed before proceeding. If not, stop here.
             if (user.email && user.email == email) {
                 logger.warn("Users.setEmail", user.id, `Email ${email} hasn't changed`)
-                return
+                if (!user.confirmEmail) {
+                    return
+                }
             }
 
-            // Save new email address.
+            // Save email address.
             const data: Partial<UserData> = {
                 id: user.id,
                 displayName: user.displayName,
