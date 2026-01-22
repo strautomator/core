@@ -195,6 +195,13 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
             })
             dbCalendar.lastRequestCount++
 
+            // Make sure the club ID is added (or removed) from the calendar config.
+            if (clubEvents.length > 0) {
+                dbCalendar.clubIds.push(club.id)
+            } else if (dbCalendar.clubIds?.includes(club.id.toString())) {
+                dbCalendar.clubIds = dbCalendar.clubIds.filter((cid) => cid != club.id.toString())
+            }
+
             // Iterate user's club events to get their details and push to the calendar.
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
             while (clubEvents.length) {
@@ -208,10 +215,17 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
         const clubFilter = (c: StravaClub) => dbCalendar.options.clubIds.includes(c.id.toString()) || (c.url && dbCalendar.options.clubIds.includes(c.url))
         let clubs = dbCalendar.options.clubIds?.length > 0 ? allClubs.filter(clubFilter) : allClubs
 
+        // Init the club IDs array when needed.
+        if (clubs.length > 0 && !dbCalendar.clubIds) {
+            dbCalendar.clubIds = []
+        }
+
         // There's a limit on how many clubs can be processed at any given time,
         // so we randomly select a few clubs to process.
         if (clubs.length > maxClubs) {
-            clubs = _.sampleSize(clubs, maxClubs)
+            const knownClubs = _.remove(clubs, (c) => dbCalendar.clubIds?.includes(c.id.toString()))
+            const sample = _.sampleSize(clubs, maxClubs - knownClubs.length)
+            clubs = _.merge(knownClubs, sample)
         }
 
         // Iterate user's clubs to get their events and push to the calendar.

@@ -22,6 +22,8 @@ export interface CalendarData {
     gearEventCount?: number
     /** How many requests were triggered on the last calendar build task. */
     lastRequestCount?: number
+    /** List of club IDs known to have events in the calendar. */
+    clubIds?: string[]
     /** Flag to set if the calendar is considered expired and should be updated. */
     pendingUpdate?: boolean
     /** Flag to force refresh the calendar and ignore cached events. */
