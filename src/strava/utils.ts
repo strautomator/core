@@ -282,17 +282,18 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     if (data.segment_efforts?.length > 0) {
         activity.segments = {}
         for (const s of data.segment_efforts) {
-            if (!activity.segments[s.segment.id]) {
-                activity.segments[s.segment.id] = {name: s.segment.name, count: 0}
+            const segmentId = s.segment.id?.toString()
+            if (!activity.segments[segmentId]) {
+                activity.segments[segmentId] = {name: s.segment.name, count: 0}
             }
             if (s.pr_rank == 1) {
-                activity.segments[s.segment.id].pr = true
+                activity.segments[segmentId].pr = true
             }
             if (s.kom_rank == 1) {
-                activity.segments[s.segment.id].kom = true
+                activity.segments[segmentId].kom = true
             }
 
-            activity.segments[s.segment.id].count++
+            activity.segments[segmentId].count++
         }
     }
 
