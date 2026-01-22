@@ -459,7 +459,7 @@
     "plans": {
         "free": {
             "apiConcurrency": 4,
-            // Free accounts are limited to 3 recipes and 2 gearwear configuration.
+            // Free accounts are limited to 3 recipes and 2 GearWear configuration.
             "maxRecipes": 3,
             "maxGearWear": 2,
             "maxGearRecentActivities": 3,
@@ -483,13 +483,13 @@
         },
         "pro": {
             "apiConcurrency": 6,
-            // PRO accounts are limited to 999 (virtually unlimited) recipes and gearwear configs.
+            // PRO accounts are limited to 999 (virtually unlimited) recipes and GearWear configs.
             "maxRecipes": 999,
             "maxGearWear": 999,
             "maxGearRecentActivities": 50,
             "maxClubs": 30,
-            // PRO accounts can trigger batch automations for activities up to 5 years old.
-            "batchDays": 1825,
+            // PRO accounts can trigger batch automations for activities up to 10 years old.
+            "batchDays": 3650,
             // PRO accounts limited to 10 years in the past and up to 1 year in the future.
             "pastCalendarDays": 3650,
             "futureCalendarDays": 365,
