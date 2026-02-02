@@ -309,6 +309,8 @@ export class Recipes {
                     conditionProp = `${dateProp.format("lll")} | ${timeLog}, offset ${activity.utcStartOffset} min`
                 } else if (_.isArray(conditionProp)) {
                     conditionProp = conditionProp.length
+                } else if (_.isObject(conditionProp)) {
+                    conditionProp = Object.values(conditionProp).join(", ")
                 }
 
                 let logValue = conditionProp ? `Not a match: ${conditionProp}` : "Not a match"
@@ -397,7 +399,7 @@ export class Recipes {
             }
 
             // Segment conditions.
-            else if (prop.startsWith("segments.") || prop == "komSegments" || prop == "prSegments") {
+            else if (prop.startsWith("segments") || prop == "komSegments" || prop == "prSegments") {
                 const valid = conditions.checkSegments(activity, condition)
                 if (!valid) return false
             }
