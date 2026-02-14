@@ -82,13 +82,6 @@ export class OpenAI implements AiProvider {
                         {role: "system", content: options.instruction},
                         {role: "user", content: messages.join(" ")}
                     ]
-                },
-                onRetry: (opt) => {
-                    if (user.isPro) {
-                        opt.data.model = "gpt-4o-mini"
-                        return true
-                    }
-                    return false
                 }
             }
 
