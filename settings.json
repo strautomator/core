@@ -618,14 +618,14 @@
             "maxAgeDays": 366
         },
         "ftp": {
-            // Estimated FTP will go down by 1% for each retroactive week of no activities.
-            "idleLossPerWeek": 0.01,
+            // Estimated FTP will go down by 2% for each retroactive week of no activities.
+            "idleLossPerWeek": 0.02,
             // User's FTP will be estimated based on activities from the last 10 weeks.
             "weeks": 10,
             // FTP can be updated only once every 24 hours.
             "sinceLastHours": 24,
-            // FTP must have changed by at least 2% to be updated automatically.
-            "saveThreshold": 0.02
+            // FTP must have changed by at least 3% to be updated automatically.
+            "saveThreshold": 0.03
         },
         "fitnessLevel": {
             // Fitness levels will be estimated based on activities from the last 12 weeks by default.

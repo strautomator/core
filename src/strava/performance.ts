@@ -361,8 +361,8 @@ export class StravaPerformance {
             // If highest activity FTP is higher than current FTP, set it as the new value.
             // Otherwise get the weighted or current value itself, whatever is the lowest.
             if (currentWatts && currentWatts > maxWatts) {
-                const maxWattsWeight = [maxWatts, 1]
-                const currentWattsWeight = [currentWatts, 3]
+                const maxWattsWeight = [maxWatts, 2]
+                const currentWattsWeight = [currentWatts, 5]
                 const ftpWeights = [maxWattsWeight, currentWattsWeight]
                 const [ftpTotalSum, ftpWeightSum] = ftpWeights.reduce(([valueSum, weightSum], [value, weight]) => [valueSum + value * weight, weightSum + weight], [0, 0])
                 ftpWatts = ftpTotalSum / ftpWeightSum
@@ -380,7 +380,7 @@ export class StravaPerformance {
 
             // Adjusted loss per week off the bike.
             const weeks = Math.floor(dayjs().diff(lastActivityDate, "d") / 7)
-            if (weeks > 0) {
+            if (weeks > 1) {
                 ftpWatts -= ftpWatts * (weeks * settings.strava.ftp.idleLossPerWeek)
             }
 
