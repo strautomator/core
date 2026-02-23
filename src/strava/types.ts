@@ -807,6 +807,7 @@ export enum StravaSport {
     Kayaking = "Kayaking",
     Kitesurf = "Kitesurf",
     NordicSki = "NordicSki",
+    Padel = "Padel",
     Pickleball = "Pickleball",
     Pilates = "Pilates",
     Racquetball = "Racquetball",
