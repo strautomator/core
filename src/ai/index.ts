@@ -263,27 +263,36 @@ export class AI {
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
         // Free accounts defaults to OpenRouter.
-        if (!user.isPro && !options.provider) {
+        if (!user.isPro || !options.provider) {
             options.provider = AiProviderName.OpenRouter
         }
 
         // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
-        const availableProviders = allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 1)
+        const availableProviders = allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
         const preferredProviders = _.remove(allProviders, (p) => p.constructor.name.toLowerCase() == options.provider)
-        let provider: AiProvider = preferredProviders.pop() || availableProviders.pop()
+        let provider: AiProvider = preferredProviders.length > 0 ? preferredProviders.pop() : availableProviders.pop()
 
         // Keep trying with different providers.
-        let response: string
+        let response: string = null
         while (!response && provider) {
+            let providerName = provider.constructor.name
+            let errorMessage = null
             try {
                 response = await provider.prompt(user, options, messages)
                 if (!response) {
-                    logger.warn("AI.prompt", logHelper.user(user), subject, `Empty response from ${provider.constructor.name}, will try another`)
-                    provider = availableProviders.length > 0 ? availableProviders.pop() : null
+                    errorMessage = `Empty response from ${providerName}`
                 }
             } catch (ex) {
-                logger.warn("AI.prompt", logHelper.user(user), subject, `${provider.constructor.name} failed, will try another`)
-                provider = availableProviders.length > 0 ? availableProviders.pop() : null
+                errorMessage = `Error from ${providerName}: ${ex.message || ex.toString()}`
+            } finally {
+                if (!response) {
+                    if (availableProviders.length > 0) {
+                        provider = availableProviders.pop()
+                        logger.warn("AI.prompt", logHelper.user(user), subject, errorMessage, `Will try ${provider.constructor.name}`)
+                    } else {
+                        logger.error("AI.prompt", logHelper.user(user), subject, errorMessage)
+                    }
+                }
             }
         }
 
