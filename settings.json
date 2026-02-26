@@ -393,9 +393,9 @@
         "api": {
             "baseUrl": "https://openrouter.ai/api/v1/",
             // Maximum concurrent requests per instance.
-            "maxConcurrent": 2,
+            "maxConcurrent": 4,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 10
+            "maxPerMinute": 100
         }
     },
     "paddle": {
