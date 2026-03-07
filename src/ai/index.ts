@@ -268,7 +268,7 @@ export class AI {
         }
 
         // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
-        const availableProviders = allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0)
+        const availableProviders = _.shuffle(allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0))
         const preferredProviders = _.remove(allProviders, (p) => p.constructor.name.toLowerCase() == options.provider)
         let provider: AiProvider = preferredProviders.length > 0 ? preferredProviders.pop() : availableProviders.pop()
 
@@ -290,7 +290,7 @@ export class AI {
                         provider = availableProviders.pop()
                         logger.warn("AI.prompt", logHelper.user(user), subject, errorMessage, `Will try ${provider.constructor.name}`)
                     } else {
-                        logger.error("AI.prompt", logHelper.user(user), subject, errorMessage)
+                        logger.error("AI.prompt", logHelper.user(user), subject, errorMessage, "No providers left to try")
                     }
                 }
             }
