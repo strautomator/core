@@ -92,7 +92,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 40
+            "maxPerMinute": 60
         }
     },
     "axios": {
@@ -253,7 +253,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 20
+            "maxPerMinute": 40
         }
     },
     "genius": {
@@ -356,7 +356,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 20
+            "maxPerMinute": 40
         }
     },
     "notifications": {
@@ -679,7 +679,7 @@
             // Maximum concurrent requests per instance.
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
-            "maxPerMinute": 10
+            "maxPerMinute": 20
         }
     },
     "wahoo": {
