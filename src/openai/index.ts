@@ -72,36 +72,49 @@ export class OpenAI implements AiProvider {
     prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
             const reqOptions: AxiosConfig = {
-                url: `${settings.openai.api.baseUrl}chat/completions`,
+                url: `${settings.openai.api.baseUrl}responses`,
                 method: "POST",
                 headers: this.baseHeaders,
                 data: {
                     model: user.isPro && options.useReason ? "gpt-5-mini" : "gpt-5-nano",
-                    max_completion_tokens: options.maxTokens,
-                    messages: [
-                        {role: "system", content: options.instruction},
-                        {role: "user", content: messages.join(" ")}
-                    ]
+                    reasoning: {effort: options.useReason ? "low" : "minimal"},
+                    max_output_tokens: options.maxTokens,
+                    instructions: options.instruction,
+                    input: messages.join(" "),
+                    truncation: "auto"
                 }
             }
 
             // Here we go!
             try {
-                const result = await this.limiter.schedule(() => axiosRequest(reqOptions))
+                let result = await this.limiter.schedule(() => axiosRequest(reqOptions))
 
-                // Successful prompt response? Extract the generated content.
-                if (result?.choices?.length > 0) {
-                    const arrName = result.choices[0].message.content.split(`"`)
-                    let text = arrName.length > 1 ? arrName[1] : arrName[0]
+                // If the response is not yet complete, poll until it is (up to 3 retries).
+                if (result?.id && result.status === "incomplete") {
+                    logger.warn("OpenAI.prompt", logHelper.user(user), options.subject, `Not completed yet, trying again: ${result.id}`)
 
-                    // Ends with a period, but has no question? Remove it.
-                    if (text.substring(text.length - 1) == "." && !text.includes("?")) {
-                        text = text.substring(0, text.length - 1).trim()
-                    } else {
-                        text = text.trim()
+                    const retryOptions: AxiosConfig = {
+                        url: `${settings.openai.api.baseUrl}responses/${result.id}`,
+                        method: "GET",
+                        headers: this.baseHeaders
                     }
+                    await new Promise((resolve) => setTimeout(resolve, settings.axios.retryInterval))
+                    result = await this.limiter.schedule(() => axiosRequest(retryOptions))
+                }
 
-                    return text
+                // Only extract content if the response completed successfully.
+                if (result?.status === "completed" && result?.output?.length > 0) {
+                    const message = result.output.find((o) => o.type === "message")
+                    const content = message?.content?.find((c) => c.type === "output_text")
+                    if (content?.text) {
+                        const arrName = content.text.split(`"`)
+                        let text = arrName.length > 1 ? arrName[1] : arrName[0]
+                        return text
+                    }
+                }
+
+                if (result?.status && result.status !== "completed") {
+                    logger.warn("OpenAI.prompt", logHelper.user(user), options.subject, `Response status: ${result.status}`)
                 }
             } catch (innerEx) {
                 logger.error("OpenAI.prompt", logHelper.user(user), options.subject, innerEx)
