@@ -19570,7 +19570,7 @@ const Profile = {
             0x00004000: "protected"
         },
         batteryStatus: {
-            1: "new",
+            1: "full",
             2: "good",
             3: "ok",
             4: "low",

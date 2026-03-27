@@ -108,7 +108,7 @@ export interface GearWearDeviceBattery {
     /** Device ID. */
     id: string
     /** Device battery state. */
-    status: "new" | "good" | "ok" | "low" | "critical" | "unknown"
+    status: "full" | "good" | "ok" | "low" | "critical" | "unknown"
     /** Last update date will match the date of the activity in most cases. */
     dateUpdated: Date
 }

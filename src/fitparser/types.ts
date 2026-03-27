@@ -61,7 +61,7 @@ export interface FitDeviceBattery {
     /** The device ID. */
     id: string
     /** Battery status. */
-    status: "new" | "good" | "ok" | "low" | "critical"
+    status: "full" | "good" | "ok" | "low" | "critical"
 }
 
 /**
