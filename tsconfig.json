@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "baseUrl": "",
         "rootDir": "src",
         "outDir": "lib",
         "target": "es2024",
@@ -11,9 +10,10 @@
         "noUnusedLocals": true,
         "declaration": true,
         "skipLibCheck": true,
+        "strict": false,
         "paths": {
-            "anyhow": ["node_modules/anyhow/", "../api/node_modules/anyhow/"],
-            "setmeup": ["node_modules/setmeup/", "../api/node_modules/setmeup/"]
+            "anyhow": ["./node_modules/anyhow/", "../api/node_modules/anyhow/"],
+            "setmeup": ["./node_modules/setmeup/", "../api/node_modules/setmeup/"]
         }
     }
 }
