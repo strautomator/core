@@ -681,7 +681,7 @@ class FitEncoder {
     }
 
     /**
-     * Write session message with training metrics.
+     * Write session message with training metrics and activity name.
      */
     writeSessionMessage(startTimestamp: number, endTimestamp: number, activity: StravaActivity, metrics: FitTrainingMetrics, sport: number, subSport: number): void {
         const elapsedTime = (activity.totalTime || 0) * 1000
@@ -693,6 +693,12 @@ class FitEncoder {
         // Get start position if available.
         const startLat = activity.locationStart ? degreesToSemicircles(activity.locationStart[0]) : 0
         const startLng = activity.locationStart ? degreesToSemicircles(activity.locationStart[1]) : 0
+
+        // Activity name for sport_profile_name (field 110).
+        const maxNameLength = 64
+        const truncatedName = activity.name ? activity.name.substring(0, maxNameLength - 1) : "Strava activity"
+        const nameBytes = Buffer.from(truncatedName + "\0", "utf8")
+        const nameLength = Math.min(nameBytes.length, maxNameLength)
 
         const localMesgType = this.defineMessage(FIT_MESG_NUM.SESSION, [
             {fieldNum: 254, size: 2, baseType: FIT_BASE_TYPE.UINT16}, // message_index
@@ -724,41 +730,46 @@ class FitEncoder {
             {fieldNum: 24, size: 1, baseType: FIT_BASE_TYPE.UINT8}, // total_training_effect (aerobic)
             {fieldNum: 137, size: 1, baseType: FIT_BASE_TYPE.UINT8}, // total_anaerobic_training_effect
             {fieldNum: 168, size: 4, baseType: FIT_BASE_TYPE.SINT32}, // training_load_peak
-            {fieldNum: 188, size: 1, baseType: FIT_BASE_TYPE.UINT8} // primary_benefit
+            {fieldNum: 188, size: 1, baseType: FIT_BASE_TYPE.UINT8}, // primary_benefit
+            {fieldNum: 110, size: nameLength, baseType: FIT_BASE_TYPE.STRING} // sport_profile_name
         ])
 
-        this.writeDataMessage(localMesgType, [
-            0,
-            endTimestamp,
-            FIT_EVENT.SESSION,
-            FIT_EVENT_TYPE.STOP,
-            startTimestamp,
-            startLat,
-            startLng,
-            sport,
-            subSport,
-            elapsedTime,
-            timerTime,
-            Math.round(distance),
-            Math.round(avgSpeed),
-            Math.round(maxSpeed),
-            activity.calories || 0,
-            activity.hrAvg || 0,
-            activity.hrMax || 0,
-            activity.cadenceAvg || 0,
-            activity.wattsAvg || 0,
-            activity.wattsMax || 0,
-            activity.elevationGain || 0,
-            0,
-            1,
-            metrics.normalizedPower || 0,
-            Math.round((metrics.tss || 0) * 10),
-            Math.round((metrics.intensityFactor || 0) * 1000),
-            Math.round((metrics.aerobicTrainingEffect || 0) * TRAINING_EFFECT_SCALE),
-            Math.round((metrics.anaerobicTrainingEffect || 0) * TRAINING_EFFECT_SCALE),
-            Math.round((metrics.trainingLoadPeak || 0) * TRAINING_LOAD_SCALE),
-            metrics.primaryBenefit || 0
-        ])
+        this.writeDataMessageWithString(
+            localMesgType,
+            [
+                0,
+                endTimestamp,
+                FIT_EVENT.SESSION,
+                FIT_EVENT_TYPE.STOP,
+                startTimestamp,
+                startLat,
+                startLng,
+                sport,
+                subSport,
+                elapsedTime,
+                timerTime,
+                Math.round(distance),
+                Math.round(avgSpeed),
+                Math.round(maxSpeed),
+                activity.calories || 0,
+                activity.hrAvg || 0,
+                activity.hrMax || 0,
+                activity.cadenceAvg || 0,
+                activity.wattsAvg || 0,
+                activity.wattsMax || 0,
+                activity.elevationGain || 0,
+                0,
+                1,
+                metrics.normalizedPower || 0,
+                Math.round((metrics.tss || 0) * 10),
+                Math.round((metrics.intensityFactor || 0) * 1000),
+                Math.round((metrics.aerobicTrainingEffect || 0) * TRAINING_EFFECT_SCALE),
+                Math.round((metrics.anaerobicTrainingEffect || 0) * TRAINING_EFFECT_SCALE),
+                Math.round((metrics.trainingLoadPeak || 0) * TRAINING_LOAD_SCALE),
+                metrics.primaryBenefit || 0
+            ],
+            nameBytes.subarray(0, nameLength)
+        )
     }
 
     /**
