@@ -189,7 +189,7 @@ export class Recipes {
                 }
 
                 // PRO-only actions.
-                if (!user.isPro && [RecipeActionType.GenerateDescription, RecipeActionType.Webhook].includes(action.type)) {
+                if (!user.isPro && [RecipeActionType.GenerateDescription, RecipeActionType.AiProcess, RecipeActionType.Webhook].includes(action.type)) {
                     throw new Error(`Action ${action.type} is only available to PRO users`)
                 }
 
@@ -503,6 +503,11 @@ export class Recipes {
         // Auto generated content with AI?
         else if (action.type == RecipeActionType.GenerateName || action.type == RecipeActionType.GenerateDescription || action.type == RecipeActionType.GenerateInsights) {
             return actions.aiGenerateAction(user, activity, recipe, action)
+        }
+
+        // Process activity data with AI?
+        else if (action.type == RecipeActionType.AiProcess) {
+            return actions.aiProcessAction(user, activity, recipe, action)
         }
 
         // Dispatch activity to webhook?

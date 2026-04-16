@@ -161,6 +161,7 @@ export enum RecipeActionType {
     EnableGearComponent = "enableGearComponent",
     DisableGearComponent = "disableGearComponent",
     MapStyle = "mapStyle",
+    AiProcess = "aiProcess",
     Webhook = "webhook"
 }
 

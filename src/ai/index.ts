@@ -1,6 +1,7 @@
 // Strautomator Core: AI / LLM
 
 import {AiGenerateOptions, AiGeneratedResponse, AiProvider, AiProviderName} from "./types"
+import {StravaActivity} from "../strava/types"
 import {calculatePowerIntervals, getCadenceString} from "../strava/utils"
 import {UserData} from "../users/types"
 import {translation} from "../translations"
@@ -247,6 +248,67 @@ export class AI {
         }
     }
 
+    /**
+     * Process an activity using a user-defined prompt. The AI can update any updatable
+     * field on the activity JSON, but must not add or rename properties.
+     * @param user The user data.
+     * @param options AI generation options.
+     */
+    processActivity = async (user: UserData, options: AiGenerateOptions): Promise<StravaActivity> => {
+        try {
+            if (!options.activity) {
+                throw new Error("Activity must be provided in options")
+            }
+            if (!options.customPrompt) {
+                throw new Error("Custom prompt must be provided in options")
+            }
+
+            options.useReason = true
+            options.maxTokens = settings.ai.maxTokens.insights
+            options.instruction =
+                "You are an assistant that processes and updates Strava activity JSON data based on user instructions. You reply with ONLY the updated activity as a valid JSON object. Do not add any new properties to the JSON, nor rename existing ones. Do not wrap the response in Markdown code blocks or add any other text."
+
+            // Build the prompt messages.
+            const activityJson = JSON.stringify(options.activity)
+            const messages = [`Here is my Strava activity JSON:\n-\n`, activityJson, "\n-\n", options.customPrompt, "Reply ONLY the updated activity JSON, with no added markups."]
+
+            // Generate the result.
+            const result = await this.prompt(user, options, messages)
+            if (!result?.response || typeof result.response !== "string") {
+                logger.warn("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
+                return null
+            }
+
+            // Parse and validate the response.
+            let updatedActivity: StravaActivity
+            try {
+                updatedActivity = JSON.parse(result.response as string)
+            } catch (parseEx) {
+                logger.error("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), "Invalid JSON response from AI", result.response)
+                return null
+            }
+
+            // Ensure no new or renamed properties were introduced.
+            const originalKeys = Object.keys(options.activity)
+            const updatedKeys = Object.keys(updatedActivity)
+            for (const key of updatedKeys) {
+                if (!originalKeys.includes(key)) {
+                    logger.warn("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), `Removing property '${key}', which was added / renamed by the AI model`)
+                    delete updatedActivity[key]
+                }
+            }
+
+            // Preserve the activity ID, in case the user's prompt has affected it.
+            updatedActivity.id = options.activity.id
+
+            logger.info("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), result.provider, `Prompt: ${options.customPrompt}`)
+            return updatedActivity
+        } catch (ex) {
+            logger.error("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), ex)
+            return null
+        }
+    }
+
     // PROMPTS
     // --------------------------------------------------------------------------
 
@@ -435,10 +497,10 @@ export class AI {
 
     /**
      * Helper to get the cache ID for the specified AI generation options.
-     * @param options Provider, humourPrompt and activity details.
+     * @param options Provider, customPrompt and activity details.
      */
     private getCacheId = (options: AiGenerateOptions): string => {
-        return `${options.provider || "default"}-${options.humourPrompt || "random"}-${options.activity.id}`
+        return `${options.provider || "default"}-${options.customPrompt || "random"}-${options.activity.id}`
     }
 
     /**
@@ -464,15 +526,15 @@ export class AI {
         const messages = []
 
         // If a custom prompt was set, do not use predefined humours or translations.
-        if (options.humourPrompt?.toString().startsWith("custom:")) {
-            messages.push(options.humourPrompt.substring(7))
+        if (options.customPrompt?.toString().startsWith("custom:")) {
+            messages.push(options.customPrompt.substring(7))
             return messages
         }
 
         // If we have recent activities, it means it's Insights do no need for humour.
-        const humourPrompt = options.humourPrompt || _.sample(settings.ai.humours)
-        if (!options.recentActivities && humourPrompt != "none") {
-            messages.push(`Please be very ${humourPrompt} with the choice of words.`)
+        const customPrompt = options.customPrompt || _.sample(settings.ai.humours)
+        if (!options.recentActivities && customPrompt != "none") {
+            messages.push(`Please be very ${customPrompt} with the choice of words.`)
         }
 
         // Translate to the user's language (if other than English).

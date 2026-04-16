@@ -616,7 +616,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         const now = dayjs.utc()
         const actionValue = action?.value || null
         const provider = Object.values(AiProviderName).includes(actionValue) ? actionValue : null
-        const humourPrompt = !provider && actionValue ? actionValue : _.sample(settings.ai.humours)
+        const customPrompt = !provider && actionValue ? actionValue : _.sample(settings.ai.humours)
 
         // Stop here if the activity already has an AI generated name or description.
         if (action.type == RecipeActionType.GenerateName && activity.aiNameProvider) {
@@ -658,7 +658,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         }
         if (!user.preferences.privacyMode && Math.random() * 100 <= rndAi) {
             if (action.type == RecipeActionType.GenerateName) {
-                const aiResponse = await ai.generateActivityName(user, {activity, humourPrompt, provider, activityWeather, fullDetails: user.isPro})
+                const aiResponse = await ai.generateActivityName(user, {activity, customPrompt, provider, activityWeather, fullDetails: user.isPro})
                 if (aiResponse) {
                     activity.aiNameProvider = aiResponse.provider
                     activity.aiName = activity.name = aiResponse.response as string
@@ -666,7 +666,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                     return true
                 }
             } else if (action.type == RecipeActionType.GenerateDescription) {
-                const aiResponse = await ai.generateActivityDescription(user, {activity, humourPrompt, provider, activityWeather, fullDetails: user.isPro})
+                const aiResponse = await ai.generateActivityDescription(user, {activity, customPrompt, provider, activityWeather, fullDetails: user.isPro})
                 if (aiResponse) {
                     activity.aiDescriptionProvider = aiResponse.provider
                     activity.aiDescription = activity.description = aiResponse.response as string
@@ -677,7 +677,7 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                 const fromDate = now.subtract(settings.ai.insights.recentWeeks, "weeks").toDate()
                 const toDate = dayjs(activity.dateStart).subtract(1, "minute").toDate()
                 const recentActivities = await strava.activityProcessing.getProcessedActivities(user, fromDate, toDate)
-                const aiResponse = await ai.generateActivityInsights(user, {activity, humourPrompt, provider, activityWeather, recentActivities, fullDetails: true})
+                const aiResponse = await ai.generateActivityInsights(user, {activity, customPrompt, provider, activityWeather, recentActivities, fullDetails: true})
                 if (aiResponse) {
                     activity.aiInsightsProvider = aiResponse.provider
                     activity.aiInsights = activity.privateNote = aiResponse.response as string
@@ -724,27 +724,27 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         // Cycling.
         if (isRide) {
             if (activity.distance >= 400) {
-                if (["boring"].includes(humourPrompt)) {
+                if (["boring"].includes(customPrompt)) {
                     uniqueNames.push("just a very, very long ride")
                 }
-                if (["ancient", "exquisite"].includes(humourPrompt)) {
+                if (["ancient", "exquisite"].includes(customPrompt)) {
                     uniqueNames.push("transcontinental feelings")
                 }
-                if (["comical", "hilarious", "silly"].includes(humourPrompt)) {
+                if (["comical", "hilarious", "silly"].includes(customPrompt)) {
                     uniqueNames.push("almost a lap around the world")
                 }
-                if (["funny", "hilarious", "ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["funny", "hilarious", "ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     uniqueNames.push("short and easy tour")
                 }
             } else if (activity.distance >= 200 && activity.distance <= 220) {
-                if (["boring"].includes(humourPrompt)) {
+                if (["boring"].includes(customPrompt)) {
                     names.push("double century tour")
                     names.push("double century ride")
                 } else {
                     names.push("century x2")
                 }
             } else if (activity.distance >= 100 && activity.distance <= 110) {
-                if (["boring"].includes(humourPrompt)) {
+                if (["boring"].includes(customPrompt)) {
                     names.push("century ride")
                     names.push("century tour")
                 } else {
@@ -757,73 +757,73 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
                 uniqueNames.push("marathon on two wheels")
                 uniqueNames.push("marathon on a bike")
             } else if (((imperial && activity.distance < 6) || activity.distance <= 10) && activity.distance > 0) {
-                if (["ancient", "boring"].includes(humourPrompt)) {
+                if (["ancient", "boring"].includes(customPrompt)) {
                     names.push("and short, too short of a ride")
                     names.push("short, very short ride")
                     names.push("mini ride")
                 }
-                if (["comical", "funny", "hilarious", "ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["comical", "funny", "hilarious", "ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     uniqueNames.push("training for the Tour de France")
                 }
             }
 
             if ((imperial && activity.speedAvg > 26) || activity.speedAvg > 42) {
-                if (["ancient", "boring"].includes(humourPrompt)) {
+                if (["ancient", "boring"].includes(customPrompt)) {
                     uniqueNames.push("lightspeed")
                     uniqueNames.push("push push push")
                 }
-                if (["comical", "funny", "hilarious", "ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["comical", "funny", "hilarious", "ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     uniqueNames.push("recovery ride")
                 }
-                if (["comical", "funny", "sexy", "wicked"].includes(humourPrompt)) {
+                if (["comical", "funny", "sexy", "wicked"].includes(customPrompt)) {
                     uniqueNames.push("shut up legs")
                 }
             } else if (((imperial && activity.speedAvg < 5) || activity.speedAvg < 8) && activity.speedAvg > 0) {
-                if (["ancient", "boring"].includes(humourPrompt)) {
+                if (["ancient", "boring"].includes(customPrompt)) {
                     uniqueNames.push("slow does it")
                 }
-                if (["comical", "funny", "hilarious"].includes(humourPrompt)) {
+                if (["comical", "funny", "hilarious"].includes(customPrompt)) {
                     uniqueNames.push("who's in a hurry?")
                 }
-                if (["ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     uniqueNames.push("training for La Vuelta")
                 }
             }
 
             if (activity.wattsMax > 1600 || activity.wattsAvg > 400) {
-                if (["ancient"].includes(humourPrompt)) {
+                if (["ancient"].includes(customPrompt)) {
                     uniqueNames.push("much horsepower")
                 }
-                if (["boring"].includes(humourPrompt)) {
+                if (["boring"].includes(customPrompt)) {
                     uniqueNames.push("legs are pumping hard")
                 }
-                if (["comical", "funny"].includes(humourPrompt)) {
+                if (["comical", "funny"].includes(customPrompt)) {
                     uniqueNames.push("rocket propelled")
                 }
-                if (["comical", "funny", "sexy", "wicked"].includes(humourPrompt)) {
+                if (["comical", "funny", "sexy", "wicked"].includes(customPrompt)) {
                     uniqueNames.push("shut up legs")
                 }
             } else if (activity.wattsAvg < 80 && activity.wattsAvg > 0) {
-                if (["ancient"].includes(humourPrompt)) {
+                if (["ancient"].includes(customPrompt)) {
                     uniqueNames.push("no horsepower")
                 }
-                if (["ancient", "boring"].includes(humourPrompt)) {
+                if (["ancient", "boring"].includes(customPrompt)) {
                     uniqueNames.push("smooth")
                 }
-                if (["boring", "silly"].includes(humourPrompt)) {
+                if (["boring", "silly"].includes(customPrompt)) {
                     uniqueNames.push("easy does it")
                     uniqueNames.push("soft pedaling")
                 }
-                if (["ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     uniqueNames.push("training for the Giro")
                 }
             }
 
             if (activity.distance > 0 && activity.elevationGain > 0 && activity.climbingRatio < 0.15) {
-                if (["boring"].includes(humourPrompt)) {
+                if (["boring"].includes(customPrompt)) {
                     names.push("flatland tour")
                 }
-                if (["ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     names.push("ride along some massive hills")
                 }
             }
@@ -832,34 +832,34 @@ export const aiGenerateAction = async (user: UserData, activity: StravaActivity,
         // Running.
         else if (isRun) {
             if ((imperial && activity.distance >= 52) || activity.distance >= 84) {
-                if (["ancient", "boring", "silly"].includes(humourPrompt)) {
+                if (["ancient", "boring", "silly"].includes(customPrompt)) {
                     uniqueNames.push("when a marathon is not enough")
                 }
-                if (["boring"].includes(humourPrompt)) {
+                if (["boring"].includes(customPrompt)) {
                     uniqueNames.push("double marathon")
                 }
-                if (["ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     uniqueNames.push("walk in the park")
                 }
             } else if ((imperial && activity.distance >= 26) || activity.distance >= 42) {
-                if (["ancient", "boring", "silly"].includes(humourPrompt)) {
+                if (["ancient", "boring", "silly"].includes(customPrompt)) {
                     names.push("marathon")
                 }
-                if (["ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     uniqueNames.push("walk in the park")
                 }
-                if (["sexy"].includes(humourPrompt)) {
+                if (["sexy"].includes(customPrompt)) {
                     uniqueNames.push("all the legs out")
                 }
             } else if (distanceR == 10) {
                 names.push("10K")
                 names.push("10K or 6 miles?")
             } else if (((imperial && activity.distance < 2.5) || activity.distance < 4) && activity.distance > 0) {
-                if (["ancient", "boring", "silly"].includes(humourPrompt)) {
+                if (["ancient", "boring", "silly"].includes(customPrompt)) {
                     names.push("super short run")
                     names.push("mini workout")
                 }
-                if (["ironic", "sarcastic", "silly"].includes(humourPrompt)) {
+                if (["ironic", "sarcastic", "silly"].includes(customPrompt)) {
                     names.push("training for the marathon")
                 }
             }
@@ -1088,6 +1088,47 @@ export const toggleGearComponents = async (user: UserData, activity: StravaActiv
         return true
     } catch (ex) {
         logger.error("Recipes.actions.toggleGearComponents", logHelper.user(user), logHelper.activity(activity), ex)
+        return false
+    }
+}
+
+/**
+ * Process an activity using a user-defined AI prompt.
+ * @param user The activity owner.
+ * @param activity The Strava activity details.
+ * @param recipe The source recipe.
+ * @param action The action details (value is the user prompt).
+ */
+export const aiProcessAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+    try {
+        const customPrompt = action.value
+        if (!customPrompt) {
+            logger.warn("Recipes.aiProcessAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Missing AI prompt")
+            return false
+        }
+
+        const provider = Object.values(AiProviderName).includes(action.value) ? action.value : null
+        const updatedActivity = await ai.processActivity(user, {activity, customPrompt: provider ? undefined : customPrompt, provider})
+        if (!updatedActivity) {
+            logger.warn("Recipes.aiProcessAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "AI processing failed")
+            return false
+        }
+
+        // Merge updated fields back into the activity, tracking which fields changed.
+        const originalKeys = Object.keys(activity)
+        for (const key of originalKeys) {
+            if (key === "id" || key === "updatedFields") continue
+            if (updatedActivity[key] !== undefined && !_.isEqual(activity[key], updatedActivity[key])) {
+                activity[key] = updatedActivity[key]
+                if (!activity.updatedFields.includes(key)) {
+                    activity.updatedFields.push(key)
+                }
+            }
+        }
+
+        return true
+    } catch (ex) {
+        failedAction(user, activity, recipe, action, ex)
         return false
     }
 }

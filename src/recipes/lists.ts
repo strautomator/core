@@ -170,5 +170,6 @@ export const recipeActionList = [
     {value: "hideStatStartTime", text: "Hide start time"},
     {value: "enableGearComponent", text: "Enable gear component"},
     {value: "disableGearComponent", text: "Disable gear component"},
+    {value: "aiProcess", text: "Update the activity data with AI", isPro: true},
     {value: "webhook", text: "Webhook", isPro: true}
 ]
