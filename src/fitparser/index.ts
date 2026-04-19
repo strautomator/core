@@ -289,13 +289,23 @@ export class FitParser {
                 return null
             }
 
-            // Make sure activity is the correct one.
-            const minTime = activity.totalTime - 60
-            const maxTime = activity.totalTime + 60
-            const result = activities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
+            // Make sure activity is the correct one by validating the total time.
+            let minTime = activity.totalTime - 60
+            let maxTime = activity.totalTime + 60
+            let result = activities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
+
+            if (!result) {
+                minTime -= 120
+                maxTime += 120
+                result = activities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
+                if (result) {
+                    logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), `Total time discrepancy (Strava ${activity.totalTime}, FIT ${result.totalTime})`)
+                }
+            }
+
             if (!result) {
                 const logActivityIds = `Activities: ${activities.map((a) => a.id).join(", ")}`
-                const logTotalTime = `Similar start date but different total time (${activity.totalTime})`
+                const logTotalTime = `Similar start date but different total time (Strava ${activity.totalTime}, FIT ${result.totalTime})`
                 logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), logActivityIds, logTotalTime)
                 return null
             }
