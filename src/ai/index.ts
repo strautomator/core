@@ -167,9 +167,8 @@ export class AI {
             options.useReason = true
             options.maxTokens = settings.ai.maxTokens.insights
             options.instruction = [
-                "You are a sports coach that analyzes cycling and running workouts, and give short, to-the-point suggestions to improve performance.",
-                "If weather data is provided, consider that temperature and wind can affect the speed and power output.",
-                `You can give very technical answers.`
+                "You are a sports coach that analyzes workouts, and give short, to-the-point and very technical suggestions to improve performance.",
+                "If weather data is provided, consider that temperature and wind can affect the speed and power output."
             ].join("")
 
             // At the moment this is enabled for moving activities with at least HR or power data.
@@ -188,11 +187,11 @@ export class AI {
             }
 
             const now = dayjs.utc()
-            const messages = ["Give me some important metrics about my activity performance."]
+            const messages = ["Give me important metrics about my last activity performance."]
 
             // Recent activities were passed? Use them for context. At the moment we only use activities that have at least power or HR data.
             if (options.recentActivities?.length > 0 && options.fullDetails) {
-                messages.push("First I will give you some details about my previous activities.")
+                messages.push("First I will give you details about recent activities.")
 
                 for (let a of options.recentActivities) {
                     if (!a.sportType) continue
@@ -225,8 +224,8 @@ export class AI {
 
             // Get the activity prompt and add final instructions.
             messages.push(...this.getActivityPrompt(user, options))
-            messages.push("Your analysis should be two sentences, the first one explaining why my performance was good or bad compared to previous performances, and a second suggesting what I could do to improve, and when I should train again.")
-            messages.push("If weather could have played a major factor, please tell me how it affected my performance (for example, heart rate might be too elevated in hot conditions, or speed might decrease a bit when it's too cold).")
+            messages.push("Your analysis should be two sentences, the first one explaining why my performance was good or bad compared to previous performances, and a second suggesting what I could do to improve and when I should train again.")
+            messages.push("If weather could have played a major factor, please tell me how it affected my performance (for example, heart rate might be too elevated in hot conditions, or speed might decrease when it's too cold).")
 
             const athleteLevel = !user.fitnessLevel || user.fitnessLevel <= 2 ? "a beginner" : user.fitnessLevel <= 4 ? "an average" : "a pro"
             messages.push(`If my performance has been consistently getting worse, please verify if it could be due to sickness or overtraining at the current season, also considering that I'm ${athleteLevel} athlete.`)
