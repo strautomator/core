@@ -81,6 +81,8 @@ export const recipePropertyList = [
     {value: "locationEnd", text: "End location", type: "location", operators: recipeOperatorList.location},
     {value: "cityStart", text: "Start city", type: "text", operators: recipeOperatorList.is, isPro: true},
     {value: "cityEnd", text: "End city", type: "text", operators: recipeOperatorList.is, isPro: true},
+    {value: "countryStart", text: "Start country", type: "text", operators: recipeOperatorList.is},
+    {value: "countryEnd", text: "End country", type: "text", operators: recipeOperatorList.is},
     {value: "polyline", text: "Passes on location", type: "location", operators: recipeOperatorList.location},
     {value: "hasPower", text: "Has a power meter", type: "boolean", operators: recipeOperatorList.is},
     {value: "wattsAvg", text: "Average power", shortText: "Avg power", type: "number", operators: recipeOperatorList.number, min: 0, max: 9999, suffix: "watts"},
