@@ -8,6 +8,7 @@ import {UserData} from "../users/types"
 import {WeatherSummary} from "../weather/types"
 import recipeStats from "./stats"
 import fitparser from "../fitparser"
+import lastfm from "../lastfm"
 import maps from "../maps"
 import spotify from "../spotify"
 import strava from "../strava"
@@ -567,27 +568,32 @@ export const checkGarminWahoo = async (user: UserData, activity: StravaActivity,
 }
 
 /**
- * Check if a spotify track during the the activity matches the specified condition.
+ * Check if a listened music track during the activity matches the specified condition.
  * @param user User data.
  * @param activity The Strava activity to be checked.
- * @param condition The Spotify based recipe condition.
+ * @param condition The music based recipe condition.
  */
-export const checkSpotify = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
+export const checkMusic = async (user: UserData, activity: StravaActivity, condition: RecipeCondition): Promise<boolean> => {
     const op = condition.operator
     let valid = false
 
-    // If user has no Spotify account linked, stop here.
-    if (!user.spotify) {
-        logger.debug("Recipes.checkSpotify", logHelper.activity(activity), condition, "Skipped, user has no Spotify profile")
+    // If user has no Spotify or Last.fm account linked, stop here.
+    if (!user.spotify && !user.lastfm) {
+        logger.debug("Recipes.checkMusic", logHelper.activity(activity), condition, "Skipped, user has no Spotify or Last.fm profile")
         return op == RecipeOperator.NotEqual || op == RecipeOperator.NotLike
     }
 
     // Fetch recent played tracks from Spotify.
-    const tracks = (await spotify.getActivityTracks(user, activity)) || []
+    const tracks = []
+    if (user.spotify) {
+        tracks.push(...(await spotify.getActivityTracks(user, activity)))
+    }
+    if (user.lastfm) {
+        tracks.push(...(await lastfm.getActivityTracks(user, activity)))
+    }
     const trackTitles = tracks.map((t) => t.title.toLowerCase())
     const value = condition.value.toString().toLowerCase() || ""
 
-    // Check Spotify.
     // Set as valid if user has tracks and either no specific track name was set,
     // or a track name was set and it matches one of the played tracks.
     if (tracks.length > 0) {
@@ -608,7 +614,7 @@ export const checkSpotify = async (user: UserData, activity: StravaActivity, con
         return true
     }
 
-    logger.debug("Recipes.checkSpotify", logHelper.activity(activity), condition, "Failed")
+    logger.debug("Recipes.checkMusic", logHelper.activity(activity), condition, "Failed")
     return false
 }
 

@@ -3,6 +3,7 @@
 import {AiProviderName} from "../ai/types"
 import {FitDeviceNames} from "../fitparser/types"
 import {GarminProfile} from "../garmin/types"
+import {LastfmProfile} from "../lastfm/types"
 import {RecipeData} from "../recipes/types"
 import {SpotifyProfile} from "../spotify/types"
 import {StravaFitnessLevel, StravaProfile, StravaTokens} from "../strava/types"
@@ -64,6 +65,8 @@ export interface UserData {
     wahooAuthState?: string
     /** Wahoo repeated failures count. */
     wahooFailures?: number
+    /** Linked Last.fm profile. */
+    lastfm?: LastfmProfile
     /** Names given to device IDs by the user. */
     fitDeviceNames?: FitDeviceNames
     /** Custom URL token used to get the calendar. */

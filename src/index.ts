@@ -95,6 +95,10 @@ import {Wahoo} from "./wahoo"
 export const wahoo: Wahoo = Wahoo.Instance
 import {Spotify} from "./spotify"
 export const spotify: Spotify = Spotify.Instance
+import {Lastfm} from "./lastfm"
+export const lastfm: Lastfm = Lastfm.Instance
+import {Music} from "./music"
+export const music: Music = Music.Instance
 import {Weather} from "./weather"
 export const weather: Weather = Weather.Instance
 import {Users} from "./users"
@@ -131,6 +135,8 @@ export * from "./strava/types"
 export * from "./komoot/types"
 export * from "./garmin/types"
 export * from "./spotify/types"
+export * from "./lastfm/types"
+export * from "./music/types"
 export * from "./wahoo/types"
 export * from "./users/types"
 export * from "./subscriptions/types"
@@ -247,8 +253,10 @@ export const startup = async (quickStart?: boolean) => {
     // Init individual modules now. Start with the most important modules, than the rest.
     const coreModules = [github, paypal, paddle, strava, users, subscriptions]
     await Promise.all(coreModules.map(initModule))
-    const otherModules = [affiliates, ai, announcements, anthropic, awin, calendar, chatbase, faq, garmin, gearwear, gdpr, gemini, komoot, mailer, maps, mistral, notifications, openai, openrouter, recipes, spotify, xai, wahoo, weather]
-    await Promise.all(otherModules.map(initModule))
+    const secondaryModules = [ai, announcements, calendar, faq, gearwear, gdpr, mailer, maps, notifications, openrouter, recipes, weather]
+    await Promise.allSettled(secondaryModules.map(initModule))
+    const optionalModules = [affiliates, anthropic, awin, chatbase, garmin, gemini, komoot, lastfm, mistral, music, openai, spotify, xai, wahoo]
+    await Promise.allSettled(optionalModules.map(initModule))
 
     process.env.SMU_APP_STARTED = "1"
 

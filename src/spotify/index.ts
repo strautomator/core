@@ -1,7 +1,7 @@
 // Strautomator Core: Spotify
 
-import {SpotifyProfile, SpotifyRequestOptions, SpotifyTokens, SpotifyTrack} from "./types"
-import {toSpotifyTrack} from "./utils"
+import {SpotifyProfile, SpotifyRequestOptions, SpotifyTokens} from "./types"
+import {MusicTrack} from "../music/types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
@@ -48,8 +48,7 @@ export class Spotify {
                 throw new Error("Missing the spotify.api.clientSecret setting")
             }
 
-            cache.setup("spotify", settings.spotify.cacheDuration)
-            logger.info("Spotify.init", `Cache profile for up to ${settings.spotify.cacheDuration} seconds`)
+            cache.setup("spotify", settings.music.cacheDuration)
         } catch (ex) {
             logger.error("Spotify.init", ex)
             throw ex
@@ -125,6 +124,32 @@ export class Spotify {
             logger.error("Spotify.makeRequest", reqOptions.method, reqOptions.url || reqOptions.path, ex)
             throw ex
         }
+    }
+
+    /**
+     * Helper to transform data from the Spotify API to a MusicTrack interface.
+     * @param data Input data.
+     */
+    private toMusicTrack = (data: any): MusicTrack => {
+        const track = data.track ? data.track : data
+        const artists: string[] = track.artists.map((a) => a.name)
+        const artistString: string = artists.filter((a) => !track.name.includes(a)).join(", ")
+        const seconds = Math.ceil(track.duration_ms / 1000)
+
+        const result: MusicTrack = {
+            id: track.id,
+            name: track.name,
+            artist: artistString,
+            title: `${artistString} - ${track.name}`,
+            duration: dayjs.duration(seconds, "seconds").format("mm:ss")
+        }
+
+        // Optional play date.
+        if (data.played_at) {
+            result.datePlayed = dayjs(data.played_at).toDate()
+        }
+
+        return result
     }
 
     // AUTH
@@ -379,14 +404,14 @@ export class Spotify {
      * @param user The user.
      * @param activity The Strava activity.
      */
-    getActivityTracks = async (user: UserData, activity: StravaActivity): Promise<SpotifyTrack[]> => {
+    getActivityTracks = async (user: UserData, activity: StravaActivity): Promise<MusicTrack[]> => {
         try {
             if (!user.spotify) {
                 throw new Error("User has no Spotify account linked")
             }
 
             const cacheId = `tracks-${activity.id}`
-            const cached: SpotifyTrack[] = cache.get("spotify", cacheId)
+            const cached: MusicTrack[] = cache.get("spotify", cacheId)
             if (cached) {
                 logger.info("Spotify.getActivityTracks", logHelper.user(user), logHelper.activity(activity), `Got ${cached.length || "no"} tracks`, "From cache")
                 return cached
@@ -394,21 +419,21 @@ export class Spotify {
 
             user.spotify.tokens = await this.validateTokens(user)
 
-            const addedBuffer = settings.spotify.dateBufferSeconds * 1000
-            const tsFrom = activity.dateStart.valueOf() - addedBuffer
-            const tsTo = activity.dateEnd.valueOf() + addedBuffer
+            const addedBuffer = settings.music.dateBufferSeconds * 1000
+            const tsFrom = activity.dateStart.valueOf() + activity.utcStartOffset * 60 * 1000 - addedBuffer
+            const tsTo = activity.dateEnd.valueOf() + activity.utcStartOffset * 60 * 1000
             const tokens = user.spotify.tokens
 
             // Make request to fetch list of recent tracks, and iterate results
             // to populate the list of matching tracks for the activity timespan.
             // Tracks will be sorted by play date.
-            const res = await this.makeRequest({tokens, path: `me/player/recently-played?after=${tsFrom}&limit=${settings.spotify.trackLimit}`})
+            const res = await this.makeRequest({tokens, path: `me/player/recently-played?after=${tsFrom}&limit=${settings.music.trackLimit}`})
             const items = _.sortBy(res.items || [], "played_at")
 
             // Iterate, transform and populate track list.
-            const tracks: SpotifyTrack[] = []
+            const tracks: MusicTrack[] = []
             for (let i of items) {
-                const track = toSpotifyTrack(i)
+                const track = this.toMusicTrack(i)
                 if (track.datePlayed.valueOf() < tsTo) {
                     tracks.push(track)
                 }

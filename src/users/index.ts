@@ -952,6 +952,9 @@ export class Users {
                 if (user.spotify) {
                     logs.push(`Spotify: ${logValue(user.spotify.id || "unset")}`)
                 }
+                if (user.lastfm) {
+                    logs.push(`Last.fm: ${logValue(user.lastfm.username || "unset")}`)
+                }
                 if (user.paddleId) {
                     logs.push(`Paddle ID: ${logValue(user.paddleId)}`)
                 }

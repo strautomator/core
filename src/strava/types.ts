@@ -212,6 +212,8 @@ export interface StravaActivityToProcess extends StravaActivity {
     counter?: any
     /** Garmin data. */
     garmin?: any
+    /** Last.fm data. */
+    lastfm?: any
     /** Spotify data. */
     spotify?: any
     /** Wahoo data. */

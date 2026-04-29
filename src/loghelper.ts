@@ -8,7 +8,7 @@ import {GitHubSubscription} from "./github/types"
 import {PaddleSubscription} from "./paddle/types"
 import {PayPalSubscription} from "./paypal/types"
 import {RecipeData} from "./recipes/types"
-import {SpotifyTrack} from "./spotify/types"
+import {MusicTrack} from "./music/types"
 import {StravaActivity, StravaGear, StravaProcessedActivity} from "./strava/types"
 import {BaseSubscription} from "./subscriptions/types"
 import {UserData} from "./users/types"
@@ -89,12 +89,12 @@ export const recipe = (lRecipe: RecipeData): string => {
 }
 
 /**
- * Helper to get Spotify track details for logging.
- * @param lSpotifyTrack Spotify track data.
+ * Helper to get music track details for logging.
+ * @param lTrack Music track data.
  */
-export const spotifyTrack = (lSpotifyTrack: SpotifyTrack): string => {
-    if (!lSpotifyTrack) return "Unknown spotify track"
-    return `Spotify: ${lSpotifyTrack.title}`
+export const musicTrack = (lTrack: MusicTrack): string => {
+    if (!lTrack) return "Unknown track"
+    return `Track: ${lTrack.title}`
 }
 
 /**
