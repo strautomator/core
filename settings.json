@@ -359,6 +359,17 @@
             "maxPerMinute": 40
         }
     },
+    // Settings for music / tracklist providers.
+    "music": {
+        // Cache recently played tracks for up to 1 minute. Value set in seconds.
+        "cacheDuration": 60,
+        // Track lyrics cached for up to 30 days in the database. Value set in seconds.
+        "maxCacheDuration": 2592000,
+        // Include tracks that started / ended within a minute of the activity date.
+        "dateBufferSeconds": 60,
+        // Maximum number of tracks returned.
+        "trackLimit": 50
+    },
     "notifications": {
         // Cache notification results for up to 4 seconds.
         "cacheDuration": 4,
@@ -544,15 +555,14 @@
             "authUrl": "https://accounts.spotify.com/authorize",
             "tokenUrl": "https://accounts.spotify.com/api/token",
             "scopes": "user-read-email,user-read-recently-played"
-        },
-        // Cache profiles and recently played tracks for up to 1 minute. Value set in seconds.
-        "cacheDuration": 60,
-        // Track lyrics cached for up to 30 days in the database. Value set in seconds.
-        "maxCacheDuration": 2592000,
-        // Include tracks that started / ended within a minute of the activity date.
-        "dateBufferSeconds": 60,
-        // Maximum number of tracks returned.
-        "trackLimit": 50
+        }
+    },
+    // Last.fm integration. The "key" must be set via secret settings or via the
+    // SMU_lastfm_api_key environment variable.
+    "lastfm": {
+        "api": {
+            "baseUrl": "https://ws.audioscrobbler.com/2.0/"
+        }
     },
     // STANDS4 APIs. The "uid" and "tokenId" must be set via secret settings or via the
     // SMU_stands4_api_uid and SMU_stands4_api_tokenId environment variables.
