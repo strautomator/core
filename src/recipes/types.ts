@@ -102,7 +102,7 @@ export interface RecipeStatsData {
     activities: number[]
     /** Total number of activities processed by the recipe. */
     activityCount?: number
-    /** Execution counter that can be used on activity data. */
+    /** Execution / custom data counter that can be used on activity data. */
     counter?: number
     /** Failed execution counter (gets reset if recipe executes successfully). */
     recentFailures?: number

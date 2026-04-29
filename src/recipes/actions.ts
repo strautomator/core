@@ -4,7 +4,6 @@ import {RecipeAction, RecipeActionType, RecipeData, RecipeMusicTags, RecipeStats
 import {recipeActionList} from "./lists"
 import {AiProviderName} from "../ai/types"
 import {GearWearComponent, GearWearConfig} from "../gearwear/types"
-import {getLyrics} from "../spotify/lyrics"
 import {transformActivityFields} from "../strava/utils"
 import {StravaActivity, StravaActivityToProcess, StravaGear, StravaSport} from "../strava/types"
 import {UserData} from "../users/types"
@@ -14,9 +13,11 @@ import recipeStats from "./stats"
 import ai from "../ai"
 import fitparser from "../fitparser"
 import gearwear from "../gearwear"
+import lastfm from "../lastfm"
 import maps from "../maps"
 import notifications from "../notifications"
 import spotify from "../spotify"
+import music from "../music"
 import strava from "../strava"
 import weather from "../weather"
 import dayjs from "../dayjs"
@@ -140,6 +141,8 @@ const failedAction = async (user: UserData, activity: StravaActivity, recipe: Re
  * @param action The action details.
  */
 export const replaceTagsAction = async (user: UserData, activity: StravaActivity, recipe: RecipeData, action: RecipeAction): Promise<boolean> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
+
     try {
         let processedValue = (action.value || "").toString()
         if (processedValue.trim() == "") {
@@ -155,8 +158,8 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
         if (hasCounter) {
             const stats: RecipeStatsData = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
             const currentCounter = stats?.counter || 0
-
             const processedBefore = stats?.activities.includes(activity.id)
+
             let addCounter = 0
             if (!processedBefore) {
                 const arrPropValue = recipe.counterProp ? recipe.counterProp.split(".") : null
@@ -171,6 +174,7 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
                 try {
                     if (!arrPropValue) {
                         addCounter = 1
+                        debugLogger("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Counter increment = 1 (counterProp not set)")
                     } else if (arrPropValue.length == 2) {
                         const propRef = activity[arrPropValue[0]]
                         if (propRef) {
@@ -179,16 +183,21 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
                             addCounter = byId?.count || byId || byProperty || 0
                             if (isNaN(addCounter)) {
                                 addCounter = 0
+                                debugLogger("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Sub counter increment = 0 (counterProp not a number)")
+                            } else {
+                                debugLogger("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Sub counter increment = ${addCounter}`)
                             }
                         }
                     } else {
                         addCounter = activity[arrPropValue[0]] || 0
+                        debugLogger("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), `Counter increment = ${addCounter}`)
                     }
                 } catch (counterEx) {
                     logger.error("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), "Failed to process counter", counterEx)
                 }
             }
-            activityToProcess.counter = (currentCounter + addCounter).toFixed(recipe.counterProp ? 1 : 0)
+            activity.counter = currentCounter + addCounter
+            activityToProcess.counter = activity.counter.toFixed(recipe.counterProp ? 1 : 0)
         }
 
         // City tags on the value? Fetch cities and process them.
@@ -203,9 +212,13 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
             if (assign) _.assign(activityToProcess, assign)
         }
 
-        // Music tags on the value? Fetch from Spotify if the user has an account linked.
+        // Music tags on the value? Fetch from Spotify and Last.fm if the user has an account linked.
         if (processedValue.includes("${spotify.")) {
             const assign = await getSpotifyTags(user, activity, recipe, processedValue)
+            if (assign) _.assign(activityToProcess, assign)
+        }
+        if (processedValue.includes("${lastfm.")) {
+            const assign = await getLastfmTags(user, activity, recipe, processedValue)
             if (assign) _.assign(activityToProcess, assign)
         }
 
@@ -365,7 +378,7 @@ export const getWeatherTags = async (user: UserData, activity: StravaActivity, r
 }
 
 /**
- * Default action to add music tags to the activity name or description.
+ * Default action to add Spotify tags to the activity name or description.
  * @param user The activity owner.
  * @param activity The unprocessed Strava activity details.
  * @param activityToProcess The Strava activity details.
@@ -396,16 +409,62 @@ export const getSpotifyTags = async (user: UserData, activity: StravaActivity, r
         // Add lyrics (only available to PRO users).
         if (user.isPro) {
             if (processedValue.includes("spotify.lyricsStart")) {
-                spotifyTags.lyricsStart = await getLyrics(tracks[0])
+                spotifyTags.lyricsStart = await music.getLyrics(tracks[0])
             }
             if (processedValue.includes("spotify.lyricsEnd")) {
-                spotifyTags.lyricsEnd = await getLyrics(tracks[tracks.length - 1])
+                spotifyTags.lyricsEnd = await music.getLyrics(tracks[tracks.length - 1])
             }
         }
 
         return {spotify: spotifyTags}
     } catch (ex) {
         logger.warn("Recipes.getSpotifyTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
+        return null
+    }
+}
+
+/**
+ * Default action to add Last.fm tags to the activity name or description.
+ * @param user The activity owner.
+ * @param activity The unprocessed Strava activity details.
+ * @param activityToProcess The Strava activity details.
+ * @param recipe The source recipe.
+ * @param processedValue The action's processed value.
+ */
+export const getLastfmTags = async (user: UserData, activity: StravaActivity, recipe: RecipeData, processedValue: string): Promise<Partial<StravaActivityToProcess>> => {
+    const debugLogger = user.debug ? logger.warn : logger.debug
+
+    if (!user.lastfm) {
+        debugLogger("Recipes.getLastfmTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "User has no Last.fm profile linked, will skip")
+        return null
+    }
+
+    try {
+        const tracks = await lastfm.getActivityTracks(user, activity)
+        if (!tracks || tracks.length == 0) {
+            logger.warn("Recipes.getLastfmTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "No Last.fm tracks returned for the activity")
+            return null
+        }
+
+        const lastfmTags: RecipeMusicTags = {
+            trackStart: tracks[0].title,
+            trackEnd: tracks[tracks.length - 1].title,
+            trackList: tracks.map((t) => t.title).join("\n")
+        }
+
+        // Add lyrics (only available to PRO users).
+        if (user.isPro) {
+            if (processedValue.includes("lastfm.lyricsStart")) {
+                lastfmTags.lyricsStart = await music.getLyrics(tracks[0])
+            }
+            if (processedValue.includes("lastfm.lyricsEnd")) {
+                lastfmTags.lyricsEnd = await music.getLyrics(tracks[tracks.length - 1])
+            }
+        }
+
+        return {lastfm: lastfmTags}
+    } catch (ex) {
+        logger.warn("Recipes.getLastfmTags", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), ex)
         return null
     }
 }

@@ -107,12 +107,13 @@ export class RecipeStats {
 
             // If not existing, create a new stats object.
             if (!exists) {
+                const initialCounter = activity.counter || 1
                 stats = {
                     id: id,
                     userId: user.id,
                     activities: [activity.id],
                     activityCount: 1,
-                    counter: 1
+                    counter: initialCounter
                 }
 
                 logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), "Created new recipe stats")
@@ -125,9 +126,9 @@ export class RecipeStats {
                     stats.activityCount++
 
                     // Increase the data counter based on the selected counter prop.
-                    if (recipe.counterProp) {
-                        stats.counter = (stats.counter || 0) + (activity[recipe.counterProp] || 0)
-                    } else {
+                    if (activity.counter) {
+                        stats.counter = activity.counter
+                    } else if (!recipe.counterProp) {
                         stats.counter++
                     }
                 }
