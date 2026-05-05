@@ -6,30 +6,30 @@ This is the core module of Strautomator, containing most of its business logic. 
 
 Some main points to know before you start:
 
--   Code is mostly TypeScript
--   Should run on Node 20+
--   Optimized for GCP (Google Cloud Platform)
+- Code is mostly TypeScript
+- Should run on Node 20+
+- Optimized for GCP (Google Cloud Platform)
 
 ### 3rd party services
 
 Required integrations:
 
--   [GCP](https://console.cloud.google.com/apis/credentials)
--   [Strava API](https://www.strava.com/settings/api)
+- [GCP](https://console.cloud.google.com/apis/credentials)
+- [Strava API](https://www.strava.com/settings/api)
 
 Additional integrations:
 
--   Garmin Connect API
--   GitHub API
--   LocationIQ API
--   musixmatch API
--   Paddle API
--   PayPal API
--   Spotify API
--   Wahoo Cloud API
--   Chatbase API
--   AI providers: Anthropic, Gemini, Mistral, OpenAI, xAI, OpenRouter
--   Weather providers: Open-Meteo, OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
+- Chatbase API
+- Garmin Connect API
+- GitHub API
+- Last.fm APi
+- LocationIQ API
+- Paddle API
+- PayPal API
+- Spotify API
+- Wahoo Cloud API
+- AI providers: Anthropic, Gemini, Mistral, OpenAI, xAI, OpenRouter
+- Weather providers: Open-Meteo, OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
 
 Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For power users, you might need to subscribe to paid plans.
 
@@ -51,11 +51,11 @@ You'll need to download a set of JSON credentials for that account:
 
 Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its docs. The settings are split as follows:
 
--   **settings.json** - settings shared by all environments, targeting production by default
--   **settings.development.json** - development settings, mostly when running on your dev machine
--   **settings.production.json** - production-only settings, except credentials and secrets (optional)
--   **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
--   **GCS settings** - optional, will be downloaded from a Google Cloud Storage bucket on startup
+- **settings.json** - settings shared by all environments, targeting production by default
+- **settings.development.json** - development settings, mostly when running on your dev machine
+- **settings.production.json** - production-only settings, except credentials and secrets (optional)
+- **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
+- **GCS settings** - optional, will be downloaded from a Google Cloud Storage bucket on startup
 
 Additionally, you can also define settings via environment variables, prefixed by SMU and separating levels with underscore. So for instance to define the `app.title` via an environment variable, you should set the value on `$SMU_app_title`. To define `gcp.projectId`, use `$SMU_gcp_projectId`. And so on.
 
@@ -69,23 +69,23 @@ By default Strautomator uses Google Cloud Firestore to store its data. But the [
 
 The following collections are used:
 
--   **app-state** general application state
--   **activities** processed activities
--   **announcements** website announcements
--   **athlete-records** athlete sports records
--   **calendars** exported Strava calendars
--   **faq** help questions and answers
--   **garmin** cached Garmin data
--   **gearwear** GearWear configurations
--   **komoot** cached Komoot routes
--   **lyrics** cached Lyrics from musixmatch
--   **maps** cached geolocation data
--   **notifications** notifications to users
--   **recipe-stats** automation recipe stats
--   **subscriptions** PRO subscriptions
--   **strava-cache** cached responses from Strava
--   **users** registered user details
--   **wahoo** cached Wahoo data
+- **app-state** general application state
+- **activities** processed activities
+- **announcements** website announcements
+- **athlete-records** athlete sports records
+- **calendars** exported Strava calendars
+- **faq** help questions and answers
+- **garmin** cached Garmin data
+- **gearwear** GearWear configurations
+- **komoot** cached Komoot routes
+- **lyrics** cached Lyrics from musixmatch
+- **maps** cached geolocation data
+- **notifications** notifications to users
+- **recipe-stats** automation recipe stats
+- **subscriptions** PRO subscriptions
+- **strava-cache** cached responses from Strava
+- **users** registered user details
+- **wahoo** cached Wahoo data
 
 These collections might have a suffix, depending on the settings. On development, the default suffix is `-dev`.
 
@@ -95,9 +95,9 @@ Some indexes are needed in Firestore. At the moment there's no automated creatio
 
 Strautomator will store some files on Google Cloud Storage buckets:
 
--   **cache**: generic cache bucket, at the moment used only for affiliate feed caching
--   **calendar**: cached calendar outputs, default name is `bucket-calendar.strautomator.com`
--   **gdpr**: ZIP archives requested by users, default name is `bucket-gdpr.strautomator.com`
+- **cache**: generic cache bucket, at the moment used only for affiliate feed caching
+- **calendar**: cached calendar outputs, default name is `bucket-calendar.strautomator.com`
+- **gdpr**: ZIP archives requested by users, default name is `bucket-gdpr.strautomator.com`
 
 Buckets can have an optional TTL (days) policy, also defined on the settings as "ttlDays". If a bucket does not exist, it will be created during startup. If no "location" is set directly on the bucket settings, then the default is taken from the setting `gcp.location`.
 

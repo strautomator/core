@@ -585,10 +585,10 @@ export const checkMusic = async (user: UserData, activity: StravaActivity, condi
 
     // Fetch recent played tracks from Spotify.
     const tracks = []
-    if (user.spotify) {
+    if (user.spotify && !condition.property.startsWith("lastfm")) {
         tracks.push(...(await spotify.getActivityTracks(user, activity)))
     }
-    if (user.lastfm) {
+    if (user.lastfm && !condition.property.startsWith("spotify")) {
         tracks.push(...(await lastfm.getActivityTracks(user, activity)))
     }
     const trackTitles = tracks.map((t) => t.title.toLowerCase())

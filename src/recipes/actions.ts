@@ -400,14 +400,14 @@ export const getSpotifyTags = async (user: UserData, activity: StravaActivity, r
             return null
         }
 
-        const spotifyTags: RecipeMusicTags = {
-            trackStart: tracks[0].title,
-            trackEnd: tracks[tracks.length - 1].title,
-            trackList: tracks.map((t) => t.title).join("\n") + "\n#spotify"
-        }
+        // Starting track is available to everyone.
+        const spotifyTags: RecipeMusicTags = {trackStart: tracks[0].title}
 
-        // Add lyrics (only available to PRO users).
+        // Other tags are available to PRO users.
         if (user.isPro) {
+            spotifyTags.trackEnd = tracks[tracks.length - 1].title
+            spotifyTags.trackList = tracks.map((t) => t.title).join("\n") + "\n#spotify"
+
             if (processedValue.includes("spotify.lyricsStart")) {
                 spotifyTags.lyricsStart = await music.getLyrics(tracks[0])
             }
@@ -446,14 +446,14 @@ export const getLastfmTags = async (user: UserData, activity: StravaActivity, re
             return null
         }
 
-        const lastfmTags: RecipeMusicTags = {
-            trackStart: tracks[0].title,
-            trackEnd: tracks[tracks.length - 1].title,
-            trackList: tracks.map((t) => t.title).join("\n")
-        }
+        // Start track is available to everyone.
+        const lastfmTags: RecipeMusicTags = {trackStart: tracks[0].title}
 
-        // Add lyrics (only available to PRO users).
+        // Other tags are PRO only.
         if (user.isPro) {
+            lastfmTags.trackEnd = tracks[tracks.length - 1].title
+            lastfmTags.trackList = tracks.map((t) => t.title).join("\n")
+
             if (processedValue.includes("lastfm.lyricsStart")) {
                 lastfmTags.lyricsStart = await music.getLyrics(tracks[0])
             }

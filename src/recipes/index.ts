@@ -369,7 +369,7 @@ export class Recipes {
             }
 
             // Music conditions.
-            else if (prop.indexOf("music") == 0 || prop.indexOf("spotify") == 0 || prop.indexOf("lastfm") == 0) {
+            else if (prop.startsWith("music") || prop.startsWith("spotify") || prop.startsWith("lastfm")) {
                 const valid = await conditions.checkMusic(user, activity, condition)
                 if (!valid) return false
             }
