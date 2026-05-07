@@ -420,8 +420,8 @@ export class Spotify {
             user.spotify.tokens = await this.validateTokens(user)
 
             const addedBuffer = settings.music.dateBufferSeconds * 1000
-            const tsFrom = activity.dateStart.valueOf() + activity.utcStartOffset * 60 * 1000 - addedBuffer
-            const tsTo = activity.dateEnd.valueOf() + activity.utcStartOffset * 60 * 1000
+            const tsFrom = activity.dateStart.valueOf() - addedBuffer
+            const tsTo = activity.dateEnd.valueOf() + addedBuffer
             const tokens = user.spotify.tokens
 
             // Make request to fetch list of recent tracks, and iterate results
