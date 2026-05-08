@@ -111,7 +111,7 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                         }
                     }
 
-                    const eventLink = `https://www.strava.com/clubs/${club.id}/group_events/${clubEvent.id}`
+                    const eventLink = `https://www.strava.com/clubs/${club.id}`
                     const organizer = clubEvent.organizer ? `${clubEvent.organizer.firstName} ${clubEvent.organizer.lastName}` : null
 
                     // Add all relevant details to the event description.
