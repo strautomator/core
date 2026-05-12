@@ -210,8 +210,8 @@ export class Lastfm {
             }
 
             const addedBuffer = settings.music.dateBufferSeconds
-            const tsFrom = Math.floor(activity.dateStart.valueOf() / 1000) + activity.utcStartOffset * 60 - addedBuffer
-            const tsTo = Math.floor(activity.dateEnd.valueOf() / 1000) + activity.utcStartOffset * 60
+            const tsFrom = Math.floor(activity.dateStart.valueOf() / 1000) - addedBuffer
+            const tsTo = Math.floor(activity.dateEnd.valueOf() / 1000) + addedBuffer
 
             // Make request to fetch list of recent tracks within the activity timespan.
             const res = await this.makeRequest({
