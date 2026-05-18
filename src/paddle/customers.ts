@@ -3,6 +3,7 @@
 import {Customer, CustomerNotification, EventEntity, ListCustomerQueryParameters} from "@paddle/paddle-node-sdk"
 import {UserData} from "../users/types"
 import api from "./api"
+import subscriptions from "../subscriptions"
 import users from "../users"
 import _ from "lodash"
 import logger from "anyhow"
@@ -39,10 +40,10 @@ export class PaddleCustomers {
                 user = await users.getById(userId, true)
                 if (user) {
                     logger.info("Paddle.onCustomerUpdated", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
-                    try {
-                        await api.client.customers.update(data.id, {customData: {userId: user.id}})
-                    } catch (innerEx) {
-                        logger.error("Paddle.onCustomerUpdated", logHelper.paddleEvent(entity), `Failed to update customer ${data.id} with user ID ${user.id}`, innerEx)
+                    await api.client.customers.update(data.id, {customData: {userId: user.id}})
+                    if (user.subscriptionId) {
+                        await subscriptions.update({id: user.subscriptionId, userId: user.id})
+                        await users.update({id: user.id, subscriptionId: user.subscriptionId})
                     }
                 }
             }

@@ -201,11 +201,8 @@ export class PaddleSubscriptions {
                 user = await users.getById(userId, true)
                 if (user) {
                     logger.info("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
-                    try {
-                        await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
-                    } catch (innerEx) {
-                        logger.error("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Failed to update customer ${data.customerId} with user ID ${user.id}`, innerEx)
-                    }
+                    await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
+                    await subscriptions.update({id: data.id, userId: user.id})
                 }
             }
             if (!user) {
@@ -273,10 +270,10 @@ export class PaddleSubscriptions {
                 user = await users.getById(userId, true)
                 if (user) {
                     logger.info("Paddle.onTransaction", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
-                    try {
-                        await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
-                    } catch (innerEx) {
-                        logger.error("Paddle.onTransaction", logHelper.paddleEvent(entity), `Failed to update customer ${data.customerId} with user ID ${user.id}`, innerEx)
+                    await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
+                    if (data.subscriptionId) {
+                        await subscriptions.update({id: data.subscriptionId, userId: user.id})
+                        await users.update({id: user.id, subscriptionId: data.subscriptionId})
                     }
                 }
             }
