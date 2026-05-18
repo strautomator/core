@@ -23,6 +23,8 @@ export interface UserRecipeMap {
 export interface UserData {
     /** Unique ID, same as Strava's athlete ID. */
     id: string
+    /** Previous Strava account ID (for deleted accounts that had a subscription). */
+    previousId?: string
     /** User's display (taken from one of the user profile fields). */
     displayName?: string
     /** Is activated with a Pro account? */

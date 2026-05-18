@@ -35,6 +35,17 @@ export class PaddleCustomers {
             if (!user && userId) {
                 user = await users.getById(userId)
             }
+            if (!user && userId) {
+                user = await users.getById(userId, true)
+                if (user) {
+                    logger.info("Paddle.onCustomerUpdated", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
+                    try {
+                        await api.client.customers.update(data.id, {customData: {userId: user.id}})
+                    } catch (innerEx) {
+                        logger.error("Paddle.onCustomerUpdated", logHelper.paddleEvent(entity), `Failed to update customer ${data.id} with user ID ${user.id}`, innerEx)
+                    }
+                }
+            }
             if (!user) {
                 throw new Error(`User ${userId} not found`)
             }

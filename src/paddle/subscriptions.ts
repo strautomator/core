@@ -197,6 +197,17 @@ export class PaddleSubscriptions {
                 logger.warn("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
             }
+            if (!user && userId) {
+                user = await users.getById(userId, true)
+                if (user) {
+                    logger.info("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
+                    try {
+                        await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
+                    } catch (innerEx) {
+                        logger.error("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Failed to update customer ${data.customerId} with user ID ${user.id}`, innerEx)
+                    }
+                }
+            }
             if (!user) {
                 throw new Error(`User with Paddle ID ${data.customerId} not found`)
             }
@@ -257,6 +268,17 @@ export class PaddleSubscriptions {
             if (!user && userId) {
                 logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
+            }
+            if (!user && userId) {
+                user = await users.getById(userId, true)
+                if (user) {
+                    logger.info("Paddle.onTransaction", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
+                    try {
+                        await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
+                    } catch (innerEx) {
+                        logger.error("Paddle.onTransaction", logHelper.paddleEvent(entity), `Failed to update customer ${data.customerId} with user ID ${user.id}`, innerEx)
+                    }
+                }
             }
             if (!user) {
                 throw new Error(`User ${data.customerId || userId} not found`)
