@@ -70,6 +70,7 @@ export class OpenRouter implements AiProvider {
                 data: {
                     max_tokens: options.maxTokens,
                     stream: false,
+                    reasoning: {effort: user.isPro && options.useReason ? "low" : "none"},
                     messages: [
                         {role: "system", content: options.instruction},
                         {role: "user", content: messages.join(" ")}
