@@ -271,20 +271,20 @@ export class FitParser {
 
             // Find activities based on the start date.
             // No activities found? Try again once if the activity device matches the passed FIT file source.
-            let activities: FitFileActivity[]
+            let fitActivities: FitFileActivity[]
             if (source == "any") {
                 const fromGarmin = await database.search("garmin", where)
                 const fromWahoo = await database.search("wahoo", where)
-                activities = _.concat(fromGarmin, fromWahoo)
+                fitActivities = _.concat(fromGarmin, fromWahoo)
             } else {
-                activities = await database.search(source, where)
-                if (activities.length == 0 && activity.device?.toLowerCase().includes(source)) {
+                fitActivities = await database.search(source, where)
+                if (fitActivities.length == 0 && activity.device?.toLowerCase().includes(source)) {
                     await jaul.io.sleep(settings.axios.retryInterval * 2)
-                    activities = await database.search(source, where)
+                    fitActivities = await database.search(source, where)
                 }
             }
 
-            if (activities.length == 0) {
+            if (fitActivities.length == 0) {
                 debugLogger("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), "Not found")
                 return null
             }
@@ -292,20 +292,20 @@ export class FitParser {
             // Make sure activity is the correct one by validating the total time.
             let minTime = activity.totalTime - 60
             let maxTime = activity.totalTime + 60
-            let result = activities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
+            let result = fitActivities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
 
             if (!result) {
-                minTime -= 120
-                maxTime += 120
-                result = activities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
+                minTime -= 300
+                maxTime += 300
+                result = fitActivities.find((a) => a.totalTime >= minTime && a.totalTime <= maxTime)
                 if (result) {
                     logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), `Total time discrepancy (Strava ${activity.totalTime}, FIT ${result.totalTime})`)
                 }
             }
 
             if (!result) {
-                const logActivityIds = `Activities: ${activities.map((a) => a.id).join(", ")}`
-                const logTotalTime = `Similar start date but different total time (Strava ${activity.totalTime}, FIT ${result.totalTime})`
+                const logActivityIds = `Activities: ${fitActivities.map((a) => a.id).join(", ")}`
+                const logTotalTime = `Similar start date but different total time (Strava ${activity.totalTime}, FIT ${fitActivities[0].totalTime})`
                 logger.warn("FitParser.getMatchingActivity", logHelper.user(user), source, logHelper.activity(activity), logActivityIds, logTotalTime)
                 return null
             }
