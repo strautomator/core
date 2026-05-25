@@ -1,6 +1,7 @@
 // Strautomator Core: Paddle Customers
 
 import {Customer, CustomerNotification, EventEntity, ListCustomerQueryParameters} from "@paddle/paddle-node-sdk"
+import {FieldValue} from "@google-cloud/firestore"
 import {UserData} from "../users/types"
 import api from "./api"
 import subscriptions from "../subscriptions"
@@ -37,13 +38,19 @@ export class PaddleCustomers {
                 user = await users.getById(userId)
             }
             if (!user && userId) {
-                user = await users.getById(userId, true)
+                user = await users.getByPreviousId(userId)
                 if (user) {
                     logger.info("Paddle.onCustomerUpdated", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
                     await api.client.customers.update(data.id, {customData: {userId: user.id}})
+                    await users.update({id: user.id, displayName: user.displayName, paddleId: data.id})
+
                     if (user.subscriptionId) {
                         await subscriptions.update({id: user.subscriptionId, userId: user.id})
-                        await users.update({id: user.id, subscriptionId: user.subscriptionId})
+                    }
+
+                    const previousUser = await users.getById(userId)
+                    if (previousUser) {
+                        await users.update({id: previousUser.id, displayName: previousUser.displayName, suspended: true, subscriptionId: FieldValue.delete() as any, isPro: FieldValue.delete() as any, paddleId: FieldValue.delete() as any})
                     }
                 }
             }

@@ -198,11 +198,17 @@ export class PaddleSubscriptions {
                 user = await users.getById(userId)
             }
             if (!user && userId) {
-                user = await users.getById(userId, true)
+                user = await users.getByPreviousId(userId)
                 if (user) {
                     logger.info("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
                     await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
                     await subscriptions.update({id: data.id, userId: user.id})
+                    await users.update({id: user.id, displayName: user.displayName, paddleId: data.customerId})
+
+                    const previousUser = await users.getById(userId)
+                    if (previousUser) {
+                        await users.update({id: previousUser.id, displayName: previousUser.displayName, suspended: true, subscriptionId: FieldValue.delete() as any, isPro: FieldValue.delete() as any, paddleId: FieldValue.delete() as any})
+                    }
                 }
             }
             if (!user) {
@@ -267,13 +273,19 @@ export class PaddleSubscriptions {
                 user = await users.getById(userId)
             }
             if (!user && userId) {
-                user = await users.getById(userId, true)
+                user = await users.getByPreviousId(userId)
                 if (user) {
                     logger.info("Paddle.onTransaction", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
                     await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
+                    await users.update({id: user.id, displayName: user.displayName, paddleId: data.customerId})
+
                     if (data.subscriptionId) {
                         await subscriptions.update({id: data.subscriptionId, userId: user.id})
-                        await users.update({id: user.id, subscriptionId: data.subscriptionId})
+                    }
+
+                    const previousUser = await users.getById(userId)
+                    if (previousUser) {
+                        await users.update({id: previousUser.id, displayName: previousUser.displayName, suspended: true, subscriptionId: FieldValue.delete() as any, isPro: FieldValue.delete() as any, paddleId: FieldValue.delete() as any})
                     }
                 }
             }

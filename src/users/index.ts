@@ -520,16 +520,11 @@ export class Users {
     /**
      * Get the user by ID.
      * @param id The user's ID.
-     * @param previous If true, also search by previousId.
      */
-    getById = async (id: string, previous?: boolean): Promise<UserData> => {
+    getById = async (id: string): Promise<UserData> => {
         try {
-            let user: UserData = await database.get("users", id)
+            const user: UserData = await database.get("users", id)
 
-            if (!user && previous) {
-                const results = await database.search("users", ["previousId", "==", id])
-                user = results.length > 0 ? results[0] : null
-            }
             if (!user) {
                 logger.debug("Users.getById", id, "Not found")
             }
@@ -537,6 +532,28 @@ export class Users {
             return user
         } catch (ex) {
             logger.error("Users.getById", id, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get the user by previous ID (old Strava account linked to the user).
+     * @param previousId The user's previous Strava account ID.
+     */
+    getByPreviousId = async (previousId: string): Promise<UserData> => {
+        try {
+            const results = await database.search("users", ["previousId", "==", previousId])
+            const user = results.length > 0 ? results[0] : null
+
+            if (user) {
+                logger.info("Users.getByPreviousId", previousId, logHelper.user(user))
+            } else {
+                logger.debug("Users.getByPreviousId", previousId, "Not found")
+            }
+
+            return user
+        } catch (ex) {
+            logger.error("Users.getByPreviousId", previousId, ex)
             throw ex
         }
     }
