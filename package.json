@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "26.221.12143",
+    "version": "26.222.12332",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -26,13 +26,13 @@
         "bitecache": "^1.3.3",
         "bottleneck": "^2.19.5",
         "csv-parser": "^3.2.1",
-        "dayjs": "^1.11.20",
+        "dayjs": "^1.11.21",
         "flatbush": "^3.3.1",
         "ical-generator": "10.2.0",
         "jaul": "^1.7.1",
         "jszip": "^3.10.1",
         "lodash": "^4.18.1",
-        "nodemailer": "^8.0.8",
+        "nodemailer": "^8.0.9",
         "paypal-rest-sdk": "^1.8.1",
         "setmeup": "^1.9.5",
         "typescript": "^6.0.3"
