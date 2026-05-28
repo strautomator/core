@@ -202,6 +202,8 @@ export const buildClubs = async (user: UserData, dbCalendar: CalendarData, cal: 
                 dbCalendar.clubIds = dbCalendar.clubIds.filter((cid) => cid != club.id.toString())
             }
 
+            dbCalendar.clubIds = _.uniq(dbCalendar.clubIds)
+
             // Iterate user's club events to get their details and push to the calendar.
             const batchSize = user.isPro ? settings.plans.pro.apiConcurrency : settings.plans.free.apiConcurrency
             while (clubEvents.length) {
