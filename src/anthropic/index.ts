@@ -71,7 +71,8 @@ export class Anthropic implements AiProvider {
                     model: user.isPro && options.useReason ? "claude-sonnet-4-5" : "claude-haiku-4-5",
                     max_tokens: options.maxTokens,
                     system: options.instruction,
-                    messages: [{role: "user", content: messages.join(" ")}]
+                    messages: [{role: "user", content: messages.join(" ")}],
+                    cache_control: {type: "ephemeral"}
                 }
             }
             reqOptions.headers["anthropic-version"] = settings.anthropic.api.version
