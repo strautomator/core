@@ -589,7 +589,7 @@
         "api": {
             "baseUrl": "https://www.strava.com/api/v3/",
             "authUrl": "https://www.strava.com/oauth/authorize",
-            "deauthUrl": "https://www.strava.com/oauth/deauthorize",
+            "revokeUrl": "https://www.strava.com/oauth/revoke",
             "tokenUrl": "https://www.strava.com/oauth/token",
             "scopes": "read,profile:read_all,profile:write,activity:read_all,activity:write",
             // Maximum concurrent requests per instance.
@@ -603,7 +603,7 @@
             // This MUST be set on the settings.secret.json file or via
             // via the SMU_strava_api_urlToken environment variable.
             "urlToken": null,
-            // Default verification token to be sent by Strava on subcriptions, MUST be set
+            // Default verification token to be sent by Strava on subscriptions, MUST be set
             // via secret settings or the SMU_strava_api_verifyToken environment variable.
             "verifyToken": null,
             // Strava will be considered as having an incident going on if more than 20

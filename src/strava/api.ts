@@ -75,14 +75,17 @@ export class StravaAPI {
 
             // Clear gateway timeout counters every few minutes.
             const counterSeconds = settings.strava.api.timeoutThresholds.seconds
-            setInterval(() => {
-                if (this.gatewayTimeouts.last && dayjs().subtract(counterSeconds, "seconds").isAfter(this.gatewayTimeouts.last)) {
-                    logger.info("Strava.gatewayTimeouts", `Cleared counter, last timestamp: ${this.gatewayTimeouts.last.toTimeString()}`)
-                    this.gatewayTimeouts.first = null
-                    this.gatewayTimeouts.last = null
-                    this.gatewayTimeouts.count = 0
-                }
-            }, counterSeconds * 3 * 1000)
+            setInterval(
+                () => {
+                    if (this.gatewayTimeouts.last && dayjs().subtract(counterSeconds, "seconds").isAfter(this.gatewayTimeouts.last)) {
+                        logger.info("Strava.gatewayTimeouts", `Cleared counter, last timestamp: ${this.gatewayTimeouts.last.toTimeString()}`)
+                        this.gatewayTimeouts.first = null
+                        this.gatewayTimeouts.last = null
+                        this.gatewayTimeouts.count = 0
+                    }
+                },
+                counterSeconds * 3 * 1000
+            )
 
             logger.info("Strava.init", `Max concurrent: ${settings.strava.api.maxConcurrent}, per minute: ${settings.strava.api.maxPerMinute}`)
         } catch (ex) {
@@ -100,7 +103,7 @@ export class StravaAPI {
      */
     getToken = async (code: string): Promise<StravaTokens> => {
         try {
-            let qs = {
+            const qs = {
                 grant_type: "authorization_code",
                 client_id: settings.strava.api.clientId,
                 client_secret: settings.strava.api.clientSecret,
@@ -109,10 +112,11 @@ export class StravaAPI {
             }
 
             // Post auth data to Strava.
-            const urlParams = new URLSearchParams(qs)
-            const reqOptions = {
+            const reqOptions: AxiosConfig = {
                 method: "POST",
-                url: `${settings.strava.api.tokenUrl}?${urlParams.toString()}`,
+                url: settings.strava.api.tokenUrl,
+                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                data: new URLSearchParams(qs).toString(),
                 timeout: settings.oauth.tokenTimeout
             }
 
@@ -161,16 +165,16 @@ export class StravaAPI {
                 refresh_token: refreshToken
             }
 
-            // Access token was passed?
+            // Post auth data to Strava. The previous access token (if any) goes in the Authorization header.
+            const headers: any = {"Content-Type": "application/x-www-form-urlencoded"}
             if (accessToken) {
-                qs.access_token = accessToken
+                headers["Authorization"] = `Bearer ${accessToken}`
             }
-
-            // Post auth data to Strava.
-            const urlParams = new URLSearchParams(qs)
             const reqOptions: AxiosConfig = {
                 method: "POST",
-                url: `${settings.strava.api.tokenUrl}?${urlParams.toString()}`,
+                url: settings.strava.api.tokenUrl,
+                headers: headers,
+                data: new URLSearchParams(qs).toString(),
                 timeout: settings.oauth.tokenTimeout
             }
 
@@ -212,15 +216,11 @@ export class StravaAPI {
      */
     revokeToken = async (userId: string, accessToken: string, refreshToken?: string): Promise<void> => {
         try {
-            const qs: any = {
-                access_token: accessToken
-            }
-
-            // Post auth data to Strava.
-            const urlParams = new URLSearchParams(qs)
+            // Send the access token via the Authorization header, as required by the new Strava API.
             const reqOptions: AxiosConfig = {
                 method: "POST",
-                url: `${settings.strava.api.deauthUrl}?${urlParams.toString()}`,
+                url: settings.strava.api.revokeUrl,
+                headers: {Authorization: `Bearer ${accessToken}`},
                 timeout: settings.oauth.tokenTimeout
             }
 
