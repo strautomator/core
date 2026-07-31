@@ -8,6 +8,7 @@ import {AxiosConfig, axiosRequest} from "../axios"
 import {FieldValue} from "@google-cloud/firestore"
 import {Request} from "express"
 import eventManager from "../eventmanager"
+import notifications from "../notifications"
 import users from "../users"
 import _ from "lodash"
 import cache from "bitecache"
@@ -32,6 +33,11 @@ export class Spotify {
      * Spotify requests should wait till this timestamp before proceeding.
      */
     rateLimitedUntil: number = 0
+
+    /**
+     * Title used on all notifications asking the user to authenticate with Spotify again.
+     */
+    readonly reauthNotificationTitle: string = "Spotify reauthentication needed"
 
     // INIT
     // --------------------------------------------------------------------------
@@ -204,7 +210,12 @@ export class Spotify {
 
             const tokens = await this.getToken(user, req.query.code as string)
             const profile = await this.getProfile(user, tokens)
+
+            // A brand new refresh token was issued, so reset its expiry date.
+            profile.dateRefreshExpiry = dayjs().add(settings.spotify.refreshTokenDays, "days").toDate()
+
             await this.saveProfile(user, profile)
+            await notifications.deleteUnread(user, {auth: true, source: "spotify"})
 
             delete user.spotifyAuthState
 
@@ -383,6 +394,11 @@ export class Spotify {
                 id: res.id,
                 email: res.email,
                 tokens: tokens
+            }
+
+            // Refreshing tokens does not extend the refresh token lifetime, so keep the original expiry date.
+            if (user.spotify?.dateRefreshExpiry) {
+                profile.dateRefreshExpiry = user.spotify.dateRefreshExpiry
             }
 
             // Save to cache and return the user profile.

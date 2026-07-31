@@ -129,6 +129,20 @@ export const EmailTemplates = {
             "</p>"
     },
 
+    // When a Spotify refresh token is about to expire and user needs to reauthenticate.
+    SpotifyTokenExpiring: {
+        subject: "Your Spotify auth will expire in ${days} days",
+        body:
+            "<p>" +
+            "Hi ${userName}!<br><br>" +
+            "Spotify requires users to reauthenticate their 3rd party integrations every few months, and the link between Strautomator and your Spotify account is set to expire on <strong>${expiryDate}</strong>.<br>" +
+            "Once it expires, Strautomator won't be able to fetch the music you listened to during your activities, and your Spotify account will be automatically unlinked." +
+            "</p>" +
+            "<p>" +
+            'To keep it working, please <a href="${appUrl}account?spotify=link">click here</a> to link your Spotify account again.' +
+            "</p>"
+    },
+
     // When user has many unread notifications.
     UnreadNotifications: {
         subject: "You have ${count} unread notifications",

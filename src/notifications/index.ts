@@ -248,6 +248,38 @@ export class Notifications {
         }
     }
 
+    /**
+     * Delete unread notifications matching the passed fields. Returns the deleted count.
+     * @param user The user (owner) of the notifications.
+     * @param filter Fields to be matched, for instance {source: "spotify"}.
+     */
+    deleteUnread = async (user: UserData, filter: Partial<AuthNotification> | Partial<FailedRecipeNotification> | Partial<GearWearNotification>): Promise<number> => {
+        const filterLog = Object.entries(filter)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(", ")
+
+        try {
+            const queries: any[] = [
+                ["userId", "==", user.id],
+                ["read", "==", false]
+            ]
+            for (let [key, value] of Object.entries(filter)) {
+                queries.push([key, "==", value])
+            }
+
+            const counter = await database.delete("notifications", queries)
+
+            if (counter > 0) {
+                logger.info("Notifications.deleteUnread", logHelper.user(user), filterLog, `Deleted ${counter} notifications`)
+            }
+
+            return counter
+        } catch (ex) {
+            logger.error("Notifications.deleteUnread", logHelper.user(user), filterLog, ex)
+            return 0
+        }
+    }
+
     // ALERTING
     // --------------------------------------------------------------------------
 

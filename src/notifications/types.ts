@@ -28,8 +28,10 @@ export interface BaseNotification {
  * Notification related to authentication.
  */
 export interface AuthNotification extends BaseNotification {
-    /** Authentication failed? */
+    /** Authentication related notification? */
     auth: boolean
+    /** Which linked service the notification refers to. */
+    source?: "strava" | "garmin" | "wahoo" | "spotify"
 }
 
 /**

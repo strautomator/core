@@ -555,7 +555,9 @@
             "authUrl": "https://accounts.spotify.com/authorize",
             "tokenUrl": "https://accounts.spotify.com/api/token",
             "scopes": "user-read-email,user-read-recently-played"
-        }
+        },
+        "refreshTokenDays": 180,
+        "reauthNotifyDays": [14, 7, 2]
     },
     // Last.fm integration. The "key" must be set via secret settings or via the
     // SMU_lastfm_api_key environment variable.

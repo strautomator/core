@@ -30,6 +30,8 @@ export interface SpotifyProfile {
     email: string
     /** Spotify tokens. */
     tokens: SpotifyTokens
+    /** Date when the refresh token expires and the user must authenticate again. */
+    dateRefreshExpiry?: Date
 }
 
 /**

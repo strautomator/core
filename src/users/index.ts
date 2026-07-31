@@ -160,7 +160,7 @@ export class Users {
             }
 
             if (body) {
-                await notifications.createNotification(user, {title: title, body: body, href: href, auth: true, dateExpiry: expiry})
+                await notifications.createNotification(user, {title: title, body: body, href: href, auth: true, source: "strava", dateExpiry: expiry} as Partial<AuthNotification>)
             }
         } catch (ex) {
             logger.error("Notifications.onStravaMissingPermission", `Failed to notify user for token ${maskedToken}`)
@@ -312,7 +312,8 @@ export class Users {
                     title: "Spotify reauthentication needed",
                     body: "Your Spotify account authentication has expired, please login again.",
                     href: "/account?spotify=link",
-                    auth: true
+                    auth: true,
+                    source: "spotify"
                 }
                 await notifications.createNotification(user, nOptions)
 
@@ -358,7 +359,8 @@ export class Users {
                     title: "Wahoo reauthentication needed",
                     body: "Your Wahoo account authentication has expired, please login again.",
                     href: "/account?wahoo=link",
-                    auth: true
+                    auth: true,
+                    source: "wahoo"
                 }
                 await notifications.createNotification(user, nOptions)
 
@@ -404,7 +406,8 @@ export class Users {
                     title: "Garmin reauthentication needed",
                     body: "The service failed to connect to your Garmin data too many times, please login again.",
                     href: "/account?garmin=link",
-                    auth: true
+                    auth: true,
+                    source: "garmin"
                 }
                 await notifications.createNotification(user, nOptions)
 
