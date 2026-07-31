@@ -68,7 +68,7 @@ export class Anthropic implements AiProvider {
                 method: "POST",
                 headers: {},
                 data: {
-                    model: user.isPro && options.useReason ? "claude-sonnet-4-5" : "claude-haiku-4-5",
+                    model: user.isPro && options.useReason ? "claude-sonnet-5" : "claude-haiku-4-5",
                     max_tokens: options.maxTokens,
                     system: options.instruction,
                     messages: [{role: "user", content: messages.join(" ")}],
