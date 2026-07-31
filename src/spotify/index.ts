@@ -373,19 +373,24 @@ export class Spotify {
     /**
      * Get a Spotify profile for the specified user.
      * @param user User requesting the Spotify profile data.
-     * @param tokens Optional tokens, in case the profile is being set for the first time.
+     * @param tokens Optional tokens, in case the profile is being updated.
      * @event Spotify.tokenFailure
      */
     getProfile = async (user: UserData, tokens?: SpotifyTokens): Promise<SpotifyProfile> => {
         try {
             const cacheId = `profile-${user.id}`
-            const cached: SpotifyProfile = cache.get("spotify", cacheId)
-            if (cached) {
-                logger.info("Spotify.getProfile", logHelper.user(user), `ID ${cached.id}`, "From cache")
-                return cached
+
+            // Only use the cache when working with the currently saved tokens.
+            if (!tokens) {
+                const cached: SpotifyProfile = cache.get("spotify", cacheId)
+                if (cached) {
+                    logger.info("Spotify.getProfile", logHelper.user(user), `ID ${cached.id}`, "From cache")
+                    return cached
+                }
+
+                tokens = user.spotify.tokens
             }
 
-            if (!tokens) tokens = user.spotify.tokens
             tokens = await this.validateTokens(user, tokens)
 
             // Make request to fetch profile.
