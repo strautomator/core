@@ -150,11 +150,9 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     }
 
     // Set activity gear.
-    const gearId = data.gear && data.gear.id ? data.gear.id : data.gear_id
+    const gearId = data.gear?.id || data.gear_id
     if (gearId) {
-        activity.gear = activity.gear = _.find(profile.bikes, {id: gearId}) || _.find(profile.shoes, {id: gearId})
-    } else if (data.gear) {
-        activity.gear = toStravaGear(profile, data.gear.id)
+        activity.gear = _.find(profile.bikes, {id: gearId}) || _.find(profile.shoes, {id: gearId}) || (data.gear ? toStravaGear(profile, data.gear) : null)
     }
 
     // Climbing ratio multiplier in metric is 19m / 1km.

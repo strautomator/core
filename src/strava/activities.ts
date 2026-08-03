@@ -1,6 +1,6 @@
 // Strautomator Core: Strava Activities
 
-import {StravaActivity, StravaActivityQuery, StravaActivityStreams, StravaGear, StravaRawActivityStreams} from "./types"
+import {StravaActivity, StravaActivityQuery, StravaActivityStreams, StravaRawActivityStreams} from "./types"
 import {toStravaActivity} from "./utils"
 import {UserData} from "../users/types"
 import stravaAthletes from "./athletes"
@@ -115,34 +115,13 @@ export class StravaActivities {
             const data = await api.get(tokens, `activities/${id}`, {include_all_efforts: 0})
             const activity = toStravaActivity(user, data)
 
-            // Activity's gear was set?
-            // First we try fetching gear details from cached database user.
-            // Otherwise get directly from the API.
-            if (data.gear_id) {
+            // Gear could not be resolved from the cached user profile? Fetch it live.
+            if (data.gear_id && !activity.gear) {
                 try {
-                    let gear: StravaGear
-
-                    // Search for bikes.
-                    for (let bike of user.profile.bikes) {
-                        if (bike.id == id) {
-                            gear = bike
-                        }
-                    }
-
-                    // Search for shoes.
-                    for (let shoe of user.profile.shoes) {
-                        if (shoe.id == id) {
-                            gear = shoe
-                        }
-                    }
-
-                    // Set correct activity gear.
-                    activity.gear = gear ? gear : await stravaAthletes.getGear(user, data.gear_id)
+                    activity.gear = await stravaAthletes.getGear(user, data.gear_id)
                 } catch (ex) {
-                    logger.warn("Strava.getActivity", id, "Could not get activity's gear details")
+                    logger.warn("Strava.getActivity", logHelper.user(user), `Activity ${id}`, `Gear ${data.gear_id}`, "Could not get gear details", ex)
                 }
-            } else {
-                activity.gear = null
             }
 
             // Get start time and timezone to be logged.
