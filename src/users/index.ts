@@ -1176,6 +1176,7 @@ export class Users {
 
             logger.info("Users.setEmail", logHelper.user(user), email)
 
+            user.email = email
             eventManager.emit("Users.emailUpdated", user)
         } catch (ex) {
             logger.error("Users.setEmail", logHelper.user(user), email, ex)

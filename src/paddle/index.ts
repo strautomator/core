@@ -96,6 +96,7 @@ export class PaddleWrapper {
         try {
             if (user.paddleId && user.email) {
                 await this.api.client.customers.update(user.paddleId, {email: user.email})
+                logger.info("Paddle.onEmailUpdated", logHelper.user(user), user.email, `Updated customer ${user.paddleId}`)
             }
         } catch (ex) {
             logger.error("Paddle.onEmailUpdated", logHelper.user(user), user.email, "Failed to update user email on Paddle", ex)
