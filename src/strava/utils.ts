@@ -164,7 +164,7 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     // Conversion to imperial units.
     // Climbing ration multiplier is 100ft / 1mi.
     // Speeds are in mph, distance in miles, and elevation in feet.
-    if (profile.units == "imperial" && activity.sportType != StravaSport.Swim) {
+    if (profile.units == "imperial") {
         cRatioMultiplier = 100
         distanceMultiplier = rMiles
         elevationMultiplier = rFeet
@@ -178,14 +178,17 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     let elevationMax: number = data.elev_high * elevationMultiplier
 
     // Calculate pace in minutes, and get seconds with leading 0.
-    // Pace calculation depends on the sport.
-    const paceFactor = activity.sportType == StravaSport.Swim ? 10 : 1
-    let paceDurationAvg = dayjs.duration(60 / avgSpeed / paceFactor, "minutes")
+    // Pace calculation depends on the sport, and swimming is always metric (/ 100m).
+    const isSwim = activity.sportType == StravaSport.Swim
+    const paceFactor = isSwim ? 10 : 1
+    const paceAvgSpeed = isSwim ? data.average_speed * 3.6 : avgSpeed
+    const paceMaxSpeed = isSwim ? data.max_speed * 3.6 : maxSpeed
+    let paceDurationAvg = dayjs.duration(60 / paceAvgSpeed / paceFactor, "minutes")
     let avgPaceMinutes = paceDurationAvg.minutes()
     let avgPaceSeconds: any = paceDurationAvg.seconds()
     if (paceDurationAvg.milliseconds() > 500) avgPaceSeconds += 1
     if (avgPaceSeconds < 10) avgPaceSeconds = `0${avgPaceSeconds}`
-    let paceDurationMax = dayjs.duration(60 / maxSpeed / paceFactor, "minutes")
+    let paceDurationMax = dayjs.duration(60 / paceMaxSpeed / paceFactor, "minutes")
     let maxPaceMinutes = paceDurationMax.minutes()
     let maxPaceSeconds: any = paceDurationMax.seconds()
     if (paceDurationMax.milliseconds() > 500) maxPaceSeconds += 1
