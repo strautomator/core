@@ -58,7 +58,6 @@ export class Garmin {
 
             eventManager.on("Garmin.activityFailure", this.onActivityFailure)
             eventManager.on("Users.delete", this.onUserDelete)
-            eventManager.on("Users.login", this.onUserLogin)
 
             cache.setup("garmin", settings.garmin.cacheDuration)
             logger.info("Garmin.init", `Cache profile for up to ${settings.garmin.cacheDuration} seconds`)
@@ -99,16 +98,6 @@ export class Garmin {
             }
         } catch (ex) {
             logger.error("Garmin.onUserDelete", logHelper.user(user), ex)
-        }
-    }
-
-    /**
-     * Exchange the legacy OAuth1 tokens for OAuth2 ones when the user logs in.
-     * @param user User that has just logged in.
-     */
-    private onUserLogin = async (user: UserData): Promise<void> => {
-        if (user.garmin?.tokens?.tokenSecret) {
-            await garminProfiles.migrateToOAuth2(user)
         }
     }
 
