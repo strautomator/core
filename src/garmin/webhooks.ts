@@ -1,7 +1,6 @@
 // Strautomator Core: Garmin Webhooks
 
 import {GarminPingPermissions, GarminPing, GarminPingActivityFile, GarminWebhookData} from "./types"
-import {UserData} from "../users/types"
 import {Request} from "express"
 import garminActivities from "./activities"
 import garminProfiles from "./profiles"
@@ -68,30 +67,13 @@ export class GarminWebhooks {
     // --------------------------------------------------------------------------
 
     /**
-     * Match the user referenced in a ping. The user access token is only present on
-     * legacy OAuth1 pings, and is validated when available.
-     * @param data The ping data.
-     */
-    private getPingUser = async (data: GarminPing): Promise<UserData> => {
-        const user = await users.getByGarminId(data.userId)
-        if (!user) {
-            return null
-        }
-        if (data.userAccessToken && user.garmin?.tokens?.accessToken != data.userAccessToken) {
-            return null
-        }
-
-        return user
-    }
-
-    /**
      * Process activity files events.
      * @param items Webhook activityFiles body.
      */
     private activityFiles = async (items: GarminPingActivityFile[]): Promise<void> => {
         for (let data of items || []) {
             try {
-                const user = await this.getPingUser(data)
+                let user = await users.getByGarminId(data.userId)
 
                 // Found a matching user and the activity is of type FIT? Get and parse the activity file.
                 if (user && data.fileType == "FIT") {
@@ -112,7 +94,7 @@ export class GarminWebhooks {
     private deregistrations = async (items: GarminPing[]): Promise<void> => {
         for (let data of items || []) {
             try {
-                const user = await this.getPingUser(data)
+                const user = await users.getByGarminId(data.userId)
 
                 // Found a matching user? Delete the profile.
                 if (user) {
@@ -136,7 +118,7 @@ export class GarminWebhooks {
         for (let data of items || []) {
             try {
                 if (!data.permissions || !data.permissions.includes("ACTIVITY_EXPORT")) {
-                    const user = await this.getPingUser(data)
+                    const user = await users.getByGarminId(data.userId)
 
                     // Found a matching user? Deregister and delete the profile.
                     if (user) {

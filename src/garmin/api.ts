@@ -79,15 +79,7 @@ export class GarminAPI {
             method: method || "GET",
             returnResponse: true,
             url: targetUrl,
-            headers: {}
-        }
-
-        // Legacy OAuth1 tokens must be signed, while OAuth2 ones use a bearer header.
-        if (tokens.tokenSecret) {
-            const oauthData = oauth1.getData(options, tokens.accessToken, tokens.tokenSecret)
-            options.headers["Authorization"] = oauth1.getHeader(oauthData)
-        } else {
-            options.headers["Authorization"] = `Bearer ${tokens.accessToken}`
+            headers: {Authorization: `Bearer ${tokens.accessToken}`}
         }
 
         // Return raw data as buffer?
@@ -193,8 +185,18 @@ export class GarminAPI {
                 throw new Error("User has no legacy OAuth1 tokens")
             }
 
-            // The exchange request must be signed with the OAuth1 credentials.
-            const res: OAuth2Token = await this.makeRequest(tokens, settings.garmin.api.tokenExchangeUrl, "POST")
+            const reqOptions: AxiosConfig = {
+                method: "POST",
+                url: settings.garmin.api.tokenExchangeUrl,
+                headers: {},
+                timeout: settings.oauth.tokenTimeout
+            }
+
+            // This is the only request that must still be signed with the legacy OAuth1 credentials.
+            const oauthData = oauth1.getData(reqOptions, tokens.accessToken, tokens.tokenSecret)
+            reqOptions.headers["Authorization"] = oauth1.getHeader(oauthData)
+
+            const res: OAuth2Token = await this.limiter.schedule(() => axiosRequest(reqOptions))
             const newTokens = this.parseTokenResponse(res)
 
             logger.info("Garmin.exchangeToken", logHelper.user(user), "Exchanged OAuth1 for OAuth2 tokens")
@@ -206,8 +208,7 @@ export class GarminAPI {
     }
 
     /**
-     * Make sure the user has valid tokens, refreshing them if necessary. Legacy OAuth1
-     * tokens are returned as-is, as they do not expire.
+     * Make sure the user has valid tokens, refreshing them if necessary.
      * @param user The user to be validated.
      */
     validateTokens = async (user: UserData): Promise<GarminTokens> => {
@@ -216,7 +217,7 @@ export class GarminAPI {
             if (!tokens?.accessToken) {
                 throw new Error("User has no Garmin tokens")
             }
-            if (tokens.tokenSecret || tokens.expiresAt > dayjs().unix()) {
+            if (tokens.expiresAt > dayjs().unix()) {
                 return tokens
             }
 
@@ -236,14 +237,6 @@ export class GarminAPI {
     getRedirectUrl = (): string => {
         const baseUrl = settings.api.url || `${settings.app.url}api/`
         return `${baseUrl}garmin/auth/callback`
-    }
-
-    /**
-     * Base path of the user endpoints, which moved to the partner gateway with OAuth2.
-     * @param tokens The user tokens.
-     */
-    getUserPath = (tokens: GarminTokens): string => {
-        return tokens.tokenSecret ? "wellness-api/rest/user" : "partner-gateway/rest/user"
     }
 
     /**

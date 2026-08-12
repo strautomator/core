@@ -36,7 +36,7 @@ export class GarminProfiles {
             const tokens = await api.validateTokens(user)
 
             // Make request to fetch profile.
-            const res = await api.makeRequest(tokens, `${api.getUserPath(tokens)}/id`)
+            const res = await api.makeRequest(tokens, "partner-gateway/rest/user/id")
             const profile: GarminProfile = {
                 id: res.userId,
                 tokens: tokens
@@ -121,7 +121,7 @@ export class GarminProfiles {
             if (!skipDeregistration) {
                 try {
                     const tokens = await api.validateTokens(user)
-                    await api.makeRequest(tokens, `${api.getUserPath(tokens)}/registration`, "DELETE")
+                    await api.makeRequest(tokens, "partner-gateway/rest/user/registration", "DELETE")
                 } catch (innerEx) {
                     logger.warn("Garmin.deleteProfile", logHelper.user(user), "Failed to deregister user on Garmin")
                 }

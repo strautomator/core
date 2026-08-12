@@ -1,6 +1,5 @@
 // Strautomator Core: Garmin OAuth 1.0a
-// Largely based on samples from Stack Overflow (gotta love the old OAuth1 spec).
-// This will be slowly refactored as needed.
+// Only used to sign the OAuth1 to OAuth2 token exchange requests.
 
 import {OAuth1Data} from "./types"
 import {AxiosConfig} from "../axios"
@@ -19,20 +18,14 @@ export class GarminOAuth1 {
     /**
      * Get request authorization base data.
      */
-    getData = (reqOptions: AxiosConfig, oauthToken?: string, tokenSecret?: string, oauthVerifier?: string): OAuth1Data => {
+    getData = (reqOptions: AxiosConfig, oauthToken: string, tokenSecret: string): OAuth1Data => {
         const result: OAuth1Data = {
             oauth_timestamp: dayjs().unix(),
             oauth_nonce: jaul.data.uuid().replace(/\-/, ""),
-            oauth_consumer_key: settings.garmin.api.clientId,
+            oauth_consumer_key: settings.garmin.api.clientId1,
             oauth_version: "1.0",
-            oauth_signature_method: "HMAC-SHA1"
-        }
-
-        if (oauthToken) {
-            result.oauth_token = oauthToken
-        }
-        if (oauthVerifier) {
-            result.oauth_verifier = oauthVerifier
+            oauth_signature_method: "HMAC-SHA1",
+            oauth_token: oauthToken
         }
 
         result.oauth_signature = this.getSignature(reqOptions, result, tokenSecret)
@@ -108,7 +101,7 @@ export class GarminOAuth1 {
      */
     getSigningKey = (tokenSecret: string) => {
         tokenSecret = tokenSecret || ""
-        return this.percentEncodeString(settings.garmin.api.clientSecret) + "&" + this.percentEncodeString(tokenSecret)
+        return this.percentEncodeString(settings.garmin.api.clientSecret1) + "&" + this.percentEncodeString(tokenSecret)
     }
 
     /**
