@@ -245,7 +245,7 @@ export const startup = async (quickStart?: boolean) => {
                 }
             }
         } catch (ex) {
-            logger.error("Strautomator.startup", "Failed to start a core module, will exit...")
+            logger.error("Strautomator.startup", "Failed to start a core module, will exit...", ex)
             return process.exit(1)
         }
     }
