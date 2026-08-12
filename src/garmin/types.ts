@@ -16,14 +16,12 @@ export interface GarminProfile {
 export interface GarminTokens {
     /** Access token. */
     accessToken: string
-    /** Refresh token (OAuth2 only). */
+    /** Refresh token. */
     refreshToken?: string
     /** Access token expiry timestamp. */
     expiresAt?: number
     /** Refresh token expiry timestamp. */
     refreshExpiresAt?: number
-    /** Access token secret (legacy OAuth1 only). */
-    tokenSecret?: string
     /** Token repeated failure count. */
     failureCount?: number
 }
@@ -46,8 +44,6 @@ export interface GarminWebhookData {
 export interface GarminPing {
     /** User ID (from Garmin). */
     userId?: string
-    /** User access token (Legacy OAuth1 only). */
-    userAccessToken?: string
 }
 
 /**
@@ -76,22 +72,7 @@ export interface GarminPingPermissions extends GarminPing {
 }
 
 /**
- * OAuth1 metadata, only used to sign the OAuth1 to OAuth2 token exchange.
- */
-export interface OAuth1Data {
-    oauth_timestamp: number
-    oauth_nonce: string
-    oauth_consumer_key: string
-    oauth_version: string
-    oauth_verifier?: string
-    oauth_token?: string
-    oauth_body_hash?: string
-    oauth_signature?: string
-    oauth_signature_method?: string
-}
-
-/**
- * OAuth2 token response from Garmin, also returned by the OAuth1 to OAuth2 token exchange.
+ * OAuth2 token response from Garmin.
  */
 export interface OAuth2Token {
     access_token: string
