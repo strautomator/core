@@ -815,8 +815,9 @@ export class Users {
             const doc = database.doc("users", profile.id)
             const docSnapshot = await doc.get()
             const exists = docSnapshot.exists
+            let existingData: UserData
 
-            // Set base data, if user does not exist yet.
+            // Set base data, if user does not exist yet, otherwise update it.
             if (!exists) {
                 logger.debug("Users.upsert", profile.id, "Will create new user")
 
@@ -832,10 +833,9 @@ export class Users {
                     userData.countryCode = maps.getCountryCode(profile.country)
                 }
             }
-            // If user exists, update the relevant data.
             else {
                 const docData = docSnapshot.data()
-                const existingData = docData as UserData
+                existingData = docData as UserData
 
                 userData.dateLastActivity = existingData.dateLastActivity
                 userData.preferences = existingData.preferences || {}
@@ -922,6 +922,10 @@ export class Users {
                 eventManager.emit("Users.create", userData)
             } else {
                 logger.info("Users.upsert", logHelper.user(userData), "Updated")
+
+                if (login) {
+                    eventManager.emit("Users.login", existingData)
+                }
             }
 
             return userData

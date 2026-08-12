@@ -1,6 +1,5 @@
 // Strautomator Core: Garmin
 
-import {OAuth1Token} from "./types"
 import {UserData} from "../users/types"
 import {Request} from "express"
 import activities from "./activities"
@@ -59,6 +58,7 @@ export class Garmin {
 
             eventManager.on("Garmin.activityFailure", this.onActivityFailure)
             eventManager.on("Users.delete", this.onUserDelete)
+            eventManager.on("Users.login", this.onUserLogin)
 
             cache.setup("garmin", settings.garmin.cacheDuration)
             logger.info("Garmin.init", `Cache profile for up to ${settings.garmin.cacheDuration} seconds`)
@@ -102,31 +102,54 @@ export class Garmin {
         }
     }
 
+    /**
+     * Exchange the legacy OAuth1 tokens for OAuth2 ones when the user logs in.
+     * @param user User that has just logged in.
+     */
+    private onUserLogin = async (user: UserData): Promise<void> => {
+        if (user.garmin?.tokens?.tokenSecret) {
+            await garminProfiles.migrateToOAuth2(user)
+        }
+    }
+
     // AUTH
     // --------------------------------------------------------------------------
 
     /**
-     * Generate a new authentication URL for the user.
-     * @param user The user requesting the auth URL.
+     * Shortcut to the API's validateTokens(), which will refresh expired OAuth2 tokens.
+     * @param user The user to be validated.
      */
-    generateAuthUrl = async (user: UserData): Promise<string> => {
-        const tokens = await api.makeTokenRequest("request_token")
-
-        // Set the auth state for the user.
-        const authState = crypto.randomBytes(8).toString("hex")
-        const state = `${authState}-${tokens.oauth_token_secret}`
-        await users.update({id: user.id, displayName: user.displayName, garminAuthState: state})
-
-        // Return final auth URL.
-        const baseUrl = settings.api.url || `${settings.app.url}api/`
-        const callbackUrl = `${baseUrl}garmin/auth/callback?state=${user.id}-${state}`
-        logger.info("Garmin.generateAuthUrl", logHelper.user(user), callbackUrl)
-
-        return `${settings.garmin.api.loginUrl}?oauth_token=${tokens.oauth_token}&oauth_callback=${callbackUrl}`
+    validateTokens = async (user: UserData): Promise<void> => {
+        await api.validateTokens(user)
     }
 
     /**
-     * Get the OAuth1 access token based on the provided auth parameters.
+     * Generate a new OAuth2 (PKCE) authentication URL for the user.
+     * @param user The user requesting the auth URL.
+     */
+    generateAuthUrl = async (user: UserData): Promise<string> => {
+        const authState = crypto.randomBytes(8).toString("hex")
+        const codeVerifier = crypto.randomBytes(48).toString("hex")
+        const codeChallenge = crypto.createHash("sha256").update(codeVerifier).digest("base64url")
+
+        // The code verifier is kept together with the auth state, as it's needed on the callback.
+        await users.update({id: user.id, displayName: user.displayName, garminAuthState: `${authState}-${codeVerifier}`})
+
+        const params = new URLSearchParams({
+            client_id: settings.garmin.api.clientId,
+            response_type: "code",
+            code_challenge: codeChallenge,
+            code_challenge_method: "S256",
+            redirect_uri: api.getRedirectUrl(),
+            state: `${user.id}-${authState}`
+        })
+
+        logger.info("Garmin.generateAuthUrl", logHelper.user(user), `State: ${authState}`)
+        return `${settings.garmin.api.loginUrl}?${params.toString()}`
+    }
+
+    /**
+     * Get the OAuth2 access token based on the provided auth parameters.
      * This will also trigger an update to the Garmin profile on the database.
      * @param req The request object.
      */
@@ -134,16 +157,17 @@ export class Garmin {
         let user: UserData
 
         try {
-            if (!req.query.oauth_token || !req.query.oauth_verifier || !req.query.state) {
-                throw new Error("Missing oauth token or verifier")
+            if (!req.query.code || !req.query.state) {
+                throw new Error("Missing auth code or state")
             }
 
             // State is prefixed with the user ID.
-            const arrStateToken = req.query.state.toString().split("-")
-            const userId = arrStateToken.shift()
+            const arrState = req.query.state.toString().split("-")
+            const userId = arrState.shift()
+            const authState = arrState.shift()
 
             // Pre-validate state value.
-            if (!userId || arrStateToken.length < 2) {
+            if (!userId || !authState) {
                 throw new Error("Invalid state")
             }
 
@@ -153,15 +177,13 @@ export class Garmin {
                 throw new Error("Invalid user")
             }
 
-            // Validate state.
-            const state = arrStateToken.shift()
-            if (!user.garminAuthState || !user.garminAuthState.includes(state)) {
-                throw new Error(`Invalid auth state: ${state}`)
+            // Validate state and extract the PKCE code verifier.
+            if (!user.garminAuthState || !user.garminAuthState.startsWith(`${authState}-`)) {
+                throw new Error(`Invalid auth state: ${authState}`)
             }
+            const codeVerifier = user.garminAuthState.substring(authState.length + 1)
 
-            const oToken = req.query.oauth_token as string
-            const oVerifier = req.query.oauth_verifier as string
-            const tokenData: OAuth1Token = await api.makeTokenRequest("access_token", oToken, arrStateToken.join("-"), oVerifier)
+            const tokens = await api.getToken(user, req.query.code as string, codeVerifier)
 
             // Make sure user has a Garmin profile object.
             if (!user.garmin) {
@@ -169,7 +191,7 @@ export class Garmin {
             }
 
             // If token request was successful, now get and save the user profile.
-            user.garmin.tokens = {accessToken: tokenData.oauth_token, tokenSecret: tokenData.oauth_token_secret}
+            user.garmin.tokens = tokens
             const profile = await garminProfiles.getProfile(user)
             await garminProfiles.saveProfile(user, profile)
         } catch (ex) {

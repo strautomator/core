@@ -93,7 +93,7 @@ export class GarminActivities {
                 dateTo = dateFrom.add(86399, "seconds")
             }
 
-            const tokens = user.garmin.tokens
+            const tokens = await api.validateTokens(user)
             const query = `uploadStartTimeInSeconds=${dateFrom.utc().unix()}&uploadEndTimeInSeconds=${dateTo.utc().unix()}`
             const res = await api.makeRequest(tokens, `wellness-api/rest/activities?${query}`)
 
@@ -116,7 +116,7 @@ export class GarminActivities {
             }
 
             // Try fetching the FIT file specified in the callback URL.
-            const tokens = user.garmin.tokens
+            const tokens = await api.validateTokens(user)
             const res = await api.makeRequest(tokens, ping.callbackURL, "GET", true)
             if (res) {
                 return Buffer.from(res)

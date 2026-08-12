@@ -33,10 +33,10 @@ export class GarminProfiles {
                 return cached
             }
 
-            const tokens = user.garmin.tokens
+            const tokens = await api.validateTokens(user)
 
             // Make request to fetch profile.
-            const res = await api.makeRequest(tokens, "wellness-api/rest/user/id")
+            const res = await api.makeRequest(tokens, `${api.getUserPath(tokens)}/id`)
             const profile: GarminProfile = {
                 id: res.userId,
                 tokens: tokens
@@ -79,6 +79,30 @@ export class GarminProfiles {
     }
 
     /**
+     * Exchange the user's legacy OAuth1 tokens for OAuth2 ones and save the updated
+     * profile. Returns false if the exchange failed.
+     * @param user The user still using legacy OAuth1 tokens.
+     */
+    migrateToOAuth2 = async (user: UserData): Promise<boolean> => {
+        try {
+            if (!user.garmin?.tokens?.tokenSecret) {
+                logger.warn("Garmin.migrateToOAuth2", logHelper.user(user), "User is not using legacy OAuth1 tokens")
+                return false
+            }
+
+            const tokens = await api.exchangeToken(user)
+            cache.del("garmin", `profile-${user.id}`)
+            await this.saveProfile(user, {...user.garmin, tokens: tokens})
+
+            logger.info("Garmin.migrateToOAuth2", logHelper.user(user), "Successfully migrated to OAuth2")
+            return true
+        } catch (ex) {
+            logger.error("Garmin.migrateToOAuth2", logHelper.user(user), ex)
+            return false
+        }
+    }
+
+    /**
      * Unlink the registration and delete the user profile data.
      * @param user User requesting the Garmin data.
      * @param skipDeregistration If true, will not call the deregistration endpoint on Garmin.
@@ -96,8 +120,8 @@ export class GarminProfiles {
             // Make request to unlink profile, unless the skipDeregistration is set.
             if (!skipDeregistration) {
                 try {
-                    const tokens = user.garmin.tokens
-                    await api.makeRequest(tokens, "wellness-api/rest/user/registration", "DELETE")
+                    const tokens = await api.validateTokens(user)
+                    await api.makeRequest(tokens, `${api.getUserPath(tokens)}/registration`, "DELETE")
                 } catch (innerEx) {
                     logger.warn("Garmin.deleteProfile", logHelper.user(user), "Failed to deregister user on Garmin")
                 }

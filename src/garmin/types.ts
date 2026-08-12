@@ -11,13 +11,20 @@ export interface GarminProfile {
 }
 
 /**
- * Garmin authentication tokens.
+ * Garmin authentication tokens. Tokens having a "tokenSecret" are
+ * legacy OAuth1 tokens, while the OAuth2 ones have a "refreshToken".
  */
 export interface GarminTokens {
     /** Access token. */
     accessToken: string
-    /** Access token secret. */
-    tokenSecret: string
+    /** Access token secret (legacy OAuth1 only). */
+    tokenSecret?: string
+    /** Refresh token (OAuth2 only). */
+    refreshToken?: string
+    /** Access token expiry timestamp (OAuth2 only). */
+    expiresAt?: number
+    /** Refresh token expiry timestamp (OAuth2 only). */
+    refreshExpiresAt?: number
     /** Token repeated failure count. */
     failureCount?: number
 }
@@ -90,4 +97,17 @@ export interface OAuth1Data {
 export interface OAuth1Token {
     oauth_token: string
     oauth_token_secret: string
+}
+
+/**
+ * OAuth2 token response from Garmin, also returned by the OAuth1 to OAuth2 token exchange.
+ */
+export interface OAuth2Token {
+    access_token: string
+    refresh_token?: string
+    token_type?: string
+    expires_in?: number
+    refresh_token_expires_in?: number
+    scope?: string
+    jti?: string
 }

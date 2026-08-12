@@ -25,7 +25,7 @@ export class GarminCourses {
      */
     getCourses = async (user: UserData): Promise<void> => {
         try {
-            const tokens = user.garmin.tokens
+            const tokens = await api.validateTokens(user)
             const res = await api.makeRequest(tokens, "training-api/courses/v1/course/userCourses")
 
             return res
