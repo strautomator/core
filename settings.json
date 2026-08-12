@@ -194,11 +194,9 @@
     "garmin": {
         "api": {
             "baseUrl": "https://apis.garmin.com/",
-            // OAuth2 endpoints (current standard).
+            // OAuth2 endpoints.
             "loginUrl": "https://connect.garmin.com/oauth2Confirm",
             "tokenUrl": "https://diauth.garmin.com/di-oauth2-service/oauth/token",
-            // Endpoint used to exchange legacy OAuth1 tokens for OAuth2 ones.
-            "tokenExchangeUrl": "https://apis.garmin.com/partner-gateway/rest/user/token-exchange",
             // Maximum concurrent requests per instance.
             "maxConcurrent": 4,
             // Maximum requests per minute per instance.
