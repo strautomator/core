@@ -257,7 +257,8 @@
             "maxConcurrent": 2,
             // Maximum requests per minute per instance.
             "maxPerMinute": 40
-        }
+        },
+        "location": "eu"
     },
     "genius": {
         "api": {
