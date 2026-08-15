@@ -4,7 +4,6 @@ import {GarminTokens, OAuth2Token} from "./types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import {AxiosResponse} from "axios"
-import oauth1 from "./oauth1"
 import eventManager from "../eventmanager"
 import users from "../users"
 import Bottleneck from "bottleneck"
@@ -169,40 +168,6 @@ export class GarminAPI {
             return tokens
         } catch (ex) {
             logger.error("Garmin.refreshToken", logHelper.user(user), ex)
-            throw ex
-        }
-    }
-
-    /**
-     * Exchange the user's legacy OAuth1 tokens for OAuth2 ones. The original OAuth1
-     * token remains valid for 30 days after the exchange.
-     * @param user The user still using legacy OAuth1 tokens.
-     */
-    exchangeToken = async (user: UserData): Promise<GarminTokens> => {
-        try {
-            const tokens = user.garmin?.tokens
-            if (!tokens?.tokenSecret) {
-                throw new Error("User has no legacy OAuth1 tokens")
-            }
-
-            const reqOptions: AxiosConfig = {
-                method: "POST",
-                url: settings.garmin.api.tokenExchangeUrl,
-                headers: {},
-                timeout: settings.oauth.tokenTimeout
-            }
-
-            // This is the only request that must still be signed with the legacy OAuth1 credentials.
-            const oauthData = oauth1.getData(reqOptions, tokens.accessToken, tokens.tokenSecret)
-            reqOptions.headers["Authorization"] = oauth1.getHeader(oauthData)
-
-            const res: OAuth2Token = await this.limiter.schedule(() => axiosRequest(reqOptions))
-            const newTokens = this.parseTokenResponse(res)
-
-            logger.info("Garmin.exchangeToken", logHelper.user(user), "Exchanged OAuth1 for OAuth2 tokens")
-            return newTokens
-        } catch (ex) {
-            logger.error("Garmin.exchangeToken", logHelper.user(user), ex)
             throw ex
         }
     }
