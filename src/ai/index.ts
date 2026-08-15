@@ -77,6 +77,8 @@ export class AI {
      */
     generateActivityName = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
+            const activity = options.activity
+
             options.maxTokens = settings.ai.maxTokens.name
             options.instruction = "You are an assistant to create creative titles for Strava activities."
 
@@ -84,18 +86,18 @@ export class AI {
             const cacheId = `name-${this.getCacheId(options)}`
             const fromCache = cache.get("ai", cacheId)
             if (fromCache) {
-                logger.info("AI.generateActivityName", logHelper.user(user), logHelper.activity(options.activity), fromCache.provider, "Cached response", fromCache.response)
+                logger.info("AI.generateActivityName", logHelper.user(user), logHelper.activity(activity), fromCache.provider, "Cached response", fromCache.response)
                 return fromCache
             }
 
-            const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            let aDate = dayjs(options.activity.dateStart)
-            if (options.activity.utcStartOffset) {
-                aDate = aDate.add(options.activity.utcStartOffset, "minutes")
+            const sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim()
+            let aDate = dayjs(activity.dateStart)
+            if (activity.utcStartOffset) {
+                aDate = aDate.add(activity.utcStartOffset, "minutes")
             }
 
             // Get the activity prompt.
-            const messages = [`Generate a single name for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}. The activity started at ${aDate.format("HH:MM")}.`]
+            const messages = [`Generate a single name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()}. The activity started at ${aDate.format("HH:MM")}.`]
             messages.push(...this.getActivityPrompt(user, options))
             messages.push("Answer the generated name only, with no additional text or Markdown formatting.")
             messages.push(...this.getHumourAndTranslation(user, options))
@@ -104,11 +106,11 @@ export class AI {
             const result = await this.prompt(user, options, messages)
             if (result) {
                 cache.set("ai", cacheId, result)
-                logger.info("AI.generateActivityName", logHelper.user(user), logHelper.activity(options.activity), result.provider, result.response)
+                logger.info("AI.generateActivityName", logHelper.user(user), logHelper.activity(activity), result.provider, result.response)
                 return result
             }
 
-            logger.warn("AI.generateActivityName", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
+            logger.warn("AI.generateActivityName", logHelper.user(user), logHelper.activity(activity), "AI failed")
             return null
         } catch (ex) {
             logger.error("AI.generateActivityName", logHelper.user(user), logHelper.activity(options.activity), ex)
@@ -123,6 +125,8 @@ export class AI {
      */
     generateActivityDescription = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
+            const activity = options.activity
+
             options.maxTokens = settings.ai.maxTokens.description
             options.instruction = "You are an assistant to create poems to describe Strava activities."
 
@@ -130,13 +134,13 @@ export class AI {
             const cacheId = `description-${this.getCacheId(options)}`
             const fromCache = cache.get("ai", cacheId)
             if (fromCache) {
-                logger.info("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(options.activity), fromCache.provider, "Cached response", fromCache.response)
+                logger.info("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(activity), fromCache.provider, "Cached response", fromCache.response)
                 return fromCache
             }
 
             // Get the activity prompt.
-            const sportType = options.activity.sportType.replace(/([A-Z])/g, " $1").trim()
-            const messages = [`Write a very short poem for my Strava ${options.activity.commute ? "commute" : sportType.toLowerCase()}.`]
+            const sportType = activity.sportType.replace(/([A-Z])/g, " $1").trim()
+            const messages = [`Write a very short poem for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()}.`]
             messages.push(...this.getActivityPrompt(user, options))
             messages.push("Answer the generated poem only, with no additional text, limited to a maximum of 10 lines.")
             messages.push(...this.getHumourAndTranslation(user, options))
@@ -145,11 +149,11 @@ export class AI {
             const result = await this.prompt(user, options, messages)
             if (result) {
                 cache.set("ai", cacheId, result)
-                logger.info("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(options.activity), result.provider, result.response)
+                logger.info("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(activity), result.provider, result.response)
                 return result
             }
 
-            logger.warn("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
+            logger.warn("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(activity), "AI failed")
             return null
         } catch (ex) {
             logger.error("AI.generateActivityDescription", logHelper.user(user), logHelper.activity(options.activity), ex)
@@ -164,17 +168,18 @@ export class AI {
      */
     generateActivityInsights = async (user: UserData, options: AiGenerateOptions): Promise<AiGeneratedResponse> => {
         try {
-            options.useReason = true
+            const activity = options.activity
+
+            options.useReason = !activity.batch
             options.maxTokens = settings.ai.maxTokens.insights
             options.instruction = [
-                "You are a sports coach that analyzes workouts, and give short, to-the-point and very technical suggestions to improve performance.",
+                "You are an elite sports coach that analyzes workouts, and give short, to-the-point and very technical suggestions to improve performance.",
                 "If weather data is provided, consider that temperature and wind can affect the speed and power output."
             ].join("")
 
             // At the moment this is enabled for moving activities with at least HR or power data.
-            const activity = options.activity
             if (!activity || !activity.sportType || !activity.distance || !activity.movingTime || (!activity.wattsAvg && !activity.hrAvg)) {
-                logger.warn("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), "Activity does not have power or HR data, won't generate insights")
+                logger.warn("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(activity), "Activity does not have power or HR data, won't generate insights")
                 return null
             }
 
@@ -182,7 +187,7 @@ export class AI {
             const cacheId = `insights-${this.getCacheId(options)}`
             const fromCache = cache.get("ai", cacheId)
             if (fromCache) {
-                logger.info("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), fromCache.provider, "Cached response", fromCache.response)
+                logger.info("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(activity), fromCache.provider, "Cached response", fromCache.response)
                 return fromCache
             }
 
@@ -202,7 +207,7 @@ export class AI {
 
                     // Make sure we only use activities of the same type and the recent activity
                     // has the minimum necessary data for the prompt.
-                    if (a.id == options.activity.id || !sameType || (!a.movingTime && !a.wattsAvg && !a.hrAvg)) {
+                    if (a.id == activity.id || !sameType || (!a.movingTime && !a.wattsAvg && !a.hrAvg)) {
                         continue
                     }
 
@@ -235,11 +240,11 @@ export class AI {
             const result = await this.prompt(user, options, messages)
             if (result) {
                 cache.set("ai", cacheId, result)
-                logger.info("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), result.provider, result.response)
+                logger.info("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(activity), result.provider, result.response)
                 return result
             }
 
-            logger.warn("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
+            logger.warn("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(activity), "AI failed")
             return null
         } catch (ex) {
             logger.error("AI.generateActivityInsights", logHelper.user(user), logHelper.activity(options.activity), ex)
@@ -255,26 +260,25 @@ export class AI {
      */
     processActivity = async (user: UserData, options: AiGenerateOptions): Promise<StravaActivity> => {
         try {
-            if (!options.activity) {
-                throw new Error("Activity must be provided in options")
-            }
             if (!options.customPrompt) {
                 throw new Error("Custom prompt must be provided in options")
             }
 
-            options.useReason = true
-            options.maxTokens = settings.ai.maxTokens.insights
+            const activity = options.activity
+
+            options.useReason = !activity.batch
+            options.maxTokens = settings.ai.maxTokens.process
             options.instruction =
-                "You are an assistant that processes and updates Strava activity JSON data based on user instructions. You reply with ONLY the updated activity as a valid JSON object. Do not add any new properties to the JSON, nor rename existing ones. Do not wrap the response in Markdown code blocks or add any other text."
+                "You are an assistant that processes and updates Strava activity as JSON data based on user instructions. Your response must only contain the updated valid JSON. Do not add any new properties to the JSON, nor rename existing ones. Do not wrap the response in Markdown code blocks or add any other text. You reply ONLY the updated activity as a valid JSON object."
 
             // Build the prompt messages.
-            const activityJson = JSON.stringify(options.activity)
-            const messages = [`Here is my Strava activity JSON:\n-\n`, activityJson, "\n-\n", options.customPrompt, "Reply ONLY the updated activity JSON, with no added markups."]
+            const activityJson = JSON.stringify(activity)
+            const messages = [`Here is my Strava activity JSON:\n-\n`, activityJson, "\n-\n", options.customPrompt, "Reply ONLY the updated activity as a valid JSON, with no added markups, no prefixes and no remarks."]
 
             // Generate the result.
             const result = await this.prompt(user, options, messages)
             if (!result?.response || typeof result.response !== "string") {
-                logger.warn("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), "AI failed")
+                logger.warn("AI.processActivity", logHelper.user(user), logHelper.activity(activity), "AI failed")
                 return null
             }
 
@@ -283,24 +287,24 @@ export class AI {
             try {
                 updatedActivity = JSON.parse(result.response as string)
             } catch (parseEx) {
-                logger.error("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), "Invalid JSON response from AI", result.response)
+                logger.error("AI.processActivity", logHelper.user(user), logHelper.activity(activity), "Invalid JSON response from AI", result.response)
                 return null
             }
 
             // Ensure no new or renamed properties were introduced.
-            const originalKeys = Object.keys(options.activity)
+            const originalKeys = Object.keys(activity)
             const updatedKeys = Object.keys(updatedActivity)
             for (const key of updatedKeys) {
                 if (!originalKeys.includes(key)) {
-                    logger.warn("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), `Removing property '${key}', which was added / renamed by the AI model`)
+                    logger.warn("AI.processActivity", logHelper.user(user), logHelper.activity(activity), `Removing property '${key}', which was added / renamed by the AI model`)
                     delete updatedActivity[key]
                 }
             }
 
             // Preserve the activity ID, in case the user's prompt has affected it.
-            updatedActivity.id = options.activity.id
+            updatedActivity.id = activity.id
 
-            logger.info("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), result.provider, `Prompt: ${options.customPrompt}`)
+            logger.info("AI.processActivity", logHelper.user(user), logHelper.activity(activity), result.provider, `Prompt: ${options.customPrompt}`)
             return updatedActivity
         } catch (ex) {
             logger.error("AI.processActivity", logHelper.user(user), logHelper.activity(options.activity), ex)

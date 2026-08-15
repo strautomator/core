@@ -2,7 +2,7 @@
 
 import {AiGenerateOptions, AiProvider} from "../ai/types"
 import {UserData} from "../users/types"
-import {GoogleGenAI, FinishReason, HarmBlockThreshold, HarmCategory, GenerateContentParameters} from "@google/genai"
+import {GoogleGenAI, FinishReason, HarmBlockThreshold, HarmCategory, GenerateContentParameters, ThinkingLevel} from "@google/genai"
 import _ from "lodash"
 import Bottleneck from "bottleneck"
 import logger from "anyhow"
@@ -67,9 +67,11 @@ export class Gemini implements AiProvider {
     prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
             const reqOptions: GenerateContentParameters = {
-                model: user.isPro && options.useReason ? "gemini-3.6-flash" : "gemini-3.5-flash-lite",
+                model: user.isPro && options.useReason ? "gemini-3.7-flash" : "gemini-3.5-flash-lite",
                 contents: [{role: "user", parts: messages.map((p) => ({text: p}))}],
                 config: {
+                    thinkingConfig: {thinkingLevel: user.isPro && options.useReason ? ThinkingLevel.LOW : ThinkingLevel.MINIMAL},
+                    systemInstruction: options.instruction,
                     safetySettings: [
                         {category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
                         {category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH},
