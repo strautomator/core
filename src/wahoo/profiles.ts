@@ -32,13 +32,12 @@ export class WahooProfiles {
             const cached: WahooProfile = cache.get("wahoo", cacheId)
             if (cached) {
                 logger.info("Wahoo.getProfile", logHelper.user(user), `ID ${cached.id}`, "From cache")
-                return cached
+                return {...cached, tokens: user.wahoo?.tokens || cached.tokens}
             }
 
             // Validate and use the existing tokens if none were passed.
             if (!tokens) {
-                await api.validateTokens(user)
-                tokens = user.wahoo.tokens
+                tokens = await api.validateTokens(user)
             }
 
             // Make request to fetch profile.

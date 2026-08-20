@@ -8,6 +8,7 @@ import {DatabaseSearchOptions} from "../database/types"
 import {StravaActivity, StravaProcessedActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import database from "../database"
+import fitUpload from "./upload"
 import stravaActivities from "../strava/activities"
 import _ from "lodash"
 import logger from "anyhow"
@@ -27,12 +28,20 @@ export class FitParser {
     }
 
     /**
-     * Parse the specified FIT raw data.
+     * Uploaded FIT files wrapper.
+     */
+    upload = fitUpload
+
+    /**
+     * Parse the specified FIT raw data and append the extracted details to the passed
+     * FIT file activity, which is then returned. The manufacturer of the device that has
+     * generated the file is set on the activity, in lowercase (for instance "garmin"
+     * or "wahoofitness").
      * @param user The user.
      * @param fitFileActivity The FIT file activity to have the data appended to.
      * @param rawData The FIT raw data.
      */
-    async parse(user: UserData, fitFileActivity: FitFileActivity, rawData: any) {
+    async parse(user: UserData, fitFileActivity: FitFileActivity, rawData: any): Promise<FitFileActivity> {
         const stream = Stream.fromByteArray(rawData)
         if (!Decoder.isFIT(stream)) {
             throw new Error("Not a valid FIT file")
@@ -47,6 +56,22 @@ export class FitParser {
         if (errors.length > 0) {
             const logErrors = errors.map((e) => e.message || e.toSting()).join(", ")
             logger.warn("FitParser.parse", logHelper.user(user), fitFileActivity.id, `Parsing errors: ${logErrors}`)
+        }
+
+        // Identify which manufacturer has generated the file, with the file ID message
+        // taking precedence over the device that created the recording.
+        const creatorDevice = messages.deviceInfoMesgs?.find((d) => d.deviceIndex == "creator")
+        const manufacturer = (messages.fileIdMesgs?.[0]?.manufacturer || creatorDevice?.manufacturer || "").toString().toLowerCase()
+        if (manufacturer) {
+            fitFileActivity.manufacturer = manufacturer
+        }
+
+        // Activity start date not known beforehand? Extract it from the first session.
+        if (!fitFileActivity.dateStart && messages.sessionMesgs?.length > 0) {
+            const startTime = messages.sessionMesgs[0].startTime
+            if (startTime) {
+                fitFileActivity.dateStart = dayjs.utc(startTime).toDate()
+            }
         }
 
         // Extract duration and distance from sessions.
@@ -206,7 +231,9 @@ export class FitParser {
             delete fitFileActivity.pedalBalance
         }
 
-        logger.info("FitParser.parse", logHelper.user(user), logHelper.fitFileActivity(fitFileActivity, true))
+        logger.info("FitParser.parse", logHelper.user(user), manufacturer, logHelper.fitFileActivity(fitFileActivity, true))
+
+        return fitFileActivity
     }
 
     // DATABASE DATA

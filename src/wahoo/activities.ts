@@ -64,6 +64,30 @@ export class WahooActivities {
         }
     }
 
+    /**
+     * Save a parsed FIT activity that was uploaded by the user.
+     * @param user User that has uploaded the activity.
+     * @param activity The parsed FIT file activity.
+     */
+    processUploadedActivity = async (user: UserData, activity: FitFileActivity): Promise<void> => {
+        if (!activity.dateStart) {
+            throw new Error("Could not extract the activity start date")
+        }
+        if (!user.wahoo?.id) {
+            throw new Error("User does not have a Wahoo profile")
+        }
+
+        activity.userId = user.id
+        activity.profileId = user.wahoo.id
+        activity.id = `upload-${user.id}-${dayjs(activity.dateStart).utc().unix()}`
+
+        if (!activity.name) {
+            activity.name = activity.workoutName || activity.sportProfile || "Uploaded activity"
+        }
+
+        await fitparser.saveProcessedActivity(user, "wahoo", activity)
+    }
+
     // DATA FROM WAHOO
     // --------------------------------------------------------------------------
 
@@ -77,9 +101,9 @@ export class WahooActivities {
                 throw new Error("User has no Wahoo tokens")
             }
 
-            await api.validateTokens(user)
+            const tokens = await api.validateTokens(user)
 
-            const data = await api.makeRequest(user.wahoo.tokens, "v1/workouts")
+            const data = await api.makeRequest(tokens, "v1/workouts")
             if (data?.workouts) {
                 logger.info("Wahoo.getActivities", logHelper.user(user), `Got ${data.workouts.length} recent activities`)
                 return data.workouts.map((w) => toWahooActivity(w))
@@ -108,8 +132,9 @@ export class WahooActivities {
                 throw new Error("Missing activity file URL in the webhook data")
             }
 
-            await api.validateTokens(user)
-
+            // Files are served by the CDN and need no authentication, so tokens are
+            // not validated here (refreshing without an actual API call would leave
+            // unrevoked access tokens behind).
             const res = await api.makeRequest(null, webhookData.workout_summary.file.url, true)
             if (res) {
                 return Buffer.from(res)

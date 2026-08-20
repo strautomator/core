@@ -5,6 +5,7 @@ import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import {AxiosResponse} from "axios"
 import eventManager from "../eventmanager"
+import users from "../users"
 import _ from "lodash"
 import Bottleneck from "bottleneck"
 import logger from "anyhow"
@@ -26,6 +27,12 @@ export class Wahoo {
      * API limiter module.
      */
     private limiter: Bottleneck
+
+    /**
+     * Ongoing token refreshes, indexed by user ID. Wahoo has a hard limit of unrevoked
+     * access tokens per user, so we must never refresh the same user in parallel.
+     */
+    private refreshing: {[userId: string]: Promise<WahooTokens>} = {}
 
     // INIT
     // --------------------------------------------------------------------------
@@ -229,14 +236,24 @@ export class Wahoo {
      * Make sure the user tokens are valid, and if necessary refresh them.
      * @param user The user to be validated.
      */
-    validateTokens = async (user: UserData): Promise<void> => {
+    validateTokens = async (user: UserData): Promise<WahooTokens> => {
         try {
-            if (!user.wahoo?.tokens) {
+            const tokens = user.wahoo?.tokens
+            if (!tokens?.accessToken) {
                 throw new Error("User has no Wahoo tokens")
             }
-            if (user.wahoo.tokens.expiresAt <= dayjs().unix()) {
-                user.wahoo.tokens = await this.refreshToken(user)
+            if (tokens.expiresAt > dayjs().unix()) {
+                return tokens
             }
+
+            if (!this.refreshing[user.id]) {
+                this.refreshing[user.id] = this.refreshToken(user).finally(() => delete this.refreshing[user.id])
+            }
+
+            user.wahoo.tokens = await this.refreshing[user.id]
+            await users.update({id: user.id, displayName: user.displayName, wahoo: _.omit(user.wahoo, "email")})
+
+            return user.wahoo.tokens
         } catch (ex) {
             logger.error("Wahoo.validateTokens", logHelper.user(user), ex)
             throw new Error("Token validation has failed")
@@ -249,7 +266,7 @@ export class Wahoo {
      * @param err The parsed error message.
      */
     processAuthError = async (user: UserData, err: string): Promise<void> => {
-        if (err.includes("invalid_grant") || err.includes("expired") || err.includes("client scope")) {
+        if (err.includes("invalid_grant") || err.includes("expired") || err.includes("client scope") || err.includes("unrevoked access tokens")) {
             eventManager.emit("Wahoo.tokenFailure", user)
         }
     }

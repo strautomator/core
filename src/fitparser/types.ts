@@ -40,6 +40,8 @@ export interface FitFileActivity {
     workoutName?: string
     /** The workout notes. */
     workoutNotes?: string
+    /** Manufacturer of the device that has generated the FIT file, in lowercase. */
+    manufacturer?: string
     /** Devices used in the activity. */
     devices?: string[]
     /** Devices battery status. */
@@ -109,4 +111,24 @@ export interface FitTrainingMetrics {
     trainingLoadPeak?: number
     /** Primary training benefit (0-7). */
     primaryBenefit?: number
+}
+
+/**
+ * Result of a single FIT file extracted from an uploaded archive.
+ */
+export interface FitUploadResult extends Partial<FitFileActivity> {
+    /** Name of the file inside the uploaded archive. */
+    filename: string
+    /** Which of the supported devices has generated the file. */
+    source?: "garmin" | "wahoo"
+    /** Reason why the file could not be processed. */
+    error?: string
+}
+
+/**
+ * Callbacks triggered while an uploaded archive is being processed.
+ */
+export interface FitUploadCallbacks {
+    onStart?: (total: number) => Promise<void>
+    onFile?: (result: FitUploadResult) => Promise<void>
 }

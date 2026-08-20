@@ -78,6 +78,30 @@ export class GarminActivities {
         }
     }
 
+    /**
+     * Save a parsed FIT activity that was uploaded by the user.
+     * @param user User that has uploaded the activity.
+     * @param activity The parsed FIT file activity.
+     */
+    processUploadedActivity = async (user: UserData, activity: FitFileActivity): Promise<void> => {
+        if (!activity.dateStart) {
+            throw new Error("Could not extract the activity start date")
+        }
+        if (!user.garmin?.id) {
+            throw new Error("User does not have a Garmin profile")
+        }
+
+        activity.userId = user.id
+        activity.profileId = user.garmin.id
+        activity.id = `upload-${user.id}-${dayjs(activity.dateStart).utc().unix()}`
+
+        if (!activity.name) {
+            activity.name = activity.workoutName || activity.sportProfile || "Uploaded activity"
+        }
+
+        await fitparser.saveProcessedActivity(user, "garmin", activity)
+    }
+
     // DATA FROM GARMIN
     // --------------------------------------------------------------------------
 
