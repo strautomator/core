@@ -97,7 +97,7 @@ export class AI {
             }
 
             // Get the activity prompt.
-            const messages = [`Generate a single name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()}. The activity started at ${aDate.format("HH:MM")}.`]
+            const messages = [`Generate a single name for my Strava ${activity.commute ? "commute" : sportType.toLowerCase()}. The activity started at ${aDate.format("HH:mm")}.`]
             messages.push(...this.getActivityPrompt(user, options))
             messages.push("Answer the generated name only, with no additional text or Markdown formatting.")
             messages.push(...this.getHumourAndTranslation(user, options))
@@ -327,15 +327,21 @@ export class AI {
         const activity = options.activity
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
-        // Free accounts defaults to OpenRouter.
-        if (!user.isPro || !options.provider) {
+        // Free accounts default to OpenRouter.
+        if (!user.isPro) {
             options.provider = AiProviderName.OpenRouter
+        } else if (!options.provider) {
+            options.provider = user.preferences?.aiProvider || AiProviderName.OpenRouter
         }
 
-        // Filter providers that are being rate limited at the moment, and get the preferrer (if any).
-        const availableProviders = _.shuffle(allProviders.filter(async (p: AiProvider) => (await p.limiter.currentReservoir()) > 0))
-        const preferredProviders = _.remove(allProviders, (p) => p.constructor.name.toLowerCase() == options.provider)
-        let provider: AiProvider = preferredProviders.length > 0 ? preferredProviders.pop() : availableProviders.pop()
+        // Filter providers that are not enabled or being rate limited at the moment.
+        const reservoirs = await Promise.all(allProviders.map(async (p: AiProvider) => (p.limiter ? await p.limiter.currentReservoir() : 0)))
+        let availableProviders: AiProvider[] = _.shuffle(allProviders.filter((_p, i) => reservoirs[i] > 0))
+
+        // Use the preferred provider, if available, otherwise a random one.
+        const preferredProvider = availableProviders.find((p) => p.constructor.name.toLowerCase() == options.provider)
+        let provider: AiProvider = preferredProvider || availableProviders.pop()
+        availableProviders = _.without(availableProviders, provider)
 
         // Keep trying with different providers.
         let response: string = null
@@ -355,6 +361,7 @@ export class AI {
                         provider = availableProviders.pop()
                         logger.warn("AI.prompt", logHelper.user(user), subject, errorMessage, `Will try ${provider.constructor.name}`)
                     } else {
+                        provider = null
                         logger.error("AI.prompt", logHelper.user(user), subject, errorMessage, "No providers left to try")
                     }
                 }
@@ -529,8 +536,10 @@ export class AI {
         const messages = []
 
         // If a custom prompt was set, do not use predefined humours or translations.
-        if (options.customPrompt?.toString().startsWith("custom:")) {
-            messages.push(options.customPrompt.substring(7))
+        // Recipes created before mid 2026 have the prompt without the ":" separator.
+        const optionsPrompt = options.customPrompt?.toString() || ""
+        if (optionsPrompt.startsWith("custom")) {
+            messages.push(optionsPrompt.substring(optionsPrompt.startsWith("custom:") ? 7 : 6).trim())
             return messages
         }
 
