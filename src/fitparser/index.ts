@@ -168,6 +168,17 @@ export class FitParser {
             fitFileActivity.workoutNotes = messages.workoutMesgs.map((wk) => (Array.isArray(wk.wktDescription) ? wk.wktDescription[0] : wk.wktDescription)).join(", ")
         }
 
+        // Activity name not known beforehand? Try using the workout or the sport profile name.
+        if (!fitFileActivity.name) {
+            fitFileActivity.name = fitFileActivity.workoutName || fitFileActivity.sportProfile
+        }
+
+        // Some devices set the activity name in all uppercase, so switch it to capitalized style.
+        const activityName = fitFileActivity.name
+        if (activityName?.length > 3 && activityName == activityName.toUpperCase()) {
+            fitFileActivity.name = activityName.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase())
+        }
+
         // Found devices in the FIT file? Generate device IDs.
         if (messages.deviceInfoMesgs?.length > 0) {
             const filter = (d) => (d.manufacturer || d.antplusDeviceType || d.bleDeviceType) && d.serialNumber

@@ -97,7 +97,7 @@ export class FitUpload {
                 totalBytes += chunk.length
                 if (totalBytes > maxSize) {
                     zipStream.destroy()
-                    return reject(new Error(`Archive is bigger than ${Math.round(maxSize / 1024 / 1024)} MB`))
+                    return reject(new Error(`Archive is bigger than ${Math.round(maxSize / 1024 / 1024)}MB`))
                 }
                 chunks.push(Buffer.from(chunk))
             })

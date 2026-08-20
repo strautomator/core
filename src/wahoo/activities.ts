@@ -82,7 +82,7 @@ export class WahooActivities {
         activity.id = `upload-${user.id}-${dayjs(activity.dateStart).utc().unix()}`
 
         if (!activity.name) {
-            activity.name = activity.workoutName || activity.sportProfile || "Uploaded activity"
+            activity.name = "Uploaded activity"
         }
 
         await fitparser.saveProcessedActivity(user, "wahoo", activity)

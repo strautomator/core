@@ -114,7 +114,7 @@ export class CalendarBuilder {
             const uncachedCount = partialFirstBuild ? eventCount : removed + (dbCalendar.gearEventCount || 0)
 
             const countLog = `Total ${eventCount}, ${uncachedCount} not cached`
-            const sizeLog = `${size.toFixed(2)} MB`
+            const sizeLog = `${size.toFixed(2)}MB`
             const timeLog = `Generated in ${duration} seconds`
 
             // Reset the refresh flag, if set.
