@@ -6,11 +6,7 @@ import {calculatePowerIntervals, getCadenceString} from "../strava/utils"
 import {UserData} from "../users/types"
 import {translation} from "../translations"
 import openrouter from "../openrouter"
-import anthropic from "../anthropic"
 import gemini from "../gemini"
-import mistral from "../mistral"
-import openai from "../openai"
-import xai from "../xai"
 import database from "../database"
 import _ from "lodash"
 import cache from "bitecache"
@@ -18,7 +14,7 @@ import logger from "anyhow"
 import dayjs from "../dayjs"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
-const allProviders = [anthropic, xai, gemini, openai, mistral, openrouter]
+const allProviders = [openrouter, gemini]
 
 /**
  * AI / LLM wrapper.
@@ -327,21 +323,17 @@ export class AI {
         const activity = options.activity
         const subject = options.activity ? logHelper.activity(activity) : options.subject
 
-        // Free accounts default to OpenRouter.
+        // Free accounts always use the free OpenRouter models.
         if (!user.isPro) {
             options.provider = AiProviderName.OpenRouter
         } else if (!options.provider) {
             options.provider = user.preferences?.aiProvider || AiProviderName.OpenRouter
         }
 
-        // Filter providers that are not enabled or being rate limited at the moment.
+        // OpenRouter is the main provider, with Gemini as the fallback.
         const reservoirs = await Promise.all(allProviders.map(async (p: AiProvider) => (p.limiter ? await p.limiter.currentReservoir() : 0)))
-        let availableProviders: AiProvider[] = _.shuffle(allProviders.filter((_p, i) => reservoirs[i] > 0))
-
-        // Use the preferred provider, if available, otherwise a random one.
-        const preferredProvider = availableProviders.find((p) => p.constructor.name.toLowerCase() == options.provider)
-        let provider: AiProvider = preferredProvider || availableProviders.pop()
-        availableProviders = _.without(availableProviders, provider)
+        const availableProviders: AiProvider[] = allProviders.filter((_p, i) => reservoirs[i] > 0)
+        let provider: AiProvider = availableProviders.shift()
 
         // Keep trying with different providers.
         let response: string = null
@@ -358,7 +350,7 @@ export class AI {
             } finally {
                 if (!response) {
                     if (availableProviders.length > 0) {
-                        provider = availableProviders.pop()
+                        provider = availableProviders.shift()
                         logger.warn("AI.prompt", logHelper.user(user), subject, errorMessage, `Will try ${provider.constructor.name}`)
                     } else {
                         provider = null

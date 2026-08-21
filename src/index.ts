@@ -73,16 +73,8 @@ import {Komoot} from "./komoot"
 export const komoot: Komoot = Komoot.Instance
 import {AI} from "./ai"
 export const ai: AI = AI.Instance
-import {OpenAI} from "./openai"
-export const openai: OpenAI = OpenAI.Instance
 import {Gemini} from "./gemini"
 export const gemini: Gemini = Gemini.Instance
-import {Anthropic} from "./anthropic"
-export const anthropic: Anthropic = Anthropic.Instance
-import {xAI} from "./xai"
-export const xai: xAI = xAI.Instance
-import {Mistral} from "./mistral"
-export const mistral: Mistral = Mistral.Instance
 import {OpenRouter} from "./openrouter"
 export const openrouter: OpenRouter = OpenRouter.Instance
 import {Chatbase} from "./chatbase"
@@ -256,7 +248,7 @@ export const startup = async (quickStart?: boolean) => {
     await Promise.all(coreModules.map(initModule))
     const secondaryModules = [ai, announcements, calendar, faq, gearwear, gdpr, mailer, maps, notifications, openrouter, recipes, weather]
     await Promise.allSettled(secondaryModules.map(initModule))
-    const optionalModules = [affiliates, anthropic, awin, chatbase, garmin, gemini, komoot, lastfm, mistral, music, openai, spotify, xai, wahoo]
+    const optionalModules = [affiliates, awin, chatbase, garmin, gemini, komoot, lastfm, music, spotify, wahoo]
     await Promise.allSettled(optionalModules.map(initModule))
 
     process.env.SMU_APP_STARTED = "1"

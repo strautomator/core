@@ -1,6 +1,6 @@
 // Strautomator Core: OpenRouter
 
-import {AiGenerateOptions, AiProvider} from "../ai/types"
+import {AiGenerateOptions, AiProvider, AiProviderName} from "../ai/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import _ from "lodash"
@@ -56,6 +56,19 @@ export class OpenRouter implements AiProvider {
     // --------------------------------------------------------------------------
 
     /**
+     * Get the OpenRouter model matching the user's preferred AI provider.
+     * @param provider The preferred AI provider name.
+     * @param useReason True to get the model that uses reason.
+     */
+    getModel = (provider: AiProviderName, useReason: boolean): string => {
+        const models = settings.openrouter.models[provider]
+        if (!models) {
+            return null
+        }
+        return (useReason ? models.reason : models.default) || null
+    }
+
+    /**
      * Dispatch a prompt to OpenRouter.
      * @param user The user.
      * @param options AI generation options.
@@ -63,6 +76,8 @@ export class OpenRouter implements AiProvider {
      */
     prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
+            const useReason = user.isPro && options.useReason
+            const model = this.getModel(options.provider, useReason)
             const reqOptions: AxiosConfig = {
                 url: `${settings.openrouter.api.baseUrl}chat/completions`,
                 method: "POST",
@@ -70,12 +85,18 @@ export class OpenRouter implements AiProvider {
                 data: {
                     max_tokens: options.maxTokens,
                     stream: false,
-                    reasoning: {effort: user.isPro && options.useReason ? "low" : "none"},
+                    reasoning: {effort: useReason ? "low" : "none"},
                     messages: [
                         {role: "system", content: options.instruction},
                         {role: "user", content: messages.join(" ")}
                     ]
                 }
+            }
+
+            // Only set a model if the user has a specific provider preference, otherwise
+            // OpenRouter will use the default model set on the account.
+            if (model) {
+                reqOptions.data.model = model
             }
 
             // Here we go!

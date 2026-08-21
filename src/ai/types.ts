@@ -10,11 +10,13 @@ import {ActivityWeather} from "../weather/types"
  */
 export enum AiProviderName {
     Anthropic = "anthropic",
+    DeepSeek = "deepseek",
     Gemini = "gemini",
     Mistral = "mistral",
     OpenAI = "openai",
     OpenRouter = "openrouter",
-    xAI = "xai"
+    SpaceXAI = "spacexai",
+    Zai = "zai"
 }
 
 /**

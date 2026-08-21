@@ -85,17 +85,6 @@
         // Active announcements should be cached for up to 30 minutes.
         "cacheDuration": 1800
     },
-    // Anthropic API options.
-    "anthropic": {
-        "api": {
-            "version": "2023-06-01",
-            "baseUrl": "https://api.anthropic.com/v1/",
-            // Maximum concurrent requests per instance.
-            "maxConcurrent": 2,
-            // Maximum requests per minute per instance.
-            "maxPerMinute": 60
-        }
-    },
     "axios": {
         // User agent used to emulate a browser.
         "uaBrowser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
@@ -363,16 +352,6 @@
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
         }
     },
-    // Mistral AI.
-    "mistral": {
-        "api": {
-            "baseUrl": "https://api.mistral.ai/v1/",
-            // Maximum concurrent requests per instance.
-            "maxConcurrent": 2,
-            // Maximum requests per minute per instance.
-            "maxPerMinute": 40
-        }
-    },
     // Settings for music / tracklist providers.
     "music": {
         // Cache recently played tracks for up to 1 minute. Value set in seconds.
@@ -403,17 +382,6 @@
         // OAuth2 modules (Strava, PayPal, etc).
         "tokenTimeout": 6000
     },
-    "openai": {
-        "api": {
-            "baseUrl": "https://api.openai.com/v1/",
-            // Custom assistant ID.
-            "assistantId": "asst_yBraLh0JhbxWiTXudiSRFjNJ",
-            // Maximum concurrent requests per instance.
-            "maxConcurrent": 2,
-            // Maximum requests per minute per instance.
-            "maxPerMinute": 120
-        }
-    },
     "openrouter": {
         "api": {
             "baseUrl": "https://openrouter.ai/api/v1/",
@@ -421,6 +389,38 @@
             "maxConcurrent": 4,
             // Maximum requests per minute per instance.
             "maxPerMinute": 100
+        },
+        // Models used for each of the AI providers that users can select as their preference.
+        // Providers not listed here will use the default model set on the OpenRouter account.
+        "models": {
+            "anthropic": {
+                "default": "anthropic/claude-haiku-4.5",
+                "reason": "anthropic/claude-sonnet-5"
+            },
+            "deepseek": {
+                "default": "deepseek/deepseek-v4-flash-latest",
+                "reason": "deepseek/deepseek-v4-flash-latest"
+            },
+            "gemini": {
+                "default": "google/gemini-3.5-flash-lite",
+                "reason": "google/gemini-3.7-flash"
+            },
+            "mistral": {
+                "default": "mistralai/mistral-small-2603",
+                "reason": "mistralai/mistral-small-2603"
+            },
+            "openai": {
+                "default": "openai/gpt-5.6-luna",
+                "reason": "openai/gpt-5.6-terra"
+            },
+            "spacexai": {
+                "default": "x-ai/grok-4.3",
+                "reason": "x-ai/grok-4.5"
+            },
+            "zai": {
+                "default": "z-ai/glm-4.7-flash",
+                "reason": "z-ai/glm-5.1"
+            }
         }
     },
     "paddle": {
@@ -696,16 +696,6 @@
             "noActivities": 730,
             // How many days to wait before acting on pending or cancelled subscriptions.
             "subscriptions": 5
-        }
-    },
-    // xAI API options.
-    "xai": {
-        "api": {
-            "baseUrl": "https://api.x.ai/v1/",
-            // Maximum concurrent requests per instance.
-            "maxConcurrent": 2,
-            // Maximum requests per minute per instance.
-            "maxPerMinute": 20
         }
     },
     "wahoo": {

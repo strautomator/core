@@ -28,7 +28,7 @@ Additional integrations:
 - PayPal API
 - Spotify API
 - Wahoo Cloud API
-- AI providers: Anthropic, Gemini, Mistral, OpenAI, xAI, OpenRouter
+- AI providers: OpenRouter, Gemini
 - Weather providers: Open-Meteo, OpenWeatherMap, Tomorrow.io, Visual Crossing, WeatherAPI
 
 Please note that most of the services listed above have a free / trial version, which should be enough for testing or a single user use case. For power users, you might need to subscribe to paid plans.
