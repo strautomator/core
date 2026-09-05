@@ -104,6 +104,9 @@ export class GDPR {
             // Remove sensitive data.
             delete jsonData.User.stravaTokens
             delete jsonData.User.urlToken
+            delete jsonData.User.garminAuthState
+            delete jsonData.User.wahooAuthState
+            delete jsonData.User.spotifyAuthState
             if (jsonData.User.garmin) {
                 delete jsonData.User.garmin.tokens
             }

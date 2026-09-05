@@ -132,6 +132,12 @@ export class WahooActivities {
                 throw new Error("Missing activity file URL in the webhook data")
             }
 
+            // Only download FIT files from Wahoo domains.
+            const fileHost = new URL(webhookData.workout_summary.file.url).hostname.toLowerCase()
+            if (fileHost != "wahooligan.com" && !fileHost.endsWith(".wahooligan.com")) {
+                throw new Error("Invalid activity file URL")
+            }
+
             // Files are served by the CDN and need no authentication, so tokens are
             // not validated here (refreshing without an actual API call would leave
             // unrevoked access tokens behind).

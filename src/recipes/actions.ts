@@ -1112,10 +1112,13 @@ export const toggleGearComponents = async (user: UserData, activity: StravaActiv
                 const arrGear: string[] = action.value.split(":")
                 const gearId = arrGear.shift().trim()
 
-                // Make sure the specified gear is still valid.
+                // Make sure the specified gear is still valid and belongs to the user.
                 const gear: GearWearConfig = updatedGear[gearId]?.config || (await gearwear.getById(gearId))
                 if (!gear) {
                     throw new Error(`Gear ${gearId} not found`)
+                }
+                if (gear.userId != user.id) {
+                    throw new Error(`Gear ${gearId} does not belong to user ${user.id}`)
                 }
 
                 // Make sure the component exists.

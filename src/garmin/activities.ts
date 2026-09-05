@@ -139,6 +139,12 @@ export class GarminActivities {
                 throw new Error("Missing activity callbackURL")
             }
 
+            // Only download FIT files from Garmin domains.
+            const callbackHost = new URL(ping.callbackURL).hostname.toLowerCase()
+            if (callbackHost != "garmin.com" && !callbackHost.endsWith(".garmin.com")) {
+                throw new Error("Invalid activity callbackURL")
+            }
+
             // Try fetching the FIT file specified in the callback URL.
             const tokens = await api.validateTokens(user)
             const res = await api.makeRequest(tokens, ping.callbackURL, "GET", true)
