@@ -32,7 +32,7 @@ export class EventManager extends events.EventEmitter {
             if (arg === null) continue
             if (typeof arg === "string") {
                 if (isTokenEvent && !arg.includes(" ") && ((arg.length > 36 && arg.length < 44) || (arg.split("\\.").length == 3 && arg.length > 32))) {
-                    details.push(`${arg.substring(0, 2)}*${arg.substring(-2)}`)
+                    details.push(`*${arg.slice(-2)}`)
                 } else {
                     details.push(arg)
                 }

@@ -579,6 +579,17 @@ export class Recipes {
             const now = new Date()
             const isNew = !recipe.id || recipe.id.substring(0, 1) != "s"
 
+            // Updating an existing shared recipe? Make sure it belongs to the owner.
+            if (!isNew) {
+                const existing: SharedRecipe = await database.get("shared-recipes", recipe.id)
+                if (!existing) {
+                    throw new Error(`Recipe ${recipe.id} not found`)
+                }
+                if (existing.userId != owner.id) {
+                    throw new Error(`Recipe ${recipe.id} does not belong to user ${owner.id}`)
+                }
+            }
+
             // Create the shared recipe.
             const sharedRecipe: SharedRecipe = {
                 id: isNew ? generateId(true) : recipe.id,
@@ -627,36 +638,6 @@ export class Recipes {
             logger.info("Recipes.deleteSharedRecipe", logHelper.user(owner), id)
         } catch (ex) {
             logger.error("Recipes.deleteSharedRecipe", logHelper.user(owner), id, ex)
-            throw ex
-        }
-    }
-
-    /**
-     * Copy a shared recipe to the user's account.
-     * @param user User requesting the shared recipe.
-     * @param sharedRecipe The shared recipe data.
-     */
-    copySharedRecipe = async (user: UserData, sharedRecipe: SharedRecipe): Promise<RecipeData> => {
-        try {
-            const recipe: RecipeData = {
-                id: generateId(),
-                sharedRecipeId: sharedRecipe.id,
-                title: sharedRecipe.title,
-                conditions: sharedRecipe.conditions,
-                actions: sharedRecipe.actions
-            }
-
-            if (sharedRecipe.defaultFor) recipe.defaultFor = sharedRecipe.defaultFor
-            if (sharedRecipe.op) recipe.op = sharedRecipe.op
-            if (sharedRecipe.samePropertyOp) recipe.samePropertyOp = sharedRecipe.samePropertyOp
-
-            await database.merge("shared-recipes", {id: sharedRecipe, dateLastCopy: new Date()})
-            await database.merge("users", {id: user.id, [`recipes.${recipe.id}`]: recipe})
-
-            logger.info("Recipes.copySharedRecipe", logHelper.user(user), logHelper.recipe(recipe))
-            return recipe
-        } catch (ex) {
-            logger.error("Recipes.copySharedRecipe", logHelper.user(user), ex)
             throw ex
         }
     }
