@@ -60,6 +60,23 @@
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
     },
+    // Remote MCP server (PRO only). Hosted by the web app at /mcp.
+    "mcp": {
+        // Path of the MCP Streamable HTTP endpoint.
+        "path": "/mcp",
+        // OAuth scope advertised to MCP clients.
+        "scope": "mcp",
+        // Access token lifetime in hours.
+        "accessTokenHours": 1,
+        // Refresh token lifetime in days.
+        "refreshTokenDays": 30,
+        // Authorization code lifetime in minutes.
+        "authCodeMinutes": 10,
+        // Pending authorization request lifetime in minutes (covers the Strava login round-trip).
+        "authRequestMinutes": 15,
+        // Dynamically registered OAuth clients expire after this many days of issuance.
+        "clientDays": 365
+    },
     // Afiliate settings (also used for the Country Linkify module).
     "affiliates": {
         "app": {
