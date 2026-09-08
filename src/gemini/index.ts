@@ -67,7 +67,7 @@ export class Gemini implements AiProvider {
     prompt = async (user: UserData, options: AiGenerateOptions, messages: string[]): Promise<string> => {
         try {
             const reqOptions: GenerateContentParameters = {
-                model: user.isPro && options.useReason ? "gemini-3.7-flash" : "gemini-3.5-flash-lite",
+                model: user.isPro && options.useReason ? "gemini-3.8-flash" : "gemini-3.5-flash-lite",
                 contents: [{role: "user", parts: messages.map((p) => ({text: p}))}],
                 config: {
                     thinkingConfig: {thinkingLevel: user.isPro && options.useReason ? ThinkingLevel.LOW : ThinkingLevel.MINIMAL},

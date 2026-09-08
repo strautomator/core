@@ -81,10 +81,14 @@ export class OpenRouter implements AiProvider {
             const reqOptions: AxiosConfig = {
                 url: `${settings.openrouter.api.baseUrl}chat/completions`,
                 method: "POST",
-                headers: {Authorization: `Bearer ${settings.openrouter.api.key}`},
+                headers: {
+                    Authorization: `Bearer ${settings.openrouter.api.key}`,
+                    "X-Title": "Strautomator"
+                },
                 data: {
                     max_tokens: options.maxTokens,
                     stream: false,
+                    cache_control: {type: "ephemeral"},
                     reasoning: {effort: useReason ? "low" : "none"},
                     messages: [
                         {role: "system", content: options.instruction},
@@ -94,7 +98,7 @@ export class OpenRouter implements AiProvider {
             }
 
             // Only set a model if the user has a specific provider preference, otherwise
-            // OpenRouter will use the default model set on the account.
+            // OpenRouter will use the default model set on the account / key.
             if (model) {
                 reqOptions.data.model = model
             }
