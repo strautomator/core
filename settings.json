@@ -12,8 +12,8 @@
         "maxTokens": {
             "name": 100,
             "description": 500,
-            "insights": 11000,
-            "process": 13000,
+            "insights": 20000,
+            "process": 25000,
             // If max tokens were not enough, try again with a 20% higher limit.
             "multiplier": 1.2
         },
@@ -402,6 +402,8 @@
     "openrouter": {
         "api": {
             "baseUrl": "https://openrouter.ai/api/v1/",
+            // Default model / alias to be used.
+            "defaultModel": null,
             // Maximum concurrent requests per instance.
             "maxConcurrent": 4,
             // Maximum requests per minute per instance.
@@ -420,7 +422,7 @@
             },
             "gemini": {
                 "default": "google/gemini-3.5-flash-lite",
-                "reason": "google/gemini-3.7-flash"
+                "reason": "google/gemini-3.8-flash"
             },
             "mistral": {
                 "default": "mistralai/mistral-small-2603",
