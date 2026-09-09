@@ -1,7 +1,7 @@
 // Strautomator Core: Database
 
-import {DocumentReference, FieldValue, Firestore, OrderByDirection} from "@google-cloud/firestore"
-import {DatabaseOptions} from "./types"
+import {DocumentReference, FieldValue, Firestore, OrderByDirection, Transaction} from "@google-cloud/firestore"
+import {DatabaseOptions, DatabaseTransaction as DatabaseTransactionApi} from "./types"
 import {cryptoProcess} from "./crypto"
 import _ from "lodash"
 import cache from "bitecache"
@@ -10,6 +10,45 @@ import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 const deadlineTimeout = 1500
+
+/**
+ * Firestore transaction helpers that honour collection suffixes, decryption and date transforms.
+ */
+export class DatabaseTransaction implements DatabaseTransactionApi {
+    private db: Database
+    private txn: Transaction
+
+    constructor(db: Database, txn: Transaction) {
+        this.db = db
+        this.txn = txn
+    }
+
+    /**
+     * Read a document inside the transaction.
+     */
+    get = async (collection: string, id: string): Promise<any> => {
+        const snap = await this.txn.get(this.db.doc(collection, id))
+        if (!snap.exists) {
+            return null
+        }
+
+        const result: any = snap.data()
+        cryptoProcess(result, false)
+        this.db.transformData(result)
+        result.id = snap.id
+        return result
+    }
+
+    /**
+     * Delete a document inside the transaction.
+     */
+    delete = (collection: string, id: string): void => {
+        this.txn.delete(this.db.doc(collection, id))
+        if (this.db.cacheInMemory) {
+            cache.del(`database${this.db.collectionSuffix}`, `${collection}-${id}`)
+        }
+    }
+}
 
 /**
  * Database wrapper.
@@ -483,6 +522,25 @@ export class Database {
 
             logger.info("Database.appState.increment", id, field, value)
         }
+    }
+
+    // TRANSACTIONS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Run a Firestore transaction. Use the returned {@link DatabaseTransaction} helpers so
+     * collection suffixes, field decryption and date transforms match regular get/delete calls.
+     * @param handler Callback that performs reads and writes atomically.
+     */
+    runTransaction = async <T>(handler: (transaction: DatabaseTransaction) => Promise<T>): Promise<T> => {
+        if (settings.database.writeDisabled) {
+            logger.warn("Database.runTransaction", "WRITE DISABLED")
+            throw new Error("Database writes are disabled")
+        }
+
+        return this.firestore.runTransaction(async (txn) => {
+            return handler(new DatabaseTransaction(this, txn))
+        })
     }
 
     // HELPERS
