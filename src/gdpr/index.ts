@@ -94,12 +94,12 @@ export class GDPR {
             jsonData["Activities"] = await database.search("activities", where)
             jsonData["FitActivities"] = {Garmin: await database.search("garmin", where), Wahoo: await database.search("wahoo", where)}
             jsonData["Automations"] = {Stats: await database.search("recipe-stats", where), Shared: await database.search("shared-recipes", where)}
-            jsonData["AthleteRecords"] = await database.get("athlete-records", user.id, true)
+            jsonData["AthleteRecords"] = await database.get("athlete-records", user.id)
             jsonData["Calendars"] = await database.search("calendars", where)
             jsonData["GearWear"] = {Config: await database.search("gearwear", where), BatteryTracker: await database.get("gearwear-battery", user.id)}
             jsonData["Notifications"] = await database.search("notifications", where)
             jsonData["Subscription"] = await database.search("subscriptions", where)
-            jsonData["User"] = await database.get("users", user.id, true)
+            jsonData["User"] = await database.get("users", user.id)
 
             // Remove sensitive data.
             delete jsonData.User.stravaTokens

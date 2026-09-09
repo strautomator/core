@@ -4,7 +4,6 @@ import {DocumentReference, FieldValue, Firestore, OrderByDirection, Transaction}
 import {DatabaseOptions, DatabaseTransaction as DatabaseTransactionApi} from "./types"
 import {cryptoProcess} from "./crypto"
 import _ from "lodash"
-import cache from "bitecache"
 import jaul from "jaul"
 import logger from "anyhow"
 import dayjs from "../dayjs"
@@ -44,9 +43,6 @@ export class DatabaseTransaction implements DatabaseTransactionApi {
      */
     delete = (collection: string, id: string): void => {
         this.txn.delete(this.db.doc(collection, id))
-        if (this.db.cacheInMemory) {
-            cache.del(`database${this.db.collectionSuffix}`, `${collection}-${id}`)
-        }
     }
 }
 
@@ -62,11 +58,6 @@ export class Database {
     static newInstance() {
         return new this()
     }
-
-    /**
-     * Enable the in-memory cache of DB results?
-     */
-    cacheInMemory: boolean = false
 
     /**
      * Database collection suffix.
@@ -93,12 +84,6 @@ export class Database {
             // Crypto key is global and required.
             if (!settings.database.crypto.key) {
                 throw new Error("Missing the mandatory database.crypto.key setting")
-            }
-
-            // Setup cache only if a duration was set.
-            if (dbOptions.cacheDuration) {
-                cache.setup(`database${this.collectionSuffix}`, dbOptions.cacheDuration)
-                this.cacheInMemory = true
             }
 
             const options: FirebaseFirestore.Settings = {
@@ -160,21 +145,12 @@ export class Database {
         const encryptedData = _.cloneDeep(data)
         cryptoProcess(encryptedData, true)
 
-        // Set the document, save to cache and return it.
         try {
             const result = await doc.set(encryptedData)
-            if (this.cacheInMemory) {
-                cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
-            }
-
             return result.writeTime.seconds
         } catch (ex) {
             if (this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData)
-                if (this.cacheInMemory) {
-                    cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
-                }
-
                 return result.writeTime.seconds
             } else {
                 throw ex
@@ -203,21 +179,12 @@ export class Database {
             doc = table.doc(data.id)
         }
 
-        // Merge the data, save to cache and return it.
         try {
             const result = await doc.set(encryptedData, {merge: true})
-            if (this.cacheInMemory) {
-                cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
-            }
-
             return result.writeTime.seconds
         } catch (ex) {
             if (this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData, {merge: true})
-                if (this.cacheInMemory) {
-                    cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
-                }
-
                 return result.writeTime.seconds
             } else {
                 throw ex
@@ -229,20 +196,10 @@ export class Database {
      * Get a single document from the specified database collection.
      * @param collection Name of the collection.
      * @param id ID of the desired document.
-     * @param skipCache If set to true, will not lookup on in-memory cache.
      */
-    get = async (collection: string, id: string, skipCache?: boolean): Promise<any> => {
+    get = async (collection: string, id: string): Promise<any> => {
         let colname = `${collection}${this.collectionSuffix}`
 
-        // First check if document is cached.
-        if (!skipCache && this.cacheInMemory) {
-            const fromCache = cache.get(`database${this.collectionSuffix}`, `${collection}-${id}`)
-            if (fromCache) {
-                return fromCache
-            }
-        }
-
-        // Continue here with a regular database fetch.
         const table = this.firestore.collection(colname)
         const doc = await table.doc(id).get()
 
@@ -253,11 +210,6 @@ export class Database {
             cryptoProcess(result, false)
             this.transformData(result)
             result.id = doc.id
-
-            // Add result to cache, only if enabled.
-            if (this.cacheInMemory) {
-                cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, result)
-            }
 
             return result
         }
@@ -403,9 +355,6 @@ export class Database {
         if (_.isString(queryOrId)) {
             const id = queryOrId as string
             await this.firestore.collection(colname).doc(id).delete()
-            if (this.cacheInMemory) {
-                cache.del(`database${this.collectionSuffix}`, `${collection}-${id}`)
-            }
 
             logger.info("Database.delete", collection, `ID ${id}`, `Deleted`)
             return 1

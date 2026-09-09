@@ -173,8 +173,6 @@
         // If you're hosting multiple sites or services within the same Google Project,
         // you might add a default suffix to Firestore collection names.
         "collectionSuffix": "",
-        // Cache duration to keep database documents in memory for different colletions. Value set in seconds.
-        "cacheDuration": null,
         // Encryption options.
         "crypto": {
             "algorithm": "aes-256-cbc",
