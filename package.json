@@ -1,6 +1,6 @@
 {
     "name": "strautomator-core",
-    "version": "26.361.11648",
+    "version": "26.373.11951",
     "description": "Strautomator.com core engine",
     "author": "Igor Ramadas",
     "main": "lib/index.js",
@@ -14,9 +14,9 @@
         "prepare": "tsc"
     },
     "dependencies": {
-        "@google-cloud/firestore": "^9.0.0",
-        "@google-cloud/storage": "^8.0.1",
-        "@google/genai": "^2.19.0",
+        "@google-cloud/firestore": "^9.1.0",
+        "@google-cloud/storage": "^8.1.0",
+        "@google/genai": "^2.21.0",
         "@googlemaps/google-maps-services-js": "^3.4.2",
         "@mapbox/polyline": "^1.2.1",
         "@paddle/paddle-node-sdk": "^3.10.0",
@@ -30,16 +30,16 @@
         "flatbush": "^3.3.1",
         "ical-generator": "11.1.1",
         "jaul": "^1.7.1",
-        "jszip": "^3.10.1",
+        "jszip": "^3.10.2",
         "lodash": "^4.18.1",
-        "nodemailer": "^9.1.0",
+        "nodemailer": "^10.0.1",
         "setmeup": "^1.9.5",
         "typescript": "^7.0.2"
     },
     "devDependencies": {
         "@types/express": "^5.0.6",
         "@types/lodash": "^4.17.25",
-        "@types/node": "^26.4.0",
+        "@types/node": "^26.5.0",
         "@types/nodemailer": "^8.0.1",
         "chalk": "^4.1.2"
     },
