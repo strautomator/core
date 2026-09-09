@@ -51,6 +51,10 @@
         "cacheDuration": 60,
         "maxCacheDuration": 120
     },
+    "oauth": {
+        // Set this to the user ID that you want to assume in your development environment. Does not work on production.
+        "assumeUser": null
+    },
     "paddle": {
         "api": {
             "environment": "sandbox"
