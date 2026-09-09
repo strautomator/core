@@ -15,6 +15,16 @@ export interface DatabaseOptions {
 }
 
 /**
+ * Helpers passed to {@link Database.runTransaction} for atomic reads and writes.
+ */
+export interface DatabaseTransaction {
+    /** Read a document inside the transaction. */
+    get: (collection: string, id: string) => Promise<any>
+    /** Delete a document inside the transaction. */
+    delete: (collection: string, id: string) => void
+}
+
+/**
  * Generic database search query options.
  */
 export interface DatabaseSearchOptions {
