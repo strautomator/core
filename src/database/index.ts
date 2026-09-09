@@ -1,15 +1,50 @@
 // Strautomator Core: Database
 
-import {DocumentReference, FieldValue, Firestore, OrderByDirection} from "@google-cloud/firestore"
-import {DatabaseOptions} from "./types"
+import {DocumentReference, FieldValue, Firestore, OrderByDirection, Transaction} from "@google-cloud/firestore"
+import {DatabaseOptions, DatabaseTransaction as DatabaseTransactionApi} from "./types"
 import {cryptoProcess} from "./crypto"
 import _ from "lodash"
-import cache from "bitecache"
 import jaul from "jaul"
 import logger from "anyhow"
 import dayjs from "../dayjs"
 const settings = require("setmeup").settings
 const deadlineTimeout = 1500
+
+/**
+ * Firestore transaction helpers that honour collection suffixes, decryption and date transforms.
+ */
+export class DatabaseTransaction implements DatabaseTransactionApi {
+    private db: Database
+    private txn: Transaction
+
+    constructor(db: Database, txn: Transaction) {
+        this.db = db
+        this.txn = txn
+    }
+
+    /**
+     * Read a document inside the transaction.
+     */
+    get = async (collection: string, id: string): Promise<any> => {
+        const snap = await this.txn.get(this.db.doc(collection, id))
+        if (!snap.exists) {
+            return null
+        }
+
+        const result: any = snap.data()
+        cryptoProcess(result, false)
+        this.db.transformData(result)
+        result.id = snap.id
+        return result
+    }
+
+    /**
+     * Delete a document inside the transaction.
+     */
+    delete = (collection: string, id: string): void => {
+        this.txn.delete(this.db.doc(collection, id))
+    }
+}
 
 /**
  * Database wrapper.
@@ -23,11 +58,6 @@ export class Database {
     static newInstance() {
         return new this()
     }
-
-    /**
-     * Enable the in-memory cache of DB results?
-     */
-    cacheInMemory: boolean = false
 
     /**
      * Database collection suffix.
@@ -54,12 +84,6 @@ export class Database {
             // Crypto key is global and required.
             if (!settings.database.crypto.key) {
                 throw new Error("Missing the mandatory database.crypto.key setting")
-            }
-
-            // Setup cache only if a duration was set.
-            if (dbOptions.cacheDuration) {
-                cache.setup(`database${this.collectionSuffix}`, dbOptions.cacheDuration)
-                this.cacheInMemory = true
             }
 
             const options: FirebaseFirestore.Settings = {
@@ -121,21 +145,12 @@ export class Database {
         const encryptedData = _.cloneDeep(data)
         cryptoProcess(encryptedData, true)
 
-        // Set the document, save to cache and return it.
         try {
             const result = await doc.set(encryptedData)
-            if (this.cacheInMemory) {
-                cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
-            }
-
             return result.writeTime.seconds
         } catch (ex) {
             if (this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData)
-                if (this.cacheInMemory) {
-                    cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, data)
-                }
-
                 return result.writeTime.seconds
             } else {
                 throw ex
@@ -164,21 +179,12 @@ export class Database {
             doc = table.doc(data.id)
         }
 
-        // Merge the data, save to cache and return it.
         try {
             const result = await doc.set(encryptedData, {merge: true})
-            if (this.cacheInMemory) {
-                cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
-            }
-
             return result.writeTime.seconds
         } catch (ex) {
             if (this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData, {merge: true})
-                if (this.cacheInMemory) {
-                    cache.merge(`database${this.collectionSuffix}`, `${collection}-${doc.id}`, data)
-                }
-
                 return result.writeTime.seconds
             } else {
                 throw ex
@@ -190,20 +196,10 @@ export class Database {
      * Get a single document from the specified database collection.
      * @param collection Name of the collection.
      * @param id ID of the desired document.
-     * @param skipCache If set to true, will not lookup on in-memory cache.
      */
-    get = async (collection: string, id: string, skipCache?: boolean): Promise<any> => {
+    get = async (collection: string, id: string): Promise<any> => {
         let colname = `${collection}${this.collectionSuffix}`
 
-        // First check if document is cached.
-        if (!skipCache && this.cacheInMemory) {
-            const fromCache = cache.get(`database${this.collectionSuffix}`, `${collection}-${id}`)
-            if (fromCache) {
-                return fromCache
-            }
-        }
-
-        // Continue here with a regular database fetch.
         const table = this.firestore.collection(colname)
         const doc = await table.doc(id).get()
 
@@ -214,11 +210,6 @@ export class Database {
             cryptoProcess(result, false)
             this.transformData(result)
             result.id = doc.id
-
-            // Add result to cache, only if enabled.
-            if (this.cacheInMemory) {
-                cache.set(`database${this.collectionSuffix}`, `${collection}-${id}`, result)
-            }
 
             return result
         }
@@ -364,9 +355,6 @@ export class Database {
         if (_.isString(queryOrId)) {
             const id = queryOrId as string
             await this.firestore.collection(colname).doc(id).delete()
-            if (this.cacheInMemory) {
-                cache.del(`database${this.collectionSuffix}`, `${collection}-${id}`)
-            }
 
             logger.info("Database.delete", collection, `ID ${id}`, `Deleted`)
             return 1
@@ -483,6 +471,25 @@ export class Database {
 
             logger.info("Database.appState.increment", id, field, value)
         }
+    }
+
+    // TRANSACTIONS
+    // --------------------------------------------------------------------------
+
+    /**
+     * Run a Firestore transaction. Use the returned {@link DatabaseTransaction} helpers so
+     * collection suffixes, field decryption and date transforms match regular get/delete calls.
+     * @param handler Callback that performs reads and writes atomically.
+     */
+    runTransaction = async <T>(handler: (transaction: DatabaseTransaction) => Promise<T>): Promise<T> => {
+        if (settings.database.writeDisabled) {
+            logger.warn("Database.runTransaction", "WRITE DISABLED")
+            throw new Error("Database writes are disabled")
+        }
+
+        return this.firestore.runTransaction(async (txn) => {
+            return handler(new DatabaseTransaction(this, txn))
+        })
     }
 
     // HELPERS

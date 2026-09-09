@@ -6,12 +6,20 @@
 export interface DatabaseOptions {
     /** Database instance / connection description. */
     description?: string
-    /** Cache duration in seconds. */
-    cacheDuration?: number
     /** Collection suffix. */
     collectionSuffix?: string
     /** Ignore undefined properties? */
     ignoreUndefinedProperties?: boolean
+}
+
+/**
+ * Helpers passed to {@link Database.runTransaction} for atomic reads and writes.
+ */
+export interface DatabaseTransaction {
+    /** Read a document inside the transaction. */
+    get: (collection: string, id: string) => Promise<any>
+    /** Delete a document inside the transaction. */
+    delete: (collection: string, id: string) => void
 }
 
 /**
