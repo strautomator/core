@@ -750,6 +750,7 @@ export enum StravaRouteTerrain {
  */
 export enum StravaMapStyle {
     Default = "default",
+    ActivityReplay = "activity_shorts",
     Satellite3D = "satellite_3d",
     Winter3D = "winter_3d",
     SurfaceType = "surface_type",
