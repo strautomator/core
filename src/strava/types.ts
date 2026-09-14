@@ -7,6 +7,20 @@ import {FitFileActivity} from "../fitparser/types"
 import dayjs from "dayjs"
 
 /**
+ * Strava activity debug data.
+ */
+export interface ActivityDebug {
+    /** The main Strava activity. */
+    activity: StravaActivity
+    /** Matching Garmin activity, if found. */
+    garminActivity?: FitFileActivity
+    /** Matching Wahoo activity, if found. */
+    wahooActivity?: FitFileActivity
+    /** Processed activity details from the database, if found. */
+    processedActivity?: StravaProcessedActivity
+}
+
+/**
  * An activity on Strava.
  */
 export interface StravaActivity {
