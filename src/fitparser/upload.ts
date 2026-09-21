@@ -51,6 +51,16 @@ export class FitUpload {
                 await callbacks.onStart(targetEntries.length)
             }
 
+            // Enforce a total uncompressed cap to stop ZIP bombs.
+            const maxExpandedSize = settings.fitparser.upload.maxExpandedSize
+            let totalSize = 0
+            for (let entry of targetEntries) {
+                totalSize += (entry as any)._data?.uncompressedSize || 0
+                if (totalSize > maxExpandedSize) {
+                    throw new Error(`Archive uncompressed size is bigger than ${Math.round(maxExpandedSize / 1024 / 1024)}MB`)
+                }
+            }
+
             for (let entry of targetEntries) {
                 const filename = path.posix.basename(entry.name)
                 let result: FitUploadResult
