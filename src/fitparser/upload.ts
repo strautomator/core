@@ -3,14 +3,24 @@
 import {FitFileActivity, FitUploadCallbacks, FitUploadResult} from "./types"
 import {UserData} from "../users/types"
 import {Readable} from "stream"
+import {promisify} from "util"
 import fitparser from "./index"
 import garminActivities from "../garmin/activities"
 import wahooActivities from "../wahoo/activities"
 import JSZip from "jszip"
 import logger from "anyhow"
 import path from "path"
+import zlib from "zlib"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
+
+const inflateRaw = promisify(zlib.inflateRaw)
+
+/**
+ * Bounds for the zlib output chunk hint, so usual sized FIT files inflate into a single buffer.
+ */
+const minChunkSize = 16384
+const maxChunkSize = 1048576
 
 /**
  * Processing of ZIP archives with FIT files uploaded by the users.
@@ -30,14 +40,15 @@ export class FitUpload {
      * @param user The user that has uploaded the archive.
      * @param zipStream Readable stream with the ZIP archive contents.
      * @param callbacks Optional callbacks triggered while the archive is processed.
+     * @param contentLength Archive size declared by the client, if any.
      */
-    processZip = async (user: UserData, zipStream: Readable, callbacks?: FitUploadCallbacks): Promise<FitUploadResult[]> => {
+    processZip = async (user: UserData, zipStream: Readable, callbacks?: FitUploadCallbacks, contentLength?: number): Promise<FitUploadResult[]> => {
         const results: FitUploadResult[] = []
         const maxFiles = settings.fitparser.upload.maxFiles
         const maxFileSize = settings.fitparser.upload.maxFileSize
 
         try {
-            const zip = await JSZip.loadAsync(await this.readStream(zipStream))
+            const zip = await JSZip.loadAsync(await this.readStream(zipStream, contentLength))
 
             // Only consider FIT files, ignoring directories, hidden and metadata files.
             const entries = Object.values(zip.files).filter((entry) => {
@@ -51,27 +62,37 @@ export class FitUpload {
                 await callbacks.onStart(targetEntries.length)
             }
 
-            // Enforce a total uncompressed cap to stop ZIP bombs.
+            // Cap the real inflated bytes. Header sizes are only an early reject because they can be forged.
             const maxExpandedSize = settings.fitparser.upload.maxExpandedSize
             let totalSize = 0
-            for (let entry of targetEntries) {
-                totalSize += (entry as any)._data?.uncompressedSize || 0
-                if (totalSize > maxExpandedSize) {
-                    throw new Error(`Archive uncompressed size is bigger than ${Math.round(maxExpandedSize / 1024 / 1024)}MB`)
-                }
-            }
 
             for (let entry of targetEntries) {
                 const filename = path.posix.basename(entry.name)
                 let result: FitUploadResult
+                const declaredSize = (entry as any)._data?.uncompressedSize || 0
+                const remaining = maxExpandedSize - totalSize
 
-                // The uncompressed size is only exposed via the internal entry data.
-                const fileSize = (entry as any)._data?.uncompressedSize || 0
-
-                if (fileSize > maxFileSize) {
+                if (declaredSize > remaining) {
+                    throw new Error(`Archive uncompressed size is bigger than ${Math.round(maxExpandedSize / 1024 / 1024)}MB`)
+                }
+                if (declaredSize > maxFileSize) {
                     result = {filename: filename, error: `File is bigger than ${Math.round(maxFileSize / 1024 / 1024)}MB`}
                 } else {
-                    result = await this.processFile(user, filename, await entry.async("nodebuffer"))
+                    const maxBytes = Math.min(maxFileSize, remaining)
+                    try {
+                        const rawData = await this.readEntry(entry, maxBytes)
+                        totalSize += rawData.length
+                        result = await this.processFile(user, filename, rawData)
+                    } catch (ex) {
+                        if (ex?.name === "FitEntryTooLarge") {
+                            if (maxBytes < maxFileSize) {
+                                throw new Error(`Archive uncompressed size is bigger than ${Math.round(maxExpandedSize / 1024 / 1024)}MB`)
+                            }
+                            result = {filename: filename, error: ex.message}
+                        } else {
+                            throw ex
+                        }
+                    }
                 }
 
                 results.push(result)
@@ -92,14 +113,96 @@ export class FitUpload {
     }
 
     /**
-     * Read the uploaded archive from the request stream, aborting as soon as it goes over
-     * the maximum allowed size.
-     * @param zipStream Readable stream with the ZIP archive contents.
+     * Decompress one archive entry, stopping once the output passes maxBytes.
+     * Header sizes are not trusted: the cap is enforced against the real inflated bytes.
+     * @param entry ZIP entry to read.
+     * @param maxBytes Maximum number of inflated bytes to accept.
      */
-    private readStream = async (zipStream: Readable): Promise<Buffer> => {
+    private readEntry = async (entry: JSZip.JSZipObject, maxBytes: number): Promise<Buffer> => {
+        const data = (entry as any)._data
+        const compressed = data?.compressedContent
+        const method = data?.compression?.magic
+        const source = compressed ? (Buffer.isBuffer(compressed) ? compressed : Buffer.from(compressed)) : null
+
+        // Stored entries are already the final payload.
+        if (source && method === "\x00\x00") {
+            if (source.length > maxBytes) throw this.entryTooLarge(maxBytes)
+            return source
+        }
+
+        // Deflated entries go through zlib, which enforces the cap natively and aborts mid-stream.
+        // The declared size is only used as a chunk hint, so most files skip the final concat.
+        if (source && method === "\x08\x00") {
+            const chunkSize = Math.min(Math.max(data.uncompressedSize || 0, minChunkSize), maxChunkSize, maxBytes)
+            try {
+                return await inflateRaw(source, {maxOutputLength: maxBytes, chunkSize: chunkSize})
+            } catch (ex) {
+                throw ex.code === "ERR_BUFFER_TOO_LARGE" ? this.entryTooLarge(maxBytes) : ex
+            }
+        }
+
+        return await this.readEntryStream(entry, maxBytes)
+    }
+
+    /**
+     * Fallback for entries not exposing their internal compressed data, aborting as soon
+     * as the output passes maxBytes.
+     * @param entry ZIP entry to read.
+     * @param maxBytes Maximum number of inflated bytes to accept.
+     */
+    private readEntryStream = (entry: JSZip.JSZipObject, maxBytes: number): Promise<Buffer> => {
+        return new Promise((resolve, reject) => {
+            const stream = (entry as any).internalStream("nodebuffer")
+            let chunks: Buffer[] = []
+            let size = 0
+            let done = false
+
+            const fail = (error: Error) => {
+                if (done) return
+                done = true
+                chunks = []
+                stream.pause()
+                reject(error)
+            }
+
+            stream.on("data", (chunk: Buffer) => {
+                if (done) return
+                size += chunk.length
+                if (size > maxBytes) return fail(this.entryTooLarge(maxBytes))
+                chunks.push(chunk)
+            })
+            stream.on("error", fail)
+            stream.on("end", () => {
+                if (done) return
+                done = true
+                resolve(Buffer.concat(chunks, size))
+            })
+            stream.resume()
+        })
+    }
+
+    /**
+     * Error used when an inflated FIT entry passes its byte cap.
+     * @param maxBytes The cap that was exceeded.
+     */
+    private entryTooLarge = (maxBytes: number): Error => {
+        const error = new Error(`File is bigger than ${Math.round(maxBytes / 1024 / 1024)}MB`)
+        error.name = "FitEntryTooLarge"
+        return error
+    }
+
+    /**
+     * Read the uploaded archive from the request stream, aborting as soon as it goes over
+     * the maximum allowed size. A declared content length lets the archive be read into a
+     * single pre-allocated buffer, avoiding the extra full copy made by Buffer.concat.
+     * @param zipStream Readable stream with the ZIP archive contents.
+     * @param contentLength Archive size declared by the client, if any.
+     */
+    private readStream = async (zipStream: Readable, contentLength?: number): Promise<Buffer> => {
         const maxSize = settings.fitparser.upload.maxSize
 
         return new Promise((resolve, reject) => {
+            const target = contentLength > 0 && contentLength <= maxSize ? Buffer.allocUnsafe(contentLength) : null
             const chunks: Buffer[] = []
             let totalBytes = 0
 
@@ -109,10 +212,19 @@ export class FitUpload {
                     zipStream.destroy()
                     return reject(new Error(`Archive is bigger than ${Math.round(maxSize / 1024 / 1024)}MB`))
                 }
-                chunks.push(Buffer.from(chunk))
+                if (!target) {
+                    chunks.push(Buffer.from(chunk))
+                } else if (totalBytes > target.length) {
+                    zipStream.destroy()
+                    return reject(new Error("Archive is bigger than its declared content length"))
+                } else {
+                    chunk.copy(target, totalBytes - chunk.length)
+                }
             })
             zipStream.on("error", reject)
-            zipStream.on("end", () => resolve(Buffer.concat(chunks)))
+
+            // Only the bytes actually received are exposed, so the target is never read uninitialized.
+            zipStream.on("end", () => resolve(target ? target.subarray(0, totalBytes) : Buffer.concat(chunks, totalBytes)))
         })
     }
 

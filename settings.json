@@ -198,13 +198,13 @@
         // Limits for ZIP archives with FIT files uploaded by users.
         "upload": {
             // Maximum number of FIT files processed per uploaded archive.
-            "maxFiles": 100,
+            "maxFiles": 50,
             // Maximum size of an individual FIT file, in bytes (8MB).
-            "maxFileSize": 8388608,
-            // Maximum size of the uploaded ZIP archive, in bytes (32MB).
-            "maxSize": 33554432,
-            // Maximum decompressed size of the uploaded ZIP archive, in bytes (100MB).
-            "maxExpandedSize": 104857600
+            "maxFileSize": 8000000,
+            // Maximum size of the uploaded ZIP archive, in bytes (20MB).
+            "maxSize": 20000000,
+            // Maximum decompressed size of the uploaded ZIP archive, in bytes (40MB).
+            "maxExpandedSize": 40000000
         }
     },
     "functions": {
