@@ -412,11 +412,11 @@ export function toStravaProfileStats(user: UserData, data: any): StravaProfileSt
 
     // Append only totals with an actual value.
     if (recentRideTotals) stats.recentRideTotals = recentRideTotals
-    if (recentRunTotals) stats.recentRideTotals = recentRunTotals
-    if (recentSwimTotals) stats.recentRideTotals = recentSwimTotals
-    if (allRideTotals) stats.recentRideTotals = allRideTotals
-    if (allRunTotals) stats.recentRideTotals = allRunTotals
-    if (allSwimTotals) stats.recentRideTotals = allSwimTotals
+    if (recentRunTotals) stats.recentRunTotals = recentRunTotals
+    if (recentSwimTotals) stats.recentSwimTotals = recentSwimTotals
+    if (allRideTotals) stats.allRideTotals = allRideTotals
+    if (allRunTotals) stats.allRunTotals = allRunTotals
+    if (allSwimTotals) stats.allSwimTotals = allSwimTotals
 
     // Convert values according to the specified units.
     if (user.profile.units == "imperial") {
