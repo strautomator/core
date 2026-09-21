@@ -8,6 +8,7 @@ import mailer from "../mailer"
 import users from "../users"
 import _ from "lodash"
 import cache from "bitecache"
+import crypto from "crypto"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import dayjs from "../dayjs"
@@ -99,7 +100,7 @@ export class Notifications {
 
             // Fetch notifications from the database.
             const result = await database.search("notifications", queries)
-            cache.set("notifications", `${user.id}-${all}`, result)
+            cache.set("notifications", `${user.id}-${cacheId}`, result)
 
             if (result.length > 0) {
                 logger.info("Notifications.getByUser", logHelper.user(user), whichLog, `Got ${result.length} notification(s)`)
@@ -180,7 +181,7 @@ export class Notifications {
             let logDetails = []
             const now = dayjs().toDate()
             const timestamp = now.valueOf().toString(16)
-            const random = Math.floor(Math.random() * Math.floor(9))
+            const random = crypto.randomInt(100, 999)
 
             // Set mandatory fields.
             notification.id = `${user.id}-${timestamp}${random}`
