@@ -135,7 +135,7 @@ export class Users {
 
         // Masked token used on warning logs.
         const token = tokens.accessToken || tokens.previousAccessToken
-        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
+        const maskedToken = `${token?.substring(0, 2)}*${token?.substring(token?.length - 2)}`
 
         try {
             const user = await this.getByToken(tokens)
@@ -229,7 +229,7 @@ export class Users {
 
         // Masked token used on warning logs.
         const token = tokens.accessToken || tokens.refreshToken
-        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
+        const maskedToken = `${token?.substring(0, 2)}*${token?.substring(token?.length - 2)}`
         const now = dayjs().utc()
 
         try {
@@ -562,7 +562,7 @@ export class Users {
 
             logger.info("Users.getIdle", `${suspended.length || "no"} suspended, ${noActivities.length || "no"} with no activities, ${noLogin.length || "no"} with no recent logins`)
 
-            return _.concat(suspended, noActivities, noLogin)
+            return _.uniqBy(_.concat(suspended, noActivities, noLogin), "id")
         } catch (ex) {
             logger.error("Users.getIdle", ex)
             throw ex
@@ -895,8 +895,7 @@ export class Users {
                 if (profile.country) {
                     userData.countryCode = maps.getCountryCode(profile.country)
                 }
-            }
-            else {
+            } else {
                 const docData = docSnapshot.data()
                 existingData = docData as UserData
 
@@ -916,7 +915,7 @@ export class Users {
 
                 // User has changed the access token? Update the previous one.
                 if (existingData.stravaTokens?.accessToken != stravaTokens.accessToken) {
-                    userData.stravaTokens.previousAccessToken = stravaTokens.accessToken
+                    userData.stravaTokens.previousAccessToken = existingData.stravaTokens.accessToken
                 }
 
                 // Do not overwrite all gear details, as they won't have brand and model (coming from the athlete endpoint).
@@ -1401,7 +1400,7 @@ export class Users {
      */
     switchToPro = async (user: UserData, subscription?: BaseSubscription | PaddleSubscription | GitHubSubscription, trial?: boolean): Promise<void> => {
         try {
-            if (user.isPro && subscription.status != "TRIAL") {
+            if (user.isPro && user.subscriptionId && subscription.status != "TRIAL") {
                 logger.warn("Users.switchToPro", logHelper.user(user), "User is already PRO, abort")
                 return
             }
@@ -1508,7 +1507,8 @@ export class Users {
             }
 
             // Update user and expire the subscription, in case it's active.
-            _.assign(user, freeUser)
+            // Preferences are skipped, as they were already updated in-place above.
+            _.assign(user, _.omit(freeUser, "preferences"))
             await this.update(freeUser)
             delete user.subscriptionId
             delete user.isPro
