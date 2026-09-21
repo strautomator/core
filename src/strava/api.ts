@@ -33,6 +33,11 @@ export class StravaAPI {
      */
     private limiter: Bottleneck
 
+    /**
+     * In-flight token refreshes per refresh token (single-flight).
+     */
+    private refreshPromises: Map<string, Promise<StravaTokens>> = new Map()
+
     // INIT
     // --------------------------------------------------------------------------
 
@@ -285,7 +290,16 @@ export class StravaAPI {
 
                 // Renew token if it has expired.
                 if (tokens.expiresAt && tokens.expiresAt < now) {
-                    const newTokens = await this.refreshToken(tokens.refreshToken, tokens.accessToken)
+                    const refreshToken = tokens.refreshToken
+                    let inFlight = this.refreshPromises.get(refreshToken)
+                    if (!inFlight) {
+                        inFlight = this.refreshToken(refreshToken, tokens.accessToken).finally(() => this.refreshPromises.delete(refreshToken))
+                        this.refreshPromises.set(refreshToken, inFlight)
+                    }
+
+                    // Update the passed tokens in-place, so the caller won't trigger a new refresh right away.
+                    const newTokens = await inFlight
+                    Object.assign(tokens, newTokens)
                     token = newTokens.accessToken
                 } else {
                     token = tokens.accessToken
@@ -402,7 +416,7 @@ export class StravaAPI {
             if (shouldCache) {
                 let resourceId = arrPath.join("-")
                 if (params) resourceId += `-${_.map(_.toPairs(params), (p) => p.join("-"))}`
-                cacheId = `${resourceId.replace("_", "-")}-${crypto.createHash("sha1").update(tokens.accessToken).digest("hex")}`
+                cacheId = `${resourceId.replace("_", "-")}-${crypto.createHash("sha256").update(tokens.accessToken).digest("hex")}`
 
                 const fromCache: StravaCachedResponse = await database.get("strava-cache", cacheId)
                 if (fromCache && dayjs(fromCache.dateCached).add(cacheDuration, "seconds").isAfter(now)) {
