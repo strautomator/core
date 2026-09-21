@@ -39,6 +39,18 @@ export class DatabaseTransaction implements DatabaseTransactionApi {
     }
 
     /**
+     * Merge fields into a document inside the transaction.
+     * Reads for this transaction must happen before this write.
+     * @param collection Name of the collection.
+     * @param data Fields to merge. Must include the document id.
+     */
+    merge = (collection: string, data: any): void => {
+        const encryptedData = _.cloneDeep(data)
+        cryptoProcess(encryptedData, true)
+        this.txn.set(this.db.doc(collection, data.id), encryptedData, {merge: true})
+    }
+
+    /**
      * Delete a document inside the transaction.
      */
     delete = (collection: string, id: string): void => {

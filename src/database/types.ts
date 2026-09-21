@@ -18,6 +18,8 @@ export interface DatabaseOptions {
 export interface DatabaseTransaction {
     /** Read a document inside the transaction. */
     get: (collection: string, id: string) => Promise<any>
+    /** Merge fields into a document. Called after the transaction reads. */
+    merge: (collection: string, data: any) => void
     /** Delete a document inside the transaction. */
     delete: (collection: string, id: string) => void
 }
