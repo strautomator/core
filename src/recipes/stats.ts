@@ -3,6 +3,7 @@
 import {RecipeData, RecipeStatsData} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
+import {FieldValue} from "@google-cloud/firestore"
 import database from "../database"
 import logger from "anyhow"
 import _ from "lodash"
@@ -123,13 +124,13 @@ export class RecipeStats {
                 // Only add activity ID and update the counter if it was not there yet.
                 if (!stats.activities.includes(activity.id)) {
                     stats.activities.push(activity.id)
-                    stats.activityCount++
+                    stats.activityCount = FieldValue.increment(1) as any
 
                     // Increase the data counter based on the selected counter prop.
                     if (activity.counter) {
                         stats.counter = activity.counter
                     } else if (!recipe.counterProp) {
-                        stats.counter++
+                        stats.counter = FieldValue.increment(1) as any
                     }
                 }
 
@@ -152,7 +153,7 @@ export class RecipeStats {
                 stats.recentFailures = 0
                 logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`)
             } else {
-                stats.recentFailures = (stats.recentFailures || 0) + 1
+                stats.recentFailures = FieldValue.increment(1) as any
                 stats.dateLastFailure = now
                 logger.warn("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`, `Recent recipe failures: ${stats.recentFailures}`)
             }
