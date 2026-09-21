@@ -153,6 +153,8 @@
         "maxRequestsPerBatch": 600,
         // A calendar will be deleted if no client requests it after 4 days.
         "maxCacheDuration": 345600,
+        // Maximum number of items allowed per filter in the calendar (sports, club events, etc).
+        "maxItemsPerFilter": 30,
         // Calendar events will cached if they're older than 30 days, by default.
         "minAgeForCachingDays": 30
     },
