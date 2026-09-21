@@ -30,8 +30,8 @@ export const disableProPreferences = (user: Partial<UserData>): string[] => {
             continue
         }
         if ((arrField.length > 1 && user.preferences[arrField[0]].toString() == arrField[1]) || (arrField.length == 1 && user.preferences[arrField[0]])) {
-            resetFields.push(`${field}: PRO only`)
-            user.preferences[field] = FieldValue.delete() as any
+            resetFields.push(arrField[0])
+            user.preferences[arrField[0]] = FieldValue.delete() as any
         }
     }
 
@@ -83,7 +83,7 @@ export const validateUserPreferences = (user: Partial<UserData>): void => {
         if (!user.isPro) {
             const resetFields = disableProPreferences(user)
             if (resetFields.length > 0) {
-                fields.push(...resetFields)
+                fields.push(...resetFields.map((f) => `${f}: PRO only`))
             }
         }
 

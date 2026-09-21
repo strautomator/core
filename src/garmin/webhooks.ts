@@ -33,7 +33,7 @@ export class GarminWebhooks {
             const body: GarminWebhookData = req.body || null
 
             // Check user agent and client IP.
-            if (!userAgent.includes("Garmin")) {
+            if (!userAgent?.includes("Garmin")) {
                 throw new Error(`User agent not authorized: ${userAgent}`)
             }
             if (!jaul.network.ipInRange(clientIP, ipRanges.garmin)) {

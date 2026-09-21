@@ -481,9 +481,9 @@ export class Calendar {
 
             // Find the position of the event UID first.
             const pos = ics.indexOf(`UID:${uid}`)
-            if (!pos) {
+            if (pos < 0) {
                 logger.debug("Calendar.removeEventFromIcs", arrLog.join(" | "), "Not found")
-                return
+                return null
             }
 
             // Find the BEGIN:VEVENT and END:VEVENT blocks and remove the event from the ICS string.

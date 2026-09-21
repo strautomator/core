@@ -24,6 +24,7 @@ import dayjs from "../dayjs"
 import _ from "lodash"
 import jaul from "jaul"
 import logger from "anyhow"
+import net from "net"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
@@ -1217,13 +1218,42 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, re
         const options: AxiosConfig = {
             method: method,
             url: encodeURI(jaul.data.replaceTags(targetUrl, activity)),
-            timeout: settings.recipes.webhook.timeout
+            timeout: settings.recipes.webhook.timeout,
+            maxRedirects: 0
         }
+
+        // Do not accept local or private addresses.
+        const parsed = new URL(options.url)
+        if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Invalid webhook protocol")
+
+        // Strip IPv6 brackets and the trailing dot of fully qualified domains.
+        const hostname = parsed.hostname
+            .toLowerCase()
+            .replace(/^\[|\]$/g, "")
+            .replace(/\.$/, "")
+        if (!hostname) throw new Error("Invalid webhook hostname")
+
+        const mapped = hostname.slice(hostname.lastIndexOf(":") + 1)
+        const blockedWebhookHosts = ["localhost", "metadata", "metadata.google", "metadata.google.internal"]
+        const blockedIPv4Ranges = [/^0\./, /^10\./, /^127\./, /^169\.254\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./, /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./]
+        const blockedIPv6Ranges = /^(::1?$|f[cd]|fe[89ab])/
+        const blocked = blockedWebhookHosts.includes(hostname) || (net.isIPv4(mapped) ? blockedIPv4Ranges.some((r) => r.test(mapped)) : blockedIPv6Ranges.test(hostname))
+        if (blocked) throw new Error("Private hosts are not allowed")
+
         if (!["HEAD", "GET"].includes(method)) {
             options.data = activity
         }
 
-        await axiosRequest(options)
+        try {
+            await axiosRequest(options)
+        } catch (ex) {
+            const statusCode = ex.statusCode || ex.response?.status
+            if (statusCode >= 300 && statusCode < 400) {
+                throw new Error("Webhook redirects are not allowed")
+            }
+            throw ex
+        }
+
         return true
     } catch (ex) {
         failedAction(user, activity, recipe, action, ex)

@@ -77,6 +77,7 @@ export class Users {
         eventManager.on("Wahoo.tokenFailure", this.onWahooTokenFailure)
         eventManager.on("Garmin.tokenSuccess", this.onGarminTokenSuccess)
         eventManager.on("Garmin.activityFailure", this.onGarminActivityFailure)
+        eventManager.on("Users.emailBounced", this.onEmailBounce)
     }
 
     /**
@@ -134,7 +135,7 @@ export class Users {
 
         // Masked token used on warning logs.
         const token = tokens.accessToken || tokens.previousAccessToken
-        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
+        const maskedToken = `${token?.substring(0, 2)}*${token?.substring(token?.length - 2)}`
 
         try {
             const user = await this.getByToken(tokens)
@@ -228,7 +229,7 @@ export class Users {
 
         // Masked token used on warning logs.
         const token = tokens.accessToken || tokens.refreshToken
-        const maskedToken = `${token.substring(0, 2)}*${token.substring(token.length - 2)}`
+        const maskedToken = `${token?.substring(0, 2)}*${token?.substring(token?.length - 2)}`
         const now = dayjs().utc()
 
         try {
@@ -428,6 +429,51 @@ export class Users {
         }
     }
 
+    /**
+     * When an email sent to the user bounces back.
+     * @param email The user's email.
+     * @param details Bounce details.
+     */
+    private onEmailBounce = async (email: string, details?: string): Promise<void> => {
+        const user = await this.getByEmail(email)
+        if (!user) {
+            logger.warn("Users.onEmailBounce", email, "User not found")
+            return
+        }
+
+        const emailFailures = (user.emailFailures || 0) + 1
+
+        if (emailFailures < settings.mailer.maxFailures) {
+            logger.warn("Users.onEmailBounce", logHelper.user(user), email, `Failures: ${emailFailures}`, details || "No details")
+
+            user.emailFailures = emailFailures
+            await database.merge("users", {
+                id: user.id,
+                displayName: user.displayName,
+                emailFailures: emailFailures
+            })
+        } else {
+            logger.error("Users.onEmailBounce", logHelper.user(user), email, `Reached max failures (${settings.mailer.maxFailures}), will remove the user's email`)
+
+            // Create notification for the user.
+            await notifications.createNotification(user, {
+                title: "Please update your email address",
+                body: `Emails sent to ${user.email} could not be delivered and the address has been removed from your account. Please update your email address.`,
+                href: "/account"
+            })
+
+            // Remove email and reset failure counter.
+            delete user.email
+            delete user.emailFailures
+            await database.merge("users", {
+                id: user.id,
+                displayName: user.displayName,
+                email: FieldValue.delete() as any,
+                emailFailures: FieldValue.delete() as any
+            })
+        }
+    }
+
     // GET USER DATA
     // --------------------------------------------------------------------------
 
@@ -516,7 +562,7 @@ export class Users {
 
             logger.info("Users.getIdle", `${suspended.length || "no"} suspended, ${noActivities.length || "no"} with no activities, ${noLogin.length || "no"} with no recent logins`)
 
-            return _.concat(suspended, noActivities, noLogin)
+            return _.uniqBy(_.concat(suspended, noActivities, noLogin), "id")
         } catch (ex) {
             logger.error("Users.getIdle", ex)
             throw ex
@@ -560,6 +606,20 @@ export class Users {
             return user
         } catch (ex) {
             logger.error("Users.getByPreviousId", previousId, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get the user by email address.
+     * @param email The user's email address.
+     */
+    getByEmail = async (email: string): Promise<UserData> => {
+        try {
+            const users = await database.search("users", ["email", "==", email.toLowerCase().trim()])
+            return users.length > 0 ? users[0] : null
+        } catch (ex) {
+            logger.error("Users.getByEmail", email, ex)
             throw ex
         }
     }
@@ -835,8 +895,7 @@ export class Users {
                 if (profile.country) {
                     userData.countryCode = maps.getCountryCode(profile.country)
                 }
-            }
-            else {
+            } else {
                 const docData = docSnapshot.data()
                 existingData = docData as UserData
 
@@ -856,7 +915,7 @@ export class Users {
 
                 // User has changed the access token? Update the previous one.
                 if (existingData.stravaTokens?.accessToken != stravaTokens.accessToken) {
-                    userData.stravaTokens.previousAccessToken = stravaTokens.accessToken
+                    userData.stravaTokens.previousAccessToken = existingData.stravaTokens.accessToken
                 }
 
                 // Do not overwrite all gear details, as they won't have brand and model (coming from the athlete endpoint).
@@ -1177,7 +1236,8 @@ export class Users {
                 id: user.id,
                 displayName: user.displayName,
                 email: email,
-                confirmEmail: FieldValue.delete() as any
+                confirmEmail: FieldValue.delete() as any,
+                emailFailures: FieldValue.delete() as any
             }
             await database.merge("users", data)
 
@@ -1340,7 +1400,7 @@ export class Users {
      */
     switchToPro = async (user: UserData, subscription?: BaseSubscription | PaddleSubscription | GitHubSubscription, trial?: boolean): Promise<void> => {
         try {
-            if (user.isPro && subscription.status != "TRIAL") {
+            if (user.isPro && user.subscriptionId && subscription.status != "TRIAL") {
                 logger.warn("Users.switchToPro", logHelper.user(user), "User is already PRO, abort")
                 return
             }
@@ -1447,7 +1507,8 @@ export class Users {
             }
 
             // Update user and expire the subscription, in case it's active.
-            _.assign(user, freeUser)
+            // Preferences are skipped, as they were already updated in-place above.
+            _.assign(user, _.omit(freeUser, "preferences"))
             await this.update(freeUser)
             delete user.subscriptionId
             delete user.isPro

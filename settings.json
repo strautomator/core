@@ -153,6 +153,8 @@
         "maxRequestsPerBatch": 600,
         // A calendar will be deleted if no client requests it after 4 days.
         "maxCacheDuration": 345600,
+        // Maximum number of items allowed per filter in the calendar (sports, club events, etc).
+        "maxItemsPerFilter": 30,
         // Calendar events will cached if they're older than 30 days, by default.
         "minAgeForCachingDays": 30
     },
@@ -196,11 +198,13 @@
         // Limits for ZIP archives with FIT files uploaded by users.
         "upload": {
             // Maximum number of FIT files processed per uploaded archive.
-            "maxFiles": 100,
+            "maxFiles": 50,
             // Maximum size of an individual FIT file, in bytes (8MB).
-            "maxFileSize": 8388608,
-            // Maximum size of the uploaded ZIP archive, in bytes (32MB).
-            "maxSize": 33554432
+            "maxFileSize": 8000000,
+            // Maximum size of the uploaded ZIP archive, in bytes (20MB).
+            "maxSize": 20000000,
+            // Maximum decompressed size of the uploaded ZIP archive, in bytes (40MB).
+            "maxExpandedSize": 40000000
         }
     },
     "functions": {
@@ -311,6 +315,8 @@
         "minTime": 500
     },
     "mailer": {
+        // Token used on bounce webhooks.
+        "bounceUrlToken": null,
         // Default contact email.
         "contact": "info@strautomator.com",
         // The default "from" on sent emails should be set on settings.secret.json file
@@ -318,6 +324,8 @@
         "from": "noreply@strautomator.com",
         // Optional BCC address to be added to all sent emails.
         "bcc": null,
+        // Max number of allowed email failures before taking action.
+        "maxFailures": 5,
         // Default SMTP settings are valid for Amazon SES. You can overwrite these on
         // on your secret settings or via environment variables.
         "smtp": {
@@ -739,6 +747,8 @@
     "weather": {
         // Cache weather results for 15 minutes. Value set in seconds.
         "cacheDuration": 900,
+        // Maximum number of forecasts to be taken in a batch.
+        "maxBatchSize": 50,
         // Provider will temporarily stop requests if it fails more than 5 times in a row.
         "maxRepeatedErrors": 5,
         // When fetching weather, add a buffer of 30 minutes before and 60 after the target date.

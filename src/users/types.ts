@@ -105,6 +105,8 @@ export interface UserData {
     writeSuspended?: boolean
     /** Authentication error count. */
     authFailures?: number
+    /** Email error count. */
+    emailFailures?: number
 }
 
 /**

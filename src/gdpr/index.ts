@@ -164,11 +164,13 @@ export class GDPR {
     clearArchives = async (all?: boolean): Promise<void> => {
         try {
             const files = await storage.listFiles(StorageBucket.GDPR)
+            const ttlDays = settings.storage.buckets.gdpr.ttlDays || settings.gdpr.requestDays
+            const cutoff = Date.now() - ttlDays * 86400000
             let count = 0
 
             // Iterate and delete expired (or all) archives.
             for (let file of files) {
-                if (all || file.metadata) {
+                if (all || (file.metadata?.timeCreated && new Date(file.metadata.timeCreated).getTime() <= cutoff)) {
                     await file.delete()
                     count++
                 }
