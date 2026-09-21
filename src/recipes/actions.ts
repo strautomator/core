@@ -1219,6 +1219,20 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, re
             url: encodeURI(jaul.data.replaceTags(targetUrl, activity)),
             timeout: settings.recipes.webhook.timeout
         }
+
+        // Block non HTTP requests / requests to private / internal targets (SSRF).
+        try {
+            const parsed = new URL(options.url)
+            if (!["http:", "https:"].includes(parsed.protocol)) throw "Only HTTP(S) protocols are allowed"
+            const host = parsed.hostname.toLowerCase().replace(/\.$/, "")
+            if (["localhost", "metadata", "metadata.google", "metadata.google.internal"].includes(host)) throw "Blocked private host"
+            if (host == "::1" || host == "0.0.0.0" || host == "[::1]") throw "Blocked private host"
+            if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.0\.0\.0)/.test(host)) throw "Blocked private host"
+            if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) throw "Blocked private host"
+        } catch (parseEx) {
+            throw new Error(`Blocked or invalid webhook URL`)
+        }
+
         if (!["HEAD", "GET"].includes(method)) {
             options.data = activity
         }
