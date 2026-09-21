@@ -12,7 +12,8 @@ import jaul from "jaul"
 import logger from "anyhow"
 import dayjs from "../dayjs"
 import _ from "lodash"
-const axios = require("axios").default
+const axiosModule = require("axios")
+const axios = axiosModule.default || axiosModule
 const settings = require("setmeup").settings
 
 /**
@@ -498,7 +499,7 @@ export class Maps {
 
             // Download static image from Google Maps.
             const res: any = await axios.get(url, {responseType: "arraybuffer"})
-            const image = Buffer.from(res.data, "binary")
+            const image = Buffer.from(res.data)
 
             logger.info("Maps.getStaticImage", Object.values(coordinates).join(", "), `Size ${options.size}`, `Circle ${options.circle}`)
             return image
