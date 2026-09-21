@@ -747,6 +747,8 @@
     "weather": {
         // Cache weather results for 15 minutes. Value set in seconds.
         "cacheDuration": 900,
+        // Maximum number of forecasts to be taken in a batch.
+        "maxBatchSize": 50,
         // Provider will temporarily stop requests if it fails more than 5 times in a row.
         "maxRepeatedErrors": 5,
         // When fetching weather, add a buffer of 30 minutes before and 60 after the target date.
