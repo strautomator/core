@@ -77,6 +77,7 @@ export class Users {
         eventManager.on("Wahoo.tokenFailure", this.onWahooTokenFailure)
         eventManager.on("Garmin.tokenSuccess", this.onGarminTokenSuccess)
         eventManager.on("Garmin.activityFailure", this.onGarminActivityFailure)
+        eventManager.on("Users.emailBounced", this.onEmailBounce)
     }
 
     /**
@@ -428,6 +429,51 @@ export class Users {
         }
     }
 
+    /**
+     * When an email sent to the user bounces back.
+     * @param email The user's email.
+     * @param details Bounce details.
+     */
+    private onEmailBounce = async (email: string, details?: string): Promise<void> => {
+        const user = await this.getByEmail(email)
+        if (!user) {
+            logger.warn("Users.onEmailBounce", email, "User not found")
+            return
+        }
+
+        const emailFailures = (user.emailFailures || 0) + 1
+
+        if (emailFailures < settings.mailer.maxFailures) {
+            logger.warn("Users.onEmailBounce", logHelper.user(user), email, `Failures: ${emailFailures}`, details || "No details")
+
+            user.emailFailures = emailFailures
+            await database.merge("users", {
+                id: user.id,
+                displayName: user.displayName,
+                emailFailures: emailFailures
+            })
+        } else {
+            logger.error("Users.onEmailBounce", logHelper.user(user), email, `Reached max failures (${settings.mailer.maxFailures}), will remove the user's email`)
+
+            // Create notification for the user.
+            await notifications.createNotification(user, {
+                title: "Please update your email address",
+                body: `Emails sent to ${user.email} could not be delivered and the address has been removed from your account. Please update your email address.`,
+                href: "/account"
+            })
+
+            // Remove email and reset failure counter.
+            delete user.email
+            delete user.emailFailures
+            await database.merge("users", {
+                id: user.id,
+                displayName: user.displayName,
+                email: FieldValue.delete() as any,
+                emailFailures: FieldValue.delete() as any
+            })
+        }
+    }
+
     // GET USER DATA
     // --------------------------------------------------------------------------
 
@@ -560,6 +606,20 @@ export class Users {
             return user
         } catch (ex) {
             logger.error("Users.getByPreviousId", previousId, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Get the user by email address.
+     * @param email The user's email address.
+     */
+    getByEmail = async (email: string): Promise<UserData> => {
+        try {
+            const users = await database.search("users", ["email", "==", email.toLowerCase().trim()])
+            return users.length > 0 ? users[0] : null
+        } catch (ex) {
+            logger.error("Users.getByEmail", email, ex)
             throw ex
         }
     }
@@ -1177,7 +1237,8 @@ export class Users {
                 id: user.id,
                 displayName: user.displayName,
                 email: email,
-                confirmEmail: FieldValue.delete() as any
+                confirmEmail: FieldValue.delete() as any,
+                emailFailures: FieldValue.delete() as any
             }
             await database.merge("users", data)
 

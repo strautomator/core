@@ -315,6 +315,8 @@
         "minTime": 500
     },
     "mailer": {
+        // Token used on bounce webhooks.
+        "bounceUrlToken": null,
         // Default contact email.
         "contact": "info@strautomator.com",
         // The default "from" on sent emails should be set on settings.secret.json file
@@ -322,6 +324,8 @@
         "from": "noreply@strautomator.com",
         // Optional BCC address to be added to all sent emails.
         "bcc": null,
+        // Max number of allowed email failures before taking action.
+        "maxFailures": 5,
         // Default SMTP settings are valid for Amazon SES. You can overwrite these on
         // on your secret settings or via environment variables.
         "smtp": {
