@@ -812,8 +812,51 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
         activity.gear = activity.gear.name as any
     }
 
-    // Garmin and Wahoo splits should have a summary string as splitsText.
+    // Garmin and Wahoo splits should have a summary string as splitsText, and a list of values
+    // for each individual active lap (the "laps" object, keyed by split property).
     if (activity.garmin || activity.wahoo) {
+        const isImperial = user.profile.units == "imperial"
+        const lapFormatters: {[prop: string]: {format: (value: any) => string; suffix?: string}} = {
+            totalTime: {
+                format: (value) => {
+                    const duration = _.isNumber(value) ? dayjs.duration(value, "seconds").format("HH:mm:ss") : value.toString()
+                    return duration.startsWith("00:") ? duration.substring(3) : duration
+                }
+            },
+            speedAvg: {
+                format: (value) => (value * 3.6 * (isImperial ? rMiles : 1)).toFixed(1),
+                suffix: isImperial ? "mi/h" : "km/h"
+            },
+            distance: {
+                format: (value) => ((value / 1000) * (isImperial ? rMiles : 1)).toFixed(2),
+                suffix: isImperial ? "mi" : "km"
+            },
+            ascent: {
+                format: (value) => Math.round(value * (isImperial ? rFeet : 1)).toString(),
+                suffix: isImperial ? "ft" : "m"
+            },
+            descent: {
+                format: (value) => Math.round(value * (isImperial ? rFeet : 1)).toString(),
+                suffix: isImperial ? "ft" : "m"
+            },
+            calories: {
+                format: (value) => Math.round(value).toString(),
+                suffix: "kcal"
+            }
+        }
+        const lapsList = (splits: any[]) => {
+            const activeLaps = splits.filter((s) => !s.splitType || /active/i.test(s.splitType))
+            const result = {}
+            for (let [prop, formatter] of Object.entries(lapFormatters)) {
+                const values = activeLaps.filter((s) => !_.isNil(s[prop])).map((s) => formatter.format(s[prop]))
+                if (values.length == 0) continue
+                result[prop] = values.join(", ")
+                if (formatter.suffix && !noSuffixes) {
+                    result[prop] += ` ${formatter.suffix}`
+                }
+            }
+            return result
+        }
         const splitsText = (splits: any[]) => {
             const summaries = splits.map((s) => {
                 const splitType = s.splitType || "Split"
@@ -829,9 +872,11 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             return summaries.join("\n")
         }
         if (activity.garmin?.splits?.length > 0) {
+            activity.garmin.laps = lapsList(activity.garmin.splits)
             activity.garmin.splitsText = splitsText(activity.garmin.splits)
         }
         if (activity.wahoo?.splits?.length > 0) {
+            activity.wahoo.laps = lapsList(activity.wahoo.splits)
             activity.wahoo.splitsText = splitsText(activity.wahoo.splits)
         }
     }
