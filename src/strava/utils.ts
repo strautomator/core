@@ -848,8 +848,10 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             const activeLaps = splits.filter((s) => !s.splitType || /active/i.test(s.splitType))
             const result = {}
             for (let [prop, formatter] of Object.entries(lapFormatters)) {
-                const values = activeLaps.filter((s) => !_.isNil(s[prop])).map((s) => formatter.format(s[prop]))
-                if (values.length == 0) continue
+                if (!activeLaps.some((s) => !_.isNil(s[prop]))) continue
+
+                // Missing values are kept as a placeholder, so lap positions match across the laps tags.
+                const values = activeLaps.map((s) => (_.isNil(s[prop]) ? "-" : formatter.format(s[prop])))
                 result[prop] = values.join(", ")
                 if (formatter.suffix && !noSuffixes) {
                     result[prop] += ` ${formatter.suffix}`
