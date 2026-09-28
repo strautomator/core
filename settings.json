@@ -57,6 +57,9 @@
             "legacyHeaders": false,
             "message": "Too many request, please try again later"
         },
+        // How long to cache the user ID of a valid access token, and to remember tokens rejected by Strava.
+        "tokenCacheSeconds": 300,
+        "invalidTokenCacheSeconds": 600,
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
     },
@@ -75,7 +78,13 @@
         // Pending authorization request lifetime in minutes (covers the Strava login round-trip).
         "authRequestMinutes": 15,
         // Dynamically registered OAuth clients expire after this many days of issuance.
-        "clientDays": 365
+        "clientDays": 365,
+        // Registered clients that were never used to get tokens expire after this many hours.
+        "unusedClientHours": 24,
+        // Maximum number of redirect URIs per registered client.
+        "maxRedirectUris": 5,
+        // Maximum client registrations per IP per hour.
+        "registerPerHour": 20
     },
     // Afiliate settings (also used for the Country Linkify module).
     "affiliates": {
@@ -319,6 +328,8 @@
     "mailer": {
         // Token used on bounce webhooks.
         "bounceUrlToken": null,
+        // Optional ARN of the SNS topic that sends the bounce notifications. If set, other topics are rejected.
+        "bounceTopicArn": null,
         // Default contact email.
         "contact": "info@strautomator.com",
         // The default "from" on sent emails should be set on settings.secret.json file
