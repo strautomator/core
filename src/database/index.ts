@@ -283,6 +283,53 @@ export class Database {
     }
 
     /**
+     * Search for documents on the specified database collection, yielding results page by page,
+     * so big collections are never fully loaded in memory at once.
+     * @param collection Name of the collection.
+     * @param queryList List of query in the format [property, operator, value].
+     * @param pageSize Optional page size, defaults to the database.pageSize setting.
+     */
+    async *searchPages(collection: string, queryList?: any[], pageSize?: number): AsyncGenerator<any[]> {
+        const colname = `${collection}${this.collectionSuffix}`
+        let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
+
+        if (queryList && _.isString(queryList[0])) {
+            queryList = [queryList]
+        }
+        if (queryList) {
+            for (let query of queryList) {
+                filteredTable = filteredTable.where(query[0], query[1], query[2])
+            }
+        }
+
+        pageSize = pageSize || settings.database.pageSize
+        let lastDoc: FirebaseFirestore.QueryDocumentSnapshot = null
+
+        while (true) {
+            const pageQuery = lastDoc ? filteredTable.limit(pageSize).startAfter(lastDoc) : filteredTable.limit(pageSize)
+            const snapshot = await pageQuery.get()
+            if (snapshot.empty) {
+                return
+            }
+
+            const results = snapshot.docs.map((r) => {
+                const result = r.data()
+                cryptoProcess(result, false)
+                this.transformData(result)
+                result.id = r.id
+                return result
+            })
+
+            lastDoc = snapshot.docs[snapshot.docs.length - 1]
+            yield results
+
+            if (snapshot.size < pageSize) {
+                return
+            }
+        }
+    }
+
+    /**
      * Count how many documents are returned for the specified query.
      * @param collection Name of the collection.
      * @param queryList List of query in the format [property, operator, value].

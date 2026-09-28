@@ -524,6 +524,22 @@ export class Users {
     }
 
     /**
+     * Iterate PRO users page by page.
+     * @param pageSize Optional page size.
+     */
+    getProPages = (pageSize?: number): AsyncGenerator<UserData[]> => {
+        return database.searchPages("users", ["isPro", "==", true], pageSize)
+    }
+
+    /**
+     * Iterate active users (with at least 1 recipe) page by page.
+     * @param pageSize Optional page size.
+     */
+    getActivePages = (pageSize?: number): AsyncGenerator<UserData[]> => {
+        return database.searchPages("users", ["recipeCount", ">", 0], pageSize)
+    }
+
+    /**
      * Get users with Strava OAuth tokens expired for longer than 1 day.
      */
     getExpired = async (): Promise<UserData[]> => {

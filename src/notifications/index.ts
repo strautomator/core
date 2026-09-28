@@ -298,12 +298,17 @@ export class Notifications {
                 ["dateExpiry", ">", now]
             ]
 
-            // Fetch unread notifications and group by users.
-            const result = await database.search("notifications", queries)
-            const userNotifications = _.groupBy(result, "userId")
+            // Fetch unread notifications page by page, keeping only their bodies grouped by user.
+            const userNotifications: {[userId: string]: {body: string}[]} = {}
+            for await (const page of database.searchPages("notifications", queries)) {
+                for (const n of page) {
+                    if (!userNotifications[n.userId]) userNotifications[n.userId] = []
+                    userNotifications[n.userId].push({body: n.body})
+                }
+            }
 
             let userId: string
-            let list: any
+            let list: {body: string}[]
 
             // Iterate users with unread notifications.
             for ([userId, list] of Object.entries(userNotifications)) {

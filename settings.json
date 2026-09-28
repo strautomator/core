@@ -187,6 +187,8 @@
         },
         // Ignore undefined properties?
         "ignoreUndefinedProperties": true,
+        // Default page size when iterating big collections (scheduled jobs, exports).
+        "pageSize": 500,
         // Disable writing to the database? Useful while troubleshooting data from production.
         "writeDisabled": false
     },
