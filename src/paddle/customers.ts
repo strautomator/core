@@ -65,6 +65,7 @@ export class PaddleCustomers {
             }
         } catch (ex) {
             logger.error("Paddle.onCustomerUpdated", logHelper.paddleEvent(entity), ex)
+            throw ex
         }
     }
 

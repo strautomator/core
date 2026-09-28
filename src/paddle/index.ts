@@ -167,7 +167,8 @@ export class PaddleWrapper {
     // --------------------------------------------------------------------------
 
     /**
-     * Process webhook notifications sent by Paddle.
+     * Process webhook notifications sent by Paddle. Throws if processing failed,
+     * so the webhook can be answered with an error status and retried by Paddle.
      * @param req The request object.
      */
     processWebhook = async (req: Request): Promise<void> => {
@@ -212,6 +213,7 @@ export class PaddleWrapper {
             logger.info("Paddle.processWebhook", ev.eventType, ev.eventId, ev.data.id, `From ${clientIP}`)
         } catch (ex) {
             logger.error("Paddle.processWebhook", ex)
+            throw ex
         }
     }
 }

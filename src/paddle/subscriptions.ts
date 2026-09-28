@@ -115,7 +115,7 @@ export class PaddleSubscriptions {
             return sub
         } catch (ex) {
             logger.error("Paddle.onSubscriptionTrialling", logHelper.paddleEvent(entity), ex)
-            return null
+            throw ex
         }
     }
 
@@ -177,7 +177,7 @@ export class PaddleSubscriptions {
             return sub
         } catch (ex) {
             logger.error("Paddle.onSubscriptionCreated", logHelper.paddleEvent(entity), ex)
-            return null
+            throw ex
         }
     }
 
@@ -252,7 +252,7 @@ export class PaddleSubscriptions {
             return sub
         } catch (ex) {
             logger.error("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), ex)
-            return null
+            throw ex
         }
     }
 
@@ -365,7 +365,7 @@ export class PaddleSubscriptions {
             return sub
         } catch (ex) {
             logger.error("Paddle.onTransaction", logHelper.paddleEvent(entity), ex)
-            return null
+            throw ex
         }
     }
 
