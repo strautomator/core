@@ -324,8 +324,8 @@ export class Recipes {
         logger.info("Recipes.evaluate", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), logEvaluated)
 
         // Sort recipe actions, webhook should come last.
-        const sortedActions = _.sortBy(recipe.actions, ["type"])
-        const gearwearActions = _.remove(recipe.actions, (a) => a.type.includes("GearComponent"))
+        const [gearwearActions, activityActions] = _.partition(recipe.actions, (a) => a.type.includes("GearComponent"))
+        const sortedActions = _.sortBy(activityActions, ["type"])
 
         // Execute activity actions first.
         let success: boolean = true

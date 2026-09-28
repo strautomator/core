@@ -164,14 +164,10 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
     const cLat = parseFloat(arr[0])
     const cLong = parseFloat(arr[1])
 
-    // Check if activity passed near the specified location.
-    for (let [lat, long] of coordinates) {
-        if (op == RecipeOperator.NotEqual && (lat <= cLat - radius || lat >= cLat + radius || long <= cLong - radius || long >= cLong + radius)) {
-            return true
-        }
-        if (op != RecipeOperator.NotEqual && lat <= cLat + radius && lat >= cLat - radius && long <= cLong + radius && long >= cLong - radius) {
-            return true
-        }
+    // Check if activity passed near the specified location. For "not equal", none of the points can be nearby.
+    const isNear = coordinates.some(([lat, long]) => lat <= cLat + radius && lat >= cLat - radius && long <= cLong + radius && long >= cLong - radius)
+    if (op == RecipeOperator.NotEqual ? !isNear : isNear) {
+        return true
     }
 
     logger.debug("Recipes.checkLocation", logHelper.activity(activity), condition, "Failed")
@@ -604,7 +600,7 @@ export const checkMusic = async (user: UserData, activity: StravaActivity, condi
         } else if (op == RecipeOperator.Like) {
             valid = trackTitles.filter((t) => t.includes(value)).length > 0
         } else if (op == RecipeOperator.NotLike) {
-            valid = trackTitles.filter((t) => !t.includes(value)).length > 0
+            valid = trackTitles.every((t) => !t.includes(value))
         }
     } else if (op == RecipeOperator.NotLike) {
         valid = true
@@ -649,9 +645,11 @@ export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, 
     if (whichFirst == "recipe") {
         const stats = (await recipeStats.getStats(user, recipe)) as RecipeStatsData
 
-        if (stats) {
+        if (stats?.dateLastTrigger) {
             const lastExecuted = dayjs(stats.dateLastTrigger).utc()
             isFirst = activityDate.dayOfYear() != lastExecuted.dayOfYear() || activityDate.year() != lastExecuted.year()
+        } else {
+            isFirst = true
         }
     } else {
         isFirst = activityDate.dayOfYear() > lastActivityDate.dayOfYear() || activityDate.year() > lastActivityDate.year()
@@ -675,9 +673,9 @@ export const checkFirstOfDay = async (user: UserData, activity: StravaActivity, 
     }
 
     if (op == RecipeOperator.Equal) {
-        valid = isFirst && value
+        valid = isFirst == value
     } else if (op == RecipeOperator.NotEqual) {
-        valid = !isFirst && !value
+        valid = isFirst != value
     }
 
     if (valid) {
