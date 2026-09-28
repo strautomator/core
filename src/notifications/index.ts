@@ -298,23 +298,23 @@ export class Notifications {
                 ["dateExpiry", ">", now]
             ]
 
-            // Fetch unread notifications page by page, keeping only their bodies grouped by user.
-            const userNotifications: {[userId: string]: {body: string}[]} = {}
+            // Count unread notifications per user, page by page.
+            const userCounts: {[userId: string]: number} = {}
             for await (const page of database.searchPages("notifications", queries)) {
                 for (const n of page) {
-                    if (!userNotifications[n.userId]) userNotifications[n.userId] = []
-                    userNotifications[n.userId].push({body: n.body})
+                    userCounts[n.userId] = (userCounts[n.userId] || 0) + 1
                 }
             }
 
             let userId: string
-            let list: {body: string}[]
+            let count: number
 
-            // Iterate users with unread notifications.
-            for ([userId, list] of Object.entries(userNotifications)) {
+            // Iterate users that reached the threshold, and only then fetch their notifications.
+            for ([userId, count] of Object.entries(userCounts)) {
                 try {
-                    if (list.length > 0 && list.length % settings.notifications.emailReminderCount == 0) {
+                    if (count > 0 && count % settings.notifications.emailReminderCount == 0) {
                         const user = await users.getById(userId)
+                        const list = await database.search("notifications", [["userId", "==", userId], ...queries])
 
                         // Send the email reminder only if user has set an email.
                         if (user.email) {
