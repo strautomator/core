@@ -161,7 +161,7 @@ export class Database {
             const result = await doc.set(encryptedData)
             return result.writeTime.seconds
         } catch (ex) {
-            if (this.isRetryable(ex)) {
+            if (await this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData)
                 return result.writeTime.seconds
             } else {
@@ -195,7 +195,7 @@ export class Database {
             const result = await doc.set(encryptedData, {merge: true})
             return result.writeTime.seconds
         } catch (ex) {
-            if (this.isRetryable(ex)) {
+            if (await this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData, {merge: true})
                 return result.writeTime.seconds
             } else {
@@ -337,7 +337,7 @@ export class Database {
         try {
             await doc.update(data)
         } catch (ex) {
-            if (this.isRetryable(ex)) {
+            if (await this.isRetryable(ex)) {
                 await doc.update(data)
             } else {
                 throw ex
@@ -381,17 +381,19 @@ export class Database {
             const arrLogQuery = _.flatten(where).map((i) => (_.isDate(i) ? dayjs(i).format("lll") : i))
             const logQuery = arrLogQuery.join(" ")
 
-            // Fetch snapshot to be deleted.
-            const snapshot = await filteredTable.get()
+            // Fetch only the references of the documents to be deleted.
+            const snapshot = await filteredTable.select().get()
             if (snapshot.size == 0) {
                 logger.info("Database.delete", collection, logQuery, "No documents to delete")
                 return 0
             }
 
-            // Batch delete documents.
-            const batch = this.firestore.batch()
-            snapshot.forEach(async (doc) => batch.delete(doc.ref))
-            await batch.commit()
+            // Batch delete documents, in chunks to stay within Firestore's commit limits.
+            for (let docs of _.chunk(snapshot.docs, 500)) {
+                const batch = this.firestore.batch()
+                docs.forEach((doc) => batch.delete(doc.ref))
+                await batch.commit()
+            }
 
             logger.info("Database.delete", collection, logQuery, `Deleted ${snapshot.size} documents`)
             return snapshot.size
