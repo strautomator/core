@@ -166,7 +166,7 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
 
     // Check if activity passed near the specified location. For "not equal", none of the points can be nearby.
     const isNear = coordinates.some(([lat, long]) => lat <= cLat + radius && lat >= cLat - radius && long <= cLong + radius && long >= cLong - radius)
-    if (op == RecipeOperator.NotEqual ? !isNear : isNear) {
+    if (coordinates.length > 0 && (op == RecipeOperator.NotEqual ? !isNear : isNear)) {
         return true
     }
 
