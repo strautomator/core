@@ -11,7 +11,7 @@ import path from "path"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import JSZip from "jszip"
-import _ from "lodash"
+import {Readable} from "stream"
 const settings = require("setmeup").settings
 
 /**
@@ -85,76 +85,120 @@ export class GDPR {
                 }
             }
 
-            let size = 0
-            let zip = new JSZip()
+            const zip = new JSZip()
+            const counter = {size: 0}
 
-            // Get all relevant user data from the database.
-            const where = [["userId", "==", user.id]]
-            const jsonData: any = {}
-            jsonData["Activities"] = await database.search("activities", where)
-            jsonData["FitActivities"] = {Garmin: await database.search("garmin", where), Wahoo: await database.search("wahoo", where)}
-            jsonData["Automations"] = {Stats: await database.search("recipe-stats", where), Shared: await database.search("shared-recipes", where)}
-            jsonData["AthleteRecords"] = await database.get("athlete-records", user.id)
-            jsonData["Calendars"] = await database.search("calendars", where)
-            jsonData["GearWear"] = {Config: await database.search("gearwear", where), BatteryTracker: await database.get("gearwear-battery", user.id)}
-            jsonData["Notifications"] = await database.search("notifications", where)
-            jsonData["Subscription"] = await database.search("subscriptions", where)
-            jsonData["User"] = await database.get("users", user.id)
-
-            // Remove sensitive data.
-            delete jsonData.User.stravaTokens
-            delete jsonData.User.urlToken
-            delete jsonData.User.garminAuthState
-            delete jsonData.User.wahooAuthState
-            delete jsonData.User.spotifyAuthState
-            if (jsonData.User.garmin) {
-                delete jsonData.User.garmin.tokens
-            }
-            if (jsonData.User.wahoo) {
-                delete jsonData.User.wahoo.tokens
-            }
-            if (jsonData.User.spotify) {
-                delete jsonData.User.spotify.tokens
-            }
-
-            // Cleanup data before saving.
-            let key: string
-            let data: any
-            for ([key, data] of Object.entries(jsonData)) {
-                if (!data) continue
-
-                if ((_.isArray(data) && data.length == 0) || Object.values(data).length == 0) {
-                    delete jsonData[key]
-                }
-            }
-
-            // ZIP the exported data.
-            const dataStr = JSON.stringify(jsonData, null, 2)
-            await zip.file("data.json", dataStr)
-            size += dataStr.length
+            // The data.json is streamed into the ZIP, fetching collections page by page.
+            zip.file("data.json", Readable.from(this.archiveDataChunks(user, counter)))
 
             // Get cached calendars.
             const calendarFiles = await storage.listFiles(StorageBucket.Calendar, `${user.id}/`)
             for (let file of calendarFiles) {
                 const icsName = path.basename(file.name).replace(`-${user.urlToken}`, "")
-                await zip.file(`calendar-${icsName}`, file.createReadStream())
+                zip.file(`calendar-${icsName}`, file.createReadStream())
             }
 
-            // Transform the size to kilobytes.
-            size = Math.round(size / 1024)
-
-            // Generate ZIP and push to the storage bucket.
-            const result = await zip.generateAsync({type: "nodebuffer", streamFiles: true})
-            await storage.setFile(StorageBucket.GDPR, filename, result, "application/zip")
+            // Generate ZIP and stream it to the storage bucket.
+            const zipStream = zip.generateNodeStream({type: "nodebuffer", streamFiles: true, compression: "DEFLATE"})
+            await storage.setFileStream(StorageBucket.GDPR, filename, zipStream, "application/zip")
             await users.update({id: user.id, displayName: user.displayName, dateLastArchiveGenerated: now.toDate()})
 
-            logger.info("GDPR.generateArchive", logHelper.user(user), `Size: ${size} KB`)
+            logger.info("GDPR.generateArchive", logHelper.user(user), `Size: ${Math.round(counter.size / 1024)} KB`)
 
             return await storage.getUrl(StorageBucket.GDPR, filename, saveAs)
         } catch (ex) {
             logger.error("GDPR.generateArchive", logHelper.user(user), ex)
             throw ex
         }
+    }
+
+    /**
+     * Generate the contents of the archive's data.json in chunks, with collections fetched
+     * page by page so large accounts are never fully loaded in memory.
+     * @param user The user requesting the data.
+     * @param counter Counter with the total size of the generated data.
+     */
+    private async *archiveDataChunks(user: UserData, counter: {size: number}): AsyncGenerator<Buffer> {
+        const where = [["userId", "==", user.id]]
+
+        // JSZip needs Buffer chunks, as strings from object streams are not decoded as UTF-8.
+        const emit = (chunk: string): Buffer => {
+            const buffer = Buffer.from(chunk, "utf8")
+            counter.size += buffer.length
+            return buffer
+        }
+
+        // Remove sensitive data from the user.
+        const userData = await database.get("users", user.id)
+        if (userData) {
+            delete userData.stravaTokens
+            delete userData.urlToken
+            delete userData.garminAuthState
+            delete userData.wahooAuthState
+            delete userData.spotifyAuthState
+            if (userData.garmin) delete userData.garmin.tokens
+            if (userData.wahoo) delete userData.wahoo.tokens
+            if (userData.spotify) delete userData.spotify.tokens
+        }
+
+        // Sections of the exported data: either a collection (streamed) or a single document.
+        const sections: {path: string[]; collection?: string; data?: any}[] = [
+            {path: ["Activities"], collection: "activities"},
+            {path: ["FitActivities", "Garmin"], collection: "garmin"},
+            {path: ["FitActivities", "Wahoo"], collection: "wahoo"},
+            {path: ["Automations", "Stats"], collection: "recipe-stats"},
+            {path: ["Automations", "Shared"], collection: "shared-recipes"},
+            {path: ["AthleteRecords"], data: await database.get("athlete-records", user.id)},
+            {path: ["Calendars"], collection: "calendars"},
+            {path: ["GearWear", "Config"], collection: "gearwear"},
+            {path: ["GearWear", "BatteryTracker"], data: await database.get("gearwear-battery", user.id)},
+            {path: ["Notifications"], collection: "notifications"},
+            {path: ["Subscription"], collection: "subscriptions"},
+            {path: ["User"], data: userData}
+        ]
+
+        yield emit("{")
+        let parent: string = null
+        let firstKey = true
+        let firstChildKey = true
+
+        for (let section of sections) {
+            const [key, childKey] = section.path
+
+            // Open or close the parent object for nested sections.
+            if (parent && parent != key) {
+                yield emit("}")
+                parent = null
+            }
+            if (childKey && parent != key) {
+                yield emit(`${firstKey ? "" : ","}\n${JSON.stringify(key)}:{`)
+                parent = key
+                firstKey = false
+                firstChildKey = true
+            }
+
+            const prefix = childKey ? `${firstChildKey ? "" : ","}\n${JSON.stringify(childKey)}:` : `${firstKey ? "" : ","}\n${JSON.stringify(key)}:`
+            if (childKey) firstChildKey = false
+            else firstKey = false
+
+            if (section.collection) {
+                yield emit(`${prefix}[`)
+                let firstItem = true
+                for await (const page of database.searchPages(section.collection, where)) {
+                    const items = page.map((item) => JSON.stringify(item)).join(",\n")
+                    yield emit(`${firstItem ? "\n" : ",\n"}${items}`)
+                    firstItem = false
+                }
+                yield emit("]")
+            } else {
+                yield emit(`${prefix}${JSON.stringify(section.data || null)}`)
+            }
+        }
+
+        if (parent) {
+            yield emit("}")
+        }
+        yield emit("\n}\n")
     }
 
     /**

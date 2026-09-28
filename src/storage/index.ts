@@ -2,6 +2,7 @@
 
 import {StorageBucket} from "./types"
 import * as cloudStorage from "@google-cloud/storage"
+import {pipeline} from "stream/promises"
 import logger from "anyhow"
 import dayjs = require("dayjs")
 const settings = require("setmeup").settings
@@ -200,6 +201,27 @@ export class Storage {
             logger.info("Storage.setFile", bucketKey, filename)
         } catch (ex) {
             logger.error("Storage.setFile", bucketKey, filename, ex)
+            throw ex
+        }
+    }
+
+    /**
+     * Streams the specified data to a file on the storage bucket.
+     * @param bucketKey Key or name of the storage bucket.
+     * @param filename The full filename.
+     * @param stream Readable stream with the file data.
+     * @param contentType MIME type.
+     */
+    setFileStream = async (bucketKey: StorageBucket, filename: string, stream: NodeJS.ReadableStream, contentType?: string): Promise<void> => {
+        try {
+            const bucket: string = this.buckets[bucketKey] || bucketKey
+            const file = this.client.bucket(bucket).file(filename)
+            const writeStream = file.createWriteStream({contentType: contentType ? contentType : "auto", resumable: false})
+            await pipeline(stream, writeStream)
+
+            logger.info("Storage.setFileStream", bucketKey, filename)
+        } catch (ex) {
+            logger.error("Storage.setFileStream", bucketKey, filename, ex)
             throw ex
         }
     }
