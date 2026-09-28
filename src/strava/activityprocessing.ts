@@ -102,6 +102,7 @@ export class StravaActivityProcessing {
             return activities
         } catch (ex) {
             logger.error("Strava.getProcessedActivities", logHelper.user(user), dateFrom, dateTo, ex)
+            return []
         }
     }
 
@@ -564,6 +565,7 @@ export class StravaActivityProcessing {
             return batchActivities
         } catch (ex) {
             logger.error("Strava.getQueuedActivities", logDate, `Batch size: ${batchSize}`, ex)
+            return []
         }
     }
 
