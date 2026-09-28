@@ -474,7 +474,7 @@ export class Calendar {
 
         try {
             const urlPos = ics.indexOf("URL:")
-            if (urlPos) {
+            if (urlPos >= 0) {
                 const calendarUrl = ics.substring(urlPos + 4, ics.indexOf("\n", urlPos)).trim()
                 arrLog.unshift(calendarUrl)
             }
