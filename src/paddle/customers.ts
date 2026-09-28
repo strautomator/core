@@ -29,7 +29,7 @@ export class PaddleCustomers {
         const data = entity.data as CustomerNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
 
             // Make sure the user is valid.
             const userId = customData?.userId

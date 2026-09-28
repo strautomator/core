@@ -30,7 +30,7 @@ export class PaddleSubscriptions {
      * @param sub Subscription to be updated.
      * @param data The webhook notification data.
      */
-    private setPaymentDates = async (sub: Partial<PaddleSubscription>, data: SubscriptionNotification): Promise<boolean> => {
+    private setPaymentDates = (sub: Partial<PaddleSubscription>, data: SubscriptionNotification): boolean => {
         let hasChanges = false
         let lastPayment: dayjs.Dayjs
         let nextPayment: dayjs.Dayjs
@@ -74,7 +74,7 @@ export class PaddleSubscriptions {
         const data = entity.data as SubscriptionNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
             const userId = customData?.userId || null
 
             let user = await users.getByPaddleId(data.customerId)
@@ -128,7 +128,7 @@ export class PaddleSubscriptions {
         const data = entity.data as SubscriptionNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
             const userId = customData?.userId || null
 
             let user = await users.getByPaddleId(data.customerId)
@@ -189,7 +189,7 @@ export class PaddleSubscriptions {
         const data = entity.data as SubscriptionNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
             const userId = customData?.userId || null
 
             let user = await users.getByPaddleId(data.customerId)
@@ -264,7 +264,7 @@ export class PaddleSubscriptions {
         const data = entity.data as TransactionNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
             const userId = customData?.userId || null
 
             let user = await users.getByPaddleId(data.customerId)
@@ -472,7 +472,7 @@ export class PaddleSubscriptions {
             // Check if existing transaction ID is still valid.
             if (user.paddleTransactionId) {
                 transaction = await api.client.transactions.get(user.paddleTransactionId)
-                if (transaction?.origin == "subscription_payment_method_change" && dayjs(transaction.createdAt).diff(new Date(), "hours") < 1) {
+                if (transaction?.origin == "subscription_payment_method_change" && dayjs().diff(transaction.createdAt, "hours") < 1) {
                     logger.warn("Paddle.getUpdateTransaction", logHelper.user(user), `User already has a transaction ID ${user.paddleTransactionId}, will use it instead`)
                     return transaction
                 }

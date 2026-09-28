@@ -63,6 +63,7 @@ export class Users {
             }
         }
 
+        eventManager.on("Paddle.onSubscriptionTrialling", this.onSubscription)
         eventManager.on("Paddle.subscriptionCreated", this.onSubscription)
         eventManager.on("Paddle.subscriptionUpdated", this.onSubscription)
         eventManager.on("PayPal.subscriptionCreated", this.onSubscription)
@@ -113,7 +114,7 @@ export class Users {
             }
 
             // Make sure we don't have dangling subscription IDs if user is not PRO for more than 24h.
-            if (!user.isPro && user.subscriptionId && subscription.status == "CANCELLED" && dayjs(subscription.dateLastPayment || subscription.dateUpdated).diff(new Date(), "days") > 1) {
+            if (!user.isPro && user.subscriptionId && subscription.status == "CANCELLED" && dayjs().diff(subscription.dateLastPayment || subscription.dateUpdated, "days") > 1) {
                 await this.update({id: user.id, displayName: user.displayName, subscriptionId: FieldValue.delete() as any})
             }
         } catch (ex) {
