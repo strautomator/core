@@ -845,7 +845,7 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             }
         }
         const lapsList = (splits: any[]) => {
-            const activeLaps = splits.filter((s) => !s.splitType || /active/i.test(s.splitType))
+            const activeLaps = splits.filter((s) => !s.splitType || /active|^rwd run$/i.test(s.splitType))
             const result = {}
             for (let [prop, formatter] of Object.entries(lapFormatters)) {
                 if (!activeLaps.some((s) => !_.isNil(s[prop]))) continue
