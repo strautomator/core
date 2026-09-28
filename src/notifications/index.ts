@@ -239,7 +239,9 @@ export class Notifications {
             notification.read = true
 
             // Mark as read on the database.
-            await database.merge("notifications", {id: notification.id, dateRead: notification.dateRead, read: notification.read})
+            await database.merge("notifications", {id: notification.id, dateRead: notification.dateRead, dateExpiry: notification.dateExpiry, read: notification.read})
+            cache.del("notifications", `${user.id}-unread`)
+            cache.del("notifications", `${user.id}-all`)
             logger.info("Notifications.markAsRead", id, notification.title)
 
             return true
