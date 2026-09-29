@@ -2,6 +2,7 @@
 
 import {StorageBucket} from "../storage/types"
 import {UserData} from "../users/types"
+import {Readable} from "stream"
 import database from "../database"
 import eventManager from "../eventmanager"
 import storage from "../storage"
@@ -11,7 +12,6 @@ import path from "path"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import JSZip from "jszip"
-import {Readable} from "stream"
 const settings = require("setmeup").settings
 
 /**
@@ -88,8 +88,11 @@ export class GDPR {
             const zip = new JSZip()
             const counter = {size: 0}
 
-            // The data.json is streamed into the ZIP, fetching collections page by page.
-            zip.file("data.json", Readable.from(this.archiveDataChunks(user, counter)))
+            // Each JSON file is streamed into the ZIP, fetching collections page by page.
+            const jsonFiles = await this.archiveJsonFiles(user, counter)
+            for (let file of jsonFiles) {
+                zip.file(file.name, file.stream)
+            }
 
             // Get cached calendars.
             const calendarFiles = await storage.listFiles(StorageBucket.Calendar, `${user.id}/`)
@@ -113,12 +116,12 @@ export class GDPR {
     }
 
     /**
-     * Generate the contents of the archive's data.json in chunks, with collections fetched
-     * page by page so large accounts are never fully loaded in memory.
+     * Build the JSON files of the archive, one per data section. Collections are streamed
+     * page by page so large accounts are never fully loaded in memory. Empty sections are skipped.
      * @param user The user requesting the data.
      * @param counter Counter with the total size of the generated data.
      */
-    private async *archiveDataChunks(user: UserData, counter: {size: number}): AsyncGenerator<Buffer> {
+    private archiveJsonFiles = async (user: UserData, counter: {size: number}): Promise<{name: string; stream: Readable}[]> => {
         const where = [["userId", "==", user.id]]
 
         // JSZip needs Buffer chunks, as strings from object streams are not decoded as UTF-8.
@@ -142,63 +145,52 @@ export class GDPR {
         }
 
         // Sections of the exported data: either a collection (streamed) or a single document.
-        const sections: {path: string[]; collection?: string; data?: any}[] = [
-            {path: ["Activities"], collection: "activities"},
-            {path: ["FitActivities", "Garmin"], collection: "garmin"},
-            {path: ["FitActivities", "Wahoo"], collection: "wahoo"},
-            {path: ["Automations", "Stats"], collection: "recipe-stats"},
-            {path: ["Automations", "Shared"], collection: "shared-recipes"},
-            {path: ["AthleteRecords"], data: await database.get("athlete-records", user.id)},
-            {path: ["Calendars"], collection: "calendars"},
-            {path: ["GearWear", "Config"], collection: "gearwear"},
-            {path: ["GearWear", "BatteryTracker"], data: await database.get("gearwear-battery", user.id)},
-            {path: ["Notifications"], collection: "notifications"},
-            {path: ["Subscription"], collection: "subscriptions"},
-            {path: ["User"], data: userData}
+        const sections: {name: string; collection?: string; data?: any}[] = [
+            {name: "Activities", collection: "activities"},
+            {name: "FitActivities-Garmin", collection: "garmin"},
+            {name: "FitActivities-Wahoo", collection: "wahoo"},
+            {name: "Automations-Stats", collection: "recipe-stats"},
+            {name: "Automations-Shared", collection: "shared-recipes"},
+            {name: "AthleteRecords", data: await database.get("athlete-records", user.id)},
+            {name: "Calendars", collection: "calendars"},
+            {name: "GearWear-Config", collection: "gearwear"},
+            {name: "GearWear-BatteryTracker", data: await database.get("gearwear-battery", user.id)},
+            {name: "Notifications", collection: "notifications"},
+            {name: "Subscription", collection: "subscriptions"},
+            {name: "User", data: userData}
         ]
 
-        yield emit("{")
-        let parent: string = null
-        let firstKey = true
-        let firstChildKey = true
+        const files: {name: string; stream: Readable}[] = []
 
         for (let section of sections) {
-            const [key, childKey] = section.path
-
-            // Open or close the parent object for nested sections.
-            if (parent && parent != key) {
-                yield emit("}")
-                parent = null
-            }
-            if (childKey && parent != key) {
-                yield emit(`${firstKey ? "" : ","}\n${JSON.stringify(key)}:{`)
-                parent = key
-                firstKey = false
-                firstChildKey = true
-            }
-
-            const prefix = childKey ? `${firstChildKey ? "" : ","}\n${JSON.stringify(childKey)}:` : `${firstKey ? "" : ","}\n${JSON.stringify(key)}:`
-            if (childKey) firstChildKey = false
-            else firstKey = false
-
             if (section.collection) {
-                yield emit(`${prefix}[`)
-                let firstItem = true
-                for await (const page of database.searchPages(section.collection, where)) {
-                    const items = page.map((item) => JSON.stringify(item)).join(",\n")
-                    yield emit(`${firstItem ? "\n" : ",\n"}${items}`)
-                    firstItem = false
+                // Fetch the first page upfront to skip empty collections.
+                const pages = database.searchPages(section.collection, where)
+                const first = await pages.next()
+                if (first.done || first.value.length == 0) continue
+
+                const chunks = async function* (): AsyncGenerator<Buffer> {
+                    yield emit("[\n")
+                    let page: any[] = first.value
+                    let firstItem = true
+                    while (true) {
+                        yield emit(`${firstItem ? "" : ",\n"}${page.map((item) => JSON.stringify(item, null, 2)).join(",\n")}`)
+                        firstItem = false
+
+                        const next = await pages.next()
+                        if (next.done) break
+                        page = next.value
+                    }
+                    yield emit("\n]\n")
                 }
-                yield emit("]")
-            } else {
-                yield emit(`${prefix}${JSON.stringify(section.data || null)}`)
+
+                files.push({name: `${section.name}.json`, stream: Readable.from(chunks())})
+            } else if (section.data) {
+                files.push({name: `${section.name}.json`, stream: Readable.from([emit(JSON.stringify(section.data, null, 2))])})
             }
         }
 
-        if (parent) {
-            yield emit("}")
-        }
-        yield emit("\n}\n")
+        return files
     }
 
     /**
