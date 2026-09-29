@@ -56,35 +56,10 @@
             "standardHeaders": true,
             "legacyHeaders": false,
             "message": "Too many request, please try again later"
-        },
-        // How long to cache the user ID of a valid access token, and to remember tokens rejected by Strava.
-        "tokenCacheSeconds": 300,
-        "invalidTokenCacheSeconds": 600,
+        }
+
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
-    },
-    // Remote MCP server (PRO only). Hosted by the web app at /mcp.
-    "mcp": {
-        // Path of the MCP Streamable HTTP endpoint.
-        "path": "/mcp",
-        // OAuth scope advertised to MCP clients.
-        "scope": "mcp",
-        // Access token lifetime in hours.
-        "accessTokenHours": 1,
-        // Refresh token lifetime in days.
-        "refreshTokenDays": 30,
-        // Authorization code lifetime in minutes.
-        "authCodeMinutes": 10,
-        // Pending authorization request lifetime in minutes (covers the Strava login round-trip).
-        "authRequestMinutes": 15,
-        // Dynamically registered OAuth clients expire after this many days of issuance.
-        "clientDays": 365,
-        // Registered clients that were never used to get tokens expire after this many hours.
-        "unusedClientHours": 24,
-        // Maximum number of redirect URIs per registered client.
-        "maxRedirectUris": 5,
-        // Maximum client registrations per IP per hour.
-        "registerPerHour": 20
     },
     // Afiliate settings (also used for the Country Linkify module).
     "affiliates": {
@@ -388,6 +363,29 @@
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
         }
     },
+    // Remote MCP server (PRO only). Hosted by the web app at /mcp.
+    "mcp": {
+        // Path of the MCP Streamable HTTP endpoint.
+        "path": "/mcp",
+        // OAuth scope advertised to MCP clients.
+        "scope": "mcp",
+        // Access token lifetime in hours.
+        "accessTokenHours": 1,
+        // Refresh token lifetime in days.
+        "refreshTokenDays": 30,
+        // Authorization code lifetime in minutes.
+        "authCodeMinutes": 10,
+        // Pending authorization request lifetime in minutes (covers the Strava login round-trip).
+        "authRequestMinutes": 15,
+        // Dynamically registered OAuth clients expire after this many days of issuance.
+        "clientDays": 365,
+        // Registered clients that were never used to get tokens expire after this many hours.
+        "unusedClientHours": 24,
+        // Maximum number of redirect URIs per registered client.
+        "maxRedirectUris": 5,
+        // Maximum client registrations per IP per hour.
+        "registerPerHour": 20
+    },
     // Settings for music / tracklist providers.
     "music": {
         // Cache recently played tracks for up to 1 minute. Value set in seconds.
@@ -416,7 +414,9 @@
         "tokenFailuresDisable": 10,
         // Token exchange requests times out in 6 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).
-        "tokenTimeout": 6000
+        "tokenTimeout": 6000,
+        // Cache tokens <> ID references for up to 2 minutes, when applicable.
+        "tokenCacheSeconds": 120
     },
     "openrouter": {
         "api": {
