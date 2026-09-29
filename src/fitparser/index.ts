@@ -379,7 +379,13 @@ export class FitParser {
                     ["dateStart", ">=", dayjs(chunk[0].dateStart).subtract(1, "minute").toDate()],
                     ["dateStart", "<=", dayjs(chunk[chunk.length - 1].dateStart).add(1, "minute").toDate()]
                 ]
-                const fitActivities: FitFileActivity[] = await database.search(source, where)
+                let fitActivities: FitFileActivity[]
+                try {
+                    fitActivities = await database.search(source, where)
+                } catch (chunkEx) {
+                    logger.error("FitParser.getMatchingActivities", logHelper.user(user), source, `Failed to search ${chunk.length} activities`, chunkEx)
+                    continue
+                }
                 if (fitActivities.length == 0) continue
 
                 // Match using the same rules as getMatchingActivity(): start date and total time.

@@ -313,13 +313,14 @@ export class Notifications {
             for ([userId, count] of Object.entries(userCounts)) {
                 try {
                     if (count > 0 && count % settings.notifications.emailReminderCount == 0) {
-                        // Count might have changed since the first pass, so check it again.
-                        const list = await database.search("notifications", [["userId", "==", userId], ...queries])
-                        if (list.length == 0 || list.length % settings.notifications.emailReminderCount != 0) continue
                         const user = await users.getById(userId)
 
                         // Send the email reminder only if user has set an email.
-                        if (user.email) {
+                        if (user?.email) {
+                            // Count might have changed since the first pass, so check it again.
+                            const list = await database.search("notifications", [["userId", "==", userId], ...queries])
+                            if (list.length == 0 || list.length % settings.notifications.emailReminderCount != 0) continue
+
                             const data = {
                                 userId: user.id,
                                 userName: user.profile.firstName || user.displayName,
@@ -335,7 +336,7 @@ export class Notifications {
                             await mailer.send(options)
                             logger.info("Notifications.sendEmailReminders", logHelper.user(user), `${list.length} unread notifications, email sent`)
                         } else {
-                            logger.info("Notifications.sendEmailReminders", logHelper.user(user), `${list.length} unread notifications, but no user email set`)
+                            logger.info("Notifications.sendEmailReminders", user ? logHelper.user(user) : `User ${userId}`, `${count} unread notifications, but no user email set`)
                         }
                     }
                 } catch (innerEx) {

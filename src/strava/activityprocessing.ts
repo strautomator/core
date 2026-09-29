@@ -616,7 +616,7 @@ export class StravaActivityProcessing {
             // Now we process each of the queued activities separately.
             for (let pActivity of activities) {
                 try {
-                    if (!usersCache[pActivity.userId]) {
+                    if (!(pActivity.userId in usersCache)) {
                         usersCache[pActivity.userId] = await users.getById(pActivity.userId)
                     }
                     if (!usersCache[pActivity.userId]) {

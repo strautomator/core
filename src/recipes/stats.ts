@@ -97,10 +97,14 @@ export class RecipeStats {
         const id = `${user.id}-${recipe.id}`
 
         try {
-            const now = dayjs.utc().toDate()
+            if (settings.database.writeDisabled) {
+                logger.warn("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), "WRITE DISABLED")
+                return
+            }
 
             // Read and write inside a transaction, so concurrent updates don't lose activity IDs or counts.
             const stats: RecipeStatsData = await database.runTransaction(async (txn) => {
+                const now = dayjs.utc().toDate()
                 let stats: RecipeStatsData = await txn.get("recipe-stats", id)
 
                 // If not existing, create a new stats object.
@@ -130,12 +134,10 @@ export class RecipeStats {
                             stats.counter = (stats.counter || 0) + 1
                         }
                     }
-
-                    // Remove activity IDs from the stats if it has hit the array limit.
-                    if (stats.activities.length > settings.recipes.maxActivityIds) {
-                        stats.activities = stats.activities.slice(-settings.recipes.maxActivityIds)
-                    }
                 }
+
+                // Remove activity IDs from the stats if it has hit the array limit.
+                stats.activities = settings.recipes.maxActivityIds > 0 ? stats.activities.slice(-settings.recipes.maxActivityIds) : []
 
                 // Set trigger date, and increase failure counter if recipe execution was not successful.
                 stats.dateLastTrigger = now

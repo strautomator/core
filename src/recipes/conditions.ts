@@ -147,7 +147,8 @@ export const checkLocation = (activity: StravaActivity, condition: RecipeConditi
     }
 
     // Checking for a point in the activity polyline, or for a single lat / long?
-    let coordinates: [number[]] = prop == "polyline" ? polyline.decode(activity.polyline) : [[activity[prop][0], activity[prop][1]]]
+    const rawCoordinates: number[][] = prop == "polyline" ? polyline.decode(activity.polyline) : [[activity[prop][0], activity[prop][1]]]
+    const coordinates = rawCoordinates.filter(([lat, long]) => Number.isFinite(lat) && Number.isFinite(long))
 
     // When using "equals" use around 60m radius, and "like" use 650m radius.
     let radius: number
