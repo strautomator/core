@@ -56,8 +56,7 @@
             "standardHeaders": true,
             "legacyHeaders": false,
             "message": "Too many request, please try again later"
-        }
-
+        },
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
     },
