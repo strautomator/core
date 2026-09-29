@@ -1265,12 +1265,15 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, re
         if (blocked) throw new Error("Private hosts are not allowed")
 
         // Hostnames are validated against the resolved addresses as well, on every connection.
-        options.lookup = async (lookupHostname: string) => {
-            const addresses = await dns.lookup(lookupHostname, {all: true})
-            if (addresses.length == 0 || addresses.some((a) => isPrivateAddress(a.address))) {
-                throw new Error("Private hosts are not allowed")
-            }
-            return addresses[0]
+        options.lookup = (lookupHostname, _lookupOptions, callback) => {
+            dns.lookup(lookupHostname, {all: true})
+                .then((addresses) => {
+                    if (addresses.length == 0 || addresses.some((a) => isPrivateAddress(a.address))) {
+                        return callback(new Error("Private hosts are not allowed"), [])
+                    }
+                    callback(null, addresses as any)
+                })
+                .catch((ex) => callback(ex, []))
         }
 
         if (!["HEAD", "GET"].includes(method)) {
