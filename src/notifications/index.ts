@@ -239,7 +239,9 @@ export class Notifications {
             notification.read = true
 
             // Mark as read on the database.
-            await database.merge("notifications", {id: notification.id, dateRead: notification.dateRead, read: notification.read})
+            await database.merge("notifications", {id: notification.id, dateRead: notification.dateRead, dateExpiry: notification.dateExpiry, read: notification.read})
+            cache.del("notifications", `${user.id}-unread`)
+            cache.del("notifications", `${user.id}-all`)
             logger.info("Notifications.markAsRead", id, notification.title)
 
             return true
@@ -296,21 +298,27 @@ export class Notifications {
                 ["dateExpiry", ">", now]
             ]
 
-            // Fetch unread notifications and group by users.
-            const result = await database.search("notifications", queries)
-            const userNotifications = _.groupBy(result, "userId")
+            // Count unread notifications per user, page by page.
+            const userCounts: {[userId: string]: number} = {}
+            for await (const page of database.searchPaged("notifications", queries)) {
+                for (const n of page) {
+                    userCounts[n.userId] = (userCounts[n.userId] || 0) + 1
+                }
+            }
 
             let userId: string
-            let list: any
+            let count: number
 
-            // Iterate users with unread notifications.
-            for ([userId, list] of Object.entries(userNotifications)) {
+            // Iterate users that reached the threshold, and only then fetch their notifications.
+            for ([userId, count] of Object.entries(userCounts)) {
                 try {
-                    if (list.length > 0 && list.length % settings.notifications.emailReminderCount == 0) {
+                    if (count > 0 && count % settings.notifications.emailReminderCount == 0) {
                         const user = await users.getById(userId)
 
                         // Send the email reminder only if user has set an email.
-                        if (user.email) {
+                        if (user?.email) {
+                            const list = await database.search("notifications", [["userId", "==", userId], ...queries])
+
                             const data = {
                                 userId: user.id,
                                 userName: user.profile.firstName || user.displayName,
@@ -326,7 +334,7 @@ export class Notifications {
                             await mailer.send(options)
                             logger.info("Notifications.sendEmailReminders", logHelper.user(user), `${list.length} unread notifications, email sent`)
                         } else {
-                            logger.info("Notifications.sendEmailReminders", logHelper.user(user), `${list.length} unread notifications, but no user email set`)
+                            logger.info("Notifications.sendEmailReminders", user ? logHelper.user(user) : `User ${userId}`, `${count} unread notifications, but no user email set`)
                         }
                     }
                 } catch (innerEx) {

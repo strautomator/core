@@ -161,7 +161,7 @@ export class Database {
             const result = await doc.set(encryptedData)
             return result.writeTime.seconds
         } catch (ex) {
-            if (this.isRetryable(ex)) {
+            if (await this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData)
                 return result.writeTime.seconds
             } else {
@@ -195,7 +195,7 @@ export class Database {
             const result = await doc.set(encryptedData, {merge: true})
             return result.writeTime.seconds
         } catch (ex) {
-            if (this.isRetryable(ex)) {
+            if (await this.isRetryable(ex)) {
                 const result = await doc.set(encryptedData, {merge: true})
                 return result.writeTime.seconds
             } else {
@@ -283,6 +283,53 @@ export class Database {
     }
 
     /**
+     * Search for documents on the specified database collection, yielding results page by page,
+     * so big collections are never fully loaded in memory at once.
+     * @param collection Name of the collection.
+     * @param queryList List of query in the format [property, operator, value].
+     * @param pageSize Optional page size, defaults to the database.pageSize setting.
+     */
+    async *searchPaged(collection: string, queryList?: any[], pageSize?: number): AsyncGenerator<any[]> {
+        const colname = `${collection}${this.collectionSuffix}`
+        let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
+
+        if (queryList && _.isString(queryList[0])) {
+            queryList = [queryList]
+        }
+        if (queryList) {
+            for (let query of queryList) {
+                filteredTable = filteredTable.where(query[0], query[1], query[2])
+            }
+        }
+
+        pageSize = pageSize || settings.database.pageSize
+        let lastDoc: FirebaseFirestore.QueryDocumentSnapshot = null
+
+        while (true) {
+            const pageQuery = lastDoc ? filteredTable.limit(pageSize).startAfter(lastDoc) : filteredTable.limit(pageSize)
+            const snapshot = await pageQuery.get()
+            if (snapshot.empty) {
+                return
+            }
+
+            const results = snapshot.docs.map((r) => {
+                const result = r.data()
+                cryptoProcess(result, false)
+                this.transformData(result)
+                result.id = r.id
+                return result
+            })
+
+            lastDoc = snapshot.docs[snapshot.docs.length - 1]
+            yield results
+
+            if (snapshot.size < pageSize) {
+                return
+            }
+        }
+    }
+
+    /**
      * Count how many documents are returned for the specified query.
      * @param collection Name of the collection.
      * @param queryList List of query in the format [property, operator, value].
@@ -337,7 +384,7 @@ export class Database {
         try {
             await doc.update(data)
         } catch (ex) {
-            if (this.isRetryable(ex)) {
+            if (await this.isRetryable(ex)) {
                 await doc.update(data)
             } else {
                 throw ex
@@ -381,17 +428,19 @@ export class Database {
             const arrLogQuery = _.flatten(where).map((i) => (_.isDate(i) ? dayjs(i).format("lll") : i))
             const logQuery = arrLogQuery.join(" ")
 
-            // Fetch snapshot to be deleted.
-            const snapshot = await filteredTable.get()
+            // Fetch only the references of the documents to be deleted.
+            const snapshot = await filteredTable.select().get()
             if (snapshot.size == 0) {
                 logger.info("Database.delete", collection, logQuery, "No documents to delete")
                 return 0
             }
 
-            // Batch delete documents.
-            const batch = this.firestore.batch()
-            snapshot.forEach(async (doc) => batch.delete(doc.ref))
-            await batch.commit()
+            // Batch delete documents, in chunks to stay within Firestore's commit limits.
+            for (let docs of _.chunk(snapshot.docs, settings.database.pageSize)) {
+                const batch = this.firestore.batch()
+                docs.forEach((doc) => batch.delete(doc.ref))
+                await batch.commit()
+            }
 
             logger.info("Database.delete", collection, logQuery, `Deleted ${snapshot.size} documents`)
             return snapshot.size

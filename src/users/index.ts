@@ -63,6 +63,7 @@ export class Users {
             }
         }
 
+        eventManager.on("Paddle.onSubscriptionTrialling", this.onSubscription)
         eventManager.on("Paddle.subscriptionCreated", this.onSubscription)
         eventManager.on("Paddle.subscriptionUpdated", this.onSubscription)
         eventManager.on("PayPal.subscriptionCreated", this.onSubscription)
@@ -113,7 +114,7 @@ export class Users {
             }
 
             // Make sure we don't have dangling subscription IDs if user is not PRO for more than 24h.
-            if (!user.isPro && user.subscriptionId && subscription.status == "CANCELLED" && dayjs(subscription.dateLastPayment || subscription.dateUpdated).diff(new Date(), "days") > 1) {
+            if (!user.isPro && user.subscriptionId && subscription.status == "CANCELLED" && dayjs().diff(subscription.dateLastPayment || subscription.dateUpdated, "hours") > 24) {
                 await this.update({id: user.id, displayName: user.displayName, subscriptionId: FieldValue.delete() as any})
             }
         } catch (ex) {
@@ -508,6 +509,14 @@ export class Users {
     }
 
     /**
+     * Iterate PRO users page by page.
+     * @param pageSize Optional page size.
+     */
+    getProPaged = (pageSize?: number): AsyncGenerator<UserData[]> => {
+        return database.searchPaged("users", ["isPro", "==", true], pageSize)
+    }
+
+    /**
      * Get active users (with at least 1 recipe).
      */
     getActive = async (): Promise<UserData[]> => {
@@ -520,6 +529,14 @@ export class Users {
             logger.error("Users.getActive", ex)
             throw ex
         }
+    }
+
+    /**
+     * Iterate active users (with at least 1 recipe) page by page.
+     * @param pageSize Optional page size.
+     */
+    getActivePaged = (pageSize?: number): AsyncGenerator<UserData[]> => {
+        return database.searchPaged("users", ["recipeCount", ">", 0], pageSize)
     }
 
     /**
@@ -1400,7 +1417,7 @@ export class Users {
      */
     switchToPro = async (user: UserData, subscription?: BaseSubscription | PaddleSubscription | GitHubSubscription, trial?: boolean): Promise<void> => {
         try {
-            if (user.isPro && user.subscriptionId && subscription.status != "TRIAL") {
+            if (user.isPro && user.subscriptionId && subscription.status != "TRIAL" && !user.isTrial) {
                 logger.warn("Users.switchToPro", logHelper.user(user), "User is already PRO, abort")
                 return
             }

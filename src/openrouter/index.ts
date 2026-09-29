@@ -88,10 +88,9 @@ export class OpenRouter implements AiProvider {
                 data: {
                     max_tokens: options.maxTokens,
                     stream: false,
-                    cache_control: {type: "ephemeral"},
                     reasoning: {effort: useReason ? "low" : "none"},
                     messages: [
-                        {role: "system", content: options.instruction},
+                        {role: "system", content: [{type: "text", text: options.instruction, cache_control: {type: "ephemeral"}}]},
                         {role: "user", content: messages.join(" ")}
                     ]
                 }

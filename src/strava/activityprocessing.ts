@@ -46,6 +46,10 @@ export class StravaActivityProcessing {
         try {
             const activity = await database.get("activities", id.toString())
 
+            if (activity && activity.userId != user.id) {
+                logger.warn("Strava.getProcessedActivity", logHelper.user(user), id, `Activity belongs to another user`)
+                return null
+            }
             if (activity) {
                 logger.info("Strava.getProcessedActivity", logHelper.user(user), logHelper.activity(activity))
                 return activity
@@ -98,6 +102,7 @@ export class StravaActivityProcessing {
             return activities
         } catch (ex) {
             logger.error("Strava.getProcessedActivities", logHelper.user(user), dateFrom, dateTo, ex)
+            return []
         }
     }
 
@@ -560,6 +565,7 @@ export class StravaActivityProcessing {
             return batchActivities
         } catch (ex) {
             logger.error("Strava.getQueuedActivities", logDate, `Batch size: ${batchSize}`, ex)
+            return []
         }
     }
 
@@ -610,8 +616,13 @@ export class StravaActivityProcessing {
             // Now we process each of the queued activities separately.
             for (let pActivity of activities) {
                 try {
-                    if (!usersCache[pActivity.userId]) {
+                    if (!(pActivity.userId in usersCache)) {
                         usersCache[pActivity.userId] = await users.getById(pActivity.userId)
+                    }
+                    if (!usersCache[pActivity.userId]) {
+                        logger.warn("Strava.processQueuedActivities", `User ${pActivity.userId} not found, deleting queued activity ${pActivity.id}`)
+                        await this.deleteQueuedActivity(pActivity)
+                        continue
                     }
 
                     const processed = await this.processActivity(usersCache[pActivity.userId], pActivity)

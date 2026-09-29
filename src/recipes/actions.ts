@@ -22,11 +22,38 @@ import strava from "../strava"
 import weather from "../weather"
 import dayjs from "../dayjs"
 import _ from "lodash"
+import dns from "dns/promises"
 import jaul from "jaul"
 import logger from "anyhow"
 import net from "net"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
+
+// Private, loopback, link-local and reserved ranges that webhooks can't target.
+const privateAddresses = new net.BlockList()
+for (let [address, prefix] of [
+    ["0.0.0.0", 8],
+    ["10.0.0.0", 8],
+    ["100.64.0.0", 10],
+    ["127.0.0.0", 8],
+    ["169.254.0.0", 16],
+    ["172.16.0.0", 12],
+    ["192.168.0.0", 16],
+    ["198.18.0.0", 15],
+    ["224.0.0.0", 3]
+] as [string, number][]) {
+    privateAddresses.addSubnet(address, prefix, "ipv4")
+}
+for (let [address, prefix] of [
+    ["::", 127],
+    ["64:ff9b::", 96],
+    ["fc00::", 7],
+    ["fe80::", 10],
+    ["ff00::", 8]
+] as [string, number][]) {
+    privateAddresses.addSubnet(address, prefix, "ipv6")
+}
+const isPrivateAddress = (address: string): boolean => privateAddresses.check(address, net.isIPv6(address) ? "ipv6" : "ipv4")
 
 /**
  * Random funny quotes.
@@ -1233,12 +1260,18 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, re
             .replace(/\.$/, "")
         if (!hostname) throw new Error("Invalid webhook hostname")
 
-        const mapped = hostname.slice(hostname.lastIndexOf(":") + 1)
         const blockedWebhookHosts = ["localhost", "metadata", "metadata.google", "metadata.google.internal"]
-        const blockedIPv4Ranges = [/^0\./, /^10\./, /^127\./, /^169\.254\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./, /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./]
-        const blockedIPv6Ranges = /^(::1?$|f[cd]|fe[89ab])/
-        const blocked = blockedWebhookHosts.includes(hostname) || (net.isIPv4(mapped) ? blockedIPv4Ranges.some((r) => r.test(mapped)) : blockedIPv6Ranges.test(hostname))
+        const blocked = blockedWebhookHosts.includes(hostname) || hostname.endsWith(".localhost") || (net.isIP(hostname) > 0 && isPrivateAddress(hostname))
         if (blocked) throw new Error("Private hosts are not allowed")
+
+        // Hostnames are validated against the resolved addresses as well, on every connection.
+        options.lookup = async (lookupHostname: string) => {
+            const addresses = await dns.lookup(lookupHostname, {all: true})
+            if (addresses.length == 0 || addresses.some((a) => isPrivateAddress(a.address))) {
+                throw new Error("Private hosts are not allowed")
+            }
+            return addresses[0]
+        }
 
         if (!["HEAD", "GET"].includes(method)) {
             options.data = activity

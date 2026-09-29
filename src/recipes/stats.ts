@@ -3,7 +3,6 @@
 import {RecipeData, RecipeStatsData} from "./types"
 import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
-import {FieldValue} from "@google-cloud/firestore"
 import database from "../database"
 import logger from "anyhow"
 import _ from "lodash"
@@ -98,68 +97,66 @@ export class RecipeStats {
         const id = `${user.id}-${recipe.id}`
 
         try {
-            const now = dayjs.utc().toDate()
+            if (settings.database.writeDisabled) {
+                logger.warn("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), "WRITE DISABLED")
+                return
+            }
 
-            // Check if a stats document already exists.
-            const doc = database.doc("recipe-stats", id)
-            const docSnapshot = await doc.get()
-            const exists = docSnapshot.exists
-            let stats: RecipeStatsData
+            // Read and write inside a transaction, so concurrent updates don't lose activity IDs or counts.
+            const stats: RecipeStatsData = await database.runTransaction(async (txn) => {
+                const now = dayjs.utc().toDate()
+                let stats: RecipeStatsData = await txn.get("recipe-stats", id)
 
-            // If not existing, create a new stats object.
-            if (!exists) {
-                const initialCounter = activity.counter || 1
-                stats = {
-                    id: id,
-                    userId: user.id,
-                    activities: [activity.id],
-                    activityCount: 1,
-                    counter: initialCounter
-                }
+                // If not existing, create a new stats object.
+                if (!stats) {
+                    const initialCounter = activity.counter || 1
+                    stats = {
+                        id: id,
+                        userId: user.id,
+                        activities: [activity.id],
+                        activityCount: 1,
+                        counter: initialCounter
+                    }
+                } else {
+                    if (!stats.activities) {
+                        stats.activities = []
+                    }
 
-                logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), "Created new recipe stats")
-            } else {
-                stats = docSnapshot.data() as RecipeStatsData
+                    // Only add activity ID and update the counter if it was not there yet.
+                    if (!stats.activities.includes(activity.id)) {
+                        stats.activities.push(activity.id)
+                        stats.activityCount = (stats.activityCount || 0) + 1
 
-                // Only add activity ID and update the counter if it was not there yet.
-                if (!stats.activities.includes(activity.id)) {
-                    stats.activities.push(activity.id)
-                    stats.activityCount = FieldValue.increment(1) as any
-
-                    // Increase the data counter based on the selected counter prop.
-                    if (activity.counter) {
-                        stats.counter = activity.counter
-                    } else if (!recipe.counterProp) {
-                        stats.counter = FieldValue.increment(1) as any
+                        // Increase the data counter based on the selected counter prop.
+                        if (activity.counter) {
+                            stats.counter = activity.counter
+                        } else if (!recipe.counterProp) {
+                            stats.counter = (stats.counter || 0) + 1
+                        }
                     }
                 }
 
                 // Remove activity IDs from the stats if it has hit the array limit.
-                const removedIds = []
-                while (stats.activities.length > settings.recipes.maxActivityIds) {
-                    const removedId = stats.activities.shift()
-                    removedIds.push(removedId)
-                }
-                if (removedIds.length > 0) {
-                    logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Removed activities from list: ${removedIds.join(", ")}`)
-                }
-            }
+                stats.activities = settings.recipes.maxActivityIds > 0 ? stats.activities.slice(-settings.recipes.maxActivityIds) : []
 
-            // Set trigger date.
-            stats.dateLastTrigger = now
+                // Set trigger date, and increase failure counter if recipe execution was not successful.
+                stats.dateLastTrigger = now
+                if (success) {
+                    stats.recentFailures = 0
+                } else {
+                    stats.recentFailures = (stats.recentFailures || 0) + 1
+                    stats.dateLastFailure = now
+                }
 
-            // Increase failure counter if recipe execution was not successful.
+                txn.merge("recipe-stats", stats)
+                return stats
+            })
+
             if (success) {
-                stats.recentFailures = 0
                 logger.info("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`)
             } else {
-                stats.recentFailures = FieldValue.increment(1) as any
-                stats.dateLastFailure = now
                 logger.warn("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), `Activity ${activity.id}`, `Recent recipe failures: ${stats.recentFailures}`)
             }
-
-            // Save stats to the database.
-            await database.merge("recipe-stats", stats, doc)
         } catch (ex) {
             logger.error("RecipeStats.updateStats", logHelper.user(user), logHelper.recipe(recipe), logHelper.activity(activity), ex)
         }

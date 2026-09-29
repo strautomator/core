@@ -30,7 +30,7 @@ export class PaddleSubscriptions {
      * @param sub Subscription to be updated.
      * @param data The webhook notification data.
      */
-    private setPaymentDates = async (sub: Partial<PaddleSubscription>, data: SubscriptionNotification): Promise<boolean> => {
+    private setPaymentDates = (sub: Partial<PaddleSubscription>, data: SubscriptionNotification): boolean => {
         let hasChanges = false
         let lastPayment: dayjs.Dayjs
         let nextPayment: dayjs.Dayjs
@@ -74,13 +74,17 @@ export class PaddleSubscriptions {
         const data = entity.data as SubscriptionNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
             const userId = customData?.userId || null
 
             let user = await users.getByPaddleId(data.customerId)
             if (!user && userId) {
                 logger.warn("Paddle.onSubscriptionTrialling", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
+                if (user?.paddleId && user.paddleId != data.customerId) {
+                    logger.warn("Paddle.onSubscriptionTrialling", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
+                    user = null
+                }
             }
             if (!user) {
                 throw new Error(`User ${data.customerId || userId} not found`)
@@ -115,7 +119,7 @@ export class PaddleSubscriptions {
             return sub
         } catch (ex) {
             logger.error("Paddle.onSubscriptionTrialling", logHelper.paddleEvent(entity), ex)
-            return null
+            throw ex
         }
     }
 
@@ -128,13 +132,17 @@ export class PaddleSubscriptions {
         const data = entity.data as SubscriptionNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
             const userId = customData?.userId || null
 
             let user = await users.getByPaddleId(data.customerId)
             if (!user && userId) {
                 logger.warn("Paddle.onSubscriptionCreated", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
+                if (user?.paddleId && user.paddleId != data.customerId) {
+                    logger.warn("Paddle.onSubscriptionCreated", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
+                    user = null
+                }
             }
             if (!user) {
                 throw new Error(`User ${data.customerId || userId} not found`)
@@ -177,7 +185,7 @@ export class PaddleSubscriptions {
             return sub
         } catch (ex) {
             logger.error("Paddle.onSubscriptionCreated", logHelper.paddleEvent(entity), ex)
-            return null
+            throw ex
         }
     }
 
@@ -189,16 +197,24 @@ export class PaddleSubscriptions {
         const data = entity.data as SubscriptionNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
             const userId = customData?.userId || null
 
             let user = await users.getByPaddleId(data.customerId)
             if (!user && userId) {
                 logger.warn("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
+                if (user?.paddleId && user.paddleId != data.customerId) {
+                    logger.warn("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
+                    user = null
+                }
             }
             if (!user && userId) {
                 user = await users.getByPreviousId(userId)
+                if (user?.paddleId && user.paddleId != data.customerId) {
+                    logger.warn("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `User ${user.id} (previous ID ${userId}) is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
+                    user = null
+                }
                 if (user) {
                     logger.info("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
                     await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
@@ -252,7 +268,7 @@ export class PaddleSubscriptions {
             return sub
         } catch (ex) {
             logger.error("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), ex)
-            return null
+            throw ex
         }
     }
 
@@ -264,16 +280,24 @@ export class PaddleSubscriptions {
         const data = entity.data as TransactionNotification
 
         try {
-            const customData = entity.data as any
+            const customData = (entity.data as any)?.customData
             const userId = customData?.userId || null
 
             let user = await users.getByPaddleId(data.customerId)
             if (!user && userId) {
                 logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
+                if (user?.paddleId && user.paddleId != data.customerId) {
+                    logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
+                    user = null
+                }
             }
             if (!user && userId) {
                 user = await users.getByPreviousId(userId)
+                if (user?.paddleId && user.paddleId != data.customerId) {
+                    logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `User ${user.id} (previous ID ${userId}) is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
+                    user = null
+                }
                 if (user) {
                     logger.info("Paddle.onTransaction", logHelper.paddleEvent(entity), `Found user ${user.id} by previous ID ${userId}, updating Paddle customer`)
                     await api.client.customers.update(data.customerId, {customData: {userId: user.id}})
@@ -365,7 +389,7 @@ export class PaddleSubscriptions {
             return sub
         } catch (ex) {
             logger.error("Paddle.onTransaction", logHelper.paddleEvent(entity), ex)
-            return null
+            throw ex
         }
     }
 
@@ -472,7 +496,7 @@ export class PaddleSubscriptions {
             // Check if existing transaction ID is still valid.
             if (user.paddleTransactionId) {
                 transaction = await api.client.transactions.get(user.paddleTransactionId)
-                if (transaction?.origin == "subscription_payment_method_change" && dayjs(transaction.createdAt).diff(new Date(), "hours") < 1) {
+                if (transaction?.origin == "subscription_payment_method_change" && dayjs().diff(transaction.createdAt, "hours") < 1) {
                     logger.warn("Paddle.getUpdateTransaction", logHelper.user(user), `User already has a transaction ID ${user.paddleTransactionId}, will use it instead`)
                     return transaction
                 }

@@ -164,6 +164,9 @@ export class StravaActivities {
             // Discard unused data from the response.
             const preProcessor = (streams: any): void => {
                 try {
+                    if (streams.heartrate) {
+                        streams.hr = streams.heartrate
+                    }
                     const originalKeys = Object.keys(streams)
                     originalKeys.forEach((key) => (["cadence", "hr", "watts"].includes(key) ? null : delete streams[key]))
                 } catch (preEx) {
@@ -171,7 +174,7 @@ export class StravaActivities {
                 }
             }
 
-            const streams: StravaActivityStreams = await api.get(tokens, `activities/${id}/streams`, {keys: "cadence,hr,watts", key_by_type: true}, preProcessor)
+            const streams: StravaActivityStreams = await api.get(tokens, `activities/${id}/streams`, {keys: "cadence,heartrate,watts", key_by_type: true}, preProcessor)
             const streamValues = Object.values(streams)
             for (let s of streamValues) {
                 const total = s.data.length

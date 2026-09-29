@@ -44,7 +44,7 @@ export class FitUpload {
      */
     processZip = async (user: UserData, zipStream: Readable, callbacks?: FitUploadCallbacks, contentLength?: number): Promise<FitUploadResult[]> => {
         const results: FitUploadResult[] = []
-        const maxFiles = settings.fitparser.upload.maxFiles
+        const maxFiles = settings.fitparser.maxFiles
         const maxFileSize = settings.fitparser.upload.maxFileSize
 
         try {

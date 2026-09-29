@@ -60,23 +60,6 @@
         // Only accept connections coming via Cloudflare by default.
         "requireCloudflare": true
     },
-    // Remote MCP server (PRO only). Hosted by the web app at /mcp.
-    "mcp": {
-        // Path of the MCP Streamable HTTP endpoint.
-        "path": "/mcp",
-        // OAuth scope advertised to MCP clients.
-        "scope": "mcp",
-        // Access token lifetime in hours.
-        "accessTokenHours": 1,
-        // Refresh token lifetime in days.
-        "refreshTokenDays": 30,
-        // Authorization code lifetime in minutes.
-        "authCodeMinutes": 10,
-        // Pending authorization request lifetime in minutes (covers the Strava login round-trip).
-        "authRequestMinutes": 15,
-        // Dynamically registered OAuth clients expire after this many days of issuance.
-        "clientDays": 365
-    },
     // Afiliate settings (also used for the Country Linkify module).
     "affiliates": {
         "app": {
@@ -187,6 +170,8 @@
         },
         // Ignore undefined properties?
         "ignoreUndefinedProperties": true,
+        // Default page size when iterating big collections (scheduled jobs, exports).
+        "pageSize": 500,
         // Disable writing to the database? Useful while troubleshooting data from production.
         "writeDisabled": false
     },
@@ -195,10 +180,10 @@
         "refreshSeconds": 21600
     },
     "fitparser": {
+        // Maximum number of FIT files processed / fetched at once.
+        "maxFiles": 50,
         // Limits for ZIP archives with FIT files uploaded by users.
         "upload": {
-            // Maximum number of FIT files processed per uploaded archive.
-            "maxFiles": 50,
             // Maximum size of an individual FIT file, in bytes (8MB).
             "maxFileSize": 8000000,
             // Maximum size of the uploaded ZIP archive, in bytes (20MB).
@@ -317,6 +302,8 @@
     "mailer": {
         // Token used on bounce webhooks.
         "bounceUrlToken": null,
+        // Optional ARN of the SNS topic that sends the bounce notifications. If set, other topics are rejected.
+        "bounceTopicArn": null,
         // Default contact email.
         "contact": "info@strautomator.com",
         // The default "from" on sent emails should be set on settings.secret.json file
@@ -375,6 +362,29 @@
             "baseStaticUrl": "https://maps.googleapis.com/maps/api/staticmap?"
         }
     },
+    // Remote MCP server (PRO only). Hosted by the web app at /mcp.
+    "mcp": {
+        // Path of the MCP Streamable HTTP endpoint.
+        "path": "/mcp",
+        // OAuth scope advertised to MCP clients.
+        "scope": "mcp",
+        // Access token lifetime in hours.
+        "accessTokenHours": 1,
+        // Refresh token lifetime in days.
+        "refreshTokenDays": 30,
+        // Authorization code lifetime in minutes.
+        "authCodeMinutes": 10,
+        // Pending authorization request lifetime in minutes (covers the Strava login round-trip).
+        "authRequestMinutes": 15,
+        // Dynamically registered OAuth clients expire after this many days of issuance.
+        "clientDays": 365,
+        // Registered clients that were never used to get tokens expire after this many hours.
+        "unusedClientHours": 24,
+        // Maximum number of redirect URIs per registered client.
+        "maxRedirectUris": 5,
+        // Maximum client registrations per IP per hour.
+        "registerPerHour": 20
+    },
     // Settings for music / tracklist providers.
     "music": {
         // Cache recently played tracks for up to 1 minute. Value set in seconds.
@@ -403,7 +413,9 @@
         "tokenFailuresDisable": 10,
         // Token exchange requests times out in 6 seconds. This applies to all
         // OAuth2 modules (Strava, PayPal, etc).
-        "tokenTimeout": 6000
+        "tokenTimeout": 6000,
+        // Cache tokens <> ID references for up to 2 minutes, when applicable.
+        "tokenCacheSeconds": 120
     },
     "openrouter": {
         "api": {

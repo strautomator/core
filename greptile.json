@@ -1,0 +1,3 @@
+{
+    "instructions": "Report missing atomicity whenever concurrent read-modify-write operations can affect correctness, security, or billing; do not limit this to billing scenarios."
+}

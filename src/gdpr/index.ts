@@ -2,6 +2,7 @@
 
 import {StorageBucket} from "../storage/types"
 import {UserData} from "../users/types"
+import {Readable} from "stream"
 import database from "../database"
 import eventManager from "../eventmanager"
 import storage from "../storage"
@@ -11,7 +12,6 @@ import path from "path"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 import JSZip from "jszip"
-import _ from "lodash"
 const settings = require("setmeup").settings
 
 /**
@@ -85,76 +85,112 @@ export class GDPR {
                 }
             }
 
-            let size = 0
-            let zip = new JSZip()
+            const zip = new JSZip()
+            const counter = {size: 0}
 
-            // Get all relevant user data from the database.
-            const where = [["userId", "==", user.id]]
-            const jsonData: any = {}
-            jsonData["Activities"] = await database.search("activities", where)
-            jsonData["FitActivities"] = {Garmin: await database.search("garmin", where), Wahoo: await database.search("wahoo", where)}
-            jsonData["Automations"] = {Stats: await database.search("recipe-stats", where), Shared: await database.search("shared-recipes", where)}
-            jsonData["AthleteRecords"] = await database.get("athlete-records", user.id)
-            jsonData["Calendars"] = await database.search("calendars", where)
-            jsonData["GearWear"] = {Config: await database.search("gearwear", where), BatteryTracker: await database.get("gearwear-battery", user.id)}
-            jsonData["Notifications"] = await database.search("notifications", where)
-            jsonData["Subscription"] = await database.search("subscriptions", where)
-            jsonData["User"] = await database.get("users", user.id)
-
-            // Remove sensitive data.
-            delete jsonData.User.stravaTokens
-            delete jsonData.User.urlToken
-            delete jsonData.User.garminAuthState
-            delete jsonData.User.wahooAuthState
-            delete jsonData.User.spotifyAuthState
-            if (jsonData.User.garmin) {
-                delete jsonData.User.garmin.tokens
+            // Each JSON file is streamed into the ZIP, fetching collections page by page.
+            const jsonFiles = await this.archiveJsonFiles(user, counter)
+            for (let file of jsonFiles) {
+                zip.file(file.name, file.stream)
             }
-            if (jsonData.User.wahoo) {
-                delete jsonData.User.wahoo.tokens
-            }
-            if (jsonData.User.spotify) {
-                delete jsonData.User.spotify.tokens
-            }
-
-            // Cleanup data before saving.
-            let key: string
-            let data: any
-            for ([key, data] of Object.entries(jsonData)) {
-                if (!data) continue
-
-                if ((_.isArray(data) && data.length == 0) || Object.values(data).length == 0) {
-                    delete jsonData[key]
-                }
-            }
-
-            // ZIP the exported data.
-            const dataStr = JSON.stringify(jsonData, null, 2)
-            await zip.file("data.json", dataStr)
-            size += dataStr.length
 
             // Get cached calendars.
             const calendarFiles = await storage.listFiles(StorageBucket.Calendar, `${user.id}/`)
             for (let file of calendarFiles) {
                 const icsName = path.basename(file.name).replace(`-${user.urlToken}`, "")
-                await zip.file(`calendar-${icsName}`, file.createReadStream())
+                zip.file(`calendar-${icsName}`, file.createReadStream())
             }
 
-            // Transform the size to kilobytes.
-            size = Math.round(size / 1024)
-
-            // Generate ZIP and push to the storage bucket.
-            const result = await zip.generateAsync({type: "nodebuffer", streamFiles: true})
-            await storage.setFile(StorageBucket.GDPR, filename, result, "application/zip")
+            // Generate ZIP and stream it to the storage bucket.
+            const zipStream = zip.generateNodeStream({type: "nodebuffer", streamFiles: true, compression: "DEFLATE"})
+            await storage.setFileStream(StorageBucket.GDPR, filename, zipStream, "application/zip")
             await users.update({id: user.id, displayName: user.displayName, dateLastArchiveGenerated: now.toDate()})
 
-            logger.info("GDPR.generateArchive", logHelper.user(user), `Size: ${size} KB`)
+            logger.info("GDPR.generateArchive", logHelper.user(user), `Size: ${Math.round(counter.size / 1024)} KB`)
 
             return await storage.getUrl(StorageBucket.GDPR, filename, saveAs)
         } catch (ex) {
             logger.error("GDPR.generateArchive", logHelper.user(user), ex)
             throw ex
         }
+    }
+
+    /**
+     * Build the JSON files of the archive, one per data section. Collections are streamed
+     * page by page so large accounts are never fully loaded in memory. Empty sections are skipped.
+     * @param user The user requesting the data.
+     * @param counter Counter with the total size of the generated data.
+     */
+    private archiveJsonFiles = async (user: UserData, counter: {size: number}): Promise<{name: string; stream: Readable}[]> => {
+        const where = [["userId", "==", user.id]]
+
+        // JSZip needs Buffer chunks, as strings from object streams are not decoded as UTF-8.
+        const emit = (chunk: string): Buffer => {
+            const buffer = Buffer.from(chunk, "utf8")
+            counter.size += buffer.length
+            return buffer
+        }
+
+        // Remove sensitive data from the user.
+        const userData = await database.get("users", user.id)
+        if (userData) {
+            delete userData.stravaTokens
+            delete userData.urlToken
+            delete userData.garminAuthState
+            delete userData.wahooAuthState
+            delete userData.spotifyAuthState
+            if (userData.garmin) delete userData.garmin.tokens
+            if (userData.wahoo) delete userData.wahoo.tokens
+            if (userData.spotify) delete userData.spotify.tokens
+        }
+
+        // Sections of the exported data: either a collection (streamed) or a single document.
+        const sections: {name: string; collection?: string; data?: any}[] = [
+            {name: "Activities", collection: "activities"},
+            {name: "FitActivities-Garmin", collection: "garmin"},
+            {name: "FitActivities-Wahoo", collection: "wahoo"},
+            {name: "Automations-Stats", collection: "recipe-stats"},
+            {name: "Automations-Shared", collection: "shared-recipes"},
+            {name: "AthleteRecords", data: await database.get("athlete-records", user.id)},
+            {name: "Calendars", collection: "calendars"},
+            {name: "GearWear-Config", collection: "gearwear"},
+            {name: "GearWear-BatteryTracker", data: await database.get("gearwear-battery", user.id)},
+            {name: "Notifications", collection: "notifications"},
+            {name: "Subscription", collection: "subscriptions"},
+            {name: "User", data: userData}
+        ]
+
+        const files: {name: string; stream: Readable}[] = []
+
+        for (let section of sections) {
+            if (section.collection) {
+                // Fetch the first page upfront to skip empty collections.
+                const pages = database.searchPaged(section.collection, where)
+                const first = await pages.next()
+                if (first.done || first.value.length == 0) continue
+
+                const chunks = async function* (): AsyncGenerator<Buffer> {
+                    yield emit("[\n")
+                    let page: any[] = first.value
+                    let firstItem = true
+                    while (true) {
+                        yield emit(`${firstItem ? "" : ",\n"}${page.map((item) => JSON.stringify(item, null, 2)).join(",\n")}`)
+                        firstItem = false
+
+                        const next = await pages.next()
+                        if (next.done) break
+                        page = next.value
+                    }
+                    yield emit("\n]\n")
+                }
+
+                files.push({name: `${section.name}.json`, stream: Readable.from(chunks())})
+            } else if (section.data) {
+                files.push({name: `${section.name}.json`, stream: Readable.from([emit(JSON.stringify(section.data, null, 2))])})
+            }
+        }
+
+        return files
     }
 
     /**

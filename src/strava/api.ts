@@ -240,7 +240,7 @@ export class StravaAPI {
                 logger.warn("Strava.revokeToken", `User ${userId}`, ex, "Will retry with refreshed token")
 
                 const tokens = await this.refreshToken(refreshToken, null, true)
-                this.revokeToken(userId, tokens.accessToken)
+                await this.revokeToken(userId, tokens.accessToken)
             } else {
                 logger.error("Strava.revokeToken", `User ${userId}`, ex)
             }

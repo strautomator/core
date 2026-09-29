@@ -81,6 +81,16 @@ export class Subscriptions {
     }
 
     /**
+     * Iterate all subscriptions page by page.
+     * @param source Optional, return only subscriptions from the specified source.
+     * @param pageSize Optional page size.
+     */
+    getAllPaged = (source?: string, pageSize?: number): AsyncGenerator<(BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[]> => {
+        const where = source ? [["source", "==", source]] : null
+        return database.searchPaged("subscriptions", where, pageSize)
+    }
+
+    /**
      * Get active subscriptions.
      * @param source Optional, return only subscriptions from the specified source.
      */
@@ -114,6 +124,14 @@ export class Subscriptions {
             logger.error("Subscriptions.getNonActive", ex)
             throw ex
         }
+    }
+
+    /**
+     * Iterate non-active subscriptions page by page.
+     * @param pageSize Optional page size.
+     */
+    getNonActivePaged = (pageSize?: number): AsyncGenerator<(BaseSubscription | PaddleSubscription | PayPalSubscription | GitHubSubscription)[]> => {
+        return database.searchPaged("subscriptions", [["status", "in", ["SUSPENDED", "CANCELLED", "EXPIRED"]]], pageSize)
     }
 
     /**

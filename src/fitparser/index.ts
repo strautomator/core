@@ -356,6 +356,59 @@ export class FitParser {
     }
 
     /**
+     * Find the matching FIT file activities for a list of Strava activities, using as few database
+     * queries as possible. Returns an object with the Strava activity IDs as keys. Unlike
+     * getMatchingActivity(), this won't wait and retry for missing FIT files.
+     * @param user The user.
+     * @param activities The Strava activities.
+     * @param source The FIT file source.
+     */
+    getMatchingActivities = async (user: UserData, activities: (StravaActivity | StravaProcessedActivity)[], source: "garmin" | "wahoo"): Promise<{[activityId: string]: FitFileActivity}> => {
+        const result: {[activityId: string]: FitFileActivity} = {}
+
+        try {
+            const sorted = _.sortBy(
+                activities.filter((a) => a?.dateStart),
+                (a) => dayjs(a.dateStart).valueOf()
+            )
+
+            // Query the FIT activities for chunks of Strava activities, based on their date range.
+            for (let chunk of _.chunk(sorted, settings.fitparser.maxFiles)) {
+                const where: any[] = [
+                    ["userId", "==", user.id],
+                    ["dateStart", ">=", dayjs(chunk[0].dateStart).subtract(1, "minute").toDate()],
+                    ["dateStart", "<=", dayjs(chunk[chunk.length - 1].dateStart).add(1, "minute").toDate()]
+                ]
+                let fitActivities: FitFileActivity[]
+                try {
+                    fitActivities = await database.search(source, where)
+                } catch (chunkEx) {
+                    logger.error("FitParser.getMatchingActivities", logHelper.user(user), source, `Failed to search ${chunk.length} activities`, chunkEx)
+                    continue
+                }
+                if (fitActivities.length == 0) continue
+
+                // Match using the same rules as getMatchingActivity(): start date and total time.
+                for (let activity of chunk) {
+                    const activityDate = dayjs(activity.dateStart)
+                    const candidates = fitActivities.filter((a) => Math.abs(dayjs(a.dateStart).diff(activityDate, "seconds")) <= 60)
+                    const match =
+                        candidates.find((a) => Math.abs(a.totalTime - activity.totalTime) <= 60) || candidates.find((a) => Math.abs(a.totalTime - activity.totalTime) <= 360)
+                    if (match) {
+                        result[activity.id] = match
+                    }
+                }
+            }
+
+            logger.info("FitParser.getMatchingActivities", logHelper.user(user), source, `Matched ${Object.keys(result).length} out of ${activities.length} activities`)
+        } catch (ex) {
+            logger.error("FitParser.getMatchingActivities", logHelper.user(user), source, `${activities.length} activities`, ex)
+        }
+
+        return result
+    }
+
+    /**
      * Save the the processed FIT file activity to the database.
      * @param user The user.
      * @param source The source of the FIT file (garmin or wahoo).
