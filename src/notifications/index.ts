@@ -300,7 +300,7 @@ export class Notifications {
 
             // Count unread notifications per user, page by page.
             const userCounts: {[userId: string]: number} = {}
-            for await (const page of database.searchPages("notifications", queries)) {
+            for await (const page of database.searchPaged("notifications", queries)) {
                 for (const n of page) {
                     userCounts[n.userId] = (userCounts[n.userId] || 0) + 1
                 }
@@ -317,9 +317,7 @@ export class Notifications {
 
                         // Send the email reminder only if user has set an email.
                         if (user?.email) {
-                            // Count might have changed since the first pass, so check it again.
                             const list = await database.search("notifications", [["userId", "==", userId], ...queries])
-                            if (list.length == 0 || list.length % settings.notifications.emailReminderCount != 0) continue
 
                             const data = {
                                 userId: user.id,

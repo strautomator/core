@@ -22,10 +22,10 @@ import strava from "../strava"
 import weather from "../weather"
 import dayjs from "../dayjs"
 import _ from "lodash"
+import dns from "dns/promises"
 import jaul from "jaul"
 import logger from "anyhow"
 import net from "net"
-import dns from "dns/promises"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
 
@@ -1265,15 +1265,12 @@ export const webhookAction = async (user: UserData, activity: StravaActivity, re
         if (blocked) throw new Error("Private hosts are not allowed")
 
         // Hostnames are validated against the resolved addresses as well, on every connection.
-        options.lookup = (lookupHostname, _lookupOptions, callback) => {
-            dns.lookup(lookupHostname, {all: true})
-                .then((addresses) => {
-                    if (addresses.length == 0 || addresses.some((a) => isPrivateAddress(a.address))) {
-                        return callback(new Error("Private hosts are not allowed"), [])
-                    }
-                    callback(null, addresses as any)
-                })
-                .catch((ex) => callback(ex, []))
+        options.lookup = async (lookupHostname: string) => {
+            const addresses = await dns.lookup(lookupHostname, {all: true})
+            if (addresses.length == 0 || addresses.some((a) => isPrivateAddress(a.address))) {
+                throw new Error("Private hosts are not allowed")
+            }
+            return addresses[0]
         }
 
         if (!["HEAD", "GET"].includes(method)) {

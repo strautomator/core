@@ -509,6 +509,14 @@ export class Users {
     }
 
     /**
+     * Iterate PRO users page by page.
+     * @param pageSize Optional page size.
+     */
+    getProPaged = (pageSize?: number): AsyncGenerator<UserData[]> => {
+        return database.searchPaged("users", ["isPro", "==", true], pageSize)
+    }
+
+    /**
      * Get active users (with at least 1 recipe).
      */
     getActive = async (): Promise<UserData[]> => {
@@ -524,19 +532,11 @@ export class Users {
     }
 
     /**
-     * Iterate PRO users page by page.
-     * @param pageSize Optional page size.
-     */
-    getProPages = (pageSize?: number): AsyncGenerator<UserData[]> => {
-        return database.searchPages("users", ["isPro", "==", true], pageSize)
-    }
-
-    /**
      * Iterate active users (with at least 1 recipe) page by page.
      * @param pageSize Optional page size.
      */
-    getActivePages = (pageSize?: number): AsyncGenerator<UserData[]> => {
-        return database.searchPages("users", ["recipeCount", ">", 0], pageSize)
+    getActivePaged = (pageSize?: number): AsyncGenerator<UserData[]> => {
+        return database.searchPaged("users", ["recipeCount", ">", 0], pageSize)
     }
 
     /**

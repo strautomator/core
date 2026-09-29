@@ -90,7 +90,6 @@ export class OpenRouter implements AiProvider {
                     stream: false,
                     reasoning: {effort: useReason ? "low" : "none"},
                     messages: [
-                        // Cache breakpoint set on the system instruction only, as the user message changes on every request.
                         {role: "system", content: [{type: "text", text: options.instruction, cache_control: {type: "ephemeral"}}]},
                         {role: "user", content: messages.join(" ")}
                     ]

@@ -289,7 +289,7 @@ export class Database {
      * @param queryList List of query in the format [property, operator, value].
      * @param pageSize Optional page size, defaults to the database.pageSize setting.
      */
-    async *searchPages(collection: string, queryList?: any[], pageSize?: number): AsyncGenerator<any[]> {
+    async *searchPaged(collection: string, queryList?: any[], pageSize?: number): AsyncGenerator<any[]> {
         const colname = `${collection}${this.collectionSuffix}`
         let filteredTable: FirebaseFirestore.Query = this.firestore.collection(colname)
 

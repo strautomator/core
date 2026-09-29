@@ -82,7 +82,7 @@ export class PaddleSubscriptions {
                 logger.warn("Paddle.onSubscriptionTrialling", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
                 if (user?.paddleId && user.paddleId != data.customerId) {
-                    logger.warn("Paddle.getUser", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer, ignoring`)
+                    logger.warn("Paddle.onSubscriptionTrialling", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
                     user = null
                 }
             }
@@ -140,7 +140,7 @@ export class PaddleSubscriptions {
                 logger.warn("Paddle.onSubscriptionCreated", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
                 if (user?.paddleId && user.paddleId != data.customerId) {
-                    logger.warn("Paddle.getUser", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer, ignoring`)
+                    logger.warn("Paddle.onSubscriptionCreated", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
                     user = null
                 }
             }
@@ -205,14 +205,14 @@ export class PaddleSubscriptions {
                 logger.warn("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
                 if (user?.paddleId && user.paddleId != data.customerId) {
-                    logger.warn("Paddle.getUser", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer, ignoring`)
+                    logger.warn("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
                     user = null
                 }
             }
             if (!user && userId) {
                 user = await users.getByPreviousId(userId)
                 if (user?.paddleId && user.paddleId != data.customerId) {
-                    logger.warn("Paddle.getUser", logHelper.paddleEvent(entity), `User ${user.id} (previous ID ${userId}) is linked to a different Paddle customer, ignoring`)
+                    logger.warn("Paddle.onSubscriptionUpdated", logHelper.paddleEvent(entity), `User ${user.id} (previous ID ${userId}) is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
                     user = null
                 }
                 if (user) {
@@ -288,14 +288,14 @@ export class PaddleSubscriptions {
                 logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `Customer ${data.customerId} not found, will try to find by user ID ${userId}`)
                 user = await users.getById(userId)
                 if (user?.paddleId && user.paddleId != data.customerId) {
-                    logger.warn("Paddle.getUser", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer, ignoring`)
+                    logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
                     user = null
                 }
             }
             if (!user && userId) {
                 user = await users.getByPreviousId(userId)
                 if (user?.paddleId && user.paddleId != data.customerId) {
-                    logger.warn("Paddle.getUser", logHelper.paddleEvent(entity), `User ${user.id} (previous ID ${userId}) is linked to a different Paddle customer, ignoring`)
+                    logger.warn("Paddle.onTransaction", logHelper.paddleEvent(entity), `User ${user.id} (previous ID ${userId}) is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
                     user = null
                 }
                 if (user) {

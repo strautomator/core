@@ -165,7 +165,7 @@ export class GDPR {
         for (let section of sections) {
             if (section.collection) {
                 // Fetch the first page upfront to skip empty collections.
-                const pages = database.searchPages(section.collection, where)
+                const pages = database.searchPaged(section.collection, where)
                 const first = await pages.next()
                 if (first.done || first.value.length == 0) continue
 

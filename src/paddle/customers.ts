@@ -29,7 +29,7 @@ export class PaddleCustomers {
         const data = entity.data as CustomerNotification
 
         try {
-            const customData = (entity.data as any)?.customData
+            const customData = data?.customData
 
             // Make sure the user is valid.
             const userId = customData?.userId
@@ -37,14 +37,14 @@ export class PaddleCustomers {
             if (!user && userId) {
                 user = await users.getById(userId)
                 if (user?.paddleId && user.paddleId != data.id) {
-                    logger.warn("Paddle.getUser", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer, ignoring`)
+                    logger.error("Paddle.onCustomerUpdated", logHelper.paddleEvent(entity), `User ${userId} is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
                     user = null
                 }
             }
             if (!user && userId) {
                 user = await users.getByPreviousId(userId)
                 if (user?.paddleId && user.paddleId != data.id) {
-                    logger.warn("Paddle.getUser", logHelper.paddleEvent(entity), `User ${user.id} (previous ID ${userId}) is linked to a different Paddle customer, ignoring`)
+                    logger.error("Paddle.onCustomerUpdated", logHelper.paddleEvent(entity), `User ${user.id} (previous ID ${userId}) is linked to a different Paddle customer (${user.paddleId} / ${data.id})`)
                     user = null
                 }
                 if (user) {
