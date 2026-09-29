@@ -373,7 +373,7 @@ export class FitParser {
             )
 
             // Query the FIT activities for chunks of Strava activities, based on their date range.
-            for (let chunk of _.chunk(sorted, settings.fitparser.matchBatchSize || 50)) {
+            for (let chunk of _.chunk(sorted, settings.fitparser.maxFiles)) {
                 const where: any[] = [
                     ["userId", "==", user.id],
                     ["dateStart", ">=", dayjs(chunk[0].dateStart).subtract(1, "minute").toDate()],

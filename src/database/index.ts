@@ -436,7 +436,7 @@ export class Database {
             }
 
             // Batch delete documents, in chunks to stay within Firestore's commit limits.
-            for (let docs of _.chunk(snapshot.docs, 500)) {
+            for (let docs of _.chunk(snapshot.docs, settings.database.pageSize)) {
                 const batch = this.firestore.batch()
                 docs.forEach((doc) => batch.delete(doc.ref))
                 await batch.commit()

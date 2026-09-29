@@ -181,10 +181,10 @@
         "refreshSeconds": 21600
     },
     "fitparser": {
+        // Maximum number of FIT files processed / fetched at once.
+        "maxFiles": 50,
         // Limits for ZIP archives with FIT files uploaded by users.
         "upload": {
-            // Maximum number of FIT files processed per uploaded archive.
-            "maxFiles": 50,
             // Maximum size of an individual FIT file, in bytes (8MB).
             "maxFileSize": 8000000,
             // Maximum size of the uploaded ZIP archive, in bytes (20MB).
