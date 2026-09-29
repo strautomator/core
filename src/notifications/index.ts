@@ -313,8 +313,10 @@ export class Notifications {
             for ([userId, count] of Object.entries(userCounts)) {
                 try {
                     if (count > 0 && count % settings.notifications.emailReminderCount == 0) {
-                        const user = await users.getById(userId)
+                        // Count might have changed since the first pass, so check it again.
                         const list = await database.search("notifications", [["userId", "==", userId], ...queries])
+                        if (list.length == 0 || list.length % settings.notifications.emailReminderCount != 0) continue
+                        const user = await users.getById(userId)
 
                         // Send the email reminder only if user has set an email.
                         if (user.email) {
