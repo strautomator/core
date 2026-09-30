@@ -97,10 +97,8 @@ export class OpenRouter implements AiProvider {
             }
 
             // Only set a model if the user has a specific provider preference, otherwise
-            // OpenRouter will use the default model set on the account / key.
-            if (model) {
-                reqOptions.data.model = model
-            }
+            // OpenRouter will use the default routing set on the account / key.
+            reqOptions.data.model = model || settings.openrouter.api.defaultModel
 
             // Here we go!
             try {
