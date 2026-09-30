@@ -288,6 +288,8 @@ export class GearWear {
 
             // Validate individual components.
             for (let comp of config.components) {
+                comp.name = comp.name?.trim()
+
                 if (comp.alertDistance > 0 && comp.alertDistance < 100) {
                     throw new Error("Minimum accepted alert distance is 100")
                 }
