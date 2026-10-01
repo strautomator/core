@@ -1106,6 +1106,9 @@ export class Users {
             await database.delete("users", user.id)
             logger.warn("Users.delete", logHelper.user(user), `${user.isPro ? "PRO" : "Free"} account deleted`)
 
+            // Delete MCP tokens and auth codes for the user.
+            await database.delete("mcp", ["userId", "==", user.id])
+
             // Publish delete event so related contents can be removed as well.
             eventManager.emit("Users.delete", user)
         } catch (ex) {
@@ -1529,6 +1532,12 @@ export class Users {
             await this.update(freeUser)
             delete user.subscriptionId
             delete user.isPro
+
+            // Delete MCP tokens and auth codes for the user..
+            const mcpGrants = await database.delete("mcp", ["userId", "==", user.id])
+            if (mcpGrants) {
+                logger.info("Users.switchToFree", logHelper.user(user), `Deleted ${mcpGrants} MCP grants`)
+            }
 
             const status = subscription?.status.toLowerCase() || "cancelled"
             logger.info("Users.switchToFree", logHelper.user(user), subscription ? `Subscription: ${subscription.source} ${subscription.id} - ${status}` : "No subscription found for the user")
