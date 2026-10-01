@@ -295,8 +295,8 @@
         // The token must be set via secret settings or via the SMU_locationiq_token environment variable.
         "token": null,
         // Maximum concurrent requests and requests per minute, per instance.
-        "maxConcurrent": 1,
-        "maxPerMinute": 100,
+        "maxConcurrent": 2,
+        "maxPerMinute": 60,
         "minTime": 500
     },
     "mailer": {
