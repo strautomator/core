@@ -112,7 +112,8 @@ export class StravaActivities {
     getActivity = async (user: UserData, id: number | string): Promise<StravaActivity> => {
         try {
             const tokens = user.stravaTokens
-            const data = await api.get(tokens, `activities/${id}`, {include_all_efforts: 0})
+            // Segment counters need every effort, including repeated passes on the same segment.
+            const data = await api.get(tokens, `activities/${id}`, {include_all_efforts: true})
             const activity = toStravaActivity(user, data)
 
             // Gear could not be resolved from the cached user profile? Fetch it live.
