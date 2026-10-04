@@ -98,7 +98,7 @@ export class GDPR {
             const calendarFiles = await storage.listFiles(StorageBucket.Calendar, `${user.id}/`)
             for (let file of calendarFiles) {
                 const icsName = path.basename(file.name).replace(`-${user.urlToken}`, "")
-                zip.file(`calendar-${icsName}`, file.createReadStream())
+                zip.file(`calendar-${icsName}`, storage.createReadStream(file))
             }
 
             // Generate ZIP and stream it to the storage bucket.

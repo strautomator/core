@@ -52,19 +52,15 @@ export class AWIN {
             }
 
             // Download from the storage cache in chunks, and return the file contents.
-            const chunks = []
-            const stream = cachedFile.createReadStream()
-            for await (const chunk of stream) {
-                chunks.push(Buffer.from(chunk))
-            }
+            const fileData = await storage.readFile(cachedFile)
 
             // Extract and return the file from the ZIP.
             if (zip) {
-                const zipFile = await JSZip.loadAsync(Buffer.concat(chunks))
+                const zipFile = await JSZip.loadAsync(fileData)
                 const jsonFile = zipFile.file(/\.json$/)[0]
                 return JSON.parse(await jsonFile.async("text"))
             } else {
-                return Buffer.concat(chunks).toString("utf8")
+                return fileData.toString("utf8")
             }
         } catch (ex) {
             logger.error("AWIN.readFromCache", filename, `Zip: ${zip}`, ex)

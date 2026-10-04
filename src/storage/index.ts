@@ -2,6 +2,9 @@
 
 import {StorageBucket} from "./types"
 import * as cloudStorage from "@google-cloud/storage"
+import {once} from "events"
+import {createWriteStream} from "fs"
+import {Readable} from "stream"
 import {pipeline} from "stream/promises"
 import logger from "anyhow"
 import dayjs = require("dayjs")
@@ -156,6 +159,30 @@ export class Storage {
         }
     }
 
+    /** GCS pipelines overlap error handlers on the internal HTTP response stream. */
+    createReadStream = (file: cloudStorage.File): Readable => {
+        const stream = file.createReadStream()
+        stream.on("response", (response: NodeJS.EventEmitter) => {
+            if (typeof response?.getMaxListeners != "function") {
+                return
+            }
+            const limit = response.getMaxListeners()
+            if (limit !== 0 && limit < 20) {
+                response.setMaxListeners(20)
+            }
+        })
+        return stream
+    }
+
+    /** Read a storage file into memory, retaining the SDK's checksum validation. */
+    readFile = async (file: cloudStorage.File): Promise<Buffer> => {
+        const chunks: Buffer[] = []
+        for await (const chunk of this.createReadStream(file)) {
+            chunks.push(chunk)
+        }
+        return Buffer.concat(chunks)
+    }
+
     /**
      * Downloads the specified file to the target location on the server.
      * @param bucketKey Key or name of the storage bucket.
@@ -170,7 +197,9 @@ export class Storage {
                 return false
             }
 
-            await file.download({destination: targetPath})
+            const stream = this.createReadStream(file)
+            await once(stream, "readable")
+            await pipeline(stream, createWriteStream(targetPath))
             logger.info("Storage.downloadFile", bucketKey, filename, targetPath)
             return true
         } catch (ex) {

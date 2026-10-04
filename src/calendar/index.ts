@@ -116,7 +116,7 @@ export class Calendar {
             // Get and iterate only the cached events files (.json extensions, won't touch the actual .ics files for now).
             for (let file of cachedFiles) {
                 try {
-                    const buffer = await file.download()
+                    const buffer = await storage.readFile(file)
                     if (!buffer) {
                         debugLogger("Calendar.onActivityDeleted", logHelper.user(user), activityLog, `No data for ${file.name}`)
                         continue
@@ -426,7 +426,7 @@ export class Calendar {
             // Parse cached events from file, if there's one.
             let cachedEvents
             if (cachedFile) {
-                const fileData = await cachedFile.download()
+                const fileData = await storage.readFile(cachedFile)
                 cachedEvents = fileData ? JSON.parse(fileData.toString()) : null
             }
 
