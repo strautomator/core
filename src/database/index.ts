@@ -428,22 +428,32 @@ export class Database {
             const arrLogQuery = _.flatten(where).map((i) => (_.isDate(i) ? dayjs(i).format("lll") : i))
             const logQuery = arrLogQuery.join(" ")
 
-            // Fetch only the references of the documents to be deleted.
-            const snapshot = await filteredTable.select().get()
-            if (snapshot.size == 0) {
-                logger.info("Database.delete", collection, logQuery, "No documents to delete")
-                return 0
-            }
+            // Inequality fields are implicitly ordered by, so they must be selected for Firestore to resume streams via cursors.
+            const inequalityOps = ["<", "<=", ">", ">=", "!=", "not-in"]
+            const orderFields: string[] = _.uniq(where.filter((q) => inequalityOps.includes(q[1])).map((q) => q[0]))
+            const pageSize = settings.database.pageSize
+            const pageQuery = filteredTable.select(...orderFields).limit(pageSize)
+            let count = 0
 
-            // Batch delete documents, in chunks to stay within Firestore's commit limits.
-            for (let docs of _.chunk(snapshot.docs, settings.database.pageSize)) {
+            // Delete page by page, deleted documents won't be returned again on the next query.
+            while (true) {
+                const snapshot = await pageQuery.get()
+                if (snapshot.size == 0) {
+                    break
+                }
+
                 const batch = this.firestore.batch()
-                docs.forEach((doc) => batch.delete(doc.ref))
+                snapshot.docs.forEach((doc) => batch.delete(doc.ref))
                 await batch.commit()
+                count += snapshot.size
+
+                if (snapshot.size < pageSize) {
+                    break
+                }
             }
 
-            logger.info("Database.delete", collection, logQuery, `Deleted ${snapshot.size} documents`)
-            return snapshot.size
+            logger.info("Database.delete", collection, logQuery, count > 0 ? `Deleted ${count} documents` : "No documents to delete")
+            return count
         }
     }
 
