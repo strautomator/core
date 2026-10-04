@@ -206,13 +206,14 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
                     } else if (arrPropValue.length == 2) {
                         const propRef = activity[arrPropValue[0]]
                         if (propRef) {
-                            const byId = propRef[arrPropValue[1]]
-                            if (byId) {
-                                addCounter = byId.count || byId
+                            const subProperties = Object.values(propRef) as {count?: number; [key: string]: any}[]
+                            const subPropertyNames = [...new Set(arrPropValue[1].split(",").map((value) => value.trim()).filter(Boolean))]
+                            const byIds = subPropertyNames.map((value) => propRef[value]).filter(Boolean)
+                            if (byIds.length > 0) {
+                                addCounter = byIds.reduce((total, property) => total + (property.count || property), 0)
                             } else {
-                                const subProperties = Object.values(propRef) as {count?: number; [key: string]: any}[]
                                 addCounter = subProperties
-                                    .filter((p) => p[arrPropValue[1]])
+                                    .filter((p) => subPropertyNames.some((name) => p[name]))
                                     .reduce((total, p) => total + (p.count || 1), 0)
                             }
                             if (isNaN(addCounter)) {
