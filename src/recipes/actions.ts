@@ -207,7 +207,14 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
                         const propRef = activity[arrPropValue[0]]
                         if (propRef) {
                             const subProperties = Object.values(propRef) as {count?: number; [key: string]: any}[]
-                            const subPropertyNames = [...new Set(arrPropValue[1].split(",").map((value) => value.trim()).filter(Boolean))]
+                            const subPropertyNames = [
+                                ...new Set(
+                                    arrPropValue[1]
+                                        .split(",")
+                                        .map((value) => value.trim())
+                                        .filter(Boolean)
+                                )
+                            ]
                             const byIds = subPropertyNames.map((value) => propRef[value]).filter(Boolean)
                             if (arrPropValue[0] == "segments" && ["pr", "kom"].includes(arrPropValue[1])) {
                                 const countProperty = `${arrPropValue[1]}Count`
@@ -215,9 +222,7 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
                             } else if (byIds.length > 0) {
                                 addCounter = byIds.reduce((total, property) => total + (property.count || property), 0)
                             } else {
-                                addCounter = subProperties
-                                    .filter((p) => subPropertyNames.some((name) => p[name]))
-                                    .reduce((total, p) => total + (p.count || 1), 0)
+                                addCounter = subProperties.filter((p) => subPropertyNames.some((name) => p[name])).reduce((total, p) => total + (p.count || 1), 0)
                             }
                             if (isNaN(addCounter)) {
                                 addCounter = 0
