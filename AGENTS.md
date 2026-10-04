@@ -16,10 +16,13 @@ Enforce the following Prettier rules:
     "singleQuote": false,
     "arrowParens": "always",
     "bracketSpacing": false,
-    "printWidth": 250
+    "printWidth": 250,
+    "useTabs": false
 }
+
 ```
 
+- Only for .md files, use a tab width of 2 instead of 4.
 - When creating new files that cannot be formatted with Prettier, keep the same style and patterns as the existing source code.
 
 # GIT
