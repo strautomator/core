@@ -108,12 +108,12 @@ export class StravaActivities {
      * Get a single activity from Strava.
      * @param user The owner of the activity.
      * @param id The activity ID.
+     * @param includeAllEfforts Return every pass of a segment, not only the best one. Needed by segment counters.
      */
-    getActivity = async (user: UserData, id: number | string): Promise<StravaActivity> => {
+    getActivity = async (user: UserData, id: number | string, includeAllEfforts?: boolean): Promise<StravaActivity> => {
         try {
             const tokens = user.stravaTokens
-            // Segment counters need every effort, including repeated passes on the same segment.
-            const data = await api.get(tokens, `activities/${id}`, {include_all_efforts: true})
+            const data = await api.get(tokens, `activities/${id}`, {include_all_efforts: includeAllEfforts ? true : 0})
             const activity = toStravaActivity(user, data)
 
             // Gear could not be resolved from the cached user profile? Fetch it live.
