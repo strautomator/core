@@ -185,7 +185,7 @@ export interface StravaActivity {
     /** List of new all time activity-property records. */
     newRecords?: string[]
     /** Segment efforts summary. */
-    segments?: Record<string, {name: string; count: number; pr?: boolean; kom?: boolean}>
+    segments?: Record<string, {name: string; count: number; pr?: boolean; kom?: boolean; prCount?: number; komCount?: number}>
     /** Was a link to Strautomator added to the activity (internal use only)? */
     backlink?: boolean
     /** Activity counter (extra field used exclusively when replacing activity tags). */
