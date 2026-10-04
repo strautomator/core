@@ -289,9 +289,11 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
             }
             if (s.pr_rank == 1) {
                 activity.segments[segmentId].pr = true
+                activity.segments[segmentId].prCount = (activity.segments[segmentId].prCount || 0) + 1
             }
             if (s.kom_rank == 1) {
                 activity.segments[segmentId].kom = true
+                activity.segments[segmentId].komCount = (activity.segments[segmentId].komCount || 0) + 1
             }
 
             activity.segments[segmentId].count++

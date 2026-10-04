@@ -205,9 +205,11 @@ export class StravaActivityProcessing {
                 return null
             }
 
-            // Get activity details from Strava.
+            // Get activity details from Strava. Repeated passes of the same segment are only
+            // returned when a recipe counts segments, since that makes the Strava response much bigger.
             try {
-                activity = await stravaActivities.getActivity(user, activityId)
+                const countSegments = Object.values(user.recipes || {}).some((r: RecipeData) => !r.disabled && r.counterProp?.startsWith("segments"))
+                activity = await stravaActivities.getActivity(user, activityId, countSegments)
                 if (isActivityIgnored(user, activity, "automation")) {
                     return null
                 }

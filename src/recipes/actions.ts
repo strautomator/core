@@ -195,8 +195,8 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
                 // A bit of a "catch-all" for counters. We try to get the sub property by the passed ID
                 // (the second bit after the dot separator, if there's a dot).
                 // If existing, we check if it has a "count", and if not, we use the value itself (or 1).
-                // If not found, we try getting any sub property that has the specified flag, for instance
-                // the "kom" or "pr" flags inside the segment objects.
+                // For "kom" and "pr" flags, count the matching achievements instead of all efforts
+                // on a segment that has at least one achievement.
                 // Finally, we check for the main properties (distance, elevationGain or lapCount).
                 // If nothing was found, defaults to 1.
                 try {
@@ -206,9 +206,19 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
                     } else if (arrPropValue.length == 2) {
                         const propRef = activity[arrPropValue[0]]
                         if (propRef) {
-                            const byId = propRef[arrPropValue[1]]
-                            const byProperty = byId ? null : Object.values(propRef).find((p) => p[arrPropValue[1]])
-                            addCounter = byId?.count || byId || byProperty || 0
+                            const subProperties = Object.values(propRef) as {count?: number; [key: string]: any}[]
+                            const subPropertyNames = [...new Set(arrPropValue[1].split(",").map((value) => value.trim()).filter(Boolean))]
+                            const byIds = subPropertyNames.map((value) => propRef[value]).filter(Boolean)
+                            if (arrPropValue[0] == "segments" && ["pr", "kom"].includes(arrPropValue[1])) {
+                                const countProperty = `${arrPropValue[1]}Count`
+                                addCounter = subProperties.reduce((total, property) => total + (property[countProperty] ?? (property[arrPropValue[1]] ? 1 : 0)), 0)
+                            } else if (byIds.length > 0) {
+                                addCounter = byIds.reduce((total, property) => total + (property.count || property), 0)
+                            } else {
+                                addCounter = subProperties
+                                    .filter((p) => subPropertyNames.some((name) => p[name]))
+                                    .reduce((total, p) => total + (p.count || 1), 0)
+                            }
                             if (isNaN(addCounter)) {
                                 addCounter = 0
                                 debugLogger("Recipes.replaceTagsAction", logHelper.user(user), logHelper.activity(activity), logHelper.recipe(recipe), "Sub counter increment = 0 (counterProp not a number)")
