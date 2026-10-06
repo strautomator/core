@@ -27,20 +27,24 @@ Enforce the following Prettier rules:
 
 # GIT
 
-- Reference the file `.agents/AGENTS-git.md` for GIT and source control rules and conventions whenever a GIT operation is needed.
-
-# TypeScript
-
-- Reference the file `.agents/AGENTS-typescript.md` for TypeScript rules and conventions if any TypeScript coding is involved.
-
-# Frontend
-
-- Reference the file `.agents/AGENTS-frontend.md` for frontend, UI, UX and CSS conventions if UX or UI changes are involved.
-
-# Nuxt
-
-- Reference the file `.agents/AGENTS-nuxt.md` if the app is using Nuxt and code changes are involved.
+Reference the file `.agents/AGENTS-git.md` for GIT and source control rules and conventions whenever a GIT operation is needed.
 
 # Deployments
 
-- Reference the file `.agents/AGENTS-deployment.md` for deployment rules and conventions if a new deployment is planned.
+Reference the file `.agents/AGENTS-deployment.md` for deployment rules and conventions if a new deployment is planned.
+
+# Coding
+
+Reference the file `.agents/AGENTS-coding.md` if you need to change or refactor anything in the codebase.
+
+## TypeScript
+
+Reference the file `.agents/AGENTS-typescript.md` if any TypeScript coding or changes to the TypeScript project settings are involved.
+
+## Nuxt
+
+Reference the file `.agents/AGENTS-nuxt.md` if the app is using Nuxt and code changes in the Nuxt app are involved.
+
+## Frontend
+
+Reference the file `.agents/AGENTS-frontend.md` for frontend, UI, UX and CSS conventions if UX or UI changes are involved.
