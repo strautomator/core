@@ -1,10 +1,9 @@
 // Strautomator Core: Wahoo Webhooks
 
 import {WahooWebhookData} from "./types"
-import {HttpRequest} from "../http"
+import {getRequestIP, HttpRequest} from "../http"
 import wahooActivities from "./activities"
 import users from "../users"
-import jaul from "jaul"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
 const settings = require("setmeup").settings
@@ -26,7 +25,7 @@ export class WahooWebhooks {
     processWebhook = async (req: HttpRequest): Promise<any> => {
         const data: WahooWebhookData = req.body
         const userAgent = req.headers["user-agent"]
-        const clientIP = (req.headers["cf-connecting-ip"] || jaul.network.getClientIP(req)).toString()
+        const clientIP = getRequestIP(req)
         const logFrom = `From ${clientIP} - ${userAgent}`
 
         try {

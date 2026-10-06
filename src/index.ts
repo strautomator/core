@@ -119,7 +119,7 @@ import {EventManager} from "./eventmanager"
 export const events: EventManager = EventManager.Instance
 
 // Export types and helpers.
-export * from "./http"
+export type {HttpRequest, HttpResponseWriter} from "./http"
 export * from "./gearwear/types"
 export * from "./recipes/types"
 export * from "./recipes/actions"

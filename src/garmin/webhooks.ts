@@ -1,7 +1,7 @@
 // Strautomator Core: Garmin Webhooks
 
 import {GarminPingPermissions, GarminPing, GarminPingActivityFile, GarminWebhookData} from "./types"
-import {HttpRequest} from "../http"
+import {getRequestIP, HttpRequest} from "../http"
 import garminActivities from "./activities"
 import garminProfiles from "./profiles"
 import users from "../users"
@@ -26,7 +26,7 @@ export class GarminWebhooks {
      */
     processWebhook = async (req: HttpRequest): Promise<any> => {
         const userAgent = req.headers["user-agent"]
-        const clientIP = (req.headers["cf-connecting-ip"] || jaul.network.getClientIP(req)).toString()
+        const clientIP = getRequestIP(req)
         const logFrom = `From ${clientIP} - ${userAgent}`
 
         try {
@@ -36,7 +36,7 @@ export class GarminWebhooks {
             if (!userAgent?.includes("Garmin")) {
                 throw new Error(`User agent not authorized: ${userAgent}`)
             }
-            if (!jaul.network.ipInRange(clientIP, ipRanges.garmin)) {
+            if (!clientIP || !jaul.network.ipInRange(clientIP, ipRanges.garmin)) {
                 throw new Error(`Client IP not authorized: ${clientIP}`)
             }
 
