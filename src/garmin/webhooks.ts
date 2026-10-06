@@ -1,7 +1,7 @@
 // Strautomator Core: Garmin Webhooks
 
 import {GarminPingPermissions, GarminPing, GarminPingActivityFile, GarminWebhookData} from "./types"
-import {Request} from "express"
+import {HttpRequest} from "../http"
 import garminActivities from "./activities"
 import garminProfiles from "./profiles"
 import users from "../users"
@@ -24,7 +24,7 @@ export class GarminWebhooks {
      * Process webhooks dispatched by Garmin.
      * @param req The request object.
      */
-    processWebhook = async (req: Request): Promise<any> => {
+    processWebhook = async (req: HttpRequest): Promise<any> => {
         const userAgent = req.headers["user-agent"]
         const clientIP = (req.headers["cf-connecting-ip"] || jaul.network.getClientIP(req)).toString()
         const logFrom = `From ${clientIP} - ${userAgent}`
