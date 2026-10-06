@@ -37,14 +37,10 @@
         "typescript": "^7.0.2"
     },
     "devDependencies": {
-        "@types/express": "^5.0.6",
         "@types/lodash": "^4.17.25",
         "@types/node": "^26.6.4",
         "@types/nodemailer": "^8.0.2",
         "chalk": "^4.1.2"
-    },
-    "peerDependencies": {
-        "express": "^5.1.0"
     },
     "prettier": {
         "trailingComma": "none",
