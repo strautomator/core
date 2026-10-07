@@ -1,6 +1,5 @@
 # Deployment Conventions
 
-- For local development, apps that need a web server or service must run in a random port between 3000 and 3100.
 - Package dependencies MUST be updated to their latest non-major version before each deployment to production. In this case, all validation and tests must pass with the new updated packages before the deployment can proceed.
 
 ## Versioning
