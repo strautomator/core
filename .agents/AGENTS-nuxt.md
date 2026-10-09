@@ -1,3 +1,5 @@
 # Nuxt Conventions
 
-- Use the Nuxt version assigned on the `package.json`. Minor versions can be upgraded automatically when needed, but must pass all compatibility and validation tests.
+- Vue pages must use the Composition API.
+- Prefer SASS over CSS.
+- Preferred store: pinia

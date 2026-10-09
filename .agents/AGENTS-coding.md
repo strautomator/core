@@ -22,4 +22,3 @@ Bug fix = root cause, not symptom: a report names a symptom. Grep every caller o
 - Deletion over addition. Boring over clever. Fewest files possible.
 - Shortest working diff wins, but only once you understand the problem. The smallest change in the wrong place is just another bug.
 - Question complex requests: "Do you actually need X, or does Y cover it?"
-- Pick the edge-case-correct option when two stdlib approaches are the same size. Less code does not necessarily mean the flimsier algorithm.
