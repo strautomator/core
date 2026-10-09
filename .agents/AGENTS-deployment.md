@@ -1,5 +1,6 @@
 # Deployment Conventions
 
+- **Do NOT deploy to production unless specifically asked to!**
 - Package dependencies MUST be updated to their latest non-major version before each deployment to production. In this case, all validation and tests must pass with the new updated packages before the deployment can proceed.
 
 ## Versioning
