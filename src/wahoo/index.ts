@@ -2,7 +2,7 @@
 
 import {WahooTokens} from "./types"
 import {UserData} from "../users/types"
-import {Request} from "express"
+import {HttpRequest} from "../http"
 import api from "./api"
 import wahooActivities from "./activities"
 import wahooProfiles from "./profiles"
@@ -130,7 +130,7 @@ export class Wahoo {
      * and save the referenced Wahoo profile.
      * @param req The request object.
      */
-    processAuthCode = async (req: Request): Promise<void> => {
+    processAuthCode = async (req: HttpRequest): Promise<void> => {
         let user: UserData
 
         try {

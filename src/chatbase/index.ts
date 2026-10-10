@@ -3,7 +3,7 @@
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import {AxiosResponse} from "axios"
-import {Response} from "express"
+import {HttpResponseWriter} from "../http"
 import _ from "lodash"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
@@ -73,7 +73,7 @@ export class Chatbase {
      * @param message The message from the user.
      * @param res Optional server response used when streaming the answer back to the client.
      */
-    getAnswer = async (user: UserData, message: string, res?: Response): Promise<void | string> => {
+    getAnswer = async (user: UserData, message: string, res?: HttpResponseWriter): Promise<void | string> => {
         try {
             const body = {
                 chatbotId: settings.chatbase.chatbotId,

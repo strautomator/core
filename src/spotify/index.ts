@@ -6,7 +6,7 @@ import {StravaActivity} from "../strava/types"
 import {UserData} from "../users/types"
 import {AxiosConfig, axiosRequest} from "../axios"
 import {FieldValue} from "@google-cloud/firestore"
-import {Request} from "express"
+import {HttpRequest} from "../http"
 import eventManager from "../eventmanager"
 import notifications from "../notifications"
 import users from "../users"
@@ -182,7 +182,7 @@ export class Spotify {
      * This will also trigger an update to the Spotify profile on the database.
      * @param req The request object.
      */
-    processAuthCode = async (req: Request): Promise<SpotifyProfile> => {
+    processAuthCode = async (req: HttpRequest): Promise<SpotifyProfile> => {
         let user: UserData
 
         try {

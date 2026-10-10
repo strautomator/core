@@ -1,7 +1,7 @@
 // Strautomator Core: Garmin
 
 import {UserData} from "../users/types"
-import {Request} from "express"
+import {HttpRequest} from "../http"
 import activities from "./activities"
 import api from "./api"
 import garminCourses from "./courses"
@@ -142,7 +142,7 @@ export class Garmin {
      * This will also trigger an update to the Garmin profile on the database.
      * @param req The request object.
      */
-    processAuthCallback = async (req: Request): Promise<any> => {
+    processAuthCallback = async (req: HttpRequest): Promise<any> => {
         let user: UserData
 
         try {
