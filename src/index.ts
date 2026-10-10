@@ -7,6 +7,7 @@ if (!process.env.NODE_ENV) {
 const nodeEnv = process.env.NODE_ENV
 
 // Logs to the console by default.
+import fs from "fs"
 import logger from "anyhow"
 logger.setup("console")
 logger.setOptions({
@@ -16,10 +17,13 @@ logger.setOptions({
     preprocessors: ["friendlyErrors", "maskSecrets"]
 })
 
-// Defaults to gcp-strautomator.json on home directory if no credentials were set for gcloud.
+// Defaults to gcp-strautomator.json in the app root or the current user's home
+// folder if no credentials were set for GCP.
 if (nodeEnv != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    const homedir = require("os").homedir()
-    const credPath = `${homedir}/gcp-strautomator.json`
+    let credPath = `${process.cwd()}/gcp-strautomator.json`
+    if (!fs.existsSync(credPath)) {
+        credPath = `${require("os").homedir()}/gcp-strautomator.json`
+    }
     process.env.GOOGLE_APPLICATION_CREDENTIALS = credPath
 
     logger.setOptions({timestamp: true})
