@@ -195,8 +195,12 @@ export const startup = async (quickStart?: boolean) => {
                 process.env.DEBUG = "true"
             }
         }
+    } catch (ex) {
+        logger.error("Strautomator.startup", "Failed to load local settings", ex)
+        return process.exit(1)
+    }
 
-        // Storage client must be initiated before everything else.
+    try {
         if (quickStart) {
             storage.init(quickStart)
         } else {
@@ -220,7 +224,7 @@ export const startup = async (quickStart?: boolean) => {
             }
         }
     } catch (ex) {
-        logger.error("Strautomator.startup", ex, "Failed to load settings, will exit")
+        logger.error("Strautomator.startup", "Failed to load settings from the storage bucket", ex)
         return process.exit(1)
     }
 
