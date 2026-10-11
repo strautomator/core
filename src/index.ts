@@ -7,6 +7,7 @@ if (!process.env.NODE_ENV) {
 const nodeEnv = process.env.NODE_ENV
 
 // Logs to the console by default.
+import fs from "fs"
 import logger from "anyhow"
 logger.setup("console")
 logger.setOptions({
@@ -16,10 +17,13 @@ logger.setOptions({
     preprocessors: ["friendlyErrors", "maskSecrets"]
 })
 
-// Defaults to gcp-strautomator.json on home directory if no credentials were set for gcloud.
+// Defaults to gcp-strautomator.json in the app root or the current user's home
+// folder if no credentials were set for GCP.
 if (nodeEnv != "production" && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    const homedir = require("os").homedir()
-    const credPath = `${homedir}/gcp-strautomator.json`
+    let credPath = `${process.cwd()}/gcp-strautomator.json`
+    if (!fs.existsSync(credPath)) {
+        credPath = `${require("os").homedir()}/gcp-strautomator.json`
+    }
     process.env.GOOGLE_APPLICATION_CREDENTIALS = credPath
 
     logger.setOptions({timestamp: true})
@@ -119,6 +123,7 @@ import {EventManager} from "./eventmanager"
 export const events: EventManager = EventManager.Instance
 
 // Export types and helpers.
+export type {HttpRequest, HttpResponseWriter} from "./http"
 export * from "./gearwear/types"
 export * from "./recipes/types"
 export * from "./recipes/actions"
@@ -190,8 +195,12 @@ export const startup = async (quickStart?: boolean) => {
                 process.env.DEBUG = "true"
             }
         }
+    } catch (ex) {
+        logger.error("Strautomator.startup", "Failed to load local settings", ex)
+        return process.exit(1)
+    }
 
-        // Storage client must be initiated before everything else.
+    try {
         if (quickStart) {
             storage.init(quickStart)
         } else {
@@ -215,7 +224,7 @@ export const startup = async (quickStart?: boolean) => {
             }
         }
     } catch (ex) {
-        logger.error("Strautomator.startup", ex, "Failed to load settings, will exit")
+        logger.error("Strautomator.startup", "Failed to load settings from the storage bucket", ex)
         return process.exit(1)
     }
 
