@@ -171,7 +171,11 @@ export class Spotify {
         const authState = crypto.randomBytes(8).toString("hex")
         const state = `${user.id}-${authState}`
 
-        await users.update({id: user.id, displayName: user.displayName, spotifyAuthState: authState})
+        await users.update({
+            id: user.id,
+            displayName: user.displayName,
+            spotifyAuthState: authState
+        })
         logger.info("Spotify.generateAuthUrl", logHelper.user(user), `State: ${authState}`)
 
         return `${settings.spotify.api.authUrl}?client_id=${settings.spotify.api.clientId}&redirect_uri=${baseUrl}spotify/auth/callback&response_type=code&scope=${settings.spotify.api.scopes}&state=${state}`
@@ -243,7 +247,10 @@ export class Spotify {
 
             const postData = new URLSearchParams(qs)
             const basicAuth = Buffer.from(`${settings.spotify.api.clientId}:${settings.spotify.api.clientSecret}`).toString("base64")
-            const headers = {Authorization: `Basic ${basicAuth}`, "Content-Type": "application/x-www-form-urlencoded"}
+            const headers = {
+                Authorization: `Basic ${basicAuth}`,
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
             const reqOptions: SpotifyRequestOptions = {
                 method: "POST",
                 url: settings.spotify.api.tokenUrl,
@@ -298,7 +305,10 @@ export class Spotify {
 
             const postData = new URLSearchParams(qs)
             const basicAuth = Buffer.from(`${settings.spotify.api.clientId}:${settings.spotify.api.clientSecret}`).toString("base64")
-            const headers = {Authorization: `Basic ${basicAuth}`, "Content-Type": "application/x-www-form-urlencoded"}
+            const headers = {
+                Authorization: `Basic ${basicAuth}`,
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
             const reqOptions: SpotifyRequestOptions = {
                 method: "POST",
                 url: settings.spotify.api.tokenUrl,
@@ -448,20 +458,21 @@ export class Spotify {
             // Make request to fetch list of recent tracks, and iterate results
             // to populate the list of matching tracks for the activity timespan.
             // Tracks will be sorted by play date.
-            const res = await this.makeRequest({tokens, path: `me/player/recently-played?after=${tsFrom}&limit=${settings.music.trackLimit}`})
+            const res = await this.makeRequest({
+                tokens,
+                path: `me/player/recently-played?after=${tsFrom}&limit=${settings.music.trackLimit}`
+            })
             const items = _.sortBy(res.items || [], "played_at")
 
-            // De-duplicate consecutive tracks (can happen when resuming playback).
-            // If the same track appears multiple times with timestamps close together (within 10 seconds),
-            // it's likely a pause/resume event. If timestamps are further apart, it's a legitimate repeat.
+            // De-duplicate consecutive tracks (can happen when resuming playback, for pauses that last less than 5min).
             const deduplicatedItems = []
             let lastTrackId = null
             let lastTrackTimestamp = null
-            const duplicateThreshold = 10000 // 10 seconds in milliseconds
+            const duplicateThreshold = 1000 * 60 * 5
             for (let i of items) {
                 const trackId = i.track?.id
                 const trackTimestamp = i.played_at ? dayjs(i.played_at).valueOf() : null
-                const isDuplicate = trackId === lastTrackId && trackTimestamp && lastTrackTimestamp && (trackTimestamp - lastTrackTimestamp) < duplicateThreshold
+                const isDuplicate = trackId === lastTrackId && trackTimestamp && lastTrackTimestamp && trackTimestamp - lastTrackTimestamp < duplicateThreshold
 
                 if (!isDuplicate) {
                     deduplicatedItems.push(i)
@@ -502,7 +513,11 @@ export class Spotify {
         try {
             user.spotify = profile
 
-            const data: Partial<UserData> = {id: user.id, displayName: user.displayName, spotify: profile}
+            const data: Partial<UserData> = {
+                id: user.id,
+                displayName: user.displayName,
+                spotify: profile
+            }
 
             // Reset auth state.
             if (user.spotifyAuthState) {
