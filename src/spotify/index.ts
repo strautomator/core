@@ -452,13 +452,21 @@ export class Spotify {
             const items = _.sortBy(res.items || [], "played_at")
 
             // De-duplicate consecutive tracks (can happen when resuming playback).
+            // If the same track appears multiple times with timestamps close together (within 10 seconds),
+            // it's likely a pause/resume event. If timestamps are further apart, it's a legitimate repeat.
             const deduplicatedItems = []
             let lastTrackId = null
+            let lastTrackTimestamp = null
+            const duplicateThreshold = 10000 // 10 seconds in milliseconds
             for (let i of items) {
                 const trackId = i.track?.id
-                if (trackId !== lastTrackId) {
+                const trackTimestamp = i.played_at ? dayjs(i.played_at).valueOf() : null
+                const isDuplicate = trackId === lastTrackId && trackTimestamp && lastTrackTimestamp && (trackTimestamp - lastTrackTimestamp) < duplicateThreshold
+
+                if (!isDuplicate) {
                     deduplicatedItems.push(i)
                     lastTrackId = trackId
+                    lastTrackTimestamp = trackTimestamp
                 }
             }
 
