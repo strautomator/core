@@ -451,9 +451,20 @@ export class Spotify {
             const res = await this.makeRequest({tokens, path: `me/player/recently-played?after=${tsFrom}&limit=${settings.music.trackLimit}`})
             const items = _.sortBy(res.items || [], "played_at")
 
+            // De-duplicate consecutive tracks (can happen when resuming playback).
+            const deduplicatedItems = []
+            let lastTrackId = null
+            for (let i of items) {
+                const trackId = i.track?.id
+                if (trackId !== lastTrackId) {
+                    deduplicatedItems.push(i)
+                    lastTrackId = trackId
+                }
+            }
+
             // Iterate, transform and populate track list.
             const tracks: MusicTrack[] = []
-            for (let i of items) {
+            for (let i of deduplicatedItems) {
                 const track = this.toMusicTrack(i)
                 if (track.datePlayed.valueOf() < tsTo) {
                     tracks.push(track)
