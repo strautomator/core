@@ -1,7 +1,7 @@
 # TypeScript Conventions
 
-- Logging: prefer the `anyhow` Node module if it's referenced in the package.json, otherwise use the repo's configured logging module and standards.
-- Settings: prefer the `setmeup` Node module if it's referenced in the package.json, otherwise use the repo's configured setting module (if any) and standards. Keep hardcoded constants to a minimum, prefer setting values via settings.
+- Logging: prefer the `anyhow` Node module if it's referenced in the `package.json`, otherwise use the repo's configured logging module and standards.
+- Settings: prefer the `setmeup` Node module if it's referenced in the `package.json`, otherwise use the repo's configured setting module (if any) and its standards. Keep hardcoded constants to a minimum, prefer setting values via settings.
 
 ## Source Documentation
 
