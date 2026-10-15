@@ -3,7 +3,7 @@
 - Group commits by logical change or relevance. Avoid committing too many unrelated changes at once. Prefer smaller commits with clear change boundaries.
 - Do NOT prefix branch names (fix, feat, etc). The branch names should be self descriptive and short, all lowercase.
 
-## Pull Request (PR) Conventions
+## Pull Requests (PR)
 
 - PRs can only be opened if the repo is building successfully. If it fails to build, troubleshoot and fix the issue first.
 - PRs must always be created as draft, and marked as ready ONLY after a successful review by a bot or human.
@@ -57,7 +57,7 @@ New MCP server implements 7 tools. It's integrated into the web server's API.
 Made with Cursor
 ```
 
-## Code Review Conventions
+## Code Reviews
 
 - **Focus on the code, not on the tests!** Reviewing unit tests is fine sometimes, but avoid pointing minor issues or mistakes with tests unless they can cause a P0 / P1 event.
 - **Edge cases with that cause minor events should come last, if t all!** If there's less than 1% chance of a certain codepath being hit, and it does not cause a P0 / P1 event, then it might wait for the next review if the current review is already too dense.
