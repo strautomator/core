@@ -6,11 +6,11 @@
 ## Pull Requests (PR)
 
 - PRs can only be opened if the repo is building successfully. If it fails to build, troubleshoot and fix the issue first.
-- PRs must always be created as draft, and marked as ready ONLY after a successful review by a bot or human.
+- PRs that involve minor code changes can be created as "ready", but complex PRs with new features or considerable changes to the codebase must always be created as "draft".
 - The PR description MUST be split into the following sections: `New features`, `Breaking changes`, `Other changes`. If there are no new features or no breaking changes, do not create these sections. If only minor changes are present, use just `Changes` instead of `Other changes`.
 - Do NOT expose information local dev URLs, ports, or other dev-only notes in the PR descriptions.
 - Do NOT add minor technical changes to the PR descriptions like version and lockfile updates, updated README and renamed files. Also no need to describe how the changes were validated or tested. These kind of information belongs to commit messages instead.
-- **Do NOT add attributions to commit messages or PR descriptions**. No need to write made with Cursor or made with Claude or made with whatever.
+- **Do NOT add attributions to commit messages or PR descriptions**. No need to write "Made with Cursor" or "Made with Claude" or made with whatever. That includes the `Co-authored-by` attribution, which should not be added.
 
 ### Sample Good PR Description
 
