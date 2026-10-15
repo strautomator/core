@@ -1,7 +1,6 @@
 # Base instructions
 
 - For a brief overview of what this project is, how it works and how it should be updated in general, read the file `README.md` first.
-- If a task involves complex changes that affect multiple features or parts of the app, prefer splitting it into smaller tasks and delegate those to sub agents.
 
 # Code Style
 
