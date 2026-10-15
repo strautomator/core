@@ -27,7 +27,7 @@ For example to update a Node package using NPM:
 npm version $(date '+%y.%-V%u.1%H%M') --force --allow-same-version --no-git-tag-version
 ```
 
-## Changelog
+## Changelogs
 
 If the project does not have a `CHANGELOG.md` file, you can stop here. Otherwise, make sure to add the new version with the relevant changes to the `CHANGELOG.md` file, following these rules:
 

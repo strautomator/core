@@ -43,4 +43,7 @@ parseMessage = (args: any[], jsonMode = false): string => {
 
 ## Migrations
 
-- If a new feature or a code change requires data to be migrated, do NOT add a migration procedure in the source code. Instead, check if the repository already implements any migration mechanism, and if it does, create the new migration file there. If not, ask the user how to proceed BEFORE implementing the changes.
+- If the system is flagged as **not** in production, do not create any data migrations. If you are unsure, ask the user first before creating migrations.
+- If a schema or data migration is deemed necessary for backward compatibility, check if the system has a migration mechanism in place already. If it has, use it.
+- If no migration mechanism is implemented yet, create one first so it can be reused in the future for other migrations.
+- Create a rollback plan for migrations to allow reverting the changes during development and testing.
