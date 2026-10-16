@@ -41,6 +41,11 @@ parseMessage = (args: any[], jsonMode = false): string => {
 }
 ```
 
+## Tests
+
+- **Unit tests are not as important in this day and age!** If the repository already has some unit tests, you can add further tests but **only** if a specific code path can cause a P0 / P1 event. There's no need to create unit tests covering every single corner case.
+- E2E testing is still desired and should be performed, when necessary.
+
 ## Migrations
 
 - If the system is flagged as **not** in production, do not create any data migrations. If you are unsure, ask the user first before creating migrations.
