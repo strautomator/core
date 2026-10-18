@@ -48,7 +48,7 @@ export class Mailer {
                 throw new Error("Missing the mailer.smtp server settings")
             }
             if (!settings.mailer.smtp.auth.user || !settings.mailer.smtp.auth.pass) {
-                throw new Error("Missing user and pass on mailer.smtp.auth settings")
+                throw new Error("Missing user or pass on mailer.smtp.auth settings")
             }
 
             // Create and test the SMTP client.

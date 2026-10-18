@@ -313,16 +313,14 @@
         "bcc": null,
         // Max number of allowed email failures before taking action.
         "maxFailures": 5,
-        // Default SMTP settings are valid for Amazon SES. You can overwrite these on
-        // on your secret settings or via environment variables.
+        // Cloudflare Email Service is used by default. Set the API token in the secret
+        // settings or via the SMU_mailer_smtp_auth_pass environment variable.
         "smtp": {
             "secure": true,
-            "host": "email-smtp.us-east-1.amazonaws.com",
+            "host": "smtp.mx.cloudflare.net",
             "port": 465,
             "auth": {
-                // User and password must be set via the settings.secret.json file
-                // or using environment variables.
-                "user": null,
+                "user": "api_token",
                 "pass": null
             }
         },
@@ -331,7 +329,7 @@
         // be enabled if you have defined a user and password.
         "smtpFallback": {
             "secure": true,
-            "host": "in-v3.mailjet.com",
+            "host": "email-smtp.us-east-1.amazonaws.com",
             "port": 465,
             "auth": {
                 "user": null,
