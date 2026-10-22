@@ -1,6 +1,6 @@
 # Strautomator Web
 
-This is Strautomator's web frontend, built with NuxtJS + Vuetify. It depends on the [Strautomator Core](https://github.com/strautomator/core) to run. Please make sure you read the docs for the Core first before proceeding with the Web setup.
+This is Strautomator's web frontend and API, built with Nuxt (Vue 3 + Nitro), Vuetify and Pinia. It depends on the [Strautomator Core](https://github.com/strautomator/core) to run. Please make sure you read the docs for the Core first before proceeding with the Web setup.
 
 ## Settings
 
@@ -54,13 +54,13 @@ To disable the tunnel execution, set the `app.tunnel` setting to false on the `s
 
 ### Server ports
 
-When starting up, the service will look for the `strautomator.cert` and `strautomator.key` files on the application root. If found, it will create a HTTPS server with those certificate files, otherwise it will create a regular HTTP server. The default ports:
+When starting up in production (`npm start`), the service will look for the `strautomator.cert` and `strautomator.key` files on the application root. If found, it will create a HTTPS server with those certificate files, otherwise it will create a regular HTTP server. The default ports:
 
 - Development: 3000
 - Production (HTTP): 8080
 - Production (HTTPS): 8443
 
-Please note that the actual port can be overwritten either via the PORT environment variable, or via `settings.app.port` setting.
+Please note that the actual port can be overwritten via the PORT environment variable.
 
 ### Running it locally
 

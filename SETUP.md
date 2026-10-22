@@ -88,6 +88,8 @@ Strava pushes new activities to your instance through **webhooks**, so your inst
 
 The URL you choose becomes the `app.url` setting. **It must end with a trailing slash**, for example `https://strautomator.example.com/`.
 
+The dev server blocks requests to unknown hostnames. It allows the `app.url` host from `settings.local.json`, `settings.secret.json` or the `SMU_app_url` environment variable, so you don't need to add the domain to any committed file.
+
 ### Option A: Named Cloudflare Tunnel (recommended)
 
 This option gives you a stable URL on your own domain. You don't need to open ports on your router, and you don't need to manage certificates. It's also the default in development mode: when `app.tunnel` is `true`, the app runs the `./tunnel` script automatically at startup.
@@ -412,19 +414,15 @@ make run
 
 `make run` does the following:
 
-1. Compiles the TypeScript server code into `./server`, where Nuxt loads its API routes from.
-2. Copies `../core/lib` and `../core/settings*.json` into `node_modules/strautomator-core`, so your local core changes are used.
-3. Starts the app with `nodemon` in development mode, on **port 3000**, with the scheduled jobs running in the same process. The app runs the TypeScript sources directly (via `tsx`), so you don't need to recompile after changing `src/`.
-4. If `app.tunnel` is `true`, opens the Cloudflare tunnel.
+1. Copies `../core/lib` and `../core/settings*.json` into `node_modules/strautomator-core`, so your local core changes are used.
+2. Starts the Nuxt dev server (`npm run dev`) on **port 3000**, with the scheduled jobs running in the same process. Both the frontend (`app/`) and the Nitro server (`server/`) reload automatically when you change their sources.
+3. If `app.tunnel` is `true`, opens the Cloudflare tunnel.
 
-> The Makefile also tries to copy an optional `country-linkify` package from a maintainer-only folder. **You can ignore the resulting "No such file or directory" messages.**
-
-The first startup takes a minute or two, because Nuxt builds the frontend. Watch the logs for these messages:
+The first page load takes a few seconds, because Nuxt builds the frontend on demand. Watch the logs for these messages:
 
 ```
 Database.init Default connection Collections suffixed with "-dev"
 Storage.init Created bucket: my-strautomator-calendar
-WebServer.init HTTP Server ready on port 3000
 Strava.createWebhook ID 123456 https://strautomator.example.com/api/strava/webhook/...
 ```
 
@@ -455,15 +453,14 @@ Development mode is fine for a single user on a home server. For an always-on VP
 | Frontend                     | built on the fly                                | must be pre-built with `npm run build`                                                   |
 | Tunnel                       | started automatically if `app.tunnel` is `true` | usually a separate `cloudflared` service, but `app.tunnel` works here too                |
 
-`app.port` or the `PORT` environment variable overrides the port.
+The `PORT` environment variable overrides the port. HTTPS can also be enabled by passing the certificate and key contents via the `NITRO_SSL_CERT` and `NITRO_SSL_KEY` environment variables.
 
 ### 9.2 Build and start
 
 ```sh
 cd ~/strautomator/web
 npm install
-./node_modules/.bin/tsc        # compile the server into ./server
-npm run build                  # build the Nuxt frontend
+npm run build                  # build the Nuxt app (frontend + server) into ./.output
 ```
 
 ```sh
@@ -549,8 +546,7 @@ To see more detail on any problem, set `"app": {"debug": true}` in `settings.loc
 | `Storage.init` + `403 ... does not have storage.buckets.get access`                        | Bucket name owned by someone else (the defaults are!) | Use your own unique bucket names ([7.2](#72-websettingssecretjson)).                                                                               |
 | `Storage.init` + `requires domain ownership verification`                                  | Bucket name contains dots, like a domain              | Use names without dots and set `storage.cname` to `false`.                                                                                         |
 | `Storage.init` + `Permission 'storage.buckets.create' denied`                              | Service account is missing a role                     | Grant **Storage Admin**, or create the buckets manually.                                                                                           |
-| `EADDRINUSE :::3000`                                                                       | Port already in use                                   | Stop the other process, or set `app.port` / `PORT`.                                                                                                |
-| `ERR_OSSL_EVP_UNSUPPORTED`                                                                 | Nuxt 2 run without the legacy OpenSSL flag            | Use `make run` or the `npm` scripts, which already set `--openssl-legacy-provider`.                                                                |
+| `EADDRINUSE :::3000`                                                                       | Port already in use                                   | Stop the other process, or set `PORT`.                                                                                                             |
 | `Cannot find module 'strautomator-core'` or `.../lib/index.js`                             | Core not installed or not compiled                    | Run `npm install` in `web`, and `make build` in `core`.                                                                                            |
 
 ### Database errors

@@ -6,7 +6,10 @@
 .lock-wscript
 .next
 .nuxt
+.output
+.data
 .nyc_output
+.playwright-mcp
 .serverless
 .vuepress/dist
 bower_components/
@@ -16,7 +19,6 @@ jspm_packages/
 lib-cov/
 node_modules/
 pids/
-server/
 /app.yaml
 /settings.local.json
 /settings.secret.json

@@ -1,78 +1,54 @@
 {
     "name": "strautomator-web",
-    "version": "26.407.12127",
+    "version": "26.432.11448",
     "description": "Strautomator.com website.",
     "author": "Igor Ramadas",
-    "main": "server/index.js",
-    "types": "server/index.d.ts",
     "license": "AGPL-3.0-only",
     "repository": {
         "type": "git",
         "url": "https://github.com/strautomator/web.git"
     },
     "scripts": {
-        "build": "NODE_OPTIONS=--openssl-legacy-provider nuxt build",
-        "generate": "NODE_OPTIONS=--openssl-legacy-provider nuxt generate",
-        "start": "cross-env NODE_ENV=production NODE_OPTIONS=--openssl-legacy-provider node server/index.js",
-        "start:ts": "cross-env NODE_ENV=development NODE_OPTIONS=--openssl-legacy-provider STRAUTOMATOR_CRON=true node --preserve-symlinks --import tsx ./src/index.ts",
-        "start:dev": "nodemon"
+        "dev": "cross-env STRAUTOMATOR_CRON=true nuxt dev --port 3000",
+        "build": "nuxt build",
+        "start": "cross-env NODE_ENV=production node start.mjs",
+        "preview": "nuxt preview",
+        "typecheck": "nuxt prepare && tsc --noEmit -p .nuxt/tsconfig.server.json",
+        "postinstall": "nuxt prepare"
     },
     "dependencies": {
-        "@nuxtjs/axios": "^5.13.6",
-        "@nuxtjs/dayjs": "^1.4.1",
-        "@nuxtjs/vuetify": "^1.12.3",
+        "@mdi/font": "^7.4.47",
         "@paddle/paddle-node-sdk": "^3.10.0",
+        "@pinia/nuxt": "^1.0.3",
         "axios": "^1.20.0",
-        "Base64": "^1.3.0",
-        "body-parser": "^2.3.0",
-        "chart.js": "^3.9.1",
-        "chartjs-adapter-dayjs-3": "^1.2.3",
+        "chart.js": "^4.5.1",
+        "chartjs-adapter-dayjs-4": "^1.0.4",
         "chroma-js": "^3.2.0",
-        "client-sessions": "^0.8.0",
-        "cookie-universal-nuxt": "^2.2.2",
-        "country-linkify": "^25.462.12203",
         "cross-env": "^10.1.0",
-        "express": "^5.2.1",
-        "express-rate-limit": "^8.7.0",
-        "floating-vue": "^1.0.0-beta.19",
+        "dayjs": "^1.11.23",
         "json-editor-vue": "^0.19.2",
-        "nuxt": "^2.18.1",
-        "qs": "^6.16.0",
+        "lodash": "^4.18.1",
+        "nuxt": "npm:nuxt-nightly@5.0.0-2610061304-449e9ce",
+        "pinia": "^4.1.0",
+        "setmeup": "^2.0.0",
         "strautomator-core": "github:strautomator/core",
         "vanilla-jsoneditor": "^3.13.0",
-        "vue": "^2.7.16",
-        "vue-mention": "^1.0.0-floating-vue1",
-        "vuedraggable": "^2.24.3",
-        "vuetify-loader": "^1.9.2"
+        "vue": "^3.5.44",
+        "vue-draggable-plus": "^0.6.1",
+        "vue-router": "^5.4.0",
+        "vuetify": "^4.3.0",
+        "vuetify-nuxt-module": "^1.0.0-rc.6"
     },
     "devDependencies": {
-        "@nuxt/types": "^2.18.1",
-        "@types/express": "^5.0.6",
-        "@types/lodash": "^4.17.25",
-        "@types/node": "^26.6.4",
-        "chalk": "^4.1.2",
-        "nodemon": "^3.1.14",
+        "@types/lodash": "^4.17.26",
+        "@types/node": "^26.6.5",
+        "sass-embedded": "^1.105.2",
         "tsx": "^4.23.15",
-        "typescript": "^7.0.2",
-        "webpack": "^4.47.0"
+        "typescript": "^7.0.2"
     },
     "peerDependencies": {
         "anyhow": "^3.1.2",
-        "setmeup": "^1.8.2"
-    },
-    "nodemonConfig": {
-        "ignore": [
-            "**/*.test.ts",
-            "**/*.spec.ts",
-            ".git",
-            "node_modules"
-        ],
-        "watch": [
-            "src"
-        ],
-        "exec": "npm run start:ts",
-        "ext": "ts",
-        "delay": "5000"
+        "setmeup": "^2.0.0"
     },
     "prettier": {
         "trailingComma": "none",
@@ -82,5 +58,6 @@
         "arrowParens": "always",
         "bracketSpacing": false,
         "printWidth": 250
-    }
+    },
+    "type": "module"
 }

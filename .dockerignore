@@ -4,6 +4,8 @@
 .github/
 .history/
 .nuxt/
+.output/
+dist/
 .vscode/
 coverage/
 docs/

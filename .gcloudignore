@@ -12,7 +12,8 @@ coverage/
 docs/
 node_modules/
 samples/
-src/
+.nuxt/
+dist/
 Dockerfile
 Makefile
 README.md

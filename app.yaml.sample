@@ -3,18 +3,18 @@
 # Google App Engine (standard environment). Please note that you must update
 # the environment variables to your own secrets and credentials.
 
-runtime: nodejs20
+runtime: nodejs22
 instance_class: F2
 automatic_scaling:
     max_instances: 2
 
 handlers:
     - url: /_nuxt
-      static_dir: .nuxt/dist/client
+      static_dir: .output/public/_nuxt
       secure: always
     - url: /(.*\.(gif|png|jpg|ico|txt))$
-      static_files: static/\1
-      upload: static/.*\.(gif|png|jpg|ico|txt)$
+      static_files: .output/public/\1
+      upload: .output/public/.*\.(gif|png|jpg|ico|txt)$
       secure: always
     - url: /.*
       script: auto

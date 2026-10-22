@@ -1,22 +1,4 @@
 {
-    "compilerOptions": {
-        "rootDir": "src",
-        "outDir": "server",
-        "target": "es2024",
-        "module": "nodenext",
-        "moduleResolution": "nodenext",
-        "esModuleInterop": true,
-        "noUnusedParameters": true,
-        "noUnusedLocals": true,
-        "declaration": true,
-        "skipLibCheck": true,
-        "strict": false,
-        "types": ["node"],
-        "paths": {
-            "strautomator-core": ["./node_modules/strautomator-core/", "../core/"]
-        }
-    },
-    "vueCompilerOptions": {
-        "target": 2.7
-    }
+    "files": [],
+    "references": [{"path": "./.nuxt/tsconfig.app.json"}, {"path": "./.nuxt/tsconfig.server.json"}, {"path": "./.nuxt/tsconfig.shared.json"}, {"path": "./.nuxt/tsconfig.node.json"}]
 }
