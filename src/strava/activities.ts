@@ -1,9 +1,10 @@
 // Strautomator Core: Strava Activities
 
 import {StravaActivity, StravaActivityQuery, StravaActivityStreams, StravaRawActivityStreams} from "./types"
-import {toStravaActivity} from "./utils"
+import {applyAltitudeStream, assignElevationUnit, toStravaActivity, toUserElevation} from "./utils"
 import {UserData} from "../users/types"
 import stravaAthletes from "./athletes"
+import fitparser from "../fitparser"
 import api from "./api"
 import _ from "lodash"
 import logger from "anyhow"
@@ -20,6 +21,12 @@ export class StravaActivities {
     static get Instance(): StravaActivities {
         return this._instance || (this._instance = new this())
     }
+
+    /**
+     * Elevation fields already resolved for an activity object.
+     * Avoids a second Strava stream request while recipes are evaluated.
+     */
+    private elevationAttempts = new WeakMap<StravaActivity, {loss: boolean; ends: boolean}>()
 
     // GET ACTIVITIES
     // --------------------------------------------------------------------------
@@ -224,6 +231,87 @@ export class StravaActivities {
             logger.error("Strava.getAllRawStreams", logHelper.user(user), `Activity ${id}`, ex)
             return {}
         }
+    }
+
+    /**
+     * Altitude samples for one activity, in meters. Empty when the activity has
+     * no altitude stream. Null when the request itself failed.
+     * @param user The owner of the activity.
+     * @param id The activity ID.
+     */
+    getAltitudeStream = async (user: UserData, id: number | string): Promise<number[] | null> => {
+        try {
+            const response = await api.get(user.stravaTokens, `activities/${id}/streams`, {keys: "altitude", key_by_type: true})
+            const keyed = response?.altitude?.data
+            const listed = _.isArray(response) ? _.find(response, {type: "altitude"})?.data : null
+            const data = keyed || listed
+
+            if (!_.isArray(data)) {
+                logger.info("Strava.getAltitudeStream", logHelper.user(user), `Activity ${id}`, "No altitude data")
+                return []
+            }
+
+            logger.info("Strava.getAltitudeStream", logHelper.user(user), `Activity ${id}`, `Data points: ${data.length}`)
+            return data
+        } catch (ex) {
+            const status = ex.response?.status || ex.status || null
+            if (status == 404) {
+                logger.info("Strava.getAltitudeStream", logHelper.user(user), `Activity ${id}`, "No altitude stream")
+                return []
+            }
+
+            logger.warn("Strava.getAltitudeStream", logHelper.user(user), `Activity ${id}`, ex)
+            return null
+        }
+    }
+
+    /**
+     * Fill elevation loss and start/end altitude when a recipe uses them.
+     * Garmin/Wahoo session descent is used first (no Strava call). The altitude
+     * stream is requested only for fields that are still missing.
+     * Returns true when a stream request was made.
+     * @param user The activity owner.
+     * @param activity The activity being evaluated.
+     * @param fields Fields the caller actually needs.
+     */
+    ensureExtendedElevation = async (user: UserData, activity: StravaActivity, fields: readonly string[]): Promise<boolean> => {
+        const attempt = this.elevationAttempts.get(activity) || {loss: false, ends: false}
+        this.elevationAttempts.set(activity, attempt)
+
+        const wantLoss = fields.includes("elevationLoss") && _.isNil(activity.elevationLoss) && !attempt.loss
+        const wantEnds = (fields.includes("elevationStart") || fields.includes("elevationEnd")) && !attempt.ends && (_.isNil(activity.elevationStart) || _.isNil(activity.elevationEnd))
+        if (!wantLoss && !wantEnds) return false
+
+        try {
+            if (wantLoss && (user.garmin || user.wahoo)) {
+                const fitActivity = await fitparser.getMatchingActivity(user, activity, "any")
+                if (_.isNumber(fitActivity?.totalDescent)) {
+                    activity.elevationLoss = toUserElevation(user, fitActivity.totalDescent)
+                    logger.info("Strava.ensureExtendedElevation", logHelper.user(user), logHelper.activity(activity), `Elevation loss from FIT: ${activity.elevationLoss}`)
+                }
+            }
+        } catch (ex) {
+            logger.warn("Strava.ensureExtendedElevation", logHelper.user(user), logHelper.activity(activity), "FIT lookup failed", ex)
+        }
+
+        const stillNeedLoss = wantLoss && _.isNil(activity.elevationLoss)
+        if (!stillNeedLoss && !wantEnds) {
+            attempt.loss = true
+            assignElevationUnit(user, activity)
+            return false
+        }
+
+        const altitudes = await this.getAltitudeStream(user, activity.id)
+        if (altitudes == null) return true
+
+        // The stream fills the empty start/end/min altitudes. Loss is estimated only when requested,
+        // so a later elevationLoss request can still use the FIT descent.
+        if (wantLoss) attempt.loss = true
+        attempt.ends = true
+        applyAltitudeStream(user, activity, altitudes, wantLoss && _.isNil(activity.elevationLoss))
+        assignElevationUnit(user, activity)
+        logger.info("Strava.ensureExtendedElevation", logHelper.user(user), logHelper.activity(activity), `Loss ${activity.elevationLoss ?? "-"}, start ${activity.elevationStart ?? "-"}, end ${activity.elevationEnd ?? "-"}`)
+        return true
     }
 
     // UPDATING ACTIVITIES

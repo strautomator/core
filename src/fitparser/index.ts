@@ -155,6 +155,12 @@ export class FitParser {
                     }
                 }
             }
+
+            // Device-calculated descent. Prefer this over a Strava altitude estimate.
+            const descents = sessions.map((s) => s.totalDescent).filter((v) => _.isNumber(v))
+            if (descents.length > 0) {
+                fitFileActivity.totalDescent = Math.round(_.sum(descents))
+            }
         }
 
         // Get Sport profile.
@@ -217,6 +223,25 @@ export class FitParser {
                 }
                 return _.omitBy(split, (v) => _.isNil(v))
             })
+        }
+
+        // Device laps (lap button or auto lap, such as every 1 km). These are not
+        // the run/walk splits exposed as garmin.laps.
+        if (messages.lapMesgs?.length > 0) {
+            const recordedLaps = messages.lapMesgs.filter((l) => (l.totalDistance || 0) > 0 || (l.totalElapsedTime || 0) > 0)
+            if (recordedLaps.length > 0) {
+                fitFileActivity.deviceLaps = recordedLaps.map((l) => {
+                    const lap = {
+                        totalTime: l.totalElapsedTime ? dayjs.duration(l.totalElapsedTime, "seconds").format("HH:mm:ss") : "00:00:00",
+                        speedAvg: !_.isNil(l.avgSpeed) ? l.avgSpeed : l.enhancedAvgSpeed,
+                        distance: l.totalDistance,
+                        ascent: l.totalAscent,
+                        descent: l.totalDescent,
+                        calories: l.totalCalories
+                    }
+                    return _.omitBy(lap, (v) => _.isNil(v))
+                })
+            }
         }
 
         // Decode primary benefit to a friendly string.

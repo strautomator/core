@@ -80,10 +80,18 @@ export interface StravaActivity {
     distanceMeters?: number
     /** Distance units based on the user profile. */
     distanceUnit?: "km" | "mi"
-    /** Total elevation gain in meters. */
+    /** Total elevation gain, in the user's elevation unit. */
     elevationGain?: number
-    /** Maximum elevation. */
+    /** Maximum elevation, in the user's elevation unit. */
     elevationMax?: number
+    /** Minimum elevation, in the user's elevation unit. */
+    elevationMin?: number
+    /** Total elevation loss (descent), in the user's elevation unit. */
+    elevationLoss?: number
+    /** Altitude at the start of the activity, in the user's elevation unit. */
+    elevationStart?: number
+    /** Altitude at the end of the activity, in the user's elevation unit. */
+    elevationEnd?: number
     /** Elevation unit. */
     elevationUnit?: "m" | "ft"
     /** Distance / climbing ratio: 19m per kilometer or 100ft per mile */
@@ -180,8 +188,12 @@ export interface StravaActivity {
     lapCount?: number
     /** Lap distance (most common or average). */
     lapDistance?: number
-    /** Lap time (most common or average). */
+    /** Lap time (most common or average), in seconds. */
     lapTime?: number
+    /** Comma-separated lap distances, already in the user's distance unit. */
+    lapDistances?: string
+    /** Comma-separated lap elapsed times (mm:ss, or HH:mm:ss from one hour). */
+    lapTimes?: string
     /** List of new all time activity-property records. */
     newRecords?: string[]
     /** Segment efforts summary. */
