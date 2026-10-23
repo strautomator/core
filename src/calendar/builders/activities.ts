@@ -36,7 +36,10 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
     const fieldSettings = settings.calendar.activityFields
     const calendarTemplate: UserCalendarTemplate = user.isPro ? user.preferences.calendarTemplate || {} : {}
     const customEventDetails = calendarTemplate.eventDetails || ""
-    const needsFullData = !partialFirstBuild && (customEventDetails.includes("${description}") || customEventDetails.includes("${calories}"))
+    const templateText = `${calendarTemplate.eventSummary || ""} ${customEventDetails}`
+    const extendedElevationFields = (["elevationLoss", "elevationStart", "elevationEnd"] as const).filter((field) => templateText.includes(`\${${field}`))
+    const needsDetailedActivity = /\$\{(?:elevationMin|lapTimes|lapDistances)\}/.test(templateText)
+    const needsFullData = !partialFirstBuild && (customEventDetails.includes("${description}") || customEventDetails.includes("${calories}") || needsDetailedActivity)
     const optionsLog = `From ${dateFrom.format("ll")} to ${dateTo.format("ll")}`
 
     let after = dateFrom
@@ -84,8 +87,7 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
                 return
             }
 
-            // Not ideal but... if the activity description should be added to the calendar, then we need a separate
-            // call to get the full activity details, as the activity listing endpoint won't return it.
+            // The activity list omits description, calories, laps and minimum elevation.
             if (needsFullData) {
                 activity = await strava.activities.getActivity(user, activity.id)
                 dbCalendar.lastRequestCount++
@@ -99,6 +101,12 @@ export const buildActivities = async (user: UserData, dbCalendar: CalendarData, 
             const sportType = activity.sportType.toLowerCase()
             const similarSportType = StravaBaseSport[activity.sportType]?.toLowerCase()
             const activityLink = `https://www.strava.com/activities/${activity.id}`
+
+            // Altitude stream fields, only when the calendar template uses them.
+            if (!partialFirstBuild && extendedElevationFields.length > 0) {
+                const fetchedAltitude = await strava.activities.ensureExtendedElevation(user, activity, extendedElevationFields)
+                if (fetchedAltitude) dbCalendar.lastRequestCount++
+            }
 
             // Append suffixes to activity values.
             transformActivityFields(user, activity, dbCalendar.options.compact)
