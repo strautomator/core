@@ -304,11 +304,11 @@ export class StravaActivities {
         const altitudes = await this.getAltitudeStream(user, activity.id)
         if (altitudes == null) return true
 
-        // The stream response fills every altitude field that is still empty.
-        // A FIT descent already copied onto the activity is left as-is.
-        attempt.loss = true
+        // The stream fills the empty start/end/min altitudes. Loss is estimated only when requested,
+        // so a later elevationLoss request can still use the FIT descent.
+        if (wantLoss) attempt.loss = true
         attempt.ends = true
-        applyAltitudeStream(user, activity, altitudes, _.isNil(activity.elevationLoss))
+        applyAltitudeStream(user, activity, altitudes, wantLoss && _.isNil(activity.elevationLoss))
         assignElevationUnit(user, activity)
         logger.info("Strava.ensureExtendedElevation", logHelper.user(user), logHelper.activity(activity), `Loss ${activity.elevationLoss ?? "-"}, start ${activity.elevationStart ?? "-"}, end ${activity.elevationEnd ?? "-"}`)
         return true
