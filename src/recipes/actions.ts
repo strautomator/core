@@ -277,6 +277,17 @@ export const replaceTagsAction = async (user: UserData, activity: StravaActivity
             if (assign) _.assign(activityToProcess, assign)
         }
 
+        // Start/end altitude and total descent are not on the activity payload.
+        const extendedElevationFields = (["elevationLoss", "elevationStart", "elevationEnd"] as const).filter((field) => processedValue.includes(`\${${field}`))
+        if (extendedElevationFields.length > 0) {
+            await strava.activities.ensureExtendedElevation(user, activity, extendedElevationFields)
+            activityToProcess.elevationLoss = activity.elevationLoss
+            activityToProcess.elevationStart = activity.elevationStart
+            activityToProcess.elevationEnd = activity.elevationEnd
+            activityToProcess.elevationMin = activity.elevationMin
+            activityToProcess.elevationUnit = activity.elevationUnit
+        }
+
         // Append suffixes to values and replace tags.
         transformActivityFields(user, activityToProcess)
         processedValue = processedValue.replace(/\$\{(.*?)\}/g, (_match, tag) => _.get(activityToProcess, tag, ""))

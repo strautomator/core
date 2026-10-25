@@ -10,6 +10,7 @@ import {UserData} from "../users/types"
 import database from "../database"
 import eventManager from "../eventmanager"
 import recipeStats from "./stats"
+import strava from "../strava"
 import _ from "lodash"
 import logger from "anyhow"
 import * as logHelper from "../loghelper"
@@ -355,6 +356,12 @@ export class Recipes {
         try {
             const prop = condition.property
             const propDetails = recipePropertyList.find((p) => p.value == prop)
+
+            // Descent and start/end altitude are not on the Strava payload.
+            // Fetch them only when this condition uses the field.
+            if (prop == "elevationLoss" || prop == "elevationStart" || prop == "elevationEnd") {
+                await strava.activities.ensureExtendedElevation(user, activity, [prop])
+            }
 
             // Weather conditions.
             if (prop.startsWith("weather")) {

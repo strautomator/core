@@ -16,6 +16,8 @@ export interface FitFileActivity {
     totalTime?: number
     /** Activity distance in KM. */
     distance?: number
+    /** Total descent in meters, summed from session messages. */
+    totalDescent?: number
     /** Activity primary benefit.*/
     primaryBenefit?: string
     /** Training stress score. */
@@ -48,6 +50,8 @@ export interface FitFileActivity {
     deviceBattery?: FitDeviceBattery[]
     /** Split summaries. */
     splits?: FitSplitSummary[]
+    /** Device lap messages (manual or auto laps), separate from run/walk splits. */
+    deviceLaps?: FitSplitSummary[]
     /** Additional custom fields. */
     customFields?: {[key: string]: number | string}
     /** Activity UTC start date. */

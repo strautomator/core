@@ -17,6 +17,104 @@ const settings = require("setmeup").settings
 const rFeet = 3.28084
 const rMiles = 0.621371
 
+// Ignore altitude changes smaller than this when estimating descent from a stream.
+const altitudeDescentThreshold = 1
+
+/**
+ * Convert meters to the user's elevation unit (meters or feet), rounded.
+ * @param user The activity owner.
+ * @param meters Elevation in meters.
+ */
+export function toUserElevation(user: UserData, meters: number): number {
+    const multiplier = user.profile?.units == "imperial" ? rFeet : 1
+    return Math.round(meters * multiplier)
+}
+
+/**
+ * Set the activity elevation unit when any elevation field has a value.
+ * Gain and max still only count when they are greater than zero.
+ * @param user The activity owner.
+ * @param activity The activity being updated.
+ */
+export function assignElevationUnit(user: UserData, activity: StravaActivity): void {
+    const hasElevation = activity.elevationGain > 0 || activity.elevationMax > 0 || _.isNumber(activity.elevationMin) || _.isNumber(activity.elevationLoss) || _.isNumber(activity.elevationStart) || _.isNumber(activity.elevationEnd)
+    if (hasElevation) {
+        activity.elevationUnit = user.profile.units == "imperial" ? "ft" : "m"
+    }
+}
+
+/**
+ * Format a lap elapsed time as mm:ss, or HH:mm:ss when it reaches an hour.
+ * @param seconds Lap elapsed time in seconds.
+ */
+export function formatLapTime(seconds: number): string {
+    const duration = dayjs.duration(Math.round(seconds || 0), "seconds").format("HH:mm:ss")
+    return duration.startsWith("00:") ? duration.substring(3) : duration
+}
+
+/**
+ * Total descent in meters from an altitude stream.
+ * Changes under 1m since the last counted point are ignored, so GPS jitter
+ * is not summed, while a slow descent still counts once it adds up.
+ * @param altitudes Altitude samples in meters.
+ */
+export function altitudeDescent(altitudes: number[]): number {
+    let loss = 0
+    let baseline: number = null
+
+    if (!altitudes) return 0
+
+    for (const alt of altitudes) {
+        if (!_.isFinite(alt)) continue
+        if (baseline == null) {
+            baseline = alt
+            continue
+        }
+
+        const delta = alt - baseline
+        if (delta <= -altitudeDescentThreshold) {
+            loss -= delta
+            baseline = alt
+        } else if (delta >= altitudeDescentThreshold) {
+            baseline = alt
+        }
+    }
+
+    return loss
+}
+
+/**
+ * Fill missing start, end, minimum and (optionally) loss from an altitude stream.
+ * Loss is left untouched when fillLoss is false, so a FIT descent can win.
+ * @param user The activity owner.
+ * @param activity The activity being updated.
+ * @param altitudes Altitude samples in meters.
+ * @param fillLoss Also estimate total descent when the activity does not have one yet.
+ */
+export function applyAltitudeStream(user: UserData, activity: StravaActivity, altitudes: number[], fillLoss: boolean): void {
+    let start: number = null
+    let end: number = null
+    let min: number = null
+
+    if (!altitudes) return
+
+    for (const alt of altitudes) {
+        if (!_.isFinite(alt)) continue
+        if (start == null) start = alt
+        end = alt
+        if (min == null || alt < min) min = alt
+    }
+
+    if (start == null) return
+
+    if (_.isNil(activity.elevationStart)) activity.elevationStart = toUserElevation(user, start)
+    if (_.isNil(activity.elevationEnd)) activity.elevationEnd = toUserElevation(user, end)
+    if (_.isNil(activity.elevationMin)) activity.elevationMin = toUserElevation(user, min)
+    if (fillLoss && _.isNil(activity.elevationLoss)) activity.elevationLoss = toUserElevation(user, altitudeDescent(altitudes))
+
+    assignElevationUnit(user, activity)
+}
+
 /**
  * Helper to transform data from the API to a StravaActivity interface.
  * @param user The activity owner.
@@ -195,15 +293,18 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
     if (maxPaceSeconds < 10) maxPaceSeconds = `0${maxPaceSeconds}`
 
     // Append distance, elevation, speed and pace.
+    // Minimum elevation comes from the activity payload (elev_low). Loss and
+    // start/end altitude are filled later, and only when a recipe needs them.
     if (!_.isNil(data.total_elevation_gain)) {
         activity.elevationGain = Math.round(elevationGain)
     }
     if (!_.isNil(data.elev_high)) {
         activity.elevationMax = Math.round(elevationMax)
     }
-    if (activity.elevationGain > 0 || activity.elevationMax > 0) {
-        activity.elevationUnit = user.profile.units == "imperial" ? "ft" : "m"
+    if (!_.isNil(data.elev_low)) {
+        activity.elevationMin = Math.round(data.elev_low * elevationMultiplier)
     }
+    assignElevationUnit(user, activity)
     if (data.distance) {
         activity.distanceMeters = parseInt(data.distance)
         activity.distance = parseFloat(distance.toFixed(1))
@@ -243,11 +344,14 @@ export function toStravaActivity(user: UserData, data: any): StravaActivity {
 
         // If 70% or more of laps have the same distance, use it as the
         // activity "lapDistance", otherwise calculate the average for all laps.
-        if ((commonTime[1] as number) / laps.length >= 0.7) {
+        if (commonDistance && Number(commonDistance[1]) / laps.length >= 0.7) {
             activity.lapDistance = parseFloat(commonDistance[0] as string)
         } else {
             activity.lapDistance = parseFloat(_.mean(lapDistances).toFixed(1))
         }
+
+        activity.lapDistances = lapDistances.map((distance) => Number(distance).toFixed(1)).join(", ")
+        activity.lapTimes = laps.map((lap) => formatLapTime(lap.totalTime)).join(", ")
 
         // Same principle again, but for lap times.
         if ((commonTime[1] as number) / laps.length >= 0.7) {
@@ -861,9 +965,9 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             }
             return result
         }
-        const splitsText = (splits: any[]) => {
+        const splitsText = (splits: any[], label?: string) => {
             const summaries = splits.map((s) => {
-                const splitType = s.splitType || "Split"
+                const splitType = s.splitType || label || "Split"
                 delete s.splitType
                 const props = Object.entries(s)
                 const propValueMerge = (e) => {
@@ -879,9 +983,19 @@ export const transformActivityFields = (user: UserData, activity: StravaActivity
             activity.garmin.laps = lapsList(activity.garmin.splits)
             activity.garmin.splitsText = splitsText(activity.garmin.splits)
         }
+        if (activity.garmin?.deviceLaps?.length > 0) {
+            const deviceLaps = activity.garmin.deviceLaps
+            activity.garmin.deviceLaps = lapsList(deviceLaps)
+            activity.garmin.deviceLapsText = splitsText(deviceLaps, "Lap")
+        }
         if (activity.wahoo?.splits?.length > 0) {
             activity.wahoo.laps = lapsList(activity.wahoo.splits)
             activity.wahoo.splitsText = splitsText(activity.wahoo.splits)
+        }
+        if (activity.wahoo?.deviceLaps?.length > 0) {
+            const deviceLaps = activity.wahoo.deviceLaps
+            activity.wahoo.deviceLaps = lapsList(deviceLaps)
+            activity.wahoo.deviceLapsText = splitsText(deviceLaps, "Lap")
         }
     }
 
