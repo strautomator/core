@@ -60,7 +60,7 @@ Made with Cursor
 ## Code Reviews
 
 - **Focus on the code, not on the tests!** Reviewing unit tests is fine sometimes, but avoid pointing minor issues or mistakes with tests unless they can cause a P0 / P1 event.
-- **Edge cases with that cause minor events should come last, if t all!** If there's less than 1% chance of a certain codepath being hit, and it does not cause a P0 / P1 event, then it might wait for the next review if the current review is already too dense.
+- **Edge cases with that cause minor events should come last, if at all!** If there's less than 1% chance of a certain codepath being hit, and it does not cause a P0 / P1 event, then it might not be an issue worth addressing if the current review is already too dense.
 
 ### Fixing Code Reviews
 
