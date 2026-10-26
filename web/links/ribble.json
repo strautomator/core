@@ -1,0 +1,27 @@
+{
+    "default": {
+        "de": "https://www.awin1.com/cread.php?awinmid=10008&awinaffid=931009",
+        "uk": "https://www.awin1.com/cread.php?awinmid=5923&awinaffid=931009"
+    },
+    "search": {
+        "uk": "https://www.awin1.com/cread.php?awinmid=5923&awinaffid=931009&ued=https%3A%2F%2Fwww.ribblecycles.co.uk%2Fsearch%3Fterm%3D{{query}}",
+        "de": "https://www.awin1.com/cread.php?awinmid=10008&awinaffid=931009&ued=https%3A%2F%2Fwww.ribble.de%2Fsearch%3Fterm%3D{{query}}"
+    },
+
+    "cycling-components": {
+        "uk": "https://tidd.ly/3BTpCHf",
+        "de": "https://tidd.ly/3oI8cKC"
+    },
+    "mtb": {
+        "uk": "https://tidd.ly/45D5qXB",
+        "de": "https://tidd.ly/3MQr4PO"
+    },
+    "gravel-bikes": {
+        "uk": "https://tidd.ly/43bQsGI",
+        "de": "https://tidd.ly/3N7s9Ea"
+    },
+    "road-bikes": {
+        "uk": "https://tidd.ly/45FtN7l",
+        "de": "https://tidd.ly/3N7GHnk"
+    }
+}

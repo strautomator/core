@@ -1,0 +1,63 @@
+{
+    "name": "strautomator-web",
+    "version": "26.435.12055",
+    "description": "Strautomator.com website.",
+    "author": "Igor Ramadas",
+    "license": "AGPL-3.0-only",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/strautomator/web.git"
+    },
+    "scripts": {
+        "dev": "cross-env STRAUTOMATOR_CRON=true nuxt dev --port 3000",
+        "build": "nuxt build",
+        "start": "cross-env NODE_ENV=production node start.mjs",
+        "preview": "nuxt preview",
+        "typecheck": "nuxt prepare && tsc --noEmit -p .nuxt/tsconfig.server.json",
+        "postinstall": "nuxt prepare"
+    },
+    "dependencies": {
+        "@mdi/font": "^7.4.47",
+        "@paddle/paddle-node-sdk": "^3.10.0",
+        "@pinia/nuxt": "^1.0.3",
+        "axios": "^1.20.0",
+        "chart.js": "^4.5.1",
+        "chartjs-adapter-dayjs-4": "^1.0.4",
+        "chroma-js": "^3.2.0",
+        "cross-env": "^10.1.0",
+        "dayjs": "^1.11.23",
+        "json-editor-vue": "^0.19.2",
+        "lodash": "^4.18.1",
+        "nuxt": "npm:nuxt-nightly@5.0.0-2610061304-449e9ce",
+        "pinia": "^4.1.0",
+        "setmeup": "^2.0.0",
+        "strautomator-core": "github:strautomator/core#2ca11ea2595224d2576400c27db3dae25bb912b5",
+        "vanilla-jsoneditor": "^3.13.0",
+        "vue": "^3.5.44",
+        "vue-draggable-plus": "^0.6.1",
+        "vue-router": "^5.4.0",
+        "vuetify": "^4.3.0",
+        "vuetify-nuxt-module": "^1.0.0-rc.6"
+    },
+    "devDependencies": {
+        "@types/lodash": "^4.17.26",
+        "@types/node": "^26.6.5",
+        "sass-embedded": "^1.105.2",
+        "tsx": "^4.23.15",
+        "typescript": "^7.0.2"
+    },
+    "peerDependencies": {
+        "anyhow": "^3.1.2",
+        "setmeup": "^2.0.0"
+    },
+    "prettier": {
+        "trailingComma": "none",
+        "tabWidth": 4,
+        "semi": false,
+        "singleQuote": false,
+        "arrowParens": "always",
+        "bracketSpacing": false,
+        "printWidth": 250
+    },
+    "type": "module"
+}

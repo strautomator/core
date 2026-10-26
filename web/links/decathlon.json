@@ -1,0 +1,57 @@
+{
+    "default": {
+        "at": "https://www.awin1.com/cread.php?awinmid=29221&awinaffid=931009",
+        "de": "https://www.awin1.com/cread.php?awinmid=14353&awinaffid=931009",
+        "it": "https://www.awin1.com/cread.php?awinmid=9643&awinaffid=931009",
+        "uk": "https://www.awin1.com/cread.php?awinmid=26895&awinaffid=931009"
+    },
+    "search": {
+        "de": "https://www.awin1.com/cread.php?awinmid=14353&awinaffid=931009&ued=https%3A%2F%2Fwww.decathlon.de%2Fsearch%3FNtt%3D{{query}}",
+        "it": "https://www.awin1.com/cread.php?awinmid=9643&awinaffid=931009&ued=https%3A%2F%2Fwww.decathlon.it%2Fsearch%3FNtt%3D{{query}}",
+        "uk": "https://www.awin1.com/cread.php?awinmid=26895&awinaffid=931009&ued=https%3A%2F%2Fwww.decathlon.co.uk%2Fsearch%3FNtt%3D{{query}}"
+    },
+
+    "cassette": {
+        "de": "https://tidd.ly/43sugaS",
+        "it": "https://tidd.ly/3ozQxoz",
+        "uk": "https://tidd.ly/43SxO6T"
+    },
+    "chain": {
+        "de": "https://tidd.ly/3N2JVs7",
+        "it": "https://tidd.ly/3OFImlc",
+        "uk": "https://tidd.ly/42QQwdR"
+    },
+    "cycling-components": {
+        "de": "https://tidd.ly/3WyTH8y",
+        "it": "https://tidd.ly/3IDKLJh",
+        "uk": "https://tidd.ly/3NIlpgr"
+    },
+    "gravel-bike": {
+        "de": "https://tidd.ly/3IOZ3Xv",
+        "it": "https://tidd.ly/3IIa90E",
+        "uk": "https://tidd.ly/44cFZLe"
+    },
+    "inner-tube": {
+        "uk": "https://tidd.ly/42MX4dy"
+    },
+    "mtb": {
+        "de": "https://tidd.ly/43yu1Lv",
+        "it": "https://tidd.ly/3N2ihvf",
+        "uk": "https://tidd.ly/42T54cM"
+    },
+    "road-bike": {
+        "de": "https://tidd.ly/3MEpd0d",
+        "it": "https://tidd.ly/3WCchNb",
+        "uk": "https://tidd.ly/3NobRpg"
+    },
+    "tire": {
+        "de": "https://tidd.ly/3MF1pta",
+        "it": "https://tidd.ly/3N5rHq5",
+        "uk": "https://tidd.ly/46kp1w7"
+    },
+    "wheels": {
+        "de": "https://tidd.ly/3qbT1K1",
+        "it": "https://tidd.ly/43dvVkO",
+        "uk": "https://tidd.ly/3Jsex4e"
+    }
+}

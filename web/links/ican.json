@@ -1,0 +1,22 @@
+{
+    "default": {
+        "any": "https://icancycling.com/?ref=strautomator&utm_source=affiliate",
+        "be": "https://icancycling.com/collections/ican-wheels-frames-europe?ref=strautomator&utm_source=affiliate",
+        "ca": "https://icancycling.com/collections/us-warehouse?ref=strautomator&utm_source=affiliate",
+        "de": "https://icancycling.com/collections/ican-wheels-frames-europe?ref=strautomator&utm_source=affiliate",
+        "dk": "https://icancycling.com/collections/ican-wheels-frames-europe?ref=strautomator&utm_source=affiliate",
+        "es": "https://icancycling.com/collections/ican-wheels-frames-europe?ref=strautomator&utm_source=affiliate",
+        "fr": "https://icancycling.com/collections/ican-wheels-frames-europe?ref=strautomator&utm_source=affiliate",
+        "nl": "https://icancycling.com/collections/ican-wheels-frames-europe?ref=strautomator&utm_source=affiliate",
+        "pt": "https://icancycling.com/collections/ican-wheels-frames-europe?ref=strautomator&utm_source=affiliate",
+        "uk": "https://icancycling.com/collections/ican-wheels-frames-europe?ref=strautomator&utm_source=affiliate",
+        "us": "https://icancycling.com/collections/us-warehouse?ref=strautomator&utm_source=affiliate"
+    },
+
+    "cycling-components": "https://icancycling.com/collections/components?ref=strautomator&utm_source=affiliate",
+    "gravel-bike": "https://icancycling.com/collections/gravel-bikes?ref=strautomator&utm_source=affiliate",
+    "gravel-wheels": "https://icancycling.com/collections/gravel-bike-wheels?ref=strautomator&utm_source=affiliate",
+    "mtb": "https://icancycling.com/collections/mtb-bike?ref=strautomator&utm_source=affiliate",
+    "road-bike": "https://icancycling.com/collections/road-bike?ref=strautomator&utm_source=affiliate",
+    "road-wheels": "https://icancycling.com/collections/road-bike-wheelset?ref=strautomator&utm_source=affiliate"
+}

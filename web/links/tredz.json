@@ -1,0 +1,8 @@
+{
+    "default": {
+        "uk": "https://www.awin1.com/cread.php?awinmid=6821&awinaffid=931009"
+    },
+    "search": {
+        "uk": "https://www.awin1.com/cread.php?awinmid=6821&awinaffid=931009&ued=https%3A%2F%2Fwww.tredz.co.uk%2Fsearch%3Fq%3D{{query}}"
+    }
+}
