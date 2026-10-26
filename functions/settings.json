@@ -1,0 +1,8 @@
+// STRAUTOMATOR FUNCTION SETTINGS
+// These settings are applied to Google Cloud Functions only.
+
+{
+    "app": {
+        "url": "https://strautomator.com/"
+    }
+}

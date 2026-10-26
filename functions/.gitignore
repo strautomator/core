@@ -1,0 +1,6 @@
+.history
+github/
+lib/
+node_modules/
+settings.local.json
+settings.secret.json
