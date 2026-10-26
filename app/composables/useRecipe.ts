@@ -27,7 +27,11 @@ const buildActivityTags = (): {mainActivityTags: RecipeTag[]; extraActivityTags:
         {value: "cadenceAvg", label: "Avg cadence (RPM)"},
         {value: "cadenceSpm", label: "Avg cadence (SPM)"},
         {value: "elevationGain", label: "Elevation gain"},
+        {value: "elevationLoss", label: "Elevation loss"},
+        {value: "elevationMin", label: "Min elevation"},
         {value: "elevationMax", label: "Max elevation"},
+        {value: "elevationStart", label: "Start altitude"},
+        {value: "elevationEnd", label: "End altitude"},
         {value: "climbingRatio", label: "Climbing ratio"},
         {value: "totalTime", label: "Total time"},
         {value: "movingTime", label: "Moving time"},
@@ -72,7 +76,14 @@ const buildActivityTags = (): {mainActivityTags: RecipeTag[]; extraActivityTags:
         {value: "garmin.laps.distance", label: "Garmin: Active lap distances"},
         {value: "garmin.laps.ascent", label: "Garmin: Active lap ascents"},
         {value: "garmin.laps.descent", label: "Garmin: Active lap descents"},
-        {value: "garmin.laps.calories", label: "Garmin: Active lap calories"}
+        {value: "garmin.laps.calories", label: "Garmin: Active lap calories"},
+        {value: "garmin.deviceLaps.totalTime", label: "Garmin: Device lap times"},
+        {value: "garmin.deviceLaps.distance", label: "Garmin: Device lap distances"},
+        {value: "garmin.deviceLaps.speedAvg", label: "Garmin: Device lap avg speeds"},
+        {value: "garmin.deviceLaps.ascent", label: "Garmin: Device lap ascents"},
+        {value: "garmin.deviceLaps.descent", label: "Garmin: Device lap descents"},
+        {value: "garmin.deviceLaps.calories", label: "Garmin: Device lap calories"},
+        {value: "garmin.deviceLapsText", label: "Garmin: Device lap summaries"}
     ]
 
     // Wahoo tags.
@@ -86,14 +97,23 @@ const buildActivityTags = (): {mainActivityTags: RecipeTag[]; extraActivityTags:
         {value: "wahoo.laps.distance", label: "Wahoo: Active lap distances"},
         {value: "wahoo.laps.ascent", label: "Wahoo: Active lap ascents"},
         {value: "wahoo.laps.descent", label: "Wahoo: Active lap descents"},
-        {value: "wahoo.laps.calories", label: "Wahoo: Active lap calories"}
+        {value: "wahoo.laps.calories", label: "Wahoo: Active lap calories"},
+        {value: "wahoo.deviceLaps.totalTime", label: "Wahoo: Device lap times"},
+        {value: "wahoo.deviceLaps.distance", label: "Wahoo: Device lap distances"},
+        {value: "wahoo.deviceLaps.speedAvg", label: "Wahoo: Device lap avg speeds"},
+        {value: "wahoo.deviceLaps.ascent", label: "Wahoo: Device lap ascents"},
+        {value: "wahoo.deviceLaps.descent", label: "Wahoo: Device lap descents"},
+        {value: "wahoo.deviceLaps.calories", label: "Wahoo: Device lap calories"},
+        {value: "wahoo.deviceLapsText", label: "Wahoo: Device lap summaries"}
     ]
 
     // Activity lap tags.
     const lapTags: RecipeTag[] = [
         {value: "lapCount", label: "Lap count"},
         {value: "lapDistance", label: "Lap distance"},
-        {value: "lapTime", label: "Lap time"}
+        {value: "lapDistances", label: "Lap distances"},
+        {value: "lapTime", label: "Lap time"},
+        {value: "lapTimes", label: "Lap times"}
     ]
 
     // Activity location tags.
