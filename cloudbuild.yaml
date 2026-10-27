@@ -113,7 +113,7 @@ steps:
                       --memory="$$4" \
                       --timeout=540s \
                       --source=/workspace/.functions-dist \
-                      --update-env-vars=SMU_gcp_downloadSettings_bucket=${_SETTINGS_BUCKET} \
+                      --update-env-vars=SMU_gcp_projectId=${PROJECT_ID},SMU_gcp_downloadSettings_bucket=${_SETTINGS_BUCKET} \
                       --quiet > "/workspace/.deploy-$$1.log" 2>&1 \
                       && echo "Deployed $$1" \
                       || { echo "FAILED to deploy $$1"; cat "/workspace/.deploy-$$1.log"; return 1; }
