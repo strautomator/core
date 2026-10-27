@@ -79,7 +79,7 @@ export const checkSpotify = async () => {
                 const dateExpiry = dayjs(user.spotify.dateRefreshExpiry)
 
                 // Token has expired? Unlink the Spotify profile and let the user know about it.
-                if (expiryDay <= today) {
+                if (dateExpiry.isBefore(dayjs())) {
                     const nOptions: Partial<AuthNotification> = {
                         title: "Spotify account unlinked",
                         body: "Your Spotify authentication has expired, so the account was unlinked from Strautomator. Please login to Spotify again if you wish to keep using its features.",
