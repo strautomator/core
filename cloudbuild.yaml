@@ -92,6 +92,7 @@ steps:
                   --timeout=120s \
                   --max-instances=3 \
                   --allow-unauthenticated \
+                  --update-env-vars=SMU_gcp_projectId=${PROJECT_ID},SMU_gcp_downloadSettings_bucket=${_SETTINGS_BUCKET} \
                   --quiet
 
     - id: functions-deploy
