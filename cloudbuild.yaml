@@ -1,0 +1,129 @@
+# STRAUTOMATOR CLOUD BUILD
+# Builds the web Docker image and the Cloud Functions package. Deployment to
+# production happens only when _DEPLOY is "true", which is set exclusively by the
+# trigger for version tags (v*). Builds from master and PRs never push or deploy.
+# The project ID comes from the built-in PROJECT_ID, and deployment-specific values
+# (like _SETTINGS_BUCKET) are set on the deploy trigger, so they're not public.
+
+substitutions:
+    _DEPLOY: "false"
+    _RUN_SERVICE: strautomator-web-eu
+    _RUN_REGION: europe-west4
+    _FUNCTIONS_REGION: europe-west1
+    _FUNCTIONS_RUNTIME: nodejs22
+    _SETTINGS_BUCKET: ""
+
+options:
+    logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s
+
+steps:
+    - id: check-release
+      name: gcr.io/cloud-builders/gcloud
+      entrypoint: bash
+      args:
+          - -c
+          - |
+              if [ "${_DEPLOY}" = "true" ] && [ -z "${TAG_NAME}" ]; then
+                  echo "Deployments must be triggered by a version tag."
+                  exit 1
+              fi
+              if [ "${_DEPLOY}" = "true" ] && [ -z "${_SETTINGS_BUCKET}" ]; then
+                  echo "Deployments require the _SETTINGS_BUCKET substitution to be set on the trigger."
+                  exit 1
+              fi
+
+    - id: web-build
+      name: gcr.io/cloud-builders/docker
+      waitFor: ["check-release"]
+      entrypoint: bash
+      args:
+          - -c
+          - |
+              set -e
+              docker build -f web/Dockerfile -t gcr.io/${PROJECT_ID}/web:build-${BUILD_ID} .
+              if [ "${_DEPLOY}" = "true" ]; then
+                  docker tag gcr.io/${PROJECT_ID}/web:build-${BUILD_ID} gcr.io/${PROJECT_ID}/web:${TAG_NAME}
+                  docker tag gcr.io/${PROJECT_ID}/web:build-${BUILD_ID} gcr.io/${PROJECT_ID}/web:latest
+                  docker push gcr.io/${PROJECT_ID}/web:${TAG_NAME}
+                  docker push gcr.io/${PROJECT_ID}/web:latest
+              fi
+
+    - id: functions-build
+      name: node:26-alpine
+      waitFor: ["check-release"]
+      entrypoint: sh
+      args:
+          - -c
+          - |
+              set -e
+              # Build on a copy, so the workspace isn't changed while the web image is built.
+              SRC=/tmp/src
+              DIST=/workspace/.functions-dist
+              mkdir -p $$SRC && cp -R /workspace/core /workspace/functions $$SRC/
+              cd $$SRC/core && npm ci --no-audit --no-fund
+              cd $$SRC/functions && npm ci --no-audit --no-fund && npx tsc
+              node -e "const f = require('./index.js'); console.log('Functions:', Object.keys(f).join(', ')); process.exit(0)"
+              rm -rf $$DIST && mkdir -p $$DIST
+              cp -R index.js settings.json package.json lib $$DIST/
+              cd $$SRC && npm pack ./core --pack-destination $$DIST --ignore-scripts
+              cd $$DIST
+              TGZ=$$(ls strautomator-core-*.tgz)
+              npm pkg set dependencies.strautomator-core=file:./$$TGZ
+              npm pkg delete devDependencies
+              ls -la $$DIST
+
+    - id: web-deploy
+      name: gcr.io/cloud-builders/gcloud
+      waitFor: ["web-build", "functions-build"]
+      entrypoint: bash
+      args:
+          - -c
+          - |
+              set -e
+              if [ "${_DEPLOY}" != "true" ]; then echo "Build only, skipping web deployment."; exit 0; fi
+              gcloud run deploy ${_RUN_SERVICE} \
+                  --image=gcr.io/${PROJECT_ID}/web:${TAG_NAME} \
+                  --region=${_RUN_REGION} \
+                  --platform=managed \
+                  --concurrency=999 \
+                  --memory=600Mi \
+                  --timeout=120s \
+                  --max-instances=3 \
+                  --allow-unauthenticated \
+                  --quiet
+
+    - id: functions-deploy
+      name: gcr.io/cloud-builders/gcloud
+      waitFor: ["web-build", "functions-build"]
+      entrypoint: bash
+      args:
+          - -c
+          - |
+              set -e
+              if [ "${_DEPLOY}" != "true" ]; then echo "Build only, skipping functions deployment."; exit 0; fi
+              deploy() {
+                  gcloud functions deploy "$$1" \
+                      --no-gen2 \
+                      --region=${_FUNCTIONS_REGION} \
+                      --runtime=${_FUNCTIONS_RUNTIME} \
+                      --trigger-topic="$$2" \
+                      --entry-point="$$3" \
+                      --memory="$$4" \
+                      --timeout=540s \
+                      --source=/workspace/.functions-dist \
+                      --update-env-vars=SMU_gcp_downloadSettings_bucket=${_SETTINGS_BUCKET} \
+                      --quiet > "/workspace/.deploy-$$1.log" 2>&1 \
+                      && echo "Deployed $$1" \
+                      || { echo "FAILED to deploy $$1"; cat "/workspace/.deploy-$$1.log"; return 1; }
+              }
+              pids=""
+              deploy hourly-tasks hourly-tasks hourlyTasks 512MB & pids="$$pids $$!"
+              deploy daily-tasks daily-tasks dailyTasks 512MB & pids="$$pids $$!"
+              deploy weekly-tasks weekly-tasks weeklyTasks 512MB & pids="$$pids $$!"
+              deploy monthly-tasks monthly-tasks monthlyTasks 512MB & pids="$$pids $$!"
+              deploy weekend-maintenance weekend-maintenance weekendMaintenance 1024MB & pids="$$pids $$!"
+              failed=0
+              for pid in $$pids; do wait $$pid || failed=1; done
+              exit $$failed
