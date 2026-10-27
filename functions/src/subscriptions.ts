@@ -203,7 +203,7 @@ export const checkGitHub = async () => {
                     // Make sure PRO users are still active sponsors on GitHub.
                     if (liveData) {
                         const hasLive = liveData.find((s) => s.id == subscription.id)
-                        const hasActive = activeSubs.find((s) => s.userId == subscription.userId && subscription.source != "github")
+                        const hasActive = activeSubs.find((s) => s.userId == subscription.userId && s.source != "github")
                         if (liveData && !hasLive && !hasActive && !user.paddleId) {
                             logger.info("F.Subscriptions.checkGitHub", core.logHelper.subscriptionUser(subscription), "Not found or active on GitHub")
                             subscription.status = "EXPIRED"
