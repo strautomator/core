@@ -14,11 +14,12 @@ dayjs.extend(dayjsLocalizedFormat)
 
 /**
  * Helper to get the refresh token expiry date of a user, as a plain YYYY-MM-DD string.
+ * Returns null if the user has no refresh token expiry date set.
  * @param user The user.
  */
-const refreshExpiryDay = (user: UserData): string => {
+const refreshExpiryDay = (user: UserData): string | null => {
     const dateExpiry = user.spotify?.dateRefreshExpiry
-    return dayjs(dateExpiry || new Date()).format("YYYY-MM-DD")
+    return dateExpiry ? dayjs(dateExpiry).format("YYYY-MM-DD") : null
 }
 
 /**
