@@ -340,7 +340,7 @@ export const checkPaddle = async () => {
                     if (user.subscriptionId == subscription.id && ["SUSPENDED", "CANCELLED", "EXPIRED"].includes(paddleSubscription.status)) {
                         const lastPaymentDate = dayjs.utc(paddleSubscription.dateLastPayment || paddleSubscription.dateUpdated)
                         const expiryDate = lastPaymentDate.add(paddleSubscription.frequency == "monthly" ? 29 : 364, "days")
-                        const hasActive = activeSubs.find((a) => a.userId == subscription.userId)
+                        const hasActive = activeSubs.find((a) => a.userId == subscription.userId && a.id != subscription.id)
                         if (!hasActive && now.isAfter(expiryDate)) {
                             logger.info("F.Subscriptions.checkPaddle", core.logHelper.subscriptionUser(subscription), "Unpaid subscription, reverting to Free")
                             await core.users.switchToFree(user, paddleSubscription)
