@@ -320,9 +320,11 @@ export const checkPaddle = async () => {
                     const liveData = await core.paddle.subscriptions.getSubscription(subscription.id)
                     const paddleSubscription = subscription as PaddleSubscription
                     if (!liveData) {
-                        paddleSubscription.dateExpiry = now.add(1, "month").toDate()
-                        paddleSubscription.pendingUpdate = true
-                        logger.warn("F.Subscriptions.checkPaddle", core.logHelper.subscriptionUser(subscription), "Not found on Paddle, will expire next month")
+                        if (!paddleSubscription.dateExpiry) {
+                            paddleSubscription.dateExpiry = now.add(1, "month").toDate()
+                            paddleSubscription.pendingUpdate = true
+                            logger.warn("F.Subscriptions.checkPaddle", core.logHelper.subscriptionUser(subscription), "Not found on Paddle, will expire next month")
+                        }
                         continue
                     }
 
