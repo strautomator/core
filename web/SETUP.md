@@ -509,7 +509,7 @@ docker build -f web/Dockerfile -t strautomator-web .
 docker run -d --name strautomator -p 8080:8080 \
     -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp.json \
     -v ~/gcp-strautomator.json:/secrets/gcp.json:ro \
-    -v "$PWD/settings.secret.json":/app/settings.secret.json:ro \
+    -v "$PWD/web/settings.secret.json":/app/settings.secret.json:ro \
     strautomator-web
 ```
 
