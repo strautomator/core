@@ -265,16 +265,30 @@ export const countRecipeUsage = async (): Promise<any> => {
 
     try {
         const recipeUsage: any = {}
-        const users = await core.users.getActive()
+        let userCount = 0
 
+        // Start with zero counts, so all keys are present even if there are no active users.
         for (let pl of core.recipes.propertyList) {
-            recipeUsage[`condition.${pl.value}`] = _.sum(users.map((u) => Object.values(u.recipes || []).filter((r) => r.conditions.find((rc) => rc.property == pl.value)).length))
+            recipeUsage[`condition.${pl.value}`] = 0
         }
         for (let al of core.recipes.actionList) {
-            recipeUsage[`action.${al.value}`] = _.sum(users.map((u) => Object.values(u.recipes || []).filter((r) => r.actions.find((ra) => ra.type == al.value)).length))
+            recipeUsage[`action.${al.value}`] = 0
         }
 
-        logger.info("F.Users.countSubscriptions", `Counted recipe usage for ${users.length} users`)
+        // Count usage page by page.
+        for await (const users of core.users.getActivePaged()) {
+            for (let pl of core.recipes.propertyList) {
+                const key = `condition.${pl.value}`
+                recipeUsage[key] += _.sum(users.map((u) => Object.values(u.recipes || []).filter((r) => r.conditions.find((rc) => rc.property == pl.value)).length))
+            }
+            for (let al of core.recipes.actionList) {
+                const key = `action.${al.value}`
+                recipeUsage[key] += _.sum(users.map((u) => Object.values(u.recipes || []).filter((r) => r.actions.find((ra) => ra.type == al.value)).length))
+            }
+            userCount += users.length
+        }
+
+        logger.info("F.Users.countRecipeUsage", `Counted recipe usage for ${userCount} users`)
         return recipeUsage
     } catch (ex) {
         logger.error("F.Users.countRecipeUsage", ex)

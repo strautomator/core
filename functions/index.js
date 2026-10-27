@@ -14,8 +14,8 @@ const startupCheck = async (enabledModules) => {
 const settings = require("setmeup").settings
 const affiliates = require("./lib/affiliates")
 const calendar = require("./lib/calendar")
+const garmin = require("./lib/garmin")
 const gearwear = require("./lib/gearwear")
-const maps = require("./lib/maps")
 const notifications = require("./lib/notifications")
 const spotify = require("./lib/spotify")
 const strava = require("./lib/strava")
@@ -55,7 +55,7 @@ exports.hourlyTasks = async () => {
 
 // Daily tasks wrapper.
 exports.dailyTasks = async () => {
-    await startupCheck(["affiliates", "calendar", "gearwear", "komoot", "mailer", "recipes", "strava", "subscriptions", "users"])
+    await startupCheck(["affiliates", "calendar", "gearwear", "komoot", "mailer", "notifications", "recipes", "strava", "subscriptions", "users"])
 
     try {
         await gearwear.processRecentActivities()
@@ -65,6 +65,7 @@ exports.dailyTasks = async () => {
         await strava.apiCheckStatus()
         await users.resetRecipeCounters()
         await subscriptions.checkExpiring()
+        await spotify.checkSpotify()
         await affiliates.downloadAwinPromotions()
     } catch (ex) {
         logger.warn("Functions.dailyTasks", ex.message || ex.toString())
@@ -81,6 +82,7 @@ exports.monthlyTasks = async () => {
         await gearwear.notifyRecentIdle()
         await users.deleteArchivedStats()
         await subscriptions.checkMissing()
+        await subscriptions.checkPaddle()
         await subscriptions.checkGitHub()
         await subscriptions.checkPayPal()
     } catch (ex) {
@@ -91,18 +93,17 @@ exports.monthlyTasks = async () => {
 
 // Weekend maintenance wrapper.
 exports.weekendMaintenance = async () => {
-    await startupCheck(["calendar", "gearwear", "maps", "notifications", "paddle", "spotify", "strava", "subscriptions", "users", "wahoo"])
+    await startupCheck(["calendar", "garmin", "gearwear", "maps", "notifications", "paddle", "spotify", "strava", "subscriptions", "users", "wahoo"])
 
     try {
-        await maps.cleanup()
-        await notifications.cleanup()
         await strava.cleanupOldActivities()
         await users.cleanupIdle()
         await users.disableFailingRecipes()
         await users.updateFitnessLevel()
         await subscriptions.checkNonActive()
         await spotify.refreshTokens()
-        await wahoo.refreshTokens()
+        await garmin.refreshTokens()
+        await wahoo.refreshProfiles()
         await updateCounters()
     } catch (ex) {
         logger.warn("Functions.weekendMaintenance", ex.message || ex.toString())
