@@ -10,7 +10,7 @@ Contains the core business logic of Strautomator. The vast majority of the backe
 
 - To clear and install everything from scratch: `make clean update`.
 - To just update dependencies: `make update`.
-- Deployment means pushing to master on GitHub.
+- The core is not deployed by itself. It is bundled with the web and functions, which are deployed to production when a new version tag is pushed (`make deploy-git` on the repository root).
 
 ## Testing
 

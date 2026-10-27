@@ -33,9 +33,11 @@ Browser ──HTTPS──► Cloudflare (tunnel or proxy) ──► Strautomator
                                                         └──► optional: weather, music, email, AI, Garmin, Wahoo...
 ```
 
-- **[strautomator/web](https://github.com/strautomator/web)** (this repo) is the website and API.
-- **[strautomator/core](https://github.com/strautomator/core)** has most of the business logic and its own default settings. It is installed as an npm dependency of the web.
-- **[strautomator/functions](https://github.com/strautomator/functions)** has scheduled jobs for production. You don't need them for a local setup. See [section 9](#scheduled-jobs) for details.
+Everything lives in the [ramadasnet/strautomator](https://github.com/ramadasnet/strautomator) monorepo:
+
+- **`web/`** (this folder) is the website and API.
+- **`core/`** has most of the business logic and its own default settings. It is installed as a local npm dependency of the web (`file:../core`).
+- **`functions/`** has scheduled jobs for production. You don't need them for a local setup. See [section 9](#scheduled-jobs) for details.
 
 The database is always **Google Cloud Firestore**, even if you run the app on a VPS somewhere else. You need a Google Cloud project, but the free tier is enough for personal use.
 
@@ -50,15 +52,10 @@ The database is always **Google Cloud Firestore**, even if you run the app on a 
 | **A domain on Cloudflare** (recommended)  | Public HTTPS URL for Strava webhooks | You can skip this with a Cloudflare _quick tunnel_, a reverse proxy, or plain `localhost`. See [section 4](#4-get-a-public-https-url).                                                                   |
 | **cloudflared** (recommended)             | Creates the tunnel                   | Install it with `brew install cloudflared` or [another method](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/).                                                 |
 
-## 3. Clone the repositories
-
-Create a root folder and clone **both** repositories as siblings. `make run` expects the core repo at `../core`.
+## 3. Clone the repository
 
 ```sh
-mkdir ~/strautomator
-cd ~/strautomator
-git clone https://github.com/strautomator/core.git
-git clone https://github.com/strautomator/web.git
+git clone https://github.com/ramadasnet/strautomator.git ~/strautomator
 ```
 
 Your folder should look like this:
@@ -66,10 +63,11 @@ Your folder should look like this:
 ```
 ~/strautomator/
 ├── core/
+├── functions/
 └── web/
 ```
 
-Install the dependencies and compile the core:
+Install the dependencies and compile the core. The core must be installed first, as the web installs a copy of it from `../core`:
 
 ```sh
 cd ~/strautomator/core
@@ -506,7 +504,8 @@ For the tunnel, point the `ingress` in `config.yml` to `http://localhost:8080`, 
 ### 9.4 Docker (alternative)
 
 ```sh
-docker build -t strautomator-web .
+cd ~/strautomator
+docker build -f web/Dockerfile -t strautomator-web .
 docker run -d --name strautomator -p 8080:8080 \
     -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp.json \
     -v ~/gcp-strautomator.json:/secrets/gcp.json:ro \
@@ -514,13 +513,13 @@ docker run -d --name strautomator -p 8080:8080 \
     strautomator-web
 ```
 
-The app URL comes from `app.url` in `settings.secret.json` (or pass it as `-e SMU_app_url=...`). The Docker image installs `strautomator-core` from GitHub, **not** from your local `../core` folder. The Makefile's `docker-build` target builds for `linux/arm64`. Use plain `docker build` to build for your own architecture.
+The app URL comes from `app.url` in `settings.secret.json` (or pass it as `-e SMU_app_url=...`). The image must be built from the repository root, as it compiles and bundles the local `core/` folder. The Makefile's `docker-build` target builds for `linux/arm64`. Use plain `docker build` to build for your own architecture.
 
 ### Scheduled jobs
 
-Development mode runs several jobs inside the app: delayed activity processing (about every 2 minutes), calendar regeneration (about every 3 minutes), plus GearWear and cache cleanup once at startup. They only run when the `STRAUTOMATOR_CRON` environment variable is set, which the `npm` scripts behind `make run` do for you. **Production mode runs none of them.** The official site runs them as Cloud Run jobs from [strautomator/functions](https://github.com/strautomator/functions). On a VPS you have two options:
+Development mode runs several jobs inside the app: delayed activity processing (about every 2 minutes), calendar regeneration (about every 3 minutes), plus GearWear and cache cleanup once at startup. They only run when the `STRAUTOMATOR_CRON` environment variable is set, which the `npm` scripts behind `make run` do for you. **Production mode runs none of them.** The official site runs them as Cloud Functions from the [functions](../functions) folder. On a VPS you have two options:
 
-- Deploy the functions repo on your own infrastructure. Or,
+- Deploy the functions on your own infrastructure. Or,
 - at minimum, process delayed activities on a schedule with a cron entry. The request must go through your public Cloudflare URL, so it gets past `requireCloudflare`:
   ```cron
   */5 * * * * curl -fsS "https://strautomator.example.com/api/strava/webhook/<strava.api.urlToken>/process-activity-queue" > /dev/null
@@ -593,8 +592,9 @@ To see more detail on any problem, set `"app": {"debug": true}` in `settings.loc
 ## 11. Updating
 
 ```sh
-cd ~/strautomator/core && git pull && npm install && make build
-cd ~/strautomator/web  && git pull && npm install
+cd ~/strautomator && git pull
+cd ~/strautomator/core && npm install && make build
+cd ~/strautomator/web  && npm install
 ```
 
 Then restart the app (`make run`, or `sudo systemctl restart strautomator`). In production, also rerun the build commands from [9.2](#92-build-and-start).
