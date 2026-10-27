@@ -190,7 +190,7 @@ export const checkGitHub = async () => {
                 try {
                     const user = await core.users.getById(subscription.userId)
                     await validateSubscription(subscription, user)
-                    if (!user.isPro) {
+                    if (!user || !user.isPro) {
                         continue
                     }
 
