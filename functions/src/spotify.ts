@@ -65,7 +65,6 @@ export const checkSpotify = async () => {
 
     try {
         const now = dayjs().startOf("day")
-        const today = now.format("YYYY-MM-DD")
         const warningDays: string[] = settings.spotify.reauthNotifyDays.map((d: number) => now.add(d, "days").format("YYYY-MM-DD"))
         const users = await core.users.getWithSpotify()
         let warned = 0
