@@ -271,7 +271,7 @@ export const checkPayPal = async () => {
                         if (["SUSPENDED", "CANCELLED", "EXPIRED"].includes(paypalSubscription.status)) {
                             const lastPaymentDate = dayjs.utc(liveData.lastPayment?.date || liveData.dateUpdated)
                             const expiryDate = paypalSubscription.frequency == "monthly" ? lastPaymentDate.add(4, "weeks") : lastPaymentDate.add(11, "months")
-                            const hasActive = activeSubs.find((a) => a.userId == subscription.userId)
+                            const hasActive = activeSubs.find((a) => a.userId == subscription.userId && a.id != subscription.id)
                             if (!hasActive && !user.paddleId && now.isAfter(expiryDate)) {
                                 logger.info("F.Subscriptions.checkPayPal", core.logHelper.subscriptionUser(subscription), "Unpaid subscription")
                                 await core.users.switchToFree(user, paypalSubscription)
