@@ -1,6 +1,8 @@
 # Strautomator Web
 
-This is Strautomator's web frontend and API, built with Nuxt (Vue 3 + Nitro), Vuetify and Pinia. It depends on the [Strautomator Core](https://github.com/strautomator/core) to run. Please make sure you read the docs for the Core first before proceeding with the Web setup.
+This is Strautomator's web frontend and API, built with Nuxt (Vue 3 + Nitro), Vuetify and Pinia. It depends on the [Strautomator Core](../core) to run. Please make sure you read the docs for the Core first before proceeding with the Web setup.
+
+For an overview of the architecture and a quick start of the whole monorepo, see the [main README](../README.md).
 
 ## Settings
 
@@ -12,7 +14,7 @@ Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) modul
 - **settings.secret.json** - private credentials and secrets, excluded from the GIT repo
 - **settings.local.json** - private local-only settings, excluded from the GIT repo
 
-Please note that the [Core](https://github.com/strautomator/core) also has its own collection of settings files as well. If the same setting is define on the Core and on the Web, the Web settings has the higher priority.
+Please note that the [Core](../core) also has its own collection of settings files as well. If the same setting is define on the Core and on the Web, the Web settings has the higher priority.
 
 ## Local setup
 
@@ -20,7 +22,7 @@ For a complete step-by-step self-hosting guide, please read [SETUP.md](SETUP.md)
 
 ### Local settings
 
-Make a copy of the [settings.secret.json.sample](https://github.com/strautomator/web/blob/master/settings.secret.json.sample) and name it `settings.secret.json`. This is where you'll store all the credentials and sensitive keys. The file stays in plain text unless you encrypt it with `$ npx setmeup encrypt settings.secret.json` (see [SETUP.md](SETUP.md) for details).
+Make a copy of the [settings.secret.json.sample](settings.secret.json.sample) and name it `settings.secret.json`. This is where you'll store all the credentials and sensitive keys. The file stays in plain text unless you encrypt it with `$ npx setmeup encrypt settings.secret.json` (see [SETUP.md](SETUP.md) for details).
 
 For other non-sensitive data, you can create a `settings.local.json`. This file is kept in clear text on your local machine.
 
@@ -78,10 +80,10 @@ Also note that even thou this project is open source, you might need to adapt so
 
 Basic deployment samples are provided:
 
-- App Engine: [app.yaml](https://github.com/strautomator/web/blob/master/app.yaml.sample) (not tested in production).
+- App Engine: [app.yaml](app.yaml.sample) (not tested in production).
 - VM or VPS: see the systemd and Docker instructions on [SETUP.md](SETUP.md).
-- Cloud Run: create a [Cloud Build trigger](https://cloud.google.com/cloud-build/docs/automating-builds/create-manage-triggers) to update your service whenever there's a new version pushed to your GIT fork.
+- Cloud Run: the [cloudbuild.yaml](../cloudbuild.yaml) on the repository root builds the Docker image and deploys it, together with the scheduled functions, whenever a new version tag is pushed.
 
 ### Scheduled functions
 
-Please note that some features depend on scheduled functions to work. These can be found [here](https://github.com/strautomator/functions), and need to be deployed separately to your environment of choice.
+Please note that some features depend on scheduled functions to work. These can be found in the [functions](../functions) folder. In production they are deployed by the same Cloud Build pipeline as the web. When self-hosting, you need to deploy or schedule them yourself, see [SETUP.md](SETUP.md#scheduled-jobs).

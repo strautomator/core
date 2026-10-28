@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "lib",
+        "target": "esnext",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "esModuleInterop": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "declaration": true,
+        "skipLibCheck": true,
+        "strict": false,
+        "paths": {
+            "strautomator-core": ["../core/", "./node_modules/strautomator-core/"]
+        }
+    },
+    "exclude": ["node_modules/", "lib/", "github/"]
+}

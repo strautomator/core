@@ -1,0 +1,4 @@
+.DS_Store
+settings.secret.json
+settings.test.json
+*.log

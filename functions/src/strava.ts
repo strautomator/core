@@ -146,10 +146,10 @@ export const countActivities = async (): Promise<any> => {
 
     try {
         const total = await core.database.count("activities")
-        const withLinkback = await core.database.count("activities", ["linkback", "==", true])
+        const withBacklink = (await core.database.count("activities", ["backlink", "==", true])) + (await core.database.count("activities", ["linkback", "==", true]))
 
-        logger.info("F.Strava.countActivities", `Total: ${total}`, `With linkback: ${withLinkback}`)
-        return {total: total, withLinkback: withLinkback}
+        logger.info("F.Strava.countActivities", `Total: ${total}`, `With backlink: ${withBacklink}`)
+        return {total: total, withBacklink: withBacklink}
     } catch (ex) {
         logger.error("F.Strava.countActivities", ex)
     }

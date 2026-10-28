@@ -1,6 +1,16 @@
 # Strautomator Core
 
-This is the core module of Strautomator, containing most of its business logic. This project doesn't run by itself, but is used by the [Web](https://github.com/strautomator/web) and [Functions](https://github.com/strautomator/functions).
+This is the core module of Strautomator, containing most of its business logic. This project doesn't run by itself, but is used by the [Web](../web) and [Functions](../functions).
+
+For an overview of the architecture and a quick start of the whole monorepo, see the [main README](../README.md).
+
+## Using the core
+
+The web and functions depend on the core as a local npm package (`file:../core`). Their `.npmrc` sets `install-links=true`, so npm installs a copy of the core (instead of a symlink), the same way it would install a regular package.
+
+- Run `npm install` here first. It also compiles the TypeScript sources to `lib/`.
+- After changing the core, compile it with `make build`. The `make run` commands of the web and functions copy the compiled `lib/` and the settings files into their `node_modules/strautomator-core`.
+- There's no need to publish or deploy the core. The web Docker image and the functions package both bundle the core from this folder.
 
 ## Getting started
 
@@ -61,11 +71,11 @@ Additionally, you can also define settings via environment variables, prefixed b
 
 If you want to download settings from Google Cloud Storage, you must define the `gcp.downloadSettings.bucket` (or via the `$SMU_gcp_downloadSettings_bucket` env variable). The default filename is `settings.secret.json`, but you can change that as well. The settings file downloaded from GCS will NOT persist on the disk.
 
-Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](https://github.com/strautomator/web). Same procedure, same logic.
+Please note that settings specific to the web server, API and other web-specific features are defined on files directly on the [Strautomator Web](../web). Same procedure, same logic.
 
 ## Database
 
-By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](https://github.com/strautomator/core/blob/master/src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, like MongoDB or DynamoDB.
+By default Strautomator uses Google Cloud Firestore to store its data. But the [database wrapper](src/database/index.ts) was made in such a way that it should be pretty easy to implement other document based data stores as well, like MongoDB or DynamoDB.
 
 The following collections are used:
 

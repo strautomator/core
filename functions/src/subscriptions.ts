@@ -1,6 +1,6 @@
 // Strautomator Functions: Subscriptions
 
-import {BaseSubscription, GitHubSubscription, PayPalSubscription, UserData} from "strautomator-core"
+import {BaseSubscription, GitHubSubscription, PaddleSubscription, PayPalSubscription, UserData} from "strautomator-core"
 import {FieldValue} from "@google-cloud/firestore"
 import core = require("strautomator-core")
 import _ from "lodash"
@@ -133,14 +133,15 @@ export const checkNonActive = async () => {
         }
 
         // Iterate and validate inactive subs.
-        const inactiveSubs = await core.subscriptions.getNonActive()
-        const subs = _.shuffle(_.remove(inactiveSubs, (i) => activeSubs.find((a) => a.userId == i.userId)))
-        for (let subscription of subs) {
-            const user = await core.users.getById(subscription.userId)
-            await validateSubscription(subscription, user)
-        }
+        for await (const inactiveSubs of core.subscriptions.getNonActivePaged()) {
+            const subs = _.shuffle(inactiveSubs.filter((i) => activeSubs.find((a) => a.userId == i.userId)))
+            for (let subscription of subs) {
+                const user = await core.users.getById(subscription.userId)
+                await validateSubscription(subscription, user)
+            }
 
-        await saveSubscriptions(subs)
+            await saveSubscriptions(subs)
+        }
     } catch (ex) {
         logger.error("F.Subscriptions.checkNonActive", ex)
     }
@@ -153,16 +154,16 @@ export const checkMissing = async () => {
     logger.info("F.Subscriptions.checkMissing.start")
 
     try {
-        const proUsers = await core.users.getPro()
-
-        for (let user of proUsers) {
-            try {
-                const subscription = user.subscriptionId ? await core.subscriptions.getById(user.subscriptionId) : null
-                if (!subscription) {
-                    await core.users.switchToFree(user)
+        for await (const proUsers of core.users.getProPaged()) {
+            for (let user of proUsers) {
+                try {
+                    const subscription = user.subscriptionId ? await core.subscriptions.getById(user.subscriptionId) : null
+                    if (!subscription) {
+                        await core.users.switchToFree(user)
+                    }
+                } catch (userEx) {
+                    logger.error("F.Subscriptions.checkMissing", core.logHelper.user(user), userEx)
                 }
-            } catch (userEx) {
-                logger.error("F.Subscriptions.checkMissing", core.logHelper.user(user), userEx)
             }
         }
     } catch (ex) {
@@ -183,38 +184,40 @@ export const checkGitHub = async () => {
         const liveData = await core.github.getActiveSponsors()
 
         // Iterate GitHub subscriptions and make sure they're in sync with GitHub Sponsors.
-        const subs = _.shuffle(await core.subscriptions.getAll("github"))
-        for (let subscription of subs) {
-            try {
-                const user = await core.users.getById(subscription.userId)
-                await validateSubscription(subscription, user)
-                if (!user.isPro) {
-                    continue
-                }
-
-                // Skip recent subscriptions.
-                if (now.diff(subscription.dateCreated, "days") < 30) {
-                    logger.info("F.Subscriptions.checkGitHub", core.logHelper.subscriptionUser(subscription), "New subscription skipped")
-                    continue
-                }
-
-                // Make sure PRO users are still active sponsors on GitHub.
-                if (liveData) {
-                    const hasLive = liveData.find((s) => s.id == subscription.id)
-                    const hasActive = activeSubs.find((s) => s.userId == subscription.userId && subscription.source != "github")
-                    if (liveData && !hasLive && !hasActive && !user.paddleId) {
-                        logger.info("F.Subscriptions.checkGitHub", core.logHelper.subscriptionUser(subscription), "Not found or active on GitHub")
-                        subscription.status = "EXPIRED"
-                        subscription.pendingUpdate = true
-                        await core.users.switchToFree(user, subscription)
+        for await (const page of core.subscriptions.getAllPaged("github")) {
+            const subs = _.shuffle(page)
+            for (let subscription of subs) {
+                try {
+                    const user = await core.users.getById(subscription.userId)
+                    await validateSubscription(subscription, user)
+                    if (!user || !user.isPro) {
+                        continue
                     }
-                }
-            } catch (subEx) {
-                logger.error("F.Subscriptions.checkGitHub", core.logHelper.subscriptionUser(subscription), subEx)
-            }
-        }
 
-        await saveSubscriptions(subs)
+                    // Skip recent subscriptions.
+                    if (now.diff(subscription.dateCreated, "days") < 30) {
+                        logger.info("F.Subscriptions.checkGitHub", core.logHelper.subscriptionUser(subscription), "New subscription skipped")
+                        continue
+                    }
+
+                    // Make sure PRO users are still active sponsors on GitHub.
+                    if (liveData) {
+                        const hasLive = liveData.find((s) => s.id == subscription.id)
+                        const hasActive = activeSubs.find((s) => s.userId == subscription.userId && s.source != "github")
+                        if (liveData && !hasLive && !hasActive && !user.paddleId) {
+                            logger.info("F.Subscriptions.checkGitHub", core.logHelper.subscriptionUser(subscription), "Not found or active on GitHub")
+                            subscription.status = "EXPIRED"
+                            subscription.pendingUpdate = true
+                            await core.users.switchToFree(user, subscription)
+                        }
+                    }
+                } catch (subEx) {
+                    logger.error("F.Subscriptions.checkGitHub", core.logHelper.subscriptionUser(subscription), subEx)
+                }
+            }
+
+            await saveSubscriptions(subs)
+        }
     } catch (ex) {
         logger.error("F.Subscriptions.checkGitHub", ex)
     }
@@ -229,60 +232,129 @@ export const checkPayPal = async () => {
 
     try {
         const now = dayjs.utc()
-        const subs = _.shuffle(await core.subscriptions.getAll("paypal"))
-
         // Iterate PayPal subscriptions and make sure their details are up to date.
-        for (let subscription of subs) {
-            try {
-                const user = await core.users.getById(subscription.userId)
-                await validateSubscription(subscription, user)
-                if (!user || !user.isPro) {
-                    continue
-                }
+        for await (const page of core.subscriptions.getAllPaged("paypal")) {
+            const subs = _.shuffle(page)
+            for (let subscription of subs) {
+                try {
+                    const user = await core.users.getById(subscription.userId)
+                    await validateSubscription(subscription, user)
+                    if (!user || !user.isPro) {
+                        continue
+                    }
 
-                // Skip recent subscriptions.
-                if (subscription.frequency != "lifetime" && now.diff(subscription.dateCreated, "weeks") < 4) {
-                    logger.info("F.Subscriptions.checkPayPal", core.logHelper.subscriptionUser(subscription), "Skipped (too recent)")
-                    continue
-                }
+                    // Skip recent subscriptions.
+                    if (subscription.frequency != "lifetime" && now.diff(subscription.dateCreated, "weeks") < 4) {
+                        logger.info("F.Subscriptions.checkPayPal", core.logHelper.subscriptionUser(subscription), "Skipped (too recent)")
+                        continue
+                    }
 
-                // Make sure subscription is in sync with live PayPal data.
-                const liveData = (await core.paypal.subscriptions.getSubscription(subscription.id)) as core.PayPalSubscription
-                const paypalSubscription = subscription as PayPalSubscription
+                    // Make sure subscription is in sync with live PayPal data.
+                    const liveData = (await core.paypal.subscriptions.getSubscription(subscription.id)) as core.PayPalSubscription
+                    const paypalSubscription = subscription as PayPalSubscription
 
-                // Make sure payment data is correct.
-                if (liveData.lastPayment && (!paypalSubscription.lastPayment || dayjs.utc(paypalSubscription.lastPayment.date).format("l") != dayjs.utc(liveData.lastPayment.date).format("l"))) {
-                    paypalSubscription.lastPayment = liveData.lastPayment
-                    paypalSubscription.price = liveData.lastPayment.amount
-                    paypalSubscription.currency = liveData.lastPayment.currency
-                    paypalSubscription.pendingUpdate = true
-                }
-
-                // Update status if it was cancelled and subscription is not lifetime.
-                if (paypalSubscription.frequency != "lifetime") {
-                    if (paypalSubscription.status != liveData.status) {
-                        paypalSubscription.status = liveData.status
+                    // Make sure payment data is correct.
+                    if (liveData.lastPayment && (!paypalSubscription.lastPayment || dayjs.utc(paypalSubscription.lastPayment.date).format("l") != dayjs.utc(liveData.lastPayment.date).format("l"))) {
+                        paypalSubscription.lastPayment = liveData.lastPayment
+                        paypalSubscription.price = liveData.lastPayment.amount
+                        paypalSubscription.currency = liveData.lastPayment.currency
                         paypalSubscription.pendingUpdate = true
                     }
 
-                    if (["SUSPENDED", "CANCELLED", "EXPIRED"].includes(paypalSubscription.status)) {
-                        const lastPaymentDate = dayjs.utc(liveData.lastPayment?.date || liveData.dateUpdated)
-                        const expiryDate = paypalSubscription.frequency == "monthly" ? lastPaymentDate.add(4, "weeks") : lastPaymentDate.add(11, "months")
-                        const hasActive = activeSubs.find((a) => a.userId == subscription.userId)
-                        if (!hasActive && !user.paddleId && now.isAfter(expiryDate)) {
-                            logger.info("F.Subscriptions.checkPayPal", core.logHelper.subscriptionUser(subscription), "Unpaid subscription")
-                            await core.users.switchToFree(user, paypalSubscription)
+                    // Update status if it was cancelled and subscription is not lifetime.
+                    if (paypalSubscription.frequency != "lifetime") {
+                        if (paypalSubscription.status != liveData.status) {
+                            paypalSubscription.status = liveData.status
+                            paypalSubscription.pendingUpdate = true
+                        }
+
+                        if (["SUSPENDED", "CANCELLED", "EXPIRED"].includes(paypalSubscription.status)) {
+                            const lastPaymentDate = dayjs.utc(liveData.lastPayment?.date || liveData.dateUpdated)
+                            const expiryDate = paypalSubscription.frequency == "monthly" ? lastPaymentDate.add(4, "weeks") : lastPaymentDate.add(11, "months")
+                            const hasActive = activeSubs.find((a) => a.userId == subscription.userId && a.id != subscription.id)
+                            if (!hasActive && !user.paddleId && now.isAfter(expiryDate)) {
+                                logger.info("F.Subscriptions.checkPayPal", core.logHelper.subscriptionUser(subscription), "Unpaid subscription")
+                                await core.users.switchToFree(user, paypalSubscription)
+                            }
                         }
                     }
+                } catch (subEx) {
+                    logger.error("F.Subscriptions.checkPayPal", core.logHelper.subscriptionUser(subscription), subEx)
                 }
-            } catch (subEx) {
-                logger.error("F.Subscriptions.checkPayPal", core.logHelper.subscriptionUser(subscription), subEx)
             }
-        }
 
-        await saveSubscriptions(subs)
+            await saveSubscriptions(subs)
+        }
     } catch (ex) {
         logger.error("F.Subscriptions.checkPayPal", ex)
+    }
+}
+
+/**
+ * Validate Paddle subscriptions and make sure they're in sync with Paddle.
+ */
+export const checkPaddle = async () => {
+    logger.info("F.Subscriptions.checkPaddle.start")
+    await needsActiveSubs()
+
+    try {
+        const now = dayjs.utc()
+        // Iterate Paddle subscriptions and make sure their details are up to date.
+        for await (const page of core.subscriptions.getAllPaged("paddle")) {
+            const subs = _.shuffle(page)
+            for (let subscription of subs) {
+                try {
+                    const user = await core.users.getById(subscription.userId)
+                    await validateSubscription(subscription, user)
+                    if (!user || !user.isPro) {
+                        continue
+                    }
+
+                    // Skip recent subscriptions.
+                    if (subscription.frequency == "lifetime" || now.diff(subscription.dateCreated, "weeks") < 4) {
+                        logger.info("F.Subscriptions.checkPaddle", core.logHelper.subscriptionUser(subscription), "Skipped")
+                        continue
+                    }
+
+                    // Make sure subscription is in sync with live Paddle data.
+                    const liveData = await core.paddle.subscriptions.getSubscription(subscription.id)
+                    const paddleSubscription = subscription as PaddleSubscription
+                    if (!liveData) {
+                        if (!paddleSubscription.dateExpiry) {
+                            paddleSubscription.dateExpiry = now.add(1, "month").toDate()
+                            paddleSubscription.pendingUpdate = true
+                            logger.warn("F.Subscriptions.checkPaddle", core.logHelper.subscriptionUser(subscription), "Not found on Paddle, will expire next month")
+                        }
+                        continue
+                    }
+
+                    // Update status based on live data.
+                    const liveStatus = liveData.status == "active" ? "ACTIVE" : liveData.status == "trialing" ? "TRIAL" : liveData.status == "paused" || liveData.status == "past_due" ? "SUSPENDED" : "CANCELLED"
+                    if (paddleSubscription.status != liveStatus) {
+                        logger.info("F.Subscriptions.checkPaddle", core.logHelper.subscriptionUser(subscription), `Status changed: ${paddleSubscription.status} to ${liveStatus}`)
+                        paddleSubscription.status = liveStatus
+                        paddleSubscription.pendingUpdate = true
+                    }
+
+                    // Check if subscription was cancelled or suspended (only if it's the one granting PRO to the user).
+                    if (user.subscriptionId == subscription.id && ["SUSPENDED", "CANCELLED", "EXPIRED"].includes(paddleSubscription.status)) {
+                        const lastPaymentDate = dayjs.utc(paddleSubscription.dateLastPayment || paddleSubscription.dateUpdated)
+                        const expiryDate = lastPaymentDate.add(paddleSubscription.frequency == "monthly" ? 29 : 364, "days")
+                        const hasActive = activeSubs.find((a) => a.userId == subscription.userId && a.id != subscription.id)
+                        if (!hasActive && now.isAfter(expiryDate)) {
+                            logger.info("F.Subscriptions.checkPaddle", core.logHelper.subscriptionUser(subscription), "Unpaid subscription, reverting to Free")
+                            await core.users.switchToFree(user, paddleSubscription)
+                        }
+                    }
+                } catch (subEx) {
+                    logger.error("F.Subscriptions.checkPaddle", core.logHelper.subscriptionUser(subscription), subEx)
+                }
+            }
+
+            await saveSubscriptions(subs)
+        }
+    } catch (ex) {
+        logger.error("F.Subscriptions.checkPaddle", ex)
     }
 }
 

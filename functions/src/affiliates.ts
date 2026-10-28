@@ -8,7 +8,7 @@ import _ from "lodash"
  * Download AWIN promotions.
  */
 export const downloadAwinPromotions = async () => {
-    logger.info("F.Calendar.regenerate.start")
+    logger.info("F.Affiliates.downloadAwinPromotions.start")
 
     try {
         const getCountryFeeds = await core.awin.getCountryFeeds()
@@ -27,7 +27,7 @@ export const downloadAwinPromotions = async () => {
  * Download AWIN product feeds.
  */
 export const downloadAwinProducts = async () => {
-    logger.info("F.Calendar.regenerate.start")
+    logger.info("F.Affiliates.downloadAwinProducts.start")
 
     try {
         const getCountryFeeds = await core.awin.getCountryFeeds()

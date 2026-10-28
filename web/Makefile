@@ -24,9 +24,9 @@ docs:
 build:
 	npm run build
 
-# Docker build.
+# Docker build (from the repo root, as it depends on the local core).
 docker-build:
-	docker buildx build --platform linux/arm64 -t strautomator/web .
+	$(MAKE) -C .. docker-build
 
 # Run the app locally (dev server with hot reload)
 run:
@@ -47,10 +47,8 @@ deploy-app-engine:
 	npm run build
 	gcloud app deploy app.yaml
 
-# Deploy to GIT (by creating a new tag)
+# Deploy web and functions to production (by creating a new tag)
 deploy-git:
-	npm version $(shell date '+%y.%-V%u.1%H%M') --force --allow-same-version
-	git push
-	git push --tags
+	$(MAKE) -C .. deploy-git
 
 .PHONY: docs
