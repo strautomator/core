@@ -2,6 +2,8 @@
 
 This is Strautomator's web frontend and API, built with Nuxt (Vue 3 + Nitro), Vuetify and Pinia. It depends on the [Strautomator Core](../core) to run. Please make sure you read the docs for the Core first before proceeding with the Web setup.
 
+For an overview of the architecture and a quick start of the whole monorepo, see the [main README](../README.md).
+
 ## Settings
 
 Strautomator is using the [SetMeUp](https://github.com/igoramadas/setmeup) module to handle its settings, so for detailed info please check its docs. The settings are split as follows:
@@ -84,4 +86,4 @@ Basic deployment samples are provided:
 
 ### Scheduled functions
 
-Please note that some features depend on scheduled functions to work. These can be found in the [functions](../functions) folder, and need to be deployed separately to your environment of choice.
+Please note that some features depend on scheduled functions to work. These can be found in the [functions](../functions) folder. In production they are deployed by the same Cloud Build pipeline as the web. When self-hosting, you need to deploy or schedule them yourself, see [SETUP.md](SETUP.md#scheduled-jobs).

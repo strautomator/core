@@ -2,6 +2,16 @@
 
 This is the core module of Strautomator, containing most of its business logic. This project doesn't run by itself, but is used by the [Web](../web) and [Functions](../functions).
 
+For an overview of the architecture and a quick start of the whole monorepo, see the [main README](../README.md).
+
+## Using the core
+
+The web and functions depend on the core as a local npm package (`file:../core`). Their `.npmrc` sets `install-links=true`, so npm installs a copy of the core (instead of a symlink), the same way it would install a regular package.
+
+- Run `npm install` here first. It also compiles the TypeScript sources to `lib/`.
+- After changing the core, compile it with `make build`. The `make run` commands of the web and functions copy the compiled `lib/` and the settings files into their `node_modules/strautomator-core`.
+- There's no need to publish or deploy the core. The web Docker image and the functions package both bundle the core from this folder.
+
 ## Getting started
 
 Some main points to know before you start:
