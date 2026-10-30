@@ -160,7 +160,7 @@
                             Strautomator is fully open source, licensed under the AGPL-3.0. Everyone is welcome to view, edit and contribute. And if you are well versed in tech, you can self-host your own instance of the service! PRO features, for
                             free.
                         </p>
-                        <v-btn href="https://github.com/strautomator" target="github" color="primary" variant="outlined" rounded>
+                        <v-btn href="https://github.com/ramadasnet/strautomator" target="github" color="primary" variant="outlined" rounded>
                             <v-icon start>mdi-github</v-icon>
                             View on GitHub
                         </v-btn>

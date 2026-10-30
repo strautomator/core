@@ -208,7 +208,7 @@
                         <p>
                             At our discretion, we may change our Terms and Conditions to reflect updates to the Service, current acceptable practices, or legislative or regulatory changes. If we decide to change our Terms and Conditions, we will post
                             the changes here at the same link by which you are accessing now. The full history of changes to our Terms and Conditions are available in our public source control repository, at the following address:
-                            https://github.com/strautomator/web/blob/master/pages/tc.vue
+                            https://github.com/ramadasnet/strautomator/blob/master/web/app/pages/tc.vue
                         </p>
 
                         <h2 class="mt-6 mb-4">Contact us</h2>
