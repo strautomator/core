@@ -1,6 +1,6 @@
 {
     "name": "strautomator-functions",
-    "version": "26.407.12149",
+    "version": "26.445.11629",
     "description": "Strautomator Cloud functions.",
     "author": "Igor Ramadas",
     "main": "index.js",
@@ -16,8 +16,8 @@
     },
     "devDependencies": {
         "@types/express": "^5.0.6",
-        "@types/lodash": "^4.17.25",
-        "@types/node": "^26.6.4",
+        "@types/lodash": "^4.17.27",
+        "@types/node": "^26.6.6",
         "chalk": "^4.1.2",
         "dayjs": "^1.11.23",
         "typescript": "^7.0.2"
