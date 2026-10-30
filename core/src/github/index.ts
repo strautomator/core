@@ -98,6 +98,11 @@ export class GitHub {
     buildChangelog = async (): Promise<void> => {
         try {
             const releases = await api.getRepoReleases(settings.github.api.repo)
+            if (!releases?.length) {
+                logger.warn("GitHub.buildChangelog", settings.github.api.repo, "No releases found, keeping the current changelog")
+                return
+            }
+
             const changelog: GitHubChangelog = {}
             let relevReleases: number = 0
 

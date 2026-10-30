@@ -272,9 +272,8 @@
     "github": {
         "api": {
             "baseUrl": "https://api.github.com/",
-            "repo": "strautomator/web",
-            "coreRepo": "strautomator/core",
-            "contactRepo": "strautomator/contact",
+            "repo": "ramadasnet/strautomator",
+            "contactRepo": "ramadasnet/support",
             "username": "igoramadas"
         }
     },
