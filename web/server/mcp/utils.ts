@@ -31,7 +31,8 @@ export const getMcpConfig = () => {
         authRequestMinutes: mcp.authRequestMinutes || 15,
         clientDays: mcp.clientDays || 365,
         unusedClientHours: mcp.unusedClientHours || 24,
-        maxRedirectUris: mcp.maxRedirectUris || 5,
+        // Fallback matches core/settings.json. Gemini registers 6 redirect URIs.
+        maxRedirectUris: mcp.maxRedirectUris || 8,
         registerPerHour: mcp.registerPerHour || 20,
         cookieName: settings.cookie.sessionName,
         cookieSecret: settings.cookie.secret,

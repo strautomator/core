@@ -214,6 +214,41 @@ export const authorizationServerMetadata = (event: RequestEvent): Response => {
 }
 
 /**
+ * Scheme and host of a redirect URI, for logs. Path, query and userinfo are omitted.
+ * Unparseable or oversized values are skipped so request contents are never written out.
+ */
+const redirectUriLogTarget = (value: string): string => {
+    if (typeof value != "string" || value.length > 2048) {
+        return ""
+    }
+
+    try {
+        const parsed = new URL(value)
+        if (!parsed.protocol || !parsed.hostname) {
+            return ""
+        }
+        return `${parsed.protocol}//${parsed.hostname}`
+    } catch {
+        return ""
+    }
+}
+
+/**
+ * Reject a dynamic client registration and log the reason.
+ * Logs the client IP, OAuth error, description, redirect URI count and up to a few hosts.
+ */
+const rejectRegistration = (event: RequestEvent, headers: Record<string, string | number>, status: number, error: string, description: string, redirectUris: string[]): Response => {
+    const hosts: string[] = []
+    for (const uri of redirectUris.slice(0, 8)) {
+        const host = redirectUriLogTarget(uri)
+        if (host && !hosts.includes(host)) hosts.push(host)
+    }
+    const detail = hosts.length > 0 ? `${redirectUris.length} redirect URIs: ${hosts.join(", ")}` : `${redirectUris.length} redirect URIs`
+    logger.warn("MCP.registerClient", `From: ${getClientIP(event)}`, error, description, detail)
+    return withHeaders(oauthErrorJson(event, status, error, description), headers)
+}
+
+/**
  * Dynamic client registration (RFC 7591).
  */
 export const registerClient = async (event: RequestEvent): Promise<Response> => {
@@ -226,28 +261,28 @@ export const registerClient = async (event: RequestEvent): Promise<Response> => 
         const body = (await getBody(event)) || {}
         const redirectUris: string[] = Array.isArray(body.redirect_uris) ? body.redirect_uris : []
         if (redirectUris.length < 1) {
-            return withHeaders(oauthErrorJson(event, 400, "invalid_redirect_uri", "redirect_uris is required"), rateLimit.headers)
+            return rejectRegistration(event, rateLimit.headers, 400, "invalid_redirect_uri", "redirect_uris is required", redirectUris)
         }
         if (redirectUris.length > getMcpConfig().maxRedirectUris) {
-            return withHeaders(oauthErrorJson(event, 400, "invalid_redirect_uri", "Too many redirect_uris"), rateLimit.headers)
+            return rejectRegistration(event, rateLimit.headers, 400, "invalid_redirect_uri", "Too many redirect_uris", redirectUris)
         }
         if (redirectUris.some((uri) => !isValidRedirectUri(uri))) {
-            return withHeaders(oauthErrorJson(event, 400, "invalid_redirect_uri", "One or more redirect_uris are not allowed"), rateLimit.headers)
+            return rejectRegistration(event, rateLimit.headers, 400, "invalid_redirect_uri", "One or more redirect_uris are not allowed", redirectUris)
         }
 
         const grantTypes: string[] = Array.isArray(body.grant_types) && body.grant_types.length > 0 ? body.grant_types : ["authorization_code", "refresh_token"]
         if (grantTypes.some((g) => !supportedGrantTypes.includes(g))) {
-            return withHeaders(oauthErrorJson(event, 400, "invalid_client_metadata", "Unsupported grant_types"), rateLimit.headers)
+            return rejectRegistration(event, rateLimit.headers, 400, "invalid_client_metadata", "Unsupported grant_types", redirectUris)
         }
 
         const responseTypes: string[] = Array.isArray(body.response_types) && body.response_types.length > 0 ? body.response_types : ["code"]
         if (responseTypes.some((r) => !supportedResponseTypes.includes(r))) {
-            return withHeaders(oauthErrorJson(event, 400, "invalid_client_metadata", "Unsupported response_types"), rateLimit.headers)
+            return rejectRegistration(event, rateLimit.headers, 400, "invalid_client_metadata", "Unsupported response_types", redirectUris)
         }
 
         let tokenEndpointAuthMethod = firstString(body.token_endpoint_auth_method) || "none"
         if (!supportedAuthMethods.includes(tokenEndpointAuthMethod)) {
-            return withHeaders(oauthErrorJson(event, 400, "invalid_client_metadata", "Unsupported token_endpoint_auth_method"), rateLimit.headers)
+            return rejectRegistration(event, rateLimit.headers, 400, "invalid_client_metadata", "Unsupported token_endpoint_auth_method", redirectUris)
         }
 
         const config = getMcpConfig()

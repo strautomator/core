@@ -378,7 +378,9 @@
         // Registered clients that were never used to get tokens expire after this many hours.
         "unusedClientHours": 24,
         // Maximum number of redirect URIs per registered client.
-        "maxRedirectUris": 5,
+        // Gemini registers 6 (the oauth-redirect, oauth-redirect-sandbox and
+        // oauth-redirect-test hosts, each with /r and /a). Stay a little above that.
+        "maxRedirectUris": 8,
         // Maximum client registrations per IP per hour.
         "registerPerHour": 20
     },
